@@ -1,0 +1,163 @@
+@keyframes loopGlow {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        background-position: 28px 0;
+    }
+}
+
+.calendarDay {
+    position: relative;
+    display: block;
+    flex: 1;
+    cursor: crosshair;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+}
+
+.eventCounter {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 2;
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.calendarItemBodyWeek {
+    display: flex;
+    min-height: 64px;
+    min-width: 0;
+    color: #171717;
+    padding: 5px 0 5px 8px;
+    background: #fafafb;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+    transition: background 180ms ease, color 180ms ease, filter 180ms ease;
+    gap: 6px;
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+.isWeekend {
+    background: #efefef;
+}
+
+.isToday {
+    background: #ff4f4f !important;
+    color: #fafafb !important;
+}
+
+.isSelected {
+    background-color: #16a7a0 !important;
+    color: #fafafb !important;
+    background-image: repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8) 10px, #b8b8b8 10px, #16a7a0 20px);
+    box-shadow: inset 0 -12px 16px #000000;
+    background-size: 28px 28px;
+    background-repeat: repeat;
+    animation: loopGlow 1s linear infinite !important;
+}
+
+.hasEvents {
+    color: white;
+    background: #00BCD4;
+}
+
+.dayMeta {
+    display: grid;
+    gap: 2px;
+    user-select: none;
+}
+
+.dayNumber {
+    margin-top: 2px;
+}
+
+.dayNumber strong {
+    font-size: 1rem;
+}
+
+.dayNumber small {
+    margin-left: 1px;
+}
+
+.monthLabel {
+    line-height: 1;
+}
+
+.eventsPreview {
+    display: grid;
+    gap: 2px;
+    padding-right: 4px;
+}
+
+.eventLabel {
+    display: block;
+    font-size: 0.58rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.96;
+}
+
+.emptyDay {
+    flex: 1;
+    background: #fafafb27;
+    min-height: 64px;
+    min-width: 0;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+}
+
+.isMultiEventDay1 {
+    background: linear-gradient(#959595, #959595);
+    background-size: calc(100% - 4px) calc(100% - 4px);
+    background-repeat: no-repeat;
+    background-position: 2px 2px;
+}
+
+.isMultiEventDay2 {
+    background: linear-gradient(#767676, #767676);
+    background-size: calc(100% - 4px) calc(100% - 4px);
+    background-repeat: no-repeat;
+    background-position: 2px 2px;
+}
+
+.isMultiEventDay3 {
+    background: linear-gradient(#5f5f5f, #5f5f5f);
+    background-size: calc(100% - 4px) calc(100% - 4px);
+    background-repeat: no-repeat;
+    background-position: 2px 2px;
+}
+
+.isMultiEventDay5 {
+    background: linear-gradient(rgb(62, 37, 37), rgb(62, 37, 37));
+    background-size: calc(100% - 4px) calc(100% - 4px);
+    background-repeat: no-repeat;
+    background-position: 2px 2px;
+}
+
+.isMultiEventDay7 {
+    background: linear-gradient(rgb(128, 0, 66), rgb(128, 0, 66));
+    background-size: calc(100% - 4px) calc(100% - 4px);
+    background-repeat: no-repeat;
+    background-position: 2px 2px;
+}
+
+.isMultiEventDay9 {
+    background: linear-gradient(rgb(73, 0, 71), rgb(73, 0, 71));
+    background-size: calc(100% - 4px) calc(100% - 4px);
+    background-repeat: no-repeat;
+    background-position: 2px 2px;
+}
+
+@media (max-width: 380px) {
+
+    .calendarItemBodyWeek,
+    .emptyDay {
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+    }
+}

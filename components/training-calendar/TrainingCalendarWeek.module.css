@@ -1,0 +1,6 @@
+.calendarWeek {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: var(--calendar-week-gap, 4px);
+  row-gap: 5px;
+}

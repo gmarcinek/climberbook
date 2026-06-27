@@ -1,0 +1,19 @@
+.calendarRoot {
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: visible;
+  overflow-y: auto;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(var(--calendar-columns, 3), minmax(0, 1fr));
+  column-gap: 1.5rem;
+  row-gap: 0;
+  align-content: start;
+  align-items: start;
+  min-height: 100%;
+  width: 100%;
+}

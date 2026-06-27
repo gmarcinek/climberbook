@@ -1,0 +1,42 @@
+.calendarMonth {
+  min-width: 0;
+  padding: 0;
+  margin-top: 2rem;
+  margin-bottom: 0;
+  border-top: 1px solid rgba(146, 146, 146, 0.45);
+  box-sizing: border-box;
+}
+
+.heading {
+  padding: 0 0 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  font-weight: 300;
+  align-items: center;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(146, 146, 146, 0.45);
+  text-transform: capitalize;
+}
+
+.year {
+  font-size: 1rem;
+  color: #ff4f4f;
+  font-weight: 600;
+}
+
+.weeks {
+  display: grid;
+  gap: 5px;
+}
+
+@media (min-width: 768px) {
+  .heading {
+    padding: 0 0 10px;
+    font-size: 1.2rem;
+  }
+
+  .year {
+    font-size: 1.2rem;
+  }
+}

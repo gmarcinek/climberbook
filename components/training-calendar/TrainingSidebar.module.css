@@ -1,0 +1,218 @@
+.trainingSidebar {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.trainingSidebar--default {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.trainingSidebar--selected {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.trainingSidebar__panel {
+  display: grid;
+  gap: 8px;
+  padding: 1rem;
+}
+
+.trainingSidebar__panel--filling {
+  align-content: start;
+  min-height: 0;
+}
+
+.trainingSidebar__panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.trainingSidebar__headerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.trainingSidebar__eyebrow {
+  margin: 0;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.trainingSidebar__title {
+  margin: 6px 0 0;
+}
+
+.trainingSidebar__pill {
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(246, 250, 255, 0.84));
+  border: 1px solid rgba(26, 72, 122, 0.12);
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.trainingSidebar__stack {
+  display: grid;
+  gap: 5px;
+}
+
+.trainingSidebar__helperText {
+  margin: 0;
+  color: var(--muted);
+}
+
+.trainingSidebar__trainingButton {
+  display: grid;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid rgba(28, 61, 89, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+  cursor: pointer;
+  text-align: left;
+}
+
+.trainingSidebar__trainingButtonHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  align-items: center;
+}
+
+.trainingSidebar__metaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.trainingSidebar__metaGrid--summary {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.trainingSidebar__form {
+  display: grid;
+  gap: 8px;
+}
+
+.trainingSidebar__formGrid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.trainingSidebar__field {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.trainingSidebar__field--full {
+  grid-column: 1 / -1;
+}
+
+.trainingSidebar__input {
+  border: 1px solid var(--border-strong);
+  padding: 6px 7px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text);
+  width: 100%;
+}
+
+.trainingSidebar__input--grow {
+  flex: 1;
+}
+
+.trainingSidebar__textarea {
+  resize: vertical;
+}
+
+.trainingSidebar__controlGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trainingSidebar__stepButton {
+  border: 1px solid var(--border-strong);
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.74);
+  cursor: pointer;
+  min-width: 42px;
+}
+
+.trainingSidebar__chipGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.trainingSidebar__chip {
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 5px 6px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.trainingSidebar__chip--active {
+  background: rgba(26, 120, 112, 0.16);
+  border-color: rgba(26, 120, 112, 0.42);
+}
+
+.trainingSidebar__submitButton {
+  border: 0;
+  padding: 7px 9px;
+  background: linear-gradient(135deg, #0f6d82, #2595a1);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 18px 30px rgba(18, 113, 126, 0.24);
+}
+
+.trainingSidebar__ghostButton {
+  border: 1px solid var(--border-strong);
+  padding: 5px 6px;
+  background: rgba(255, 255, 255, 0.74);
+  cursor: pointer;
+}
+
+.trainingSidebar__visibleList {
+  display: grid;
+  gap: 6px;
+}
+
+.trainingSidebar__visibleItem {
+  display: grid;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid rgba(28, 61, 89, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.trainingSidebar__minorText {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.trainingSidebar__linkButton {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #0d6b7c;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+}
