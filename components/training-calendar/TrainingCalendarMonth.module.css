@@ -40,3 +40,23 @@
     font-size: 1.2rem;
   }
 }
+
+@media (max-width: 767px) {
+  .calendarMonth {
+    margin-top: 0.75rem;
+  }
+
+  .heading {
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+  }
+
+  .year {
+    font-size: 0.9rem;
+  }
+
+  .weeks {
+    gap: 3px;
+  }
+}

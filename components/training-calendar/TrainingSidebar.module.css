@@ -228,3 +228,9 @@
   cursor: pointer;
   font-weight: 600;
 }
+
+@media (max-width: 767px) {
+  .trainingSidebar__panel {
+    padding: 0;
+  }
+}

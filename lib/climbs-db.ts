@@ -382,13 +382,14 @@ function normalizeImportedProfile(value: unknown): UserProfileRecord {
 }
 
 export async function exportDatabaseBackup(): Promise<ClimberbookDatabaseBackup> {
-  const [climbs, trainings, ascents, profile, weightEntries] = await Promise.all([
-    listClimbs(),
-    listTrainings(),
-    listAscents(),
-    getUserProfile(),
-    listWeightEntries(),
-  ]);
+  const [climbs, trainings, ascents, profile, weightEntries] =
+    await Promise.all([
+      listClimbs(),
+      listTrainings(),
+      listAscents(),
+      getUserProfile(),
+      listWeightEntries(),
+    ]);
 
   return {
     formatVersion: 1,
@@ -413,12 +414,21 @@ export async function importDatabaseBackup(value: unknown) {
   }
 
   const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
-  const trainings = asRecordArray<TrainingRecord>(backup.trainings, "trainings");
+  const trainings = asRecordArray<TrainingRecord>(
+    backup.trainings,
+    "trainings",
+  );
   const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
-  const weightEntries = asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries");
+  const weightEntries = asRecordArray<WeightEntryRecord>(
+    backup.weightEntries,
+    "weightEntries",
+  );
   const profile = normalizeImportedProfile(backup.profile);
   const database = await getDatabase();
-  const transaction = database.transaction(["climbs", "trainings", "ascents", "settings", "weightEntries"], "readwrite");
+  const transaction = database.transaction(
+    ["climbs", "trainings", "ascents", "settings", "weightEntries"],
+    "readwrite",
+  );
   const requests = [
     transaction.objectStore("climbs").clear(),
     transaction.objectStore("trainings").clear(),
@@ -426,10 +436,14 @@ export async function importDatabaseBackup(value: unknown) {
     transaction.objectStore("settings").clear(),
     transaction.objectStore("weightEntries").clear(),
     ...climbs.map((record) => transaction.objectStore("climbs").put(record)),
-    ...trainings.map((record) => transaction.objectStore("trainings").put(record)),
+    ...trainings.map((record) =>
+      transaction.objectStore("trainings").put(record),
+    ),
     ...ascents.map((record) => transaction.objectStore("ascents").put(record)),
     transaction.objectStore("settings").put(profile),
-    ...weightEntries.map((record) => transaction.objectStore("weightEntries").put(record)),
+    ...weightEntries.map((record) =>
+      transaction.objectStore("weightEntries").put(record),
+    ),
   ];
 
   await Promise.all(requests);

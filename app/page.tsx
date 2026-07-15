@@ -1,6 +1,13 @@
 "use client";
 
-import { Fragment, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Area,
   AreaChart,
@@ -632,6 +639,8 @@ function HomePageContent() {
   const isMobileTrainingLayout =
     trainingViewportWidth > 0 && trainingViewportWidth < 1180;
   const showTrainingSidebarColumn = trainingViewportWidth >= 1640;
+  const isMobileHeader =
+    trainingViewportWidth > 0 && trainingViewportWidth < 600;
   const weightChartEntries = useMemo(
     () => sortedWeightEntries.slice(-8),
     [sortedWeightEntries],
@@ -865,7 +874,9 @@ function HomePageContent() {
   async function handleDatabaseExport() {
     try {
       const backup = await exportDatabaseBackup();
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
 
@@ -875,11 +886,17 @@ function HomePageContent() {
       URL.revokeObjectURL(url);
       setStatus("Backup bazy został wyeksportowany.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Eksport backupu nie powiódł się.");
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Eksport backupu nie powiódł się.",
+      );
     }
   }
 
-  async function handleDatabaseImport(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleDatabaseImport(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
     const [file] = Array.from(event.target.files ?? []);
 
     if (!file) {
@@ -891,7 +908,11 @@ function HomePageContent() {
       await refreshData();
       setStatus("Backup bazy został zaimportowany.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Import backupu nie powiódł się.");
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Import backupu nie powiódł się.",
+      );
     } finally {
       event.target.value = "";
     }
@@ -900,11 +921,33 @@ function HomePageContent() {
   return (
     <main style={pageStyle}>
       <section style={{ ...shellStyle, ...activeModuleShellStyle }}>
-        <header style={pageHeaderStyle}>
-          <div style={topBarStyle}>
-            <strong style={brandStyle}>Climberbook</strong>
+        <header
+          style={{
+            ...pageHeaderStyle,
+            height: isMobileHeader ? 112 : 80,
+          }}
+        >
+          <div
+            style={{
+              ...topBarStyle,
+              height: isMobileHeader ? 112 : 80,
+              gridTemplateColumns: isMobileHeader
+                ? "minmax(0, 1fr)"
+                : "auto minmax(0, 1fr) auto",
+              gridTemplateRows: isMobileHeader ? "48px 40px" : "none",
+              gap: isMobileHeader ? 0 : 12,
+            }}
+          >
+            <strong
+              style={{
+                ...brandStyle,
+                gridRow: isMobileHeader ? 1 : "auto",
+              }}
+            >
+              Climberbook
+            </strong>
 
-            {activeModule === "treningowy" && (
+            {activeModule === "treningowy" && !isMobileHeader && (
               <div style={headerMetricsStyle}>
                 <span style={headerMetricStyle}>Sesje: {trainings.length}</span>
                 <span style={headerMetricStyle}>
@@ -915,7 +958,13 @@ function HomePageContent() {
               </div>
             )}
 
-            <nav style={moduleNavStyle}>
+            <nav
+              style={{
+                ...moduleNavStyle,
+                gridRow: isMobileHeader ? 2 : "auto",
+                justifyContent: isMobileHeader ? "flex-start" : "flex-end",
+              }}
+            >
               {moduleConfig.map((module, index) => (
                 <Fragment key={module.key}>
                   {index > 0 && <span style={navSeparatorStyle}>|</span>}
@@ -939,7 +988,16 @@ function HomePageContent() {
           </div>
         </header>
 
-        <div style={contentBodyStyle}>
+        <div
+          style={{
+            ...contentBodyStyle,
+            height: `calc(100vh - ${isMobileHeader ? 112 : 80}px)`,
+            marginTop: isMobileHeader ? 112 : 80,
+            overflowX: "hidden",
+            overflowY: isMobileTrainingLayout ? "auto" : "hidden",
+            paddingBottom: isMobileTrainingLayout ? 24 : 8,
+          }}
+        >
           {activeModule === "treningowy" && (
             <>
               <div
@@ -950,6 +1008,9 @@ function HomePageContent() {
                     : showTrainingSidebarColumn
                       ? "minmax(0, 2fr) minmax(0, 3fr) minmax(0, 3fr)"
                       : "minmax(0, 2fr) minmax(0, 3fr)",
+                  gridTemplateRows: isMobileTrainingLayout ? "none" : "minmax(0, 1fr)",
+                  height: isMobileTrainingLayout ? "auto" : "100%",
+                  alignItems: isMobileTrainingLayout ? "start" : "stretch",
                 }}
               >
                 {isMobileTrainingLayout && (
@@ -1042,6 +1103,25 @@ function HomePageContent() {
                   />
                 </section>
 
+                {isMobileTrainingLayout && (
+                  <div style={{ minHeight: 0 }}>
+                    <TrainingSidebar
+                      selectedDate={selectedDate}
+                      selectedDayTrainings={selectedDayTrainings}
+                      visibleRangeTrainings={visibleRangeTrainings}
+                      trainingDraft={trainingDraft}
+                      editingTrainingId={editingTrainingId}
+                      surfaceOptions={surfaceOptions}
+                      onTrainingDraftChange={handleTrainingDraftChange}
+                      onToggleSurface={toggleSurface}
+                      onSubmit={handleTrainingSubmit}
+                      onEditTraining={handleEditTraining}
+                      onResetSelection={handleResetTrainingSelection}
+                      onCancelEdit={() => resetTrainingEditor(selectedDate ?? today)}
+                    />
+                  </div>
+                )}
+
                 {showTrainingSidebarColumn && (
                   <div style={{ gridColumn: 3, gridRow: 1, minHeight: 0 }}>
                     <TrainingSidebar
@@ -1064,7 +1144,7 @@ function HomePageContent() {
                 )}
               </div>
 
-              {!showTrainingSidebarColumn && selectedDate && (
+              {!isMobileTrainingLayout && !showTrainingSidebarColumn && selectedDate && (
                 <div style={mobileDrawerOverlayStyle}>
                   <button
                     type="button"
@@ -1264,21 +1344,12 @@ function HomePageContent() {
                 </section>
 
                 <section style={panelStyle}>
-                  <div style={panelHeadingStyle}>
-                    <div>
-                      <span style={moduleEyebrowStyle}>Kopia danych</span>
-                      <h2 style={sectionTitleStyle}>Eksport i import całości</h2>
-                    </div>
-                    <span style={softTagStyle}>Pełna baza</span>
-                  </div>
-
-                  <p style={mutedParagraphStyle}>
-                    Zapisz pełną kopię danych do pliku albo odtwórz całą bazę z
-                    wcześniejszego backupu.
-                  </p>
-
                   <div style={actionRowStyle}>
-                    <button type="button" style={secondaryButtonStyle} onClick={handleDatabaseExport}>
+                    <button
+                      type="button"
+                      style={secondaryButtonStyle}
+                      onClick={handleDatabaseExport}
+                    >
                       Eksport całości
                     </button>
                     <input
@@ -1288,47 +1359,13 @@ function HomePageContent() {
                       onChange={handleDatabaseImport}
                       style={{ display: "none" }}
                     />
-                    <button type="button" style={ghostButtonStyle} onClick={() => backupImportInputRef.current?.click()}>
+                    <button
+                      type="button"
+                      style={ghostButtonStyle}
+                      onClick={() => backupImportInputRef.current?.click()}
+                    >
                       Import całości z pliku
                     </button>
-                  </div>
-
-                  <div style={scrollListStyle}>
-                    {ascents.length === 0 && (
-                      <EmptyState message="Nie ma jeszcze historii przejść." />
-                    )}
-                    {ascents.map((ascent) => (
-                      <article key={ascent.id} style={listCardStyle}>
-                        <div style={listCardHeaderStyle}>
-                          <strong>{ascent.routeName}</strong>
-                          <span style={softPillStyle}>
-                            {ascent.suggestedGrade}
-                          </span>
-                        </div>
-                        <div style={infoGridStyle}>
-                          <span>Data: {ascent.date}</span>
-                          <span>
-                            Typ: {ascent.source === "panel" ? "Panel" : "Skała"}
-                          </span>
-                          <span>
-                            Wycena sugerowana: {ascent.suggestedGrade}
-                          </span>
-                          <span>
-                            Wycena subiektywna: {ascent.subjectiveGrade}
-                          </span>
-                        </div>
-                        {ascent.notes && (
-                          <p
-                            style={{
-                              margin: "10px 0 0",
-                              color: "var(--muted)",
-                            }}
-                          >
-                            {ascent.notes}
-                          </p>
-                        )}
-                      </article>
-                    ))}
                   </div>
                 </section>
               </div>
