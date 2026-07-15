@@ -206,7 +206,18 @@ function getLatestTrainingWeight(trainings: TrainingRecord[]) {
         return training;
       }
 
-      return training.createdAt > latest.createdAt ? training : latest;
+      if (training.date > latest.date) {
+        return training;
+      }
+
+      if (
+        training.date === latest.date &&
+        training.createdAt > latest.createdAt
+      ) {
+        return training;
+      }
+
+      return latest;
     },
     null,
   );
@@ -599,8 +610,8 @@ function HomePageContent() {
   );
   const fallbackWeightKg = parseWeightInput(profileDraft.weightKg);
   const defaultTrainingWeightKg =
-    latestTrainingWeightKg ??
     latestRecordedWeight?.weightKg ??
+    latestTrainingWeightKg ??
     fallbackWeightKg;
   const currentAge = calculateAgeYears(profileDraft.birthDate, today);
   const recentWeightEntries = useMemo(
@@ -1137,15 +1148,6 @@ function HomePageContent() {
                     style={mobileDrawerBackdropStyle}
                   />
                   <div style={mobileDrawerSheetStyle}>
-                    <div style={mobileDrawerHeaderStyle}>
-                      <button
-                        type="button"
-                        onClick={handleResetTrainingSelection}
-                        style={mobileDrawerCloseButtonStyle}
-                      >
-                        ANULUJ
-                      </button>
-                    </div>
                     <TrainingSidebar
                       selectedDate={selectedDate}
                       selectedDayTrainings={selectedDayTrainings}
@@ -2655,7 +2657,7 @@ const mobileDrawerBackdropStyle = {
 const mobileDrawerSheetStyle = {
   position: "relative" as const,
   display: "grid",
-  gridTemplateRows: "auto minmax(0, 1fr)",
+  gridTemplateRows: "minmax(0, 1fr)",
   height: "100%",
   minHeight: 0,
   overflow: "hidden",
@@ -2663,18 +2665,6 @@ const mobileDrawerSheetStyle = {
   borderTop: "1px solid var(--border-strong)",
   background: "rgba(245, 244, 241, 0.98)",
   boxShadow: "0 -20px 40px rgba(35, 29, 25, 0.16)",
-};
-
-const mobileDrawerHeaderStyle = {
-  display: "flex",
-  justifyContent: "flex-end",
-  paddingBottom: 8,
-};
-
-const mobileDrawerCloseButtonStyle = {
-  ...buttonStyle,
-  padding: "7px 12px",
-  boxShadow: "0 14px 24px rgba(195, 102, 58, 0.18)",
 };
 
 const listCardStyle = {

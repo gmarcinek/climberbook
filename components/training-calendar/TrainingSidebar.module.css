@@ -115,12 +115,14 @@
 .trainingSidebar__form {
   display: grid;
   gap: 8px;
+  margin-top: 12px;
 }
 
 .trainingSidebar__formGrid {
   display: grid;
-  gap: 6px;
+  gap: 1rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 1rem;
 }
 
 .trainingSidebar__field {
@@ -162,6 +164,28 @@
   background: rgba(255, 255, 255, 0.74);
   cursor: pointer;
   min-width: 42px;
+}
+
+.trainingSidebar__durationControl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.trainingSidebar__durationSlider {
+  width: 100%;
+  margin: 0;
+  accent-color: #168f91;
+  cursor: pointer;
+}
+
+.trainingSidebar__durationValue {
+  min-width: 60px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
 }
 
 .trainingSidebar__clearButton {
@@ -254,6 +278,20 @@
 
 @media (max-width: 767px) {
   .trainingSidebar__panel {
-    padding: 0;
+    padding: 1rem;
+  }
+
+  .trainingSidebar__formGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trainingSidebar__field,
+  .trainingSidebar__controlGroup {
+    width: 100%;
+  }
+
+  .trainingSidebar__submitButton {
+    width: 100%;
+    justify-self: stretch;
   }
 }
