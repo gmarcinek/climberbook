@@ -62,6 +62,16 @@ export type AscentRecord = {
   createdAt: string;
 };
 
+export type ClimberbookDatabaseBackup = {
+  formatVersion: 1;
+  exportedAt: string;
+  climbs: ClimbRecord[];
+  trainings: TrainingRecord[];
+  ascents: AscentRecord[];
+  profile: UserProfileRecord;
+  weightEntries: WeightEntryRecord[];
+};
+
 interface ClimberbookDb extends DBSchema {
   climbs: {
     key: number;
@@ -344,4 +354,84 @@ export async function addWeightEntry(
     ...input,
     createdAt: new Date().toISOString(),
   });
+}
+
+function asRecordArray<T>(value: unknown, label: string): T[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Nieprawidłowy backup: ${label} musi być listą.`);
+  }
+
+  return value as T[];
+}
+
+function normalizeImportedProfile(value: unknown): UserProfileRecord {
+  if (!value || typeof value !== "object") {
+    throw new Error("Nieprawidłowy backup: brakuje profilu użytkownika.");
+  }
+
+  const profile = value as Partial<UserProfileRecord>;
+
+  return {
+    key: "primary",
+    birthDate: profile.birthDate ?? "",
+    sex: profile.sex ?? "",
+    heightCm: profile.heightCm ?? null,
+    weightKg: profile.weightKg ?? null,
+    updatedAt: profile.updatedAt ?? new Date().toISOString(),
+  };
+}
+
+export async function exportDatabaseBackup(): Promise<ClimberbookDatabaseBackup> {
+  const [climbs, trainings, ascents, profile, weightEntries] = await Promise.all([
+    listClimbs(),
+    listTrainings(),
+    listAscents(),
+    getUserProfile(),
+    listWeightEntries(),
+  ]);
+
+  return {
+    formatVersion: 1,
+    exportedAt: new Date().toISOString(),
+    climbs,
+    trainings,
+    ascents,
+    profile,
+    weightEntries,
+  };
+}
+
+export async function importDatabaseBackup(value: unknown) {
+  if (!value || typeof value !== "object") {
+    throw new Error("Nieprawidłowy plik backupu.");
+  }
+
+  const backup = value as Partial<ClimberbookDatabaseBackup>;
+
+  if (backup.formatVersion !== 1) {
+    throw new Error("Nieobsługiwana wersja backupu.");
+  }
+
+  const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
+  const trainings = asRecordArray<TrainingRecord>(backup.trainings, "trainings");
+  const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
+  const weightEntries = asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries");
+  const profile = normalizeImportedProfile(backup.profile);
+  const database = await getDatabase();
+  const transaction = database.transaction(["climbs", "trainings", "ascents", "settings", "weightEntries"], "readwrite");
+  const requests = [
+    transaction.objectStore("climbs").clear(),
+    transaction.objectStore("trainings").clear(),
+    transaction.objectStore("ascents").clear(),
+    transaction.objectStore("settings").clear(),
+    transaction.objectStore("weightEntries").clear(),
+    ...climbs.map((record) => transaction.objectStore("climbs").put(record)),
+    ...trainings.map((record) => transaction.objectStore("trainings").put(record)),
+    ...ascents.map((record) => transaction.objectStore("ascents").put(record)),
+    transaction.objectStore("settings").put(profile),
+    ...weightEntries.map((record) => transaction.objectStore("weightEntries").put(record)),
+  ];
+
+  await Promise.all(requests);
+  await transaction.done;
 }

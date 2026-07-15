@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
+import { Fragment, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -37,7 +37,9 @@ import {
   addTraining,
   addWeightEntry,
   createEmptyUserProfile,
+  exportDatabaseBackup,
   getUserProfile,
+  importDatabaseBackup,
   listAscents,
   listTrainings,
   listWeightEntries,
@@ -465,6 +467,7 @@ function HomePageContent() {
   );
   const [weightEntries, setWeightEntries] = useState<WeightEntryRecord[]>([]);
   const [status, setStatus] = useState("Ładowanie danych z IndexedDB...");
+  const backupImportInputRef = useRef<HTMLInputElement | null>(null);
 
   async function refreshData() {
     const [trainingItems, ascentItems, profileRecord, weightItems] =
@@ -859,39 +862,39 @@ function HomePageContent() {
     }
   }
 
-  function exportCsv(
-    filename: string,
-    rows: Array<Record<string, string | number>>,
-  ) {
-    if (!rows.length) {
-      setStatus("Brak danych do eksportu.");
+  async function handleDatabaseExport() {
+    try {
+      const backup = await exportDatabaseBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `climberbook-backup-${formatDateIso(new Date())}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus("Backup bazy został wyeksportowany.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Eksport backupu nie powiódł się.");
+    }
+  }
+
+  async function handleDatabaseImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const [file] = Array.from(event.target.files ?? []);
+
+    if (!file) {
       return;
     }
 
-    const headers = Object.keys(rows[0]);
-    const csvContent = [headers.join(",")]
-      .concat(
-        rows.map((row) =>
-          headers
-            .map(
-              (header) =>
-                `"${String(row[header] ?? "").replaceAll('"', '""')}"`,
-            )
-            .join(","),
-        ),
-      )
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-
-    setStatus(`Wyeksportowano ${filename}.`);
+    try {
+      await importDatabaseBackup(JSON.parse(await file.text()));
+      await refreshData();
+      setStatus("Backup bazy został zaimportowany.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Import backupu nie powiódł się.");
+    } finally {
+      event.target.value = "";
+    }
   }
 
   return (
@@ -1263,60 +1266,30 @@ function HomePageContent() {
                 <section style={panelStyle}>
                   <div style={panelHeadingStyle}>
                     <div>
-                      <span style={moduleEyebrowStyle}>Eksport danych</span>
-                      <h2 style={sectionTitleStyle}>CSV gotowe</h2>
+                      <span style={moduleEyebrowStyle}>Kopia danych</span>
+                      <h2 style={sectionTitleStyle}>Eksport i import całości</h2>
                     </div>
-                    <span style={softTagStyle}>Raport z aplikacji</span>
+                    <span style={softTagStyle}>Pełna baza</span>
                   </div>
 
                   <p style={mutedParagraphStyle}>
-                    Możesz eksportować treningi i historię przejść do CSV, żeby
-                    dalej obrabiać dane poza aplikacją.
+                    Zapisz pełną kopię danych do pliku albo odtwórz całą bazę z
+                    wcześniejszego backupu.
                   </p>
 
                   <div style={actionRowStyle}>
-                    <button
-                      type="button"
-                      style={secondaryButtonStyle}
-                      onClick={() =>
-                        exportCsv(
-                          "treningi.csv",
-                          trainings.map((training) => ({
-                            date: training.date,
-                            time: training.time,
-                            durationMinutes: training.durationMinutes,
-                            bodyWeightKg: training.bodyWeightKg,
-                            ageYears: training.ageYears,
-                            caloriesBurned: training.caloriesBurned,
-                            attemptsCount: training.attemptsCount,
-                            difficultyNotes: training.difficultyNotes,
-                            wellbeing: training.wellbeing,
-                            surfaces: training.surfaces.join("|"),
-                            notes: training.notes,
-                          })),
-                        )
-                      }
-                    >
-                      Export treningów CSV
+                    <button type="button" style={secondaryButtonStyle} onClick={handleDatabaseExport}>
+                      Eksport całości
                     </button>
-                    <button
-                      type="button"
-                      style={secondaryButtonStyle}
-                      onClick={() =>
-                        exportCsv(
-                          "przejscia.csv",
-                          ascents.map((ascent) => ({
-                            date: ascent.date,
-                            source: ascent.source,
-                            routeName: ascent.routeName,
-                            suggestedGrade: ascent.suggestedGrade,
-                            subjectiveGrade: ascent.subjectiveGrade,
-                            notes: ascent.notes,
-                          })),
-                        )
-                      }
-                    >
-                      Export przejść CSV
+                    <input
+                      ref={backupImportInputRef}
+                      type="file"
+                      accept="application/json,.json"
+                      onChange={handleDatabaseImport}
+                      style={{ display: "none" }}
+                    />
+                    <button type="button" style={ghostButtonStyle} onClick={() => backupImportInputRef.current?.click()}>
+                      Import całości z pliku
                     </button>
                   </div>
 
