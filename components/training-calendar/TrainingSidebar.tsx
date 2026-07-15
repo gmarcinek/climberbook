@@ -161,9 +161,9 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
           <div className={styles.trainingSidebar__panelHeader}>
             <div>
               <p className={styles.trainingSidebar__eyebrow}>Wybrany dzień</p>
-              <h3 className={styles.trainingSidebar__title}>
+              <h1 className={styles.trainingSidebar__title}>
                 {formatDateLabel(selectedDate)}
-              </h3>
+              </h1>
             </div>
             <div className={styles.trainingSidebar__headerActions}>
               <span className={styles.trainingSidebar__pill}>
@@ -217,14 +217,14 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
         <section className={styles.trainingSidebar__panel}>
           <div className={styles.trainingSidebar__panelHeader}>
             <div>
-              <p className={styles.trainingSidebar__eyebrow}>
+              <h1 className={styles.trainingSidebar__eyebrow}>
                 {editingTrainingId ? "Edycja treningu" : "DODAJ TRENING"}
-              </p>
-              <h3 className={styles.trainingSidebar__title}>
+              </h1>
+              <h2 className={styles.trainingSidebar__title}>
                 {editingTrainingId
                   ? "Aktualizuj wpis dnia"
                   : "Dodaj trening do dnia"}
-              </h3>
+              </h2>
             </div>
           </div>
 
@@ -631,11 +631,11 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
             <p className={styles.trainingSidebar__eyebrow}>
               {isSelectionActive ? "Wybrany dzień" : "Widoczny okres"}
             </p>
-            <h3 className={styles.trainingSidebar__title}>
+            <h1 className={styles.trainingSidebar__title}>
               {isSelectionActive && selectedDate
                 ? `Treningi z ${formatDateLabel(selectedDate)}`
                 : "Lista treningów w kalendarzu"}
-            </h3>
+            </h1>
           </div>
           <span className={styles.trainingSidebar__pill}>
             {displayedTrainings.length} wpisów
