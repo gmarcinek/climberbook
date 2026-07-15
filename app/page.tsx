@@ -1068,6 +1068,7 @@ function HomePageContent() {
                     ...calendarPanelStyle,
                     gridColumn: isMobileTrainingLayout ? "auto" : 1,
                     gridRow: isMobileTrainingLayout ? "auto" : 1,
+                    order: isMobileTrainingLayout ? -1 : 0,
                   }}
                 >
                   <div style={calendarNavStyle}>
