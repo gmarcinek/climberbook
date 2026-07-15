@@ -1017,8 +1017,8 @@ function HomePageContent() {
                   gridTemplateColumns: isMobileTrainingLayout
                     ? "minmax(0, 1fr)"
                     : showTrainingSidebarColumn
-                      ? "minmax(0, 2fr) minmax(0, 3fr) minmax(0, 3fr)"
-                      : "minmax(0, 2fr) minmax(0, 3fr)",
+                      ? "515px minmax(0, 3fr) minmax(0, 3fr)"
+                      : "515px minmax(0, 3fr)",
                   gridTemplateRows: isMobileTrainingLayout
                     ? "none"
                     : "minmax(0, 1fr)",
