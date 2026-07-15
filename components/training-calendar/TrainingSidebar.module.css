@@ -76,7 +76,7 @@
 .trainingSidebar__trainingButton {
   display: grid;
   gap: 5px;
-  padding: 7px;
+  padding: 1rem;
   border: 1px solid rgba(28, 61, 89, 0.12);
   background: rgba(255, 255, 255, 0.84);
   cursor: pointer;
@@ -94,6 +94,16 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.trainingSidebar__metaLine {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
   color: var(--muted);
   font-size: 0.88rem;
 }
@@ -175,6 +185,8 @@
 
 .trainingSidebar__submitButton {
   border: 0;
+  width: min(100%, 160px);
+  justify-self: start;
   padding: 7px 9px;
   background: linear-gradient(135deg, #0f6d82, #2595a1);
   color: white;
@@ -197,7 +209,7 @@
 .trainingSidebar__visibleItem {
   display: grid;
   gap: 5px;
-  padding: 7px;
+  padding: 1rem;
   border: 1px solid rgba(28, 61, 89, 0.12);
   background: rgba(255, 255, 255, 0.78);
 }

@@ -51,7 +51,10 @@ export type TrainingDraftValues = {
 function adjustWeightValue(value: string, delta: number) {
   const normalizedValue = normalizeDecimalInput(value || "0");
   const parsedValue = Number(normalizedValue);
-  const nextValue = Math.max(0, (Number.isNaN(parsedValue) ? 0 : parsedValue) + delta);
+  const nextValue = Math.max(
+    0,
+    (Number.isNaN(parsedValue) ? 0 : parsedValue) + delta,
+  );
 
   return nextValue.toFixed(1);
 }
@@ -88,17 +91,29 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
   } = props;
 
   const isSelectionActive = selectedDate !== null;
-  const displayedTrainings = isSelectionActive ? selectedDayTrainings : visibleRangeTrainings;
+  const displayedTrainings = isSelectionActive
+    ? selectedDayTrainings
+    : visibleRangeTrainings;
   const sidebarClassName = [
     styles.trainingSidebar,
-    isSelectionActive ? styles["trainingSidebar--selected"] : styles["trainingSidebar--default"],
+    isSelectionActive
+      ? styles["trainingSidebar--selected"]
+      : styles["trainingSidebar--default"],
   ].join(" ");
   const summaryPanelClassName = [
     styles.trainingSidebar__panel,
     isSelectionActive ? styles["trainingSidebar__panel--filling"] : "",
-  ].filter(Boolean).join(" ");
-  const fullFieldClassName = [styles.trainingSidebar__field, styles["trainingSidebar__field--full"]].join(" ");
-  const growInputClassName = [styles.trainingSidebar__input, styles["trainingSidebar__input--grow"]].join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const fullFieldClassName = [
+    styles.trainingSidebar__field,
+    styles["trainingSidebar__field--full"],
+  ].join(" ");
+  const growInputClassName = [
+    styles.trainingSidebar__input,
+    styles["trainingSidebar__input--grow"],
+  ].join(" ");
 
   return (
     <aside className={sidebarClassName}>
@@ -107,30 +122,51 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
           <div className={styles.trainingSidebar__panelHeader}>
             <div>
               <p className={styles.trainingSidebar__eyebrow}>Wybrany dzień</p>
-              <h3 className={styles.trainingSidebar__title}>{formatDateLabel(selectedDate)}</h3>
+              <h3 className={styles.trainingSidebar__title}>
+                {formatDateLabel(selectedDate)}
+              </h3>
             </div>
             <div className={styles.trainingSidebar__headerActions}>
-              <span className={styles.trainingSidebar__pill}>{selectedDayTrainings.length} treningi</span>
-              <button type="button" onClick={onResetSelection} className={styles.trainingSidebar__ghostButton}>
+              <span className={styles.trainingSidebar__pill}>
+                {selectedDayTrainings.length} treningi
+              </span>
+              <button
+                type="button"
+                onClick={onResetSelection}
+                className={styles.trainingSidebar__ghostButton}
+              >
                 ANULUJ
               </button>
             </div>
           </div>
 
           <div className={styles.trainingSidebar__stack}>
-            {selectedDayTrainings.length === 0 && <p className={styles.trainingSidebar__helperText}>Brak treningów dla tego dnia. Dodaj pierwszy wpis.</p>}
+            {selectedDayTrainings.length === 0 && (
+              <p className={styles.trainingSidebar__helperText}>
+                Brak treningów dla tego dnia. Dodaj pierwszy wpis.
+              </p>
+            )}
             {selectedDayTrainings.map((training) => (
-              <button key={training.id} type="button" onClick={() => onEditTraining(training)} className={styles.trainingSidebar__trainingButton}>
+              <button
+                key={training.id}
+                type="button"
+                onClick={() => onEditTraining(training)}
+                className={styles.trainingSidebar__trainingButton}
+              >
                 <div className={styles.trainingSidebar__trainingButtonHeader}>
-                  <strong>
-                    {training.time} · {summarizeTrainingType(training)}
-                  </strong>
-                  <span className={styles.trainingSidebar__pill}>{training.durationMinutes} min</span>
+                  <strong>{summarizeTrainingType(training)}</strong>
                 </div>
-                <TrainingTimelineBar time={training.time} durationMinutes={training.durationMinutes} />
-                <div className={styles.trainingSidebar__metaGrid}>
-                  <span>Kalorie: {training.caloriesBurned}</span>
-                  <span>Wstawki: {training.attemptsCount}</span>
+                <TrainingTimelineBar
+                  time={training.time}
+                  durationMinutes={training.durationMinutes}
+                />
+                <div className={styles.trainingSidebar__metaLine}>
+                  <span>
+                    {training.time} · {training.durationMinutes} min ·{" "}
+                    {training.bodyWeightKg} kg · Kalorie:{" "}
+                    {training.caloriesBurned} · Wstawki:{" "}
+                    {training.attemptsCount}
+                  </span>
                 </div>
               </button>
             ))}
@@ -142,193 +178,268 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
         <section className={styles.trainingSidebar__panel}>
           <div className={styles.trainingSidebar__panelHeader}>
             <div>
-              <p className={styles.trainingSidebar__eyebrow}>{editingTrainingId ? "Edycja treningu" : "DODAJ TRENING"}</p>
-              <h3 className={styles.trainingSidebar__title}>{editingTrainingId ? "Aktualizuj wpis dnia" : "Dodaj trening do dnia"}</h3>
+              <p className={styles.trainingSidebar__eyebrow}>
+                {editingTrainingId ? "Edycja treningu" : "DODAJ TRENING"}
+              </p>
+              <h3 className={styles.trainingSidebar__title}>
+                {editingTrainingId
+                  ? "Aktualizuj wpis dnia"
+                  : "Dodaj trening do dnia"}
+              </h3>
             </div>
-            
           </div>
 
           <form onSubmit={onSubmit} className={styles.trainingSidebar__form}>
-          <div className={styles.trainingSidebar__formGrid}>
-            <label className={styles.trainingSidebar__field}>
-              Data
-              <input
-                value={trainingDraft.date}
-                onChange={(event) => onTrainingDraftChange({ ...trainingDraft, date: event.target.value })}
-                type="date"
-                required
-                className={styles.trainingSidebar__input}
-              />
-            </label>
-            <label className={styles.trainingSidebar__field}>
-              Godzina
-              <select
-                value={trainingDraft.time}
-                onChange={(event) => onTrainingDraftChange({ ...trainingDraft, time: event.target.value })}
-                required
-                className={styles.trainingSidebar__input}
-              >
-                {timeOptions.map((timeOption) => (
-                  <option key={timeOption} value={timeOption}>
-                    {timeOption}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={styles.trainingSidebar__field}>
-              Czas (min)
-              <input
-                value={trainingDraft.durationMinutes}
-                onChange={(event) => onTrainingDraftChange({ ...trainingDraft, durationMinutes: event.target.value })}
-                type="number"
-                min="1"
-                required
-                className={styles.trainingSidebar__input}
-              />
-            </label>
-            <label className={styles.trainingSidebar__field}>
-              Wiek (z settings)
-              <input
-                value={trainingDraft.ageYears}
-                readOnly
-                type="number"
-                min="1"
-                className={styles.trainingSidebar__input}
-              />
-            </label>
-            <label className={styles.trainingSidebar__field}>
-              Waga (kg)
-              <div className={styles.trainingSidebar__controlGroup}>
-                <button
-                  type="button"
-                  onClick={() => onTrainingDraftChange({ ...trainingDraft, bodyWeightKg: adjustWeightValue(trainingDraft.bodyWeightKg, -0.1) })}
-                  className={styles.trainingSidebar__stepButton}
-                >
-                  -
-                </button>
+            <div className={styles.trainingSidebar__formGrid}>
+              <label className={styles.trainingSidebar__field}>
+                Data
                 <input
-                  value={trainingDraft.bodyWeightKg}
+                  value={trainingDraft.date}
                   onChange={(event) =>
-                    onTrainingDraftChange({ ...trainingDraft, bodyWeightKg: normalizeDecimalInput(event.target.value) })
+                    onTrainingDraftChange({
+                      ...trainingDraft,
+                      date: event.target.value,
+                    })
                   }
-                  onBlur={() =>
-                    onTrainingDraftChange({ ...trainingDraft, bodyWeightKg: formatWeightToSingleDecimal(trainingDraft.bodyWeightKg) })
-                  }
-                  type="number"
-                  min="0"
-                  step="0.1"
+                  type="date"
                   required
-                  className={growInputClassName}
+                  className={styles.trainingSidebar__input}
                 />
-                <button
-                  type="button"
-                  onClick={() => onTrainingDraftChange({ ...trainingDraft, bodyWeightKg: adjustWeightValue(trainingDraft.bodyWeightKg, 0.1) })}
-                  className={styles.trainingSidebar__stepButton}
-                >
-                  +
-                </button>
-              </div>
-            </label>
-            <label className={styles.trainingSidebar__field}>
-              Kalorie
-              <div className={styles.trainingSidebar__controlGroup}>
-                <input
-                  value={trainingDraft.caloriesBurned}
+              </label>
+              <label className={styles.trainingSidebar__field}>
+                Godzina
+                <select
+                  value={trainingDraft.time}
                   onChange={(event) =>
                     onTrainingDraftChange({
                       ...trainingDraft,
-                      caloriesBurned: event.target.value,
-                      caloriesMode: "manual",
+                      time: event.target.value,
                     })
                   }
-                  placeholder="Auto z wagi, wieku i czasu"
-                  type="number"
-                  min="0"
-                  className={growInputClassName}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
+                  required
+                  className={styles.trainingSidebar__input}
+                >
+                  {timeOptions.map((timeOption) => (
+                    <option key={timeOption} value={timeOption}>
+                      {timeOption}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={styles.trainingSidebar__field}>
+                Czas (min)
+                <input
+                  value={trainingDraft.durationMinutes}
+                  onChange={(event) =>
                     onTrainingDraftChange({
                       ...trainingDraft,
-                      caloriesBurned: "",
-                      caloriesMode: "auto",
+                      durationMinutes: event.target.value,
                     })
                   }
-                  className={styles.trainingSidebar__stepButton}
-                >
-                  Auto
-                </button>
-              </div>
-            </label>
-            <label className={styles.trainingSidebar__field}>
-              Wstawki
-              <input
-                value={trainingDraft.attemptsCount}
-                onChange={(event) => onTrainingDraftChange({ ...trainingDraft, attemptsCount: event.target.value })}
-                type="number"
-                min="0"
-                required
-                className={styles.trainingSidebar__input}
-              />
-            </label>
-            <label className={fullFieldClassName}>
-              Wyceny
-              <input
-                value={trainingDraft.difficultyNotes}
-                onChange={(event) => onTrainingDraftChange({ ...trainingDraft, difficultyNotes: event.target.value })}
-                placeholder="Np. 7a, 7a+/b, projekt 7b+"
-                className={styles.trainingSidebar__input}
-              />
-            </label>
-            <label className={fullFieldClassName}>
-              Samopoczucie
-              <textarea
-                value={trainingDraft.wellbeing}
-                onChange={(event) => onTrainingDraftChange({ ...trainingDraft, wellbeing: event.target.value })}
-                rows={3}
-                className={[styles.trainingSidebar__input, styles.trainingSidebar__textarea].join(" ")}
-              />
-            </label>
-          </div>
-
-          <div className={styles.trainingSidebar__stack}>
-            <strong>Rodzaj sesji</strong>
-            <div className={styles.trainingSidebar__chipGrid}>
-              {surfaceOptions.map((option) => {
-                const active = trainingDraft.surfaces.includes(option.value);
-                const chipClassName = [
-                  styles.trainingSidebar__chip,
-                  active ? styles["trainingSidebar__chip--active"] : "",
-                ].filter(Boolean).join(" ");
-
-                return (
+                  type="number"
+                  min="1"
+                  required
+                  className={styles.trainingSidebar__input}
+                />
+              </label>
+              <label className={styles.trainingSidebar__field}>
+                Wiek (z settings)
+                <input
+                  value={trainingDraft.ageYears}
+                  readOnly
+                  type="number"
+                  min="1"
+                  className={styles.trainingSidebar__input}
+                />
+              </label>
+              <label className={styles.trainingSidebar__field}>
+                Waga (kg)
+                <div className={styles.trainingSidebar__controlGroup}>
                   <button
-                    key={option.value}
                     type="button"
-                    onClick={() => onToggleSurface(option.value)}
-                    className={chipClassName}
+                    onClick={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        bodyWeightKg: adjustWeightValue(
+                          trainingDraft.bodyWeightKg,
+                          -0.1,
+                        ),
+                      })
+                    }
+                    className={styles.trainingSidebar__stepButton}
                   >
-                    {option.label}
+                    -
                   </button>
-                );
-              })}
+                  <input
+                    value={trainingDraft.bodyWeightKg}
+                    onChange={(event) =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        bodyWeightKg: normalizeDecimalInput(event.target.value),
+                      })
+                    }
+                    onBlur={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        bodyWeightKg: formatWeightToSingleDecimal(
+                          trainingDraft.bodyWeightKg,
+                        ),
+                      })
+                    }
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    required
+                    className={growInputClassName}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        bodyWeightKg: adjustWeightValue(
+                          trainingDraft.bodyWeightKg,
+                          0.1,
+                        ),
+                      })
+                    }
+                    className={styles.trainingSidebar__stepButton}
+                  >
+                    +
+                  </button>
+                </div>
+              </label>
+              <label className={styles.trainingSidebar__field}>
+                Kalorie
+                <div className={styles.trainingSidebar__controlGroup}>
+                  <input
+                    value={trainingDraft.caloriesBurned}
+                    onChange={(event) =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        caloriesBurned: event.target.value,
+                        caloriesMode: "manual",
+                      })
+                    }
+                    placeholder="Auto z wagi, wieku i czasu"
+                    type="number"
+                    min="0"
+                    className={growInputClassName}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        caloriesBurned: "",
+                        caloriesMode: "auto",
+                      })
+                    }
+                    className={styles.trainingSidebar__stepButton}
+                  >
+                    Auto
+                  </button>
+                </div>
+              </label>
+              <label className={styles.trainingSidebar__field}>
+                Wstawki
+                <input
+                  value={trainingDraft.attemptsCount}
+                  onChange={(event) =>
+                    onTrainingDraftChange({
+                      ...trainingDraft,
+                      attemptsCount: event.target.value,
+                    })
+                  }
+                  type="number"
+                  min="0"
+                  required
+                  className={styles.trainingSidebar__input}
+                />
+              </label>
+              <label className={fullFieldClassName}>
+                Wyceny
+                <input
+                  value={trainingDraft.difficultyNotes}
+                  onChange={(event) =>
+                    onTrainingDraftChange({
+                      ...trainingDraft,
+                      difficultyNotes: event.target.value,
+                    })
+                  }
+                  placeholder="Np. 7a, 7a+/b, projekt 7b+"
+                  className={styles.trainingSidebar__input}
+                />
+              </label>
+              <label className={fullFieldClassName}>
+                Samopoczucie
+                <textarea
+                  value={trainingDraft.wellbeing}
+                  onChange={(event) =>
+                    onTrainingDraftChange({
+                      ...trainingDraft,
+                      wellbeing: event.target.value,
+                    })
+                  }
+                  rows={3}
+                  className={[
+                    styles.trainingSidebar__input,
+                    styles.trainingSidebar__textarea,
+                  ].join(" ")}
+                />
+              </label>
             </div>
-          </div>
 
-          <label className={styles.trainingSidebar__field}>
-            Notatki
-            <textarea
-              value={trainingDraft.notes}
-              onChange={(event) => onTrainingDraftChange({ ...trainingDraft, notes: event.target.value })}
-              rows={4}
-              className={[styles.trainingSidebar__input, styles.trainingSidebar__textarea].join(" ")}
-            />
-          </label>
+            <div className={styles.trainingSidebar__stack}>
+              <strong>Rodzaj sesji</strong>
+              <div className={styles.trainingSidebar__chipGrid}>
+                {surfaceOptions.map((option) => {
+                  const active = trainingDraft.surfaces.includes(option.value);
+                  const chipClassName = [
+                    styles.trainingSidebar__chip,
+                    active ? styles["trainingSidebar__chip--active"] : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
 
-          <button type="submit" className={styles.trainingSidebar__submitButton}>
-            {editingTrainingId ? "Zapisz zmiany" : "Dodaj trening"}
-          </button>
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => onToggleSurface(option.value)}
+                      className={chipClassName}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <label className={styles.trainingSidebar__field}>
+              Notatki
+              <textarea
+                value={trainingDraft.notes}
+                onChange={(event) =>
+                  onTrainingDraftChange({
+                    ...trainingDraft,
+                    notes: event.target.value,
+                  })
+                }
+                rows={4}
+                className={[
+                  styles.trainingSidebar__input,
+                  styles.trainingSidebar__textarea,
+                ].join(" ")}
+              />
+            </label>
+
+            <button
+              type="submit"
+              className={styles.trainingSidebar__submitButton}
+            >
+              {editingTrainingId ? "Zapisz zmiany" : "Zapisz trening"}
+            </button>
           </form>
         </section>
       )}
@@ -336,33 +447,55 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
       <section className={summaryPanelClassName}>
         <div className={styles.trainingSidebar__panelHeader}>
           <div>
-            <p className={styles.trainingSidebar__eyebrow}>{isSelectionActive ? "Wybrany dzień" : "Widoczny okres"}</p>
+            <p className={styles.trainingSidebar__eyebrow}>
+              {isSelectionActive ? "Wybrany dzień" : "Widoczny okres"}
+            </p>
             <h3 className={styles.trainingSidebar__title}>
-              {isSelectionActive && selectedDate ? `Treningi z ${formatDateLabel(selectedDate)}` : "Lista treningów w kalendarzu"}
+              {isSelectionActive && selectedDate
+                ? `Treningi z ${formatDateLabel(selectedDate)}`
+                : "Lista treningów w kalendarzu"}
             </h3>
           </div>
-          <span className={styles.trainingSidebar__pill}>{displayedTrainings.length} wpisów</span>
+          <span className={styles.trainingSidebar__pill}>
+            {displayedTrainings.length} wpisów
+          </span>
         </div>
 
         <div className={styles.trainingSidebar__visibleList}>
           {displayedTrainings.length === 0 && (
             <p className={styles.trainingSidebar__helperText}>
-              {isSelectionActive ? "Brak treningów w wybranym dniu." : "W wybranym zakresie jeszcze nie ma treningów."}
+              {isSelectionActive
+                ? "Brak treningów w wybranym dniu."
+                : "W wybranym zakresie jeszcze nie ma treningów."}
             </p>
           )}
           {displayedTrainings.map((training) => (
-            <article key={`${training.id ?? training.createdAt}-${training.time}`} className={styles.trainingSidebar__visibleItem}>
+            <article
+              key={`${training.id ?? training.createdAt}-${training.time}`}
+              className={styles.trainingSidebar__visibleItem}
+            >
               <div className={styles.trainingSidebar__trainingButtonHeader}>
                 <strong>{summarizeTrainingType(training)}</strong>
-                <span className={styles.trainingSidebar__pill}>{training.date}</span>
+                <span className={styles.trainingSidebar__pill}>
+                  {training.date}
+                </span>
               </div>
-              <div className={[styles.trainingSidebar__metaGrid, styles["trainingSidebar__metaGrid--summary"]].join(" ")}>
-              <span className={styles.trainingSidebar__minorText}>{training.time} · {training.durationMinutes} min</span>
-                <span>Kalorie: {training.caloriesBurned}</span>
-                <span>Wstawki: {training.attemptsCount}</span>
+              <div className={styles.trainingSidebar__metaLine}>
+                <span>
+                  {training.time} · {training.durationMinutes} min ·{" "}
+                  {training.bodyWeightKg} kg · Kalorie:{" "}
+                  {training.caloriesBurned} · Wstawki: {training.attemptsCount}
+                </span>
               </div>
-              <TrainingTimelineBar time={training.time} durationMinutes={training.durationMinutes} />
-              <button type="button" onClick={() => onEditTraining(training)} className={styles.trainingSidebar__linkButton}>
+              <TrainingTimelineBar
+                time={training.time}
+                durationMinutes={training.durationMinutes}
+              />
+              <button
+                type="button"
+                onClick={() => onEditTraining(training)}
+                className={styles.trainingSidebar__linkButton}
+              >
                 Edytuj ten trening
               </button>
             </article>

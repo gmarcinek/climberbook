@@ -7,7 +7,15 @@ export type ClimbRecord = {
   createdAt: string;
 };
 
-export type TrainingSurface = "lina" | "baldy" | "moon" | "spraywall" | "kilter" | "silownia" | "chwytotablica" | "campus";
+export type TrainingSurface =
+  | "lina"
+  | "baldy"
+  | "moon"
+  | "spraywall"
+  | "kilter"
+  | "silownia"
+  | "chwytotablica"
+  | "campus";
 
 export type UserSex = "" | "kobieta" | "mezczyzna" | "inna";
 
@@ -15,6 +23,7 @@ export type UserProfileRecord = {
   key: "primary";
   birthDate: string;
   sex: UserSex;
+  heightCm: number | null;
   weightKg: number | null;
   updatedAt: string;
 };
@@ -96,7 +105,7 @@ interface ClimberbookDb extends DBSchema {
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 let databasePromise: Promise<IDBPDatabase<ClimberbookDb>> | null = null;
 
 function createDatabase() {
@@ -126,7 +135,9 @@ function createDatabase() {
         let cursor = await trainingStore.openCursor();
 
         while (cursor) {
-          const legacyValue = cursor.value as TrainingRecord & { caloriesBurned?: number };
+          const legacyValue = cursor.value as TrainingRecord & {
+            caloriesBurned?: number;
+          };
 
           await cursor.update({
             ...legacyValue,
@@ -142,7 +153,9 @@ function createDatabase() {
         let cursor = await trainingStore.openCursor();
 
         while (cursor) {
-          const legacyValue = cursor.value as TrainingRecord & { ageYears?: number };
+          const legacyValue = cursor.value as TrainingRecord & {
+            ageYears?: number;
+          };
 
           await cursor.update({
             ...legacyValue,
@@ -170,7 +183,11 @@ function createDatabase() {
 
         while (cursor) {
           const legacyValue = cursor.value as AscentRecord & { grade?: string };
-          const fallbackGrade = legacyValue.suggestedGrade ?? legacyValue.subjectiveGrade ?? legacyValue.grade ?? "";
+          const fallbackGrade =
+            legacyValue.suggestedGrade ??
+            legacyValue.subjectiveGrade ??
+            legacyValue.grade ??
+            "";
 
           await cursor.update({
             ...legacyValue,
@@ -188,6 +205,24 @@ function createDatabase() {
         });
 
         store.createIndex("by-updated-at", "updatedAt");
+      }
+
+      if (oldVersion < 7 && database.objectStoreNames.contains("settings")) {
+        const settingsStore = transaction.objectStore("settings");
+        let cursor = await settingsStore.openCursor();
+
+        while (cursor) {
+          const legacyValue = cursor.value as UserProfileRecord & {
+            heightCm?: number | null;
+          };
+
+          await cursor.update({
+            ...legacyValue,
+            heightCm: legacyValue.heightCm ?? null,
+          });
+
+          cursor = await cursor.continue();
+        }
       }
 
       if (!database.objectStoreNames.contains("weightEntries")) {
@@ -208,6 +243,7 @@ export function createEmptyUserProfile(): UserProfileRecord {
     key: "primary",
     birthDate: "",
     sex: "",
+    heightCm: null,
     weightKg: null,
     updatedAt: "",
   };
@@ -241,7 +277,9 @@ export async function listTrainings() {
   return database.getAllFromIndex("trainings", "by-created-at");
 }
 
-export async function addTraining(input: Omit<TrainingRecord, "id" | "createdAt">) {
+export async function addTraining(
+  input: Omit<TrainingRecord, "id" | "createdAt">,
+) {
   const database = await getDatabase();
 
   await database.add("trainings", {
@@ -281,7 +319,9 @@ export async function getUserProfile() {
   return record ?? createEmptyUserProfile();
 }
 
-export async function saveUserProfile(input: Omit<UserProfileRecord, "updatedAt">) {
+export async function saveUserProfile(
+  input: Omit<UserProfileRecord, "updatedAt">,
+) {
   const database = await getDatabase();
 
   await database.put("settings", {
@@ -295,7 +335,9 @@ export async function listWeightEntries() {
   return database.getAllFromIndex("weightEntries", "by-created-at");
 }
 
-export async function addWeightEntry(input: Omit<WeightEntryRecord, "id" | "createdAt">) {
+export async function addWeightEntry(
+  input: Omit<WeightEntryRecord, "id" | "createdAt">,
+) {
   const database = await getDatabase();
 
   await database.add("weightEntries", {

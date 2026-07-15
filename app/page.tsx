@@ -1,8 +1,27 @@
 "use client";
 
-import { Fragment, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  ReferenceDot,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  SelectedDatesProvider,
+  useSelectedDates,
+} from "@/contexts/SelectedDatesContext";
 import { TrainingCalendar } from "@/components/training-calendar/TrainingCalendar";
-import { TrainingSidebar, type TrainingDraftValues } from "@/components/training-calendar/TrainingSidebar";
+import {
+  TrainingSidebar,
+  type TrainingDraftValues,
+} from "@/components/training-calendar/TrainingSidebar";
 import {
   addMonths,
   formatDateIso,
@@ -46,6 +65,12 @@ type AscentDraft = {
 type UserProfileDraft = {
   birthDate: string;
   sex: UserSex;
+  heightCm: string;
+  weightKg: string;
+};
+
+type WeightEntryDraft = {
+  date: string;
   weightKg: string;
 };
 
@@ -60,14 +85,26 @@ function estimateTrainingCalories(input: {
   const ageYears = Number(input.ageYears);
   const attemptsCount = Number(input.attemptsCount);
 
-  if (!durationMinutes || !bodyWeightKg || !ageYears || attemptsCount < 0 || Number.isNaN(attemptsCount)) {
+  if (
+    !durationMinutes ||
+    !bodyWeightKg ||
+    !ageYears ||
+    attemptsCount < 0 ||
+    Number.isNaN(attemptsCount)
+  ) {
     return "";
   }
 
   const durationHours = durationMinutes / 60;
   const estimatedMet = Math.min(
     8.5,
-    Math.max(4.5, 4.8 + attemptsCount * 0.12 + Math.max(0, bodyWeightKg - 60) * 0.015 - Math.max(0, ageYears - 30) * 0.01),
+    Math.max(
+      4.5,
+      4.8 +
+        attemptsCount * 0.12 +
+        Math.max(0, bodyWeightKg - 60) * 0.015 -
+        Math.max(0, ageYears - 30) * 0.01,
+    ),
   );
 
   return String(Math.round(estimatedMet * bodyWeightKg * durationHours));
@@ -85,14 +122,21 @@ function calculateAgeYears(birthDate: string, targetDate: string) {
   const birth = toDate(birthDate);
   const target = toDate(targetDate);
 
-  if (Number.isNaN(birth.getTime()) || Number.isNaN(target.getTime()) || birth > target) {
+  if (
+    Number.isNaN(birth.getTime()) ||
+    Number.isNaN(target.getTime()) ||
+    birth > target
+  ) {
     return "";
   }
 
   let age = target.getFullYear() - birth.getFullYear();
   const monthOffset = target.getMonth() - birth.getMonth();
 
-  if (monthOffset < 0 || (monthOffset === 0 && target.getDate() < birth.getDate())) {
+  if (
+    monthOffset < 0 ||
+    (monthOffset === 0 && target.getDate() < birth.getDate())
+  ) {
     age -= 1;
   }
 
@@ -116,22 +160,47 @@ function parseWeightInput(value: string) {
   return Number.isNaN(parsed) ? null : roundToSingleDecimal(parsed);
 }
 
-function createUserProfileDraft(profile: UserProfileRecord = createEmptyUserProfile()): UserProfileDraft {
+function parseHeightInput(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isNaN(parsed) || parsed <= 0 ? null : Math.round(parsed);
+}
+
+function createUserProfileDraft(
+  profile: UserProfileRecord = createEmptyUserProfile(),
+): UserProfileDraft {
   return {
     birthDate: profile.birthDate,
     sex: profile.sex,
+    heightCm: profile.heightCm?.toString() ?? "",
     weightKg: formatWeightInput(profile.weightKg),
   };
 }
 
-function getLatestTrainingWeight(trainings: TrainingRecord[]) {
-  const latestTraining = trainings.reduce<TrainingRecord | null>((latest, training) => {
-    if (!latest) {
-      return training;
-    }
+function createWeightEntryDraft(
+  date = formatDateIso(new Date()),
+  defaultWeightKg: number | null = null,
+): WeightEntryDraft {
+  return {
+    date,
+    weightKg: formatWeightInput(defaultWeightKg),
+  };
+}
 
-    return training.createdAt > latest.createdAt ? training : latest;
-  }, null);
+function getLatestTrainingWeight(trainings: TrainingRecord[]) {
+  const latestTraining = trainings.reduce<TrainingRecord | null>(
+    (latest, training) => {
+      if (!latest) {
+        return training;
+      }
+
+      return training.createdAt > latest.createdAt ? training : latest;
+    },
+    null,
+  );
 
   return latestTraining?.bodyWeightKg ?? null;
 }
@@ -154,7 +223,20 @@ function getLatestWeightEntry(entries: WeightEntryRecord[]) {
   }, null);
 }
 
-function normalizeTrainingDraft(draft: TrainingDraftValues, birthDate = ""): TrainingDraftValues {
+function getSortedWeightEntries(entries: WeightEntryRecord[]) {
+  return entries
+    .slice()
+    .sort((left, right) =>
+      `${left.date}-${left.createdAt}`.localeCompare(
+        `${right.date}-${right.createdAt}`,
+      ),
+    );
+}
+
+function normalizeTrainingDraft(
+  draft: TrainingDraftValues,
+  birthDate = "",
+): TrainingDraftValues {
   const ageYears = calculateAgeYears(birthDate, draft.date);
   const estimatedCalories = estimateTrainingCalories({
     ...draft,
@@ -164,7 +246,10 @@ function normalizeTrainingDraft(draft: TrainingDraftValues, birthDate = ""): Tra
   return {
     ...draft,
     ageYears,
-    caloriesBurned: draft.caloriesMode === "manual" ? draft.caloriesBurned : estimatedCalories,
+    caloriesBurned:
+      draft.caloriesMode === "manual"
+        ? draft.caloriesBurned
+        : estimatedCalories,
   };
 }
 
@@ -251,7 +336,13 @@ const frenchGradeOptions = [
   "9c",
 ];
 
-const moduleConfig: Array<{ key: ModuleKey; title: string; navLabel: string; description: string; eyebrow: string }> = [
+const moduleConfig: Array<{
+  key: ModuleKey;
+  title: string;
+  navLabel: string;
+  description: string;
+  eyebrow: string;
+}> = [
   {
     key: "treningowy",
     title: "Moduł treningowy",
@@ -286,20 +377,23 @@ function createTrainingDraft(
   date = formatDateIso(new Date()),
   options: { birthDate?: string; defaultWeightKg?: number | null } = {},
 ): TrainingDraftValues {
-  return normalizeTrainingDraft({
-    date,
-    time: "19:00",
-    durationMinutes: "120",
-    bodyWeightKg: formatWeightInput(options.defaultWeightKg ?? null),
-    ageYears: "",
-    caloriesBurned: "",
-    caloriesMode: "auto",
-    attemptsCount: "5",
-    difficultyNotes: "",
-    wellbeing: "",
-    surfaces: [],
-    notes: "",
-  }, options.birthDate ?? "");
+  return normalizeTrainingDraft(
+    {
+      date,
+      time: "19:00",
+      durationMinutes: "120",
+      bodyWeightKg: formatWeightInput(options.defaultWeightKg ?? null),
+      ageYears: "",
+      caloriesBurned: "",
+      caloriesMode: "auto",
+      attemptsCount: "5",
+      difficultyNotes: "",
+      wellbeing: "",
+      surfaces: [],
+      notes: "",
+    },
+    options.birthDate ?? "",
+  );
 }
 
 function createAscentDraft(): AscentDraft {
@@ -313,57 +407,103 @@ function createAscentDraft(): AscentDraft {
   };
 }
 
-function mapTrainingToDraft(training: TrainingRecord, birthDate = ""): TrainingDraftValues {
-  return normalizeTrainingDraft({
-    date: training.date,
-    time: training.time,
-    durationMinutes: String(training.durationMinutes),
-    bodyWeightKg: String(training.bodyWeightKg),
-    ageYears: "",
-    caloriesBurned: String(training.caloriesBurned),
-    caloriesMode: "manual",
-    attemptsCount: String(training.attemptsCount),
-    difficultyNotes: training.difficultyNotes,
-    wellbeing: training.wellbeing,
-    surfaces: training.surfaces,
-    notes: training.notes,
-  }, birthDate);
+function mapTrainingToDraft(
+  training: TrainingRecord,
+  birthDate = "",
+): TrainingDraftValues {
+  return normalizeTrainingDraft(
+    {
+      date: training.date,
+      time: training.time,
+      durationMinutes: String(training.durationMinutes),
+      bodyWeightKg: String(training.bodyWeightKg),
+      ageYears: "",
+      caloriesBurned: String(training.caloriesBurned),
+      caloriesMode: "manual",
+      attemptsCount: String(training.attemptsCount),
+      difficultyNotes: training.difficultyNotes,
+      wellbeing: training.wellbeing,
+      surfaces: training.surfaces,
+      notes: training.notes,
+    },
+    birthDate,
+  );
 }
 
 export default function HomePage() {
+  return (
+    <SelectedDatesProvider>
+      <HomePageContent />
+    </SelectedDatesProvider>
+  );
+}
+
+function HomePageContent() {
   const today = formatDateIso(new Date());
   const [activeModule, setActiveModule] = useState<ModuleKey>("treningowy");
   const [trainings, setTrainings] = useState<TrainingRecord[]>([]);
   const [ascents, setAscents] = useState<AscentRecord[]>([]);
-  const [selectedTrainingDate, setSelectedTrainingDate] = useState<string | null>(null);
-  const [trainingRangeStart, setTrainingRangeStart] = useState(getMonthStart(today));
-  const [trainingCalendarMonthCount, setTrainingCalendarMonthCount] = useState(3);
-  const [editingTrainingId, setEditingTrainingId] = useState<number | null>(null);
-  const [trainingDraft, setTrainingDraft] = useState<TrainingDraftValues>(() => createTrainingDraft(today));
-  const [ascentDraft, setAscentDraft] = useState<AscentDraft>(() => createAscentDraft());
-  const [profileDraft, setProfileDraft] = useState<UserProfileDraft>(() => createUserProfileDraft());
+  const { selectedDate, setSelectedDate } = useSelectedDates();
+  const [trainingRangeStart, setTrainingRangeStart] = useState(
+    getMonthStart(today),
+  );
+  const [trainingViewportWidth, setTrainingViewportWidth] = useState(0);
+  const [editingTrainingId, setEditingTrainingId] = useState<number | null>(
+    null,
+  );
+  const [trainingDraft, setTrainingDraft] = useState<TrainingDraftValues>(() =>
+    createTrainingDraft(today),
+  );
+  const [ascentDraft, setAscentDraft] = useState<AscentDraft>(() =>
+    createAscentDraft(),
+  );
+  const [profileDraft, setProfileDraft] = useState<UserProfileDraft>(() =>
+    createUserProfileDraft(),
+  );
+  const [weightEntryDraft, setWeightEntryDraft] = useState<WeightEntryDraft>(
+    () => createWeightEntryDraft(today),
+  );
   const [weightEntries, setWeightEntries] = useState<WeightEntryRecord[]>([]);
   const [status, setStatus] = useState("Ładowanie danych z IndexedDB...");
 
   async function refreshData() {
-    const [trainingItems, ascentItems, profileRecord, weightItems] = await Promise.all([
-      listTrainings(),
-      listAscents(),
-      getUserProfile(),
-      listWeightEntries(),
-    ]);
+    const [trainingItems, ascentItems, profileRecord, weightItems] =
+      await Promise.all([
+        listTrainings(),
+        listAscents(),
+        getUserProfile(),
+        listWeightEntries(),
+      ]);
 
     setTrainings(trainingItems);
-    setAscents(ascentItems.slice().sort((left, right) => right.createdAt.localeCompare(left.createdAt)));
+    setAscents(
+      ascentItems
+        .slice()
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    );
     setProfileDraft(createUserProfileDraft(profileRecord));
-    setWeightEntries(weightItems.slice().sort((left, right) => right.createdAt.localeCompare(left.createdAt)));
+    setWeightEntries(
+      weightItems
+        .slice()
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    );
+    setWeightEntryDraft(
+      createWeightEntryDraft(
+        today,
+        getLatestWeightEntry(weightItems)?.weightKg ??
+          getLatestTrainingWeight(trainingItems) ??
+          profileRecord.weightKg,
+      ),
+    );
 
     if (trainingItems.length || ascentItems.length) {
       setStatus("Dane zostały załadowane z lokalnej bazy.");
       return;
     }
 
-    setStatus("Baza działa. Możesz zacząć wpisywać treningi i historię przejść.");
+    setStatus(
+      "Baza działa. Możesz zacząć wpisywać treningi i historię przejść.",
+    );
   }
 
   useEffect(() => {
@@ -373,75 +513,111 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const updateMonthCount = () => {
-      const viewportWidth = window.innerWidth;
-
-      if (viewportWidth < 1440) {
-        setTrainingCalendarMonthCount(1);
-        return;
-      }
-
-      if (viewportWidth < 1920) {
-        setTrainingCalendarMonthCount(2);
-        return;
-      }
-
-      setTrainingCalendarMonthCount(3);
+    const updateLayoutWidth = () => {
+      setTrainingViewportWidth(window.innerWidth);
     };
 
-    updateMonthCount();
-    window.addEventListener("resize", updateMonthCount);
+    updateLayoutWidth();
+    window.addEventListener("resize", updateLayoutWidth);
 
     return () => {
-      window.removeEventListener("resize", updateMonthCount);
+      window.removeEventListener("resize", updateLayoutWidth);
     };
   }, []);
 
-  const calendarAnchorMonth = useMemo(() => addMonths(trainingRangeStart, -1), [trainingRangeStart]);
   const visibleRange = useMemo(
-    () => getVisibleRange(calendarAnchorMonth, trainingCalendarMonthCount),
-    [calendarAnchorMonth, trainingCalendarMonthCount],
+    () => getVisibleRange(trainingRangeStart, 1),
+    [trainingRangeStart],
   );
   const trainingsByDate = useMemo(
-    () => new Map(groupTrainingsByDate(trainings).map((group) => [group.date, group.trainings])),
+    () =>
+      new Map(
+        groupTrainingsByDate(trainings).map((group) => [
+          group.date,
+          group.trainings,
+        ]),
+      ),
     [trainings],
   );
   const selectedDayTrainings = useMemo(
-    () => (selectedTrainingDate ? getTrainingsForDate(trainings, selectedTrainingDate) : []),
-    [selectedTrainingDate, trainings],
+    () => (selectedDate ? getTrainingsForDate(trainings, selectedDate) : []),
+    [selectedDate, trainings],
   );
   const visibleRangeTrainings = useMemo(
     () => getTrainingsInRange(trainings, visibleRange.start, visibleRange.end),
     [trainings, visibleRange.end, visibleRange.start],
   );
 
-  const totalTrainingTime = trainings.reduce((sum, item) => sum + item.durationMinutes, 0);
-  const totalCalories = trainings.reduce((sum, item) => sum + item.caloriesBurned, 0);
+  const totalTrainingTime = trainings.reduce(
+    (sum, item) => sum + item.durationMinutes,
+    0,
+  );
+  const totalCalories = trainings.reduce(
+    (sum, item) => sum + item.caloriesBurned,
+    0,
+  );
   const averageWeight = trainings.length
-    ? (trainings.reduce((sum, item) => sum + item.bodyWeightKg, 0) / trainings.length).toFixed(1)
+    ? (
+        trainings.reduce((sum, item) => sum + item.bodyWeightKg, 0) /
+        trainings.length
+      ).toFixed(1)
     : "-";
-  const totalAttempts = trainings.reduce((sum, item) => sum + item.attemptsCount, 0);
+  const totalAttempts = trainings.reduce(
+    (sum, item) => sum + item.attemptsCount,
+    0,
+  );
   const panelAscents = ascents.filter((item) => item.source === "panel").length;
   const rockAscents = ascents.filter((item) => item.source === "skala").length;
   const topSurfaces = surfaceOptions
     .map((option) => ({
       label: option.label,
-      count: trainings.filter((item) => item.surfaces.includes(option.value)).length,
+      count: trainings.filter((item) => item.surfaces.includes(option.value))
+        .length,
     }))
     .sort((left, right) => right.count - left.count);
-  const activeModuleMeta = moduleConfig.find((module) => module.key === activeModule) ?? moduleConfig[0];
+  const activeModuleMeta =
+    moduleConfig.find((module) => module.key === activeModule) ??
+    moduleConfig[0];
   const activeModuleShellStyle = moduleShellStyles[activeModule];
-  const isMobileTrainingLayout = trainingCalendarMonthCount === 1;
-  const trainingSidebarWidth = trainingCalendarMonthCount < 3 ? 490 : 520;
-  const latestRecordedWeight = useMemo(() => getLatestWeightEntry(weightEntries), [weightEntries]);
-  const latestTrainingWeightKg = useMemo(() => getLatestTrainingWeight(trainings), [trainings]);
-  const fallbackWeightKg = parseWeightInput(profileDraft.weightKg);
-  const defaultTrainingWeightKg = latestTrainingWeightKg ?? latestRecordedWeight?.weightKg ?? fallbackWeightKg;
-  const currentAge = calculateAgeYears(profileDraft.birthDate, today);
-  const recentWeightEntries = useMemo(
-    () => weightEntries.slice().sort((left, right) => (right.date + right.createdAt).localeCompare(left.date + left.createdAt)).slice(0, 12),
+  const latestRecordedWeight = useMemo(
+    () => getLatestWeightEntry(weightEntries),
     [weightEntries],
   );
+  const latestTrainingWeightKg = useMemo(
+    () => getLatestTrainingWeight(trainings),
+    [trainings],
+  );
+  const fallbackWeightKg = parseWeightInput(profileDraft.weightKg);
+  const defaultTrainingWeightKg =
+    latestTrainingWeightKg ??
+    latestRecordedWeight?.weightKg ??
+    fallbackWeightKg;
+  const currentAge = calculateAgeYears(profileDraft.birthDate, today);
+  const recentWeightEntries = useMemo(
+    () =>
+      weightEntries
+        .slice()
+        .sort((left, right) =>
+          (right.date + right.createdAt).localeCompare(
+            left.date + left.createdAt,
+          ),
+        )
+        .slice(0, 12),
+    [weightEntries],
+  );
+  const sortedWeightEntries = useMemo(
+    () => getSortedWeightEntries(weightEntries),
+    [weightEntries],
+  );
+  const latestWeightChange = useMemo(() => {
+    if (sortedWeightEntries.length < 2) {
+      return null;
+    }
+
+    const current = sortedWeightEntries[sortedWeightEntries.length - 1];
+    const previous = sortedWeightEntries[sortedWeightEntries.length - 2];
+    return roundToSingleDecimal(current.weightKg - previous.weightKg);
+  }, [sortedWeightEntries]);
   const currentCalendarMonthLabel = useMemo(
     () =>
       new Intl.DateTimeFormat("pl-PL", {
@@ -450,8 +626,15 @@ export default function HomePage() {
       }).format(toDate(trainingRangeStart)),
     [trainingRangeStart],
   );
+  const isMobileTrainingLayout =
+    trainingViewportWidth > 0 && trainingViewportWidth < 1180;
+  const showTrainingSidebarColumn = trainingViewportWidth >= 1640;
+  const weightChartEntries = useMemo(
+    () => sortedWeightEntries.slice(-8),
+    [sortedWeightEntries],
+  );
 
-  function resetTrainingEditor(date = selectedTrainingDate ?? today) {
+  function resetTrainingEditor(date = selectedDate ?? today) {
     setEditingTrainingId(null);
     setTrainingDraft(
       createTrainingDraft(date, {
@@ -466,23 +649,23 @@ export default function HomePage() {
   }
 
   function handleTrainingDateSelect(date: string) {
-    if (selectedTrainingDate === date) {
-      setSelectedTrainingDate(null);
+    if (selectedDate === date) {
+      setSelectedDate(null);
       resetTrainingEditor(today);
       return;
     }
 
-    setSelectedTrainingDate(date);
+    setSelectedDate(date);
     resetTrainingEditor(date);
   }
 
   function handleResetTrainingSelection() {
-    setSelectedTrainingDate(null);
+    setSelectedDate(null);
     resetTrainingEditor(today);
   }
 
   function handleEditTraining(training: TrainingRecord) {
-    setSelectedTrainingDate(training.date);
+    setSelectedDate(training.date);
     setEditingTrainingId(training.id ?? null);
     setTrainingDraft(mapTrainingToDraft(training, profileDraft.birthDate));
   }
@@ -505,19 +688,23 @@ export default function HomePage() {
     setStatus("Zapisuję settings...");
 
     const parsedWeightKg = parseWeightInput(profileDraft.weightKg);
+    const parsedHeightCm = parseHeightInput(profileDraft.heightCm);
 
     try {
       await saveUserProfile({
         key: "primary",
         birthDate: profileDraft.birthDate,
         sex: profileDraft.sex,
+        heightCm: parsedHeightCm,
         weightKg: parsedWeightKg,
       });
 
       if (
         parsedWeightKg !== null &&
         parsedWeightKg > 0 &&
-        (!latestRecordedWeight || latestRecordedWeight.weightKg !== parsedWeightKg || latestRecordedWeight.date !== today)
+        (!latestRecordedWeight ||
+          latestRecordedWeight.weightKg !== parsedWeightKg ||
+          latestRecordedWeight.date !== today)
       ) {
         await addWeightEntry({
           date: today,
@@ -527,7 +714,7 @@ export default function HomePage() {
 
       await refreshData();
 
-      if (selectedTrainingDate === null && editingTrainingId === null) {
+      if (selectedDate === null && editingTrainingId === null) {
         setTrainingDraft(
           createTrainingDraft(today, {
             birthDate: profileDraft.birthDate,
@@ -538,7 +725,11 @@ export default function HomePage() {
 
       setStatus("Settings zostały zapisane.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Zapis settings nie powiódł się.");
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Zapis settings nie powiódł się.",
+      );
     }
   }
 
@@ -550,7 +741,9 @@ export default function HomePage() {
       return;
     }
 
-    setStatus(editingTrainingId ? "Aktualizuję trening..." : "Zapisuję trening...");
+    setStatus(
+      editingTrainingId ? "Aktualizuję trening..." : "Zapisuję trening...",
+    );
 
     const payload = {
       date: trainingDraft.date,
@@ -558,7 +751,11 @@ export default function HomePage() {
       durationMinutes: Number(trainingDraft.durationMinutes),
       bodyWeightKg: roundToSingleDecimal(Number(trainingDraft.bodyWeightKg)),
       ageYears: Number(trainingDraft.ageYears || 0),
-      caloriesBurned: Number(trainingDraft.caloriesBurned || estimateTrainingCalories(trainingDraft) || 0),
+      caloriesBurned: Number(
+        trainingDraft.caloriesBurned ||
+          estimateTrainingCalories(trainingDraft) ||
+          0,
+      ),
       attemptsCount: Number(trainingDraft.attemptsCount),
       difficultyNotes: trainingDraft.difficultyNotes,
       wellbeing: trainingDraft.wellbeing,
@@ -568,7 +765,9 @@ export default function HomePage() {
 
     try {
       if (editingTrainingId !== null) {
-        const current = trainings.find((training) => training.id === editingTrainingId);
+        const current = trainings.find(
+          (training) => training.id === editingTrainingId,
+        );
 
         if (!current) {
           throw new Error("Nie znaleziono treningu do edycji.");
@@ -584,7 +783,11 @@ export default function HomePage() {
 
       if (
         payload.bodyWeightKg > 0 &&
-        !weightEntries.some((entry) => entry.date === payload.date && entry.weightKg === payload.bodyWeightKg)
+        !weightEntries.some(
+          (entry) =>
+            entry.date === payload.date &&
+            entry.weightKg === payload.bodyWeightKg,
+        )
       ) {
         await addWeightEntry({
           date: payload.date,
@@ -593,11 +796,19 @@ export default function HomePage() {
       }
 
       await refreshData();
-      setSelectedTrainingDate(payload.date);
+      setSelectedDate(payload.date);
       resetTrainingEditor(payload.date);
-      setStatus(editingTrainingId ? "Trening został zaktualizowany." : "Trening został zapisany.");
+      setStatus(
+        editingTrainingId
+          ? "Trening został zaktualizowany."
+          : "Trening został zapisany.",
+      );
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Zapis treningu nie powiódł się.");
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Zapis treningu nie powiódł się.",
+      );
     }
   }
 
@@ -614,7 +825,44 @@ export default function HomePage() {
     }
   }
 
-  function exportCsv(filename: string, rows: Array<Record<string, string | number>>) {
+  async function handleWeightEntrySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus("Zapisuję pomiar wagi...");
+
+    const parsedWeightKg = parseWeightInput(weightEntryDraft.weightKg);
+
+    if (
+      !weightEntryDraft.date ||
+      parsedWeightKg === null ||
+      parsedWeightKg <= 0
+    ) {
+      setStatus("Podaj datę i poprawną wagę pomiaru.");
+      return false;
+    }
+
+    try {
+      await addWeightEntry({
+        date: weightEntryDraft.date,
+        weightKg: parsedWeightKg,
+      });
+      await refreshData();
+      setWeightEntryDraft(createWeightEntryDraft(today, parsedWeightKg));
+      setStatus("Pomiar wagi został zapisany.");
+      return true;
+    } catch (error) {
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Zapis pomiaru wagi nie powiódł się.",
+      );
+      return false;
+    }
+  }
+
+  function exportCsv(
+    filename: string,
+    rows: Array<Record<string, string | number>>,
+  ) {
     if (!rows.length) {
       setStatus("Brak danych do eksportu.");
       return;
@@ -625,7 +873,10 @@ export default function HomePage() {
       .concat(
         rows.map((row) =>
           headers
-            .map((header) => `"${String(row[header] ?? "").replaceAll("\"", '""')}"`)
+            .map(
+              (header) =>
+                `"${String(row[header] ?? "").replaceAll('"', '""')}"`,
+            )
             .join(","),
         ),
       )
@@ -653,7 +904,9 @@ export default function HomePage() {
             {activeModule === "treningowy" && (
               <div style={headerMetricsStyle}>
                 <span style={headerMetricStyle}>Sesje: {trainings.length}</span>
-                <span style={headerMetricStyle}>Objętość: {totalTrainingTime} min</span>
+                <span style={headerMetricStyle}>
+                  Objętość: {totalTrainingTime} min
+                </span>
                 <span style={headerMetricStyle}>Kalorie: {totalCalories}</span>
                 <span style={headerMetricStyle}>Wstawki: {totalAttempts}</span>
               </div>
@@ -668,7 +921,10 @@ export default function HomePage() {
                     onClick={() => setActiveModule(module.key)}
                     style={{
                       ...moduleButtonStyle,
-                      color: activeModule === module.key ? "var(--text)" : "var(--muted)",
+                      color:
+                        activeModule === module.key
+                          ? "var(--text)"
+                          : "var(--muted)",
                       fontWeight: activeModule === module.key ? 700 : 500,
                     }}
                   >
@@ -688,60 +944,105 @@ export default function HomePage() {
                   ...trainingModuleStyle,
                   gridTemplateColumns: isMobileTrainingLayout
                     ? "minmax(0, 1fr)"
-                    : `minmax(0, 1fr) minmax(${trainingSidebarWidth}px, ${trainingSidebarWidth}px)`,
+                    : showTrainingSidebarColumn
+                      ? "minmax(0, 2fr) minmax(0, 3fr) minmax(0, 3fr)"
+                      : "minmax(0, 2fr) minmax(0, 3fr)",
                 }}
               >
-                <section style={calendarPanelStyle}>
+                {isMobileTrainingLayout && (
+                  <section style={analyticsPanelStyle}>
+                    <TrainingAnalyticsPanel
+                      latestWeightKg={
+                        latestRecordedWeight?.weightKg ??
+                        defaultTrainingWeightKg
+                      }
+                      latestWeightDate={latestRecordedWeight?.date ?? null}
+                      latestWeightChange={latestWeightChange}
+                      averageWeight={averageWeight}
+                      totalTrainingTime={totalTrainingTime}
+                      totalCalories={totalCalories}
+                      weightChartEntries={weightChartEntries}
+                      weightEntryDraft={weightEntryDraft}
+                      onWeightEntryDraftChange={setWeightEntryDraft}
+                      onWeightEntrySubmit={handleWeightEntrySubmit}
+                      recentWeightEntries={recentWeightEntries}
+                    />
+                  </section>
+                )}
+
+                {!isMobileTrainingLayout && (
+                  <section
+                    style={{
+                      ...analyticsPanelStyle,
+                      gridColumn: 2,
+                      gridRow: 1,
+                    }}
+                  >
+                    <TrainingAnalyticsPanel
+                      latestWeightKg={
+                        latestRecordedWeight?.weightKg ??
+                        defaultTrainingWeightKg
+                      }
+                      latestWeightDate={latestRecordedWeight?.date ?? null}
+                      latestWeightChange={latestWeightChange}
+                      averageWeight={averageWeight}
+                      totalTrainingTime={totalTrainingTime}
+                      totalCalories={totalCalories}
+                      weightChartEntries={weightChartEntries}
+                      weightEntryDraft={weightEntryDraft}
+                      onWeightEntryDraftChange={setWeightEntryDraft}
+                      onWeightEntrySubmit={handleWeightEntrySubmit}
+                      recentWeightEntries={recentWeightEntries}
+                    />
+                  </section>
+                )}
+
+                <section
+                  style={{
+                    ...calendarPanelStyle,
+                    gridColumn: isMobileTrainingLayout ? "auto" : 1,
+                    gridRow: isMobileTrainingLayout ? "auto" : 1,
+                  }}
+                >
                   <div style={calendarNavStyle}>
-                    <button type="button" onClick={() => setTrainingRangeStart(addMonths(trainingRangeStart, -1))} style={navButtonStyle}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTrainingRangeStart(addMonths(trainingRangeStart, -1))
+                      }
+                      style={navButtonStyle}
+                    >
                       Wstecz
                     </button>
-                    <strong style={calendarNavLabelStyle}>{currentCalendarMonthLabel}</strong>
-                    <button type="button" onClick={() => setTrainingRangeStart(addMonths(trainingRangeStart, 1))} style={navButtonStyle}>
+                    <strong style={calendarNavLabelStyle}>
+                      {currentCalendarMonthLabel}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTrainingRangeStart(addMonths(trainingRangeStart, 1))
+                      }
+                      style={navButtonStyle}
+                    >
                       Dalej
                     </button>
                   </div>
 
                   <TrainingCalendar
-                    anchorMonthStart={calendarAnchorMonth}
-                    monthCount={trainingCalendarMonthCount}
-                    visibleColumns={trainingCalendarMonthCount}
+                    anchorMonthStart={trainingRangeStart}
+                    monthCount={1}
+                    visibleColumns={1}
                     trainingsByDate={trainingsByDate}
-                    selectedDate={selectedTrainingDate}
+                    selectedDate={selectedDate}
                     today={today}
                     onSelectDate={handleTrainingDateSelect}
                   />
                 </section>
 
-                {!isMobileTrainingLayout && (
-                  <TrainingSidebar
-                    selectedDate={selectedTrainingDate}
-                    selectedDayTrainings={selectedDayTrainings}
-                    visibleRangeTrainings={visibleRangeTrainings}
-                    trainingDraft={trainingDraft}
-                    editingTrainingId={editingTrainingId}
-                    surfaceOptions={surfaceOptions}
-                    onTrainingDraftChange={handleTrainingDraftChange}
-                    onToggleSurface={toggleSurface}
-                    onSubmit={handleTrainingSubmit}
-                    onEditTraining={handleEditTraining}
-                    onResetSelection={handleResetTrainingSelection}
-                    onCancelEdit={() => resetTrainingEditor(selectedTrainingDate ?? today)}
-                  />
-                )}
-              </div>
-
-              {isMobileTrainingLayout && selectedTrainingDate && (
-                <div style={mobileDrawerOverlayStyle}>
-                  <button type="button" aria-label="Zamknij drawer" onClick={handleResetTrainingSelection} style={mobileDrawerBackdropStyle} />
-                  <div style={mobileDrawerSheetStyle}>
-                    <div style={mobileDrawerHeaderStyle}>
-                      <button type="button" onClick={handleResetTrainingSelection} style={mobileDrawerCloseButtonStyle}>
-                        ANULUJ
-                      </button>
-                    </div>
+                {showTrainingSidebarColumn && (
+                  <div style={{ gridColumn: 3, gridRow: 1, minHeight: 0 }}>
                     <TrainingSidebar
-                      selectedDate={selectedTrainingDate}
+                      selectedDate={selectedDate}
                       selectedDayTrainings={selectedDayTrainings}
                       visibleRangeTrainings={visibleRangeTrainings}
                       trainingDraft={trainingDraft}
@@ -752,7 +1053,47 @@ export default function HomePage() {
                       onSubmit={handleTrainingSubmit}
                       onEditTraining={handleEditTraining}
                       onResetSelection={handleResetTrainingSelection}
-                      onCancelEdit={() => resetTrainingEditor(selectedTrainingDate ?? today)}
+                      onCancelEdit={() =>
+                        resetTrainingEditor(selectedDate ?? today)
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+
+              {!showTrainingSidebarColumn && selectedDate && (
+                <div style={mobileDrawerOverlayStyle}>
+                  <button
+                    type="button"
+                    aria-label="Zamknij drawer"
+                    onClick={handleResetTrainingSelection}
+                    style={mobileDrawerBackdropStyle}
+                  />
+                  <div style={mobileDrawerSheetStyle}>
+                    <div style={mobileDrawerHeaderStyle}>
+                      <button
+                        type="button"
+                        onClick={handleResetTrainingSelection}
+                        style={mobileDrawerCloseButtonStyle}
+                      >
+                        ANULUJ
+                      </button>
+                    </div>
+                    <TrainingSidebar
+                      selectedDate={selectedDate}
+                      selectedDayTrainings={selectedDayTrainings}
+                      visibleRangeTrainings={visibleRangeTrainings}
+                      trainingDraft={trainingDraft}
+                      editingTrainingId={editingTrainingId}
+                      surfaceOptions={surfaceOptions}
+                      onTrainingDraftChange={handleTrainingDraftChange}
+                      onToggleSurface={toggleSurface}
+                      onSubmit={handleTrainingSubmit}
+                      onEditTraining={handleEditTraining}
+                      onResetSelection={handleResetTrainingSelection}
+                      onCancelEdit={() =>
+                        resetTrainingEditor(selectedDate ?? today)
+                      }
                     />
                   </div>
                 </div>
@@ -766,11 +1107,15 @@ export default function HomePage() {
                 <div>
                   <p style={eyebrowStyle}>{activeModuleMeta.eyebrow}</p>
                   <h1 style={pageTitleStyle}>{activeModuleMeta.title}</h1>
-                  <p style={mutedParagraphStyle}>{activeModuleMeta.description}</p>
+                  <p style={mutedParagraphStyle}>
+                    {activeModuleMeta.description}
+                  </p>
                 </div>
 
                 <div style={headerBadgeRowStyle}>
-                  <span style={headerBadgeStyle}>Przejścia: {ascents.length}</span>
+                  <span style={headerBadgeStyle}>
+                    Przejścia: {ascents.length}
+                  </span>
                   <span style={headerBadgeStyle}>Panel: {panelAscents}</span>
                   <span style={headerBadgeStyle}>Skała: {rockAscents}</span>
                 </div>
@@ -779,9 +1124,21 @@ export default function HomePage() {
               </div>
 
               <div style={statsGridStyle}>
-                <MetricCard label="Wpisy raportowe" value={String(ascents.length)} detail="Wszystkie zapisane przejścia" />
-                <MetricCard label="Panel" value={String(panelAscents)} detail="Liczba przejść panelowych" />
-                <MetricCard label="Skała" value={String(rockAscents)} detail="Liczba przejść skalnych" />
+                <MetricCard
+                  label="Wpisy raportowe"
+                  value={String(ascents.length)}
+                  detail="Wszystkie zapisane przejścia"
+                />
+                <MetricCard
+                  label="Panel"
+                  value={String(panelAscents)}
+                  detail="Liczba przejść panelowych"
+                />
+                <MetricCard
+                  label="Skała"
+                  value={String(rockAscents)}
+                  detail="Liczba przejść skalnych"
+                />
               </div>
 
               <div style={twoColumnLayoutStyle}>
@@ -800,7 +1157,12 @@ export default function HomePage() {
                         Data
                         <input
                           value={ascentDraft.date}
-                          onChange={(event) => setAscentDraft({ ...ascentDraft, date: event.target.value })}
+                          onChange={(event) =>
+                            setAscentDraft({
+                              ...ascentDraft,
+                              date: event.target.value,
+                            })
+                          }
                           type="date"
                           required
                           style={inputStyle}
@@ -811,7 +1173,10 @@ export default function HomePage() {
                         <select
                           value={ascentDraft.source}
                           onChange={(event) =>
-                            setAscentDraft({ ...ascentDraft, source: event.target.value as "panel" | "skala" })
+                            setAscentDraft({
+                              ...ascentDraft,
+                              source: event.target.value as "panel" | "skala",
+                            })
                           }
                           style={inputStyle}
                         >
@@ -823,7 +1188,12 @@ export default function HomePage() {
                         Nazwa drogi / problemu
                         <input
                           value={ascentDraft.routeName}
-                          onChange={(event) => setAscentDraft({ ...ascentDraft, routeName: event.target.value })}
+                          onChange={(event) =>
+                            setAscentDraft({
+                              ...ascentDraft,
+                              routeName: event.target.value,
+                            })
+                          }
                           required
                           style={inputStyle}
                         />
@@ -832,7 +1202,12 @@ export default function HomePage() {
                         Wycena sugerowana
                         <select
                           value={ascentDraft.suggestedGrade}
-                          onChange={(event) => setAscentDraft({ ...ascentDraft, suggestedGrade: event.target.value })}
+                          onChange={(event) =>
+                            setAscentDraft({
+                              ...ascentDraft,
+                              suggestedGrade: event.target.value,
+                            })
+                          }
                           required
                           style={inputStyle}
                         >
@@ -847,7 +1222,12 @@ export default function HomePage() {
                         Wycena subiektywna
                         <select
                           value={ascentDraft.subjectiveGrade}
-                          onChange={(event) => setAscentDraft({ ...ascentDraft, subjectiveGrade: event.target.value })}
+                          onChange={(event) =>
+                            setAscentDraft({
+                              ...ascentDraft,
+                              subjectiveGrade: event.target.value,
+                            })
+                          }
                           required
                           style={inputStyle}
                         >
@@ -862,7 +1242,12 @@ export default function HomePage() {
                         Notatki
                         <textarea
                           value={ascentDraft.notes}
-                          onChange={(event) => setAscentDraft({ ...ascentDraft, notes: event.target.value })}
+                          onChange={(event) =>
+                            setAscentDraft({
+                              ...ascentDraft,
+                              notes: event.target.value,
+                            })
+                          }
                           rows={3}
                           style={textAreaStyle}
                         />
@@ -885,7 +1270,8 @@ export default function HomePage() {
                   </div>
 
                   <p style={mutedParagraphStyle}>
-                    Możesz eksportować treningi i historię przejść do CSV, żeby dalej obrabiać dane poza aplikacją.
+                    Możesz eksportować treningi i historię przejść do CSV, żeby
+                    dalej obrabiać dane poza aplikacją.
                   </p>
 
                   <div style={actionRowStyle}>
@@ -935,20 +1321,39 @@ export default function HomePage() {
                   </div>
 
                   <div style={scrollListStyle}>
-                    {ascents.length === 0 && <EmptyState message="Nie ma jeszcze historii przejść." />}
+                    {ascents.length === 0 && (
+                      <EmptyState message="Nie ma jeszcze historii przejść." />
+                    )}
                     {ascents.map((ascent) => (
                       <article key={ascent.id} style={listCardStyle}>
                         <div style={listCardHeaderStyle}>
                           <strong>{ascent.routeName}</strong>
-                          <span style={softPillStyle}>{ascent.suggestedGrade}</span>
+                          <span style={softPillStyle}>
+                            {ascent.suggestedGrade}
+                          </span>
                         </div>
                         <div style={infoGridStyle}>
                           <span>Data: {ascent.date}</span>
-                          <span>Typ: {ascent.source === "panel" ? "Panel" : "Skała"}</span>
-                          <span>Wycena sugerowana: {ascent.suggestedGrade}</span>
-                          <span>Wycena subiektywna: {ascent.subjectiveGrade}</span>
+                          <span>
+                            Typ: {ascent.source === "panel" ? "Panel" : "Skała"}
+                          </span>
+                          <span>
+                            Wycena sugerowana: {ascent.suggestedGrade}
+                          </span>
+                          <span>
+                            Wycena subiektywna: {ascent.subjectiveGrade}
+                          </span>
                         </div>
-                        {ascent.notes && <p style={{ margin: "10px 0 0", color: "var(--muted)" }}>{ascent.notes}</p>}
+                        {ascent.notes && (
+                          <p
+                            style={{
+                              margin: "10px 0 0",
+                              color: "var(--muted)",
+                            }}
+                          >
+                            {ascent.notes}
+                          </p>
+                        )}
                       </article>
                     ))}
                   </div>
@@ -963,23 +1368,65 @@ export default function HomePage() {
                 <div>
                   <p style={eyebrowStyle}>{activeModuleMeta.eyebrow}</p>
                   <h1 style={pageTitleStyle}>{activeModuleMeta.title}</h1>
-                  <p style={mutedParagraphStyle}>{activeModuleMeta.description}</p>
+                  <p style={mutedParagraphStyle}>
+                    {activeModuleMeta.description}
+                  </p>
                 </div>
 
                 <div style={headerBadgeRowStyle}>
-                  <span style={headerBadgeStyle}>Wiek: {currentAge || "-"}</span>
-                  <span style={headerBadgeStyle}>Waga: {profileDraft.weightKg ? `${profileDraft.weightKg} kg` : "-"}</span>
-                  <span style={headerBadgeStyle}>Pomiary: {weightEntries.length}</span>
+                  <span style={headerBadgeStyle}>
+                    Wiek: {currentAge || "-"}
+                  </span>
+                  <span style={headerBadgeStyle}>
+                    Waga:{" "}
+                    {profileDraft.weightKg
+                      ? `${profileDraft.weightKg} kg`
+                      : "-"}
+                  </span>
+                  <span style={headerBadgeStyle}>
+                    Wzrost:{" "}
+                    {profileDraft.heightCm
+                      ? `${profileDraft.heightCm} cm`
+                      : "-"}
+                  </span>
+                  <span style={headerBadgeStyle}>
+                    Pomiary: {weightEntries.length}
+                  </span>
                 </div>
 
                 <div style={statusBoxStyle}>{status}</div>
               </div>
 
               <div style={statsGridStyle}>
-                <MetricCard label="Data urodzenia" value={profileDraft.birthDate || "-"} detail="Wiek liczony automatycznie" />
-                <MetricCard label="Płeć" value={profileDraft.sex || "-"} detail="Pole bazowe profilu" />
-                <MetricCard label="Aktualna waga" value={profileDraft.weightKg ? `${profileDraft.weightKg} kg` : "-"} detail="Ustawienie bazowe" />
-                <MetricCard label="Zmiany wagi" value={String(weightEntries.length)} detail="Oddzielne encje: data i waga" />
+                <MetricCard
+                  label="Data urodzenia"
+                  value={profileDraft.birthDate || "-"}
+                  detail="Wiek liczony automatycznie"
+                />
+                <MetricCard
+                  label="Płeć"
+                  value={profileDraft.sex || "-"}
+                  detail="Pole bazowe profilu"
+                />
+                <MetricCard
+                  label="Wzrost"
+                  value={
+                    profileDraft.heightCm ? `${profileDraft.heightCm} cm` : "-"
+                  }
+                  detail="Ustawienie bazowe"
+                />
+                <MetricCard
+                  label="Aktualna waga"
+                  value={
+                    profileDraft.weightKg ? `${profileDraft.weightKg} kg` : "-"
+                  }
+                  detail="Ustawienie bazowe"
+                />
+                <MetricCard
+                  label="Zmiany wagi"
+                  value={String(weightEntries.length)}
+                  detail="Oddzielne encje: data i waga"
+                />
               </div>
 
               <div style={twoColumnLayoutStyle}>
@@ -989,7 +1436,9 @@ export default function HomePage() {
                       <span style={moduleEyebrowStyle}>Profil</span>
                       <h2 style={sectionTitleStyle}>Settings użytkownika</h2>
                     </div>
-                    <span style={softTagStyle}>Data urodzenia, płeć, waga</span>
+                    <span style={softTagStyle}>
+                      Data urodzenia, płeć, wzrost, waga
+                    </span>
                   </div>
 
                   <form onSubmit={handleSettingsSubmit} style={formStyle}>
@@ -998,7 +1447,12 @@ export default function HomePage() {
                         Data urodzenia
                         <input
                           value={profileDraft.birthDate}
-                          onChange={(event) => setProfileDraft((current) => ({ ...current, birthDate: event.target.value }))}
+                          onChange={(event) =>
+                            setProfileDraft((current) => ({
+                              ...current,
+                              birthDate: event.target.value,
+                            }))
+                          }
                           type="date"
                           style={inputStyle}
                         />
@@ -1007,7 +1461,12 @@ export default function HomePage() {
                         Płeć
                         <select
                           value={profileDraft.sex}
-                          onChange={(event) => setProfileDraft((current) => ({ ...current, sex: event.target.value as UserSex }))}
+                          onChange={(event) =>
+                            setProfileDraft((current) => ({
+                              ...current,
+                              sex: event.target.value as UserSex,
+                            }))
+                          }
                           style={inputStyle}
                         >
                           <option value="">Nie podano</option>
@@ -1015,6 +1474,31 @@ export default function HomePage() {
                           <option value="mezczyzna">Mężczyzna</option>
                           <option value="inna">Inna</option>
                         </select>
+                      </label>
+                      <label style={fieldStyle}>
+                        Wzrost (cm)
+                        <input
+                          value={profileDraft.heightCm}
+                          onChange={(event) =>
+                            setProfileDraft((current) => ({
+                              ...current,
+                              heightCm: event.target.value,
+                            }))
+                          }
+                          onBlur={() =>
+                            setProfileDraft((current) => ({
+                              ...current,
+                              heightCm:
+                                parseHeightInput(
+                                  current.heightCm,
+                                )?.toString() ?? "",
+                            }))
+                          }
+                          type="number"
+                          min="1"
+                          step="1"
+                          style={inputStyle}
+                        />
                       </label>
                       <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>
                         Waga (kg)
@@ -1025,7 +1509,13 @@ export default function HomePage() {
                             onClick={() =>
                               setProfileDraft((current) => ({
                                 ...current,
-                                weightKg: formatWeightInput(Math.max(0, (parseWeightInput(current.weightKg) ?? 0) - 0.1)),
+                                weightKg: formatWeightInput(
+                                  Math.max(
+                                    0,
+                                    (parseWeightInput(current.weightKg) ?? 0) -
+                                      0.1,
+                                  ),
+                                ),
                               }))
                             }
                           >
@@ -1033,11 +1523,21 @@ export default function HomePage() {
                           </button>
                           <input
                             value={profileDraft.weightKg}
-                            onChange={(event) => setProfileDraft((current) => ({ ...current, weightKg: event.target.value.replaceAll(",", ".") }))}
+                            onChange={(event) =>
+                              setProfileDraft((current) => ({
+                                ...current,
+                                weightKg: event.target.value.replaceAll(
+                                  ",",
+                                  ".",
+                                ),
+                              }))
+                            }
                             onBlur={() =>
                               setProfileDraft((current) => ({
                                 ...current,
-                                weightKg: formatWeightInput(parseWeightInput(current.weightKg)),
+                                weightKg: formatWeightInput(
+                                  parseWeightInput(current.weightKg),
+                                ),
                               }))
                             }
                             type="number"
@@ -1051,7 +1551,10 @@ export default function HomePage() {
                             onClick={() =>
                               setProfileDraft((current) => ({
                                 ...current,
-                                weightKg: formatWeightInput((parseWeightInput(current.weightKg) ?? 0) + 0.1),
+                                weightKg: formatWeightInput(
+                                  (parseWeightInput(current.weightKg) ?? 0) +
+                                    0.1,
+                                ),
                               }))
                             }
                           >
@@ -1077,9 +1580,14 @@ export default function HomePage() {
                   </div>
 
                   <div style={scrollListStyle}>
-                    {recentWeightEntries.length === 0 && <EmptyState message="Nie ma jeszcze zapisanych zmian wagi." />}
+                    {recentWeightEntries.length === 0 && (
+                      <EmptyState message="Nie ma jeszcze zapisanych zmian wagi." />
+                    )}
                     {recentWeightEntries.map((entry) => (
-                      <article key={`${entry.id ?? entry.createdAt}-${entry.date}`} style={listCardStyle}>
+                      <article
+                        key={`${entry.id ?? entry.createdAt}-${entry.date}`}
+                        style={listCardStyle}
+                      >
                         <div style={listCardHeaderStyle}>
                           <strong>{entry.weightKg.toFixed(1)} kg</strong>
                           <span style={softPillStyle}>{entry.date}</span>
@@ -1098,12 +1606,18 @@ export default function HomePage() {
                 <div>
                   <p style={eyebrowStyle}>{activeModuleMeta.eyebrow}</p>
                   <h1 style={pageTitleStyle}>{activeModuleMeta.title}</h1>
-                  <p style={mutedParagraphStyle}>{activeModuleMeta.description}</p>
+                  <p style={mutedParagraphStyle}>
+                    {activeModuleMeta.description}
+                  </p>
                 </div>
 
                 <div style={headerBadgeRowStyle}>
-                  <span style={headerBadgeStyle}>Treningi: {trainings.length}</span>
-                  <span style={headerBadgeStyle}>Średnia: {averageWeight} kg</span>
+                  <span style={headerBadgeStyle}>
+                    Treningi: {trainings.length}
+                  </span>
+                  <span style={headerBadgeStyle}>
+                    Średnia: {averageWeight} kg
+                  </span>
                   <span style={headerBadgeStyle}>Kalorie: {totalCalories}</span>
                 </div>
 
@@ -1111,10 +1625,26 @@ export default function HomePage() {
               </div>
 
               <div style={statsGridStyle}>
-                <MetricCard label="Liczba treningów" value={String(trainings.length)} detail="Wszystkie zapisane sesje" />
-                <MetricCard label="Łączny czas" value={`${totalTrainingTime} min`} detail="Suma czasu treningowego" />
-                <MetricCard label="Średnia waga" value={`${averageWeight} kg`} detail="Na podstawie wpisów treningowych" />
-                <MetricCard label="Łączne wstawki" value={String(totalAttempts)} detail="Suma prób ze wszystkich sesji" />
+                <MetricCard
+                  label="Liczba treningów"
+                  value={String(trainings.length)}
+                  detail="Wszystkie zapisane sesje"
+                />
+                <MetricCard
+                  label="Łączny czas"
+                  value={`${totalTrainingTime} min`}
+                  detail="Suma czasu treningowego"
+                />
+                <MetricCard
+                  label="Średnia waga"
+                  value={`${averageWeight} kg`}
+                  detail="Na podstawie wpisów treningowych"
+                />
+                <MetricCard
+                  label="Łączne wstawki"
+                  value={String(totalAttempts)}
+                  detail="Suma prób ze wszystkich sesji"
+                />
               </div>
 
               <div style={twoColumnLayoutStyle}>
@@ -1172,18 +1702,551 @@ export default function HomePage() {
   );
 }
 
-function MetricCard({ label, value, detail }: { label: string; value: string; detail: string }) {
+function MetricCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
   return (
     <article style={metricCardStyle}>
-      <span style={{ color: "var(--muted)", fontSize: "0.95rem" }}>{label}</span>
+      <span style={{ color: "var(--muted)", fontSize: "0.95rem" }}>
+        {label}
+      </span>
       <strong style={metricValueStyle}>{value}</strong>
-      <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>{detail}</span>
+      <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>
+        {detail}
+      </span>
     </article>
   );
 }
 
 function EmptyState({ message }: { message: string }) {
   return <p style={{ margin: 0, color: "var(--muted)" }}>{message}</p>;
+}
+
+function TrainingAnalyticsPanel(props: {
+  latestWeightKg: number | null | undefined;
+  latestWeightDate: string | null;
+  latestWeightChange: number | null;
+  averageWeight: string;
+  totalTrainingTime: number;
+  totalCalories: number;
+  weightChartEntries: WeightEntryRecord[];
+  weightEntryDraft: WeightEntryDraft;
+  onWeightEntryDraftChange: (draft: WeightEntryDraft) => void;
+  onWeightEntrySubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
+  recentWeightEntries: WeightEntryRecord[];
+}) {
+  const {
+    latestWeightKg,
+    latestWeightDate,
+    latestWeightChange,
+    averageWeight,
+    totalTrainingTime,
+    totalCalories,
+    weightChartEntries,
+    weightEntryDraft,
+    onWeightEntryDraftChange,
+    onWeightEntrySubmit,
+    recentWeightEntries,
+  } = props;
+  const [isWeightEntryModalOpen, setIsWeightEntryModalOpen] = useState(false);
+
+  async function handleWeightEntryModalSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    const wasSaved = await onWeightEntrySubmit(event);
+
+    if (wasSaved) {
+      setIsWeightEntryModalOpen(false);
+    }
+  }
+
+  return (
+    <div style={analyticsPanelInnerStyle}>
+      <div style={panelHeadingStyle}>
+        <div>
+          <span style={moduleEyebrowStyle}>Analityka</span>
+          <h2 style={sectionTitleStyle}>Waga i trend</h2>
+        </div>
+        <span style={softTagStyle}>Bieżący miesiąc</span>
+      </div>
+
+      <div style={analyticsStatsGridStyle}>
+        <article style={metricCardStyle}>
+          <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>
+            Ostatni pomiar
+          </span>
+          <strong style={metricValueStyle}>
+            {latestWeightKg ? `${latestWeightKg.toFixed(1)} kg` : "-"}
+          </strong>
+          <span style={{ color: "var(--muted)", fontSize: "0.88rem" }}>
+            {latestWeightDate ?? "Brak wpisu"}
+          </span>
+        </article>
+        <article style={metricCardStyle}>
+          <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>
+            Zmiana
+          </span>
+          <strong style={metricValueStyle}>
+            {latestWeightChange === null
+              ? "-"
+              : `${latestWeightChange > 0 ? "+" : ""}${latestWeightChange.toFixed(1)} kg`}
+          </strong>
+          <span style={{ color: "var(--muted)", fontSize: "0.88rem" }}>
+            Vs poprzedni pomiar
+          </span>
+        </article>
+        <article style={metricCardStyle}>
+          <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>
+            Średnia
+          </span>
+          <strong style={metricValueStyle}>
+            {averageWeight === "-" ? "-" : `${averageWeight} kg`}
+          </strong>
+          <span style={{ color: "var(--muted)", fontSize: "0.88rem" }}>
+            Na bazie treningów
+          </span>
+        </article>
+        <article style={metricCardStyle}>
+          <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>
+            Objętość
+          </span>
+          <strong style={metricValueStyle}>{totalTrainingTime} min</strong>
+          <span style={{ color: "var(--muted)", fontSize: "0.88rem" }}>
+            Kalorie: {totalCalories}
+          </span>
+        </article>
+      </div>
+
+      <section style={chartCardStyle}>
+        <div style={panelHeadingStyle}>
+          <div>
+            <span style={moduleEyebrowStyle}>Wykres wagi</span>
+            <h3 style={sectionTitleStyle}>Ostatnie pomiary</h3>
+          </div>
+          <span style={softPillStyle}>{weightChartEntries.length} pkt</span>
+          <button
+            type="button"
+            onClick={() => setIsWeightEntryModalOpen(true)}
+            style={{ ...buttonStyle, justifySelf: "start" }}
+          >
+            Dodaj pomiar
+          </button>
+        </div>
+        <WeightTrendChart entries={weightChartEntries} />
+      </section>
+
+      {isWeightEntryModalOpen && (
+        <div
+          style={weightEntryModalOverlayStyle}
+          role="presentation"
+          onMouseDown={() => setIsWeightEntryModalOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="weight-entry-modal-title"
+            style={weightEntryModalStyle}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div style={panelHeadingStyle}>
+              <div>
+                <span style={moduleEyebrowStyle}>Pomiar wagi</span>
+                <h3 id="weight-entry-modal-title" style={sectionTitleStyle}>
+                  Dodaj pomiar
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWeightEntryModalOpen(false)}
+                style={ghostButtonStyle}
+              >
+                Zamknij
+              </button>
+            </div>
+
+            <form onSubmit={handleWeightEntryModalSubmit} style={formStyle}>
+              <label style={fieldStyle}>
+                Data pomiaru
+                <input
+                  value={weightEntryDraft.date}
+                  onChange={(event) =>
+                    onWeightEntryDraftChange({
+                      ...weightEntryDraft,
+                      date: event.target.value,
+                    })
+                  }
+                  type="date"
+                  required
+                  style={inputStyle}
+                />
+              </label>
+              <label style={fieldStyle}>
+                Waga (kg)
+                <input
+                  value={weightEntryDraft.weightKg}
+                  onChange={(event) =>
+                    onWeightEntryDraftChange({
+                      ...weightEntryDraft,
+                      weightKg: event.target.value.replaceAll(",", "."),
+                    })
+                  }
+                  onBlur={() =>
+                    onWeightEntryDraftChange({
+                      ...weightEntryDraft,
+                      weightKg: formatWeightInput(
+                        parseWeightInput(weightEntryDraft.weightKg),
+                      ),
+                    })
+                  }
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  required
+                  style={inputStyle}
+                />
+              </label>
+
+              <button type="submit" style={buttonStyle}>
+                Zapisz pomiar
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
+
+      <section style={chartCardStyle}>
+        <div style={panelHeadingStyle}>
+          <div>
+            <span style={moduleEyebrowStyle}>Szybki przegląd</span>
+            <h3 style={sectionTitleStyle}>Ostatnie wpisy</h3>
+          </div>
+          <span style={softPillStyle}>Max 5</span>
+        </div>
+
+        <div style={scrollListStyle}>
+          {recentWeightEntries.length === 0 && (
+            <EmptyState message="Nie ma jeszcze osobnych pomiarów wagi." />
+          )}
+          {recentWeightEntries.slice(0, 5).map((entry) => (
+            <article
+              key={`${entry.id ?? entry.createdAt}-${entry.date}`}
+              style={listCardStyle}
+            >
+              <div style={listCardHeaderStyle}>
+                <strong>{entry.weightKg.toFixed(1)} kg</strong>
+                <span style={softPillStyle}>{entry.date}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function WeightTrendChart({ entries }: { entries: WeightEntryRecord[] }) {
+  const { selectedDate } = useSelectedDates();
+
+  if (entries.length === 0) {
+    return (
+      <EmptyState message="Dodaj pierwszy pomiar, aby zobaczyć wykres wagi." />
+    );
+  }
+
+  const dailyWeights = Array.from(
+    entries
+      .reduce((groupedEntries, entry) => {
+        const date = formatDateIso(entry.date);
+        const existingEntry = groupedEntries.get(date) ?? {
+          date,
+          totalWeight: 0,
+          count: 0,
+        };
+
+        existingEntry.totalWeight += entry.weightKg;
+        existingEntry.count += 1;
+        groupedEntries.set(date, existingEntry);
+
+        return groupedEntries;
+      }, new Map<string, { date: string; totalWeight: number; count: number }>())
+      .values(),
+  )
+    .map((entry) => ({
+      date: entry.date,
+      weightKg: roundToSingleDecimal(entry.totalWeight / entry.count),
+    }))
+    .sort((left, right) => left.date.localeCompare(right.date));
+  const chartEntries = dailyWeights.map((entry, index, allEntries) => {
+    const weightedEntries = allEntries.slice(Math.max(0, index - 2), index + 1);
+    const weightSum = weightedEntries.reduce(
+      (sum, weightEntry, weightedIndex) =>
+        sum + weightEntry.weightKg * (weightedIndex + 1),
+      0,
+    );
+    const divisor = weightedEntries.reduce(
+      (sum, _weightEntry, weightedIndex) => sum + weightedIndex + 1,
+      0,
+    );
+
+    return {
+      date: entry.date,
+      label: new Intl.DateTimeFormat("pl-PL", {
+        day: "numeric",
+        month: "short",
+      }).format(toDate(entry.date)),
+      weightKg: entry.weightKg,
+      weightedAverage: roundToSingleDecimal(weightSum / divisor),
+    };
+  });
+  const measuredWeights = chartEntries.flatMap((entry) => [
+    entry.weightKg,
+    entry.weightedAverage,
+  ]);
+  const todayChartDate = formatDateIso(new Date());
+  const selectedChartDate = selectedDate ? formatDateIso(selectedDate) : null;
+  const isFutureSelectedDate =
+    selectedChartDate !== null && selectedChartDate > todayChartDate;
+  const selectedChartPoint = selectedChartDate
+    ? {
+        date: selectedChartDate,
+        label: new Intl.DateTimeFormat("pl-PL", {
+          day: "numeric",
+          month: "short",
+        }).format(toDate(selectedChartDate)),
+        weightKg: null,
+        weightedAverage: null,
+      }
+    : null;
+  const latestChartEntry = chartEntries[chartEntries.length - 1];
+  const previousChartEntry =
+    chartEntries[chartEntries.length - 2] ?? latestChartEntry;
+  const trendDays = Math.max(
+    1,
+    (toDate(latestChartEntry.date).getTime() -
+      toDate(previousChartEntry.date).getTime()) /
+      86_400_000,
+  );
+  const trendPerDay =
+    (latestChartEntry.weightedAverage - previousChartEntry.weightedAverage) /
+    trendDays;
+  const selectedDayOffset = selectedChartDate
+    ? (toDate(selectedChartDate).getTime() -
+        toDate(latestChartEntry.date).getTime()) /
+      86_400_000
+    : 0;
+  const projectedWeight = isFutureSelectedDate
+    ? roundToSingleDecimal(
+        Math.min(
+          latestChartEntry.weightKg + 1,
+          Math.max(
+            latestChartEntry.weightKg - 1,
+            latestChartEntry.weightKg + trendPerDay * selectedDayOffset,
+          ),
+        ),
+      )
+    : null;
+  const chartWeights =
+    projectedWeight === null
+      ? measuredWeights
+      : [...measuredWeights, projectedWeight];
+  const minWeight = Math.min(...chartWeights);
+  const maxWeight = Math.max(...chartWeights);
+  const domainPadding = Math.max((maxWeight - minWeight) * 0.4, 0.5);
+  const axisMinimum = Math.floor(minWeight - domainPadding);
+  const axisMaximum = Math.ceil(maxWeight + domainPadding);
+  const fullKilogramTicks = Array.from(
+    { length: axisMaximum - axisMinimum + 1 },
+    (_value, index) => axisMinimum + index,
+  );
+  const halfKilogramMarks = fullKilogramTicks
+    .slice(0, -1)
+    .map((tick) => tick + 0.5);
+  const chartData = [
+    ...chartEntries.map((entry) => ({
+      ...entry,
+      projectedWeight:
+        entry.date === latestChartEntry.date ? latestChartEntry.weightKg : null,
+    })),
+    ...(selectedChartPoint &&
+    !chartEntries.some((entry) => entry.date === selectedChartDate)
+      ? [{ ...selectedChartPoint, projectedWeight }]
+      : []),
+    ...(!chartEntries.some((entry) => entry.date === todayChartDate) &&
+    todayChartDate !== selectedChartDate
+      ? [
+          {
+            date: todayChartDate,
+            label: "",
+            weightKg: null,
+            weightedAverage: null,
+            projectedWeight: null,
+          },
+        ]
+      : []),
+  ]
+    .map((entry) =>
+      entry.date === selectedChartDate ? { ...entry, projectedWeight } : entry,
+    )
+    .sort((left, right) => left.date.localeCompare(right.date));
+
+  return (
+    <div style={weightChartCardStyle}>
+      <div style={weightChartCanvasStyle}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={chartData}
+            margin={{ top: 12, right: 8, bottom: 0, left: -20 }}
+          >
+            <defs>
+              <linearGradient id="weightTrendFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#d16d3f" stopOpacity={0.48} />
+                <stop offset="85%" stopColor="#d16d3f" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              vertical={false}
+              stroke="rgba(100, 87, 77, 0.14)"
+              strokeDasharray="3 5"
+            />
+            <XAxis
+              dataKey="date"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#64574d", fontSize: 11 }}
+              minTickGap={28}
+              padding={{ left: 14, right: 14 }}
+              tickFormatter={(date) =>
+                new Intl.DateTimeFormat("pl-PL", {
+                  day: "numeric",
+                  month: "short",
+                }).format(toDate(date))
+              }
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#64574d", fontSize: 11 }}
+              tickFormatter={(value) => `${value}`}
+              domain={[axisMinimum, axisMaximum]}
+              ticks={fullKilogramTicks}
+            />
+            <Tooltip
+              cursor={{ stroke: "rgba(209, 109, 63, 0.32)", strokeWidth: 1 }}
+              contentStyle={weightChartTooltipStyle}
+              formatter={(value, name) => {
+                const measuredValue = Array.isArray(value) ? value[0] : value;
+                const label =
+                  name === "weightKg"
+                    ? "Waga"
+                    : name === "projectedWeight"
+                      ? "Waga projektowana"
+                      : "Średnia ważona";
+
+                return [
+                  `${typeof measuredValue === "number" ? measuredValue.toFixed(1) : (measuredValue ?? "-")} kg`,
+                  label,
+                ];
+              }}
+              labelFormatter={(_label, payload) =>
+                payload[0]?.payload.date ?? ""
+              }
+            />
+            {halfKilogramMarks.map((mark) => (
+              <ReferenceLine
+                key={mark}
+                y={mark}
+                stroke="rgba(100, 87, 77, 0.1)"
+                strokeDasharray="2 5"
+              />
+            ))}
+            <Area
+              type="monotone"
+              dataKey="weightedAverage"
+              stroke="#b84f27"
+              strokeWidth={2.5}
+              fill="url(#weightTrendFill)"
+              dot={false}
+              activeDot={false}
+              connectNulls
+              animationDuration={750}
+            />
+            <Line
+              type="monotone"
+              dataKey="weightKg"
+              stroke="#176f86"
+              strokeWidth={2}
+              dot={false}
+              activeDot={false}
+              connectNulls
+              animationDuration={750}
+            />
+            {projectedWeight !== null && (
+              <>
+                <Line
+                  type="linear"
+                  dataKey="projectedWeight"
+                  stroke="#7050a8"
+                  strokeWidth={2}
+                  strokeDasharray="5 4"
+                  dot={false}
+                  activeDot={false}
+                  connectNulls
+                  animationDuration={750}
+                />
+                <ReferenceDot
+                  x={selectedChartPoint?.date}
+                  y={projectedWeight}
+                  r={4}
+                  fill="#7050a8"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                />
+              </>
+            )}
+            {selectedChartPoint && (
+              <ReferenceLine
+                x={selectedChartPoint.date}
+                stroke="#176f86"
+                strokeWidth={2}
+                strokeDasharray="4 4"
+                ifOverflow="extendDomain"
+              />
+            )}
+            <ReferenceLine
+              x={todayChartDate}
+              stroke="#dc3e4b"
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              ifOverflow="extendDomain"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div style={weightChartSummaryStyle}>
+        <span>Trend: średnia ważona z maks. 3 pomiarów</span>
+        {selectedChartDate && projectedWeight !== null && (
+          <span>
+            Prognoza na {selectedChartDate}: {projectedWeight.toFixed(1)} kg
+          </span>
+        )}
+        <span>
+          Min: {Math.min(...entries.map((entry) => entry.weightKg)).toFixed(1)}{" "}
+          kg
+        </span>
+        <span>
+          Max: {Math.max(...entries.map((entry) => entry.weightKg)).toFixed(1)}{" "}
+          kg
+        </span>
+      </div>
+    </div>
+  );
 }
 
 const pageStyle = {
@@ -1285,7 +2348,8 @@ const contentBodyStyle = {
 
 const statusBoxStyle = {
   padding: 7,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.58), rgba(255,255,255,0.34))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.58), rgba(255,255,255,0.34))",
   border: "1px solid var(--border-strong)",
   color: "var(--muted)",
 };
@@ -1300,6 +2364,88 @@ const trainingModuleStyle = {
   minHeight: 0,
 };
 
+const analyticsPanelStyle = {
+  display: "grid",
+  gap: 9,
+  minHeight: 0,
+  padding: 0,
+  overflow: "hidden",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
+  border: "1px solid var(--border-strong)",
+};
+
+const analyticsPanelInnerStyle = {
+  display: "grid",
+  gap: 10,
+  height: "100%",
+  minHeight: 0,
+  padding: 11,
+  alignContent: "start" as const,
+};
+
+const analyticsStatsGridStyle = {
+  display: "grid",
+  gap: 8,
+  gridTemplateColumns: "repeat(auto-fit, minmax(132px, 1fr))",
+};
+
+const chartCardStyle = {
+  display: "grid",
+  gap: 8,
+  padding: 10,
+  border: "1px solid var(--border-strong)",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.44))",
+};
+
+const weightChartCardStyle = {
+  display: "grid",
+  gap: 8,
+};
+
+const weightChartCanvasStyle = {
+  width: "100%",
+  height: 180,
+  minWidth: 0,
+};
+
+const weightChartSummaryStyle = {
+  display: "flex",
+  flexWrap: "wrap" as const,
+  gap: 8,
+  color: "var(--muted)",
+  fontSize: "0.85rem",
+};
+
+const weightChartTooltipStyle = {
+  border: "1px solid rgba(209, 109, 63, 0.3)",
+  borderRadius: 4,
+  background: "rgba(255, 250, 243, 0.96)",
+  boxShadow: "0 12px 30px rgba(72, 49, 33, 0.14)",
+  color: "var(--text)",
+};
+
+const weightEntryModalOverlayStyle = {
+  position: "fixed" as const,
+  inset: 0,
+  zIndex: 60,
+  display: "grid",
+  placeItems: "center",
+  padding: 16,
+  background: "rgba(30, 25, 22, 0.34)",
+};
+
+const weightEntryModalStyle = {
+  display: "grid",
+  gap: 14,
+  width: "min(100%, 420px)",
+  padding: 16,
+  background: "rgba(255, 250, 243, 0.98)",
+  border: "1px solid var(--border-strong)",
+  boxShadow: "0 24px 70px rgba(72, 49, 33, 0.24)",
+};
+
 const calendarPanelStyle = {
   display: "grid",
   gridTemplateRows: "auto minmax(0, 1fr)",
@@ -1309,7 +2455,8 @@ const calendarPanelStyle = {
   padding: 11,
   overflow: "hidden",
   border: "1px solid var(--border-strong)",
-  background: "linear-gradient(180deg, rgba(255,255,255,0.52), rgba(255,255,255,0.3))",
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,0.52), rgba(255,255,255,0.3))",
 };
 
 const calendarNavStyle = {
@@ -1374,7 +2521,8 @@ const headerBadgeRowStyle = {
 const headerBadgeStyle = {
   padding: "5px 7px",
   borderRadius: 999,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.44))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.44))",
   border: "1px solid var(--border-strong)",
   color: "var(--muted)",
   fontSize: "0.88rem",
@@ -1390,7 +2538,8 @@ const metricCardStyle = {
   display: "grid",
   gap: 6,
   padding: 8,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.34))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.34))",
   border: "1px solid var(--border-strong)",
 };
 
@@ -1405,7 +2554,8 @@ const panelStyle = {
   gap: 9,
   minHeight: 0,
   padding: 11,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
   border: "1px solid var(--border-strong)",
 };
 
@@ -1443,7 +2593,8 @@ const fieldStyle = {
 const inputStyle = {
   border: "1px solid var(--border-strong)",
   padding: "7px 8px",
-  background: "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))",
   color: "var(--text)",
   width: "100%",
 };
@@ -1464,7 +2615,8 @@ const buttonStyle = {
 
 const secondaryButtonStyle = {
   ...buttonStyle,
-  background: "linear-gradient(135deg, rgba(49, 44, 40, 0.85), rgba(34, 30, 26, 0.92))",
+  background:
+    "linear-gradient(135deg, rgba(49, 44, 40, 0.85), rgba(34, 30, 26, 0.92))",
   boxShadow: "0 18px 30px rgba(35, 29, 25, 0.16)",
 };
 
@@ -1533,7 +2685,8 @@ const mobileDrawerCloseButtonStyle = {
 
 const listCardStyle = {
   padding: 8,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.84), rgba(255,255,255,0.56))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.84), rgba(255,255,255,0.56))",
   border: "1px solid var(--border-strong)",
 };
 
@@ -1596,7 +2749,8 @@ const mutedParagraphStyle = {
 const softTagStyle = {
   padding: "4px 6px",
   borderRadius: 999,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.44))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.44))",
   border: "1px solid rgba(255,255,255,0.38)",
   color: "var(--accent)",
   fontSize: "0.85rem",
@@ -1606,13 +2760,17 @@ const softTagStyle = {
 const softPillStyle = {
   padding: "4px 6px",
   borderRadius: 999,
-  background: "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.52))",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.52))",
   border: "1px solid rgba(255,255,255,0.34)",
   color: "var(--muted)",
   fontSize: "0.85rem",
 };
 
-const moduleShellStyles: Record<ModuleKey, { background: string; border?: string }> = {
+const moduleShellStyles: Record<
+  ModuleKey,
+  { background: string; border?: string }
+> = {
   treningowy: {
     background: "#ffffff9e",
     border: "1px solid var(--border-strong)",

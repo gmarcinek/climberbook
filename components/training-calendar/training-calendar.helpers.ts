@@ -42,7 +42,15 @@ export function getMonthLabel(monthIndex: number) {
 
 export function toDate(value: string | Date) {
   if (value instanceof Date) {
-    return new Date(value.getFullYear(), value.getMonth(), value.getDate(), 12, 0, 0, 0);
+    return new Date(
+      value.getFullYear(),
+      value.getMonth(),
+      value.getDate(),
+      12,
+      0,
+      0,
+      0,
+    );
   }
 
   const [year, month, day] = value.split("-").map(Number);
@@ -70,12 +78,16 @@ export function formatDateLabel(value: string) {
 
 export function getMonthStart(value: string | Date) {
   const date = toDate(value);
-  return formatDateIso(new Date(date.getFullYear(), date.getMonth(), 1, 12, 0, 0, 0));
+  return formatDateIso(
+    new Date(date.getFullYear(), date.getMonth(), 1, 12, 0, 0, 0),
+  );
 }
 
 export function addMonths(value: string, amount: number) {
   const date = toDate(value);
-  return formatDateIso(new Date(date.getFullYear(), date.getMonth() + amount, 1, 12, 0, 0, 0));
+  return formatDateIso(
+    new Date(date.getFullYear(), date.getMonth() + amount, 1, 12, 0, 0, 0),
+  );
 }
 
 export function addDays(value: string | Date, amount: number) {
@@ -106,7 +118,15 @@ function endOfMonth(value: string | Date) {
 export function getVisibleRange(anchorMonthStart: string, monthCount = 12) {
   const start = formatDateIso(startOfWeekMonday(anchorMonthStart));
   const anchorDate = toDate(anchorMonthStart);
-  const monthEnd = new Date(anchorDate.getFullYear(), anchorDate.getMonth() + monthCount, 0, 12, 0, 0, 0);
+  const monthEnd = new Date(
+    anchorDate.getFullYear(),
+    anchorDate.getMonth() + monthCount,
+    0,
+    12,
+    0,
+    0,
+    0,
+  );
   const end = formatDateIso(endOfWeekMonday(monthEnd));
 
   return {
@@ -138,8 +158,13 @@ function splitEvenly<T>(items: T[], size: number) {
   return result;
 }
 
-export function segregateDatesMonthly(days: CalendarDayCell[], rowSize: number) {
-  const monthsRaw = days.reduce<Record<string, { month: number; year: number; days: CalendarDayCell[] }>>((acc, day) => {
+export function segregateDatesMonthly(
+  days: CalendarDayCell[],
+  rowSize: number,
+) {
+  const monthsRaw = days.reduce<
+    Record<string, { month: number; year: number; days: CalendarDayCell[] }>
+  >((acc, day) => {
     const currentDate = toDate(day.date);
     const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`;
 
@@ -164,12 +189,18 @@ export function segregateDatesMonthly(days: CalendarDayCell[], rowSize: number) 
       const firstDay = monthItem.days[0].date;
       const lastDay = monthItem.days[monthItem.days.length - 1].date;
       const prefixStart = formatDateIso(startOfWeekMonday(firstDay));
-      const prefixDays = getDaysBetweenDates(prefixStart, addDays(firstDay, -1)).map((day) => ({
+      const prefixDays = getDaysBetweenDates(
+        prefixStart,
+        addDays(firstDay, -1),
+      ).map((day) => ({
         ...day,
         isOffset: true,
       }));
       const suffixEnd = formatDateIso(endOfWeekMonday(lastDay));
-      const suffixDays = getDaysBetweenDates(addDays(lastDay, 1), suffixEnd).map((day) => ({
+      const suffixDays = getDaysBetweenDates(
+        addDays(lastDay, 1),
+        suffixEnd,
+      ).map((day) => ({
         ...day,
         isOffset: true,
       }));
@@ -177,7 +208,10 @@ export function segregateDatesMonthly(days: CalendarDayCell[], rowSize: number) 
       return {
         monthIndex: monthItem.month,
         year: monthItem.year,
-        weeks: splitEvenly([...prefixDays, ...monthItem.days, ...suffixDays], rowSize),
+        weeks: splitEvenly(
+          [...prefixDays, ...monthItem.days, ...suffixDays],
+          rowSize,
+        ),
       } satisfies CalendarMonthData;
     })
     .filter((item): item is CalendarMonthData => item !== null);
@@ -220,12 +254,22 @@ export function sortTrainingsDescending(trainings: TrainingRecord[]) {
   });
 }
 
-export function getTrainingsInRange(trainings: TrainingRecord[], start: string, end: string) {
-  return sortTrainingsDescending(trainings.filter((training) => training.date >= start && training.date <= end));
+export function getTrainingsInRange(
+  trainings: TrainingRecord[],
+  start: string,
+  end: string,
+) {
+  return sortTrainingsDescending(
+    trainings.filter(
+      (training) => training.date >= start && training.date <= end,
+    ),
+  );
 }
 
 export function getTrainingsForDate(trainings: TrainingRecord[], date: string) {
-  return sortTrainingsDescending(trainings.filter((training) => training.date === date));
+  return sortTrainingsDescending(
+    trainings.filter((training) => training.date === date),
+  );
 }
 
 export function summarizeTrainingType(training: TrainingRecord) {
@@ -233,13 +277,14 @@ export function summarizeTrainingType(training: TrainingRecord) {
 }
 
 export function getTimelinePlacement(time: string, durationMinutes: number) {
-  const [hoursText, minutesText] = time.split(":");
-  const hours = Number(hoursText);
-  const minutes = Number(minutesText);
-  const startMinutes = hours * 60 + minutes;
+  const maxDurationMinutes = 150;
+  const widthPercent = Math.min(
+    (durationMinutes / maxDurationMinutes) * 100,
+    100,
+  );
 
   return {
-    left: `${(startMinutes / 1440) * 100}%`,
-    width: `${Math.max((durationMinutes / 1440) * 100, 2)}%`,
+    left: "0%",
+    width: `${Math.max(widthPercent, 2)}%`,
   };
 }
