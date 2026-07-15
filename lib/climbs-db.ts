@@ -1,4 +1,4 @@
-import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 export type ClimbRecord = {
   id?: number;
@@ -292,6 +292,16 @@ export function getDatabase() {
 
   databasePromise ??= createDatabase();
   return databasePromise;
+}
+
+export async function deleteClimberbookDatabase() {
+  if (databasePromise) {
+    const database = await databasePromise;
+    database.close();
+    databasePromise = null;
+  }
+
+  await deleteDB(DB_NAME);
 }
 
 export async function listClimbs() {
