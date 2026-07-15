@@ -100,6 +100,7 @@ type TrainingSidebarProps = {
   onToggleSurface: (surface: TrainingSurface) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onEditTraining: (training: TrainingRecord) => void;
+  onDeleteTraining: (training: TrainingRecord) => void;
   onResetSelection: () => void;
   onCancelEdit: () => void;
 };
@@ -116,14 +117,12 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     onToggleSurface,
     onSubmit,
     onEditTraining,
+    onDeleteTraining,
     onResetSelection,
     onCancelEdit,
   } = props;
 
   const isSelectionActive = selectedDate !== null;
-  const displayedTrainings = isSelectionActive
-    ? selectedDayTrainings
-    : visibleRangeTrainings;
   const sidebarClassName = [
     styles.trainingSidebar,
     isSelectionActive
@@ -153,6 +152,16 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
   const combinedNotes = [trainingDraft.wellbeing, trainingDraft.notes]
     .filter(Boolean)
     .join("\n\n");
+
+  function formatSurfaces(training: TrainingRecord) {
+    return training.surfaces
+      .map(
+        (surface) =>
+          surfaceOptions.find((option) => option.value === surface)?.label ??
+          surface,
+      )
+      .join(", ");
+  }
 
   return (
     <aside className={sidebarClassName}>
@@ -186,11 +195,9 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               </p>
             )}
             {selectedDayTrainings.map((training) => (
-              <button
+              <article
                 key={training.id}
-                type="button"
-                onClick={() => onEditTraining(training)}
-                className={styles.trainingSidebar__trainingButton}
+                className={styles.trainingSidebar__trainingCard}
               >
                 <div className={styles.trainingSidebar__trainingButtonHeader}>
                   <strong>{summarizeTrainingType(training)}</strong>
@@ -198,6 +205,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 <TrainingTimelineBar
                   time={training.time}
                   durationMinutes={training.durationMinutes}
+                  difficultyNotes={training.difficultyNotes}
                 />
                 <div className={styles.trainingSidebar__metaLine}>
                   <span>
@@ -207,7 +215,27 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     {training.attemptsCount}
                   </span>
                 </div>
-              </button>
+                <div className={styles.trainingSidebar__details}>
+                  <span>Wyceny: {training.difficultyNotes || "Brak"}</span>
+                  <span>Rodzaj: {formatSurfaces(training) || "Brak"}</span>
+                </div>
+                <div className={styles.trainingSidebar__cardActions}>
+                  <button
+                    type="button"
+                    onClick={() => onEditTraining(training)}
+                    className={styles.trainingSidebar__linkButton}
+                  >
+                    Edytuj
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteTraining(training)}
+                    className={styles.trainingSidebar__deleteButton}
+                  >
+                    Usuń
+                  </button>
+                </div>
+              </article>
             ))}
           </div>
         </section>
@@ -377,8 +405,6 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     }
                     placeholder="Auto z wagi, wieku i czasu"
                     type="number"
-                    min="0"
-                    step="100"
                     className={growInputClassName}
                   />
                   <button
@@ -505,6 +531,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     const chipClassName = [
                       styles.trainingSidebar__chip,
                       styles.trainingSidebar__gradeChip,
+                      styles[`trainingSidebar__gradeChip--${gradeBase}`],
                       active ? styles["trainingSidebar__chip--active"] : "",
                     ]
                       .filter(Boolean)
@@ -537,6 +564,10 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                       const chipClassName = [
                         styles.trainingSidebar__chip,
                         styles.trainingSidebar__gradeChip,
+                        styles[
+                          `trainingSidebar__gradeChip--${selectedGradeBase}`
+                        ],
+                        styles[`trainingSidebar__gradeChip--${gradeModifier}`],
                         active ? styles["trainingSidebar__chip--active"] : "",
                       ]
                         .filter(Boolean)
@@ -573,10 +604,34 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
             <div className={styles.trainingSidebar__stack}>
               <strong>Rodzaj sesji</strong>
               <div className={styles.trainingSidebar__chipGrid}>
-                {surfaceOptions.map((option) => {
+                {surfaceOptions.slice(0, 8).map((option) => {
                   const active = trainingDraft.surfaces.includes(option.value);
                   const chipClassName = [
                     styles.trainingSidebar__chip,
+                    styles.trainingSidebar__sessionChip,
+                    active ? styles["trainingSidebar__chip--active"] : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => onToggleSurface(option.value)}
+                      className={chipClassName}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className={styles.trainingSidebar__chipGrid}>
+                {surfaceOptions.slice(8).map((option) => {
+                  const active = trainingDraft.surfaces.includes(option.value);
+                  const chipClassName = [
+                    styles.trainingSidebar__chip,
+                    styles.trainingSidebar__sessionChip,
                     active ? styles["trainingSidebar__chip--active"] : "",
                   ]
                     .filter(Boolean)
@@ -625,64 +680,75 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
         </section>
       )}
 
-      <section className={summaryPanelClassName}>
-        <div className={styles.trainingSidebar__panelHeader}>
-          <div>
-            <p className={styles.trainingSidebar__eyebrow}>
-              {isSelectionActive ? "Wybrany dzień" : "Widoczny okres"}
-            </p>
-            <h1 className={styles.trainingSidebar__title}>
-              {isSelectionActive && selectedDate
-                ? `Treningi z ${formatDateLabel(selectedDate)}`
-                : "Lista treningów w kalendarzu"}
-            </h1>
+      {!isSelectionActive && (
+        <section className={summaryPanelClassName}>
+          <div className={styles.trainingSidebar__panelHeader}>
+            <div>
+              <p className={styles.trainingSidebar__eyebrow}>Widoczny okres</p>
+              <h1 className={styles.trainingSidebar__title}>
+                Lista treningów w kalendarzu
+              </h1>
+            </div>
+            <span className={styles.trainingSidebar__pill}>
+              {visibleRangeTrainings.length} wpisów
+            </span>
           </div>
-          <span className={styles.trainingSidebar__pill}>
-            {displayedTrainings.length} wpisów
-          </span>
-        </div>
 
-        <div className={styles.trainingSidebar__visibleList}>
-          {displayedTrainings.length === 0 && (
-            <p className={styles.trainingSidebar__helperText}>
-              {isSelectionActive
-                ? "Brak treningów w wybranym dniu."
-                : "W wybranym zakresie jeszcze nie ma treningów."}
-            </p>
-          )}
-          {displayedTrainings.map((training) => (
-            <article
-              key={`${training.id ?? training.createdAt}-${training.time}`}
-              className={styles.trainingSidebar__visibleItem}
-            >
-              <div className={styles.trainingSidebar__trainingButtonHeader}>
-                <strong>{summarizeTrainingType(training)}</strong>
-                <span className={styles.trainingSidebar__pill}>
-                  {training.date}
-                </span>
-              </div>
-              <div className={styles.trainingSidebar__metaLine}>
-                <span>
-                  {training.time} · {training.durationMinutes} min ·{" "}
-                  {training.bodyWeightKg} kg · Kalorie:{" "}
-                  {training.caloriesBurned} · Wstawki: {training.attemptsCount}
-                </span>
-              </div>
-              <TrainingTimelineBar
-                time={training.time}
-                durationMinutes={training.durationMinutes}
-              />
-              <button
-                type="button"
-                onClick={() => onEditTraining(training)}
-                className={styles.trainingSidebar__linkButton}
+          <div className={styles.trainingSidebar__visibleList}>
+            {visibleRangeTrainings.length === 0 && (
+              <p className={styles.trainingSidebar__helperText}>
+                W wybranym zakresie jeszcze nie ma treningów.
+              </p>
+            )}
+            {visibleRangeTrainings.map((training) => (
+              <article
+                key={`${training.id ?? training.createdAt}-${training.time}`}
+                className={styles.trainingSidebar__visibleItem}
               >
-                Edytuj ten trening
-              </button>
-            </article>
-          ))}
-        </div>
-      </section>
+                <div className={styles.trainingSidebar__trainingButtonHeader}>
+                  <strong>{summarizeTrainingType(training)}</strong>
+                  <span className={styles.trainingSidebar__pill}>
+                    {training.date}
+                  </span>
+                </div>
+                <div className={styles.trainingSidebar__metaLine}>
+                  <span>
+                    {training.time} · {training.durationMinutes} min ·{" "}
+                    {training.bodyWeightKg} kg · Kalorie:{" "}
+                    {training.caloriesBurned} · Wstawki:{" "}
+                    {training.attemptsCount}
+                  </span>
+                </div>
+                <TrainingTimelineBar
+                  time={training.time}
+                  durationMinutes={training.durationMinutes}
+                  difficultyNotes={training.difficultyNotes}
+                />
+                <div className={styles.trainingSidebar__details}>
+                  <span>Wyceny: {training.difficultyNotes || "Brak"}</span>
+                  <span>Rodzaj: {formatSurfaces(training) || "Brak"}</span>
+                </div>
+                <div className={styles.trainingSidebar__cardActions}>
+                  <button
+                    type="button"
+                    onClick={() => onEditTraining(training)}
+                    className={styles.trainingSidebar__linkButton}
+                  >
+                    Edytuj
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteTraining(training)}
+                    className={styles.trainingSidebar__deleteButton}
+                  >
+                    Usuń
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </aside>
   );
 }

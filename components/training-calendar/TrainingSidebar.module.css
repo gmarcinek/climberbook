@@ -83,6 +83,14 @@
   text-align: left;
 }
 
+.trainingSidebar__trainingCard {
+  display: grid;
+  gap: 5px;
+  padding: 1rem;
+  border: 1px solid rgba(28, 61, 89, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+}
+
 .trainingSidebar__trainingButtonHeader {
   display: flex;
   justify-content: space-between;
@@ -106,6 +114,19 @@
   white-space: nowrap;
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.trainingSidebar__details {
+  display: grid;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.trainingSidebar__cardActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .trainingSidebar__metaGrid--summary {
@@ -216,6 +237,10 @@
   background: rgba(255, 255, 255, 0.72);
 }
 
+.trainingSidebar__sessionChip {
+  border-radius: 4px;
+}
+
 .trainingSidebar__gradeChip {
   min-width: 54px;
   min-height: 54px;
@@ -223,11 +248,53 @@
   padding: 8px 12px;
   font-size: 1rem;
   font-weight: 700;
+  background: var(--grade-color, rgba(255, 255, 255, 0.72));
+  border-color: color-mix(in srgb, var(--grade-color, var(--border-strong)) 72%, #172330);
+  color: var(--grade-text, #172330);
 }
+
+.trainingSidebar__gradeChip--5 { --grade-color: #a8dd9a; }
+.trainingSidebar__gradeChip--6 { --grade-color: #e8d353; }
+.trainingSidebar__gradeChip--7 { --grade-color: #83cde7; }
+.trainingSidebar__gradeChip--8 { --grade-color: #ec8dc2; }
+
+.trainingSidebar__gradeChip--a { --grade-color: #a8dd9a; }
+.trainingSidebar__gradeChip--a\+ { --grade-color: #aceb96; }
+.trainingSidebar__gradeChip--b { --grade-color: #79d66a; }
+.trainingSidebar__gradeChip--b\+ { --grade-color: #4ab34d; }
+.trainingSidebar__gradeChip--c { --grade-color: #288e38; --grade-text: white; }
+.trainingSidebar__gradeChip--c\+ { --grade-color: #176729; --grade-text: white; }
+
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a { --grade-color: #e8d353; }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a\+ { --grade-color: #ffe46f; }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--b { --grade-color: #ffcf3f; }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--b\+ { --grade-color: #ffaf1f; }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--c { --grade-color: #ee8914; }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--c\+ { --grade-color: #cb5f0d; --grade-text: white; }
+
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--a { --grade-color: #83cde7; }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--a\+ { --grade-color: #86d8f6; }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--b { --grade-color: #4abce7; }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--b\+ { --grade-color: #218fce; --grade-text: white; }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--c { --grade-color: #1765ac; --grade-text: white; }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--c\+ { --grade-color: #103d78; --grade-text: white; }
+
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--a { --grade-color: #ec8dc2; }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--a\+ { --grade-color: #f59acc; }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--b { --grade-color: #df6eb8; }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--b\+ { --grade-color: #bd499e; --grade-text: white; }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--c { --grade-color: #913181; --grade-text: white; }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--c\+ { --grade-color: #642060; --grade-text: white; }
 
 .trainingSidebar__chip--active {
   background: rgba(26, 120, 112, 0.16);
   border-color: rgba(26, 120, 112, 0.42);
+}
+
+.trainingSidebar__gradeChip.trainingSidebar__chip--active {
+  background: var(--grade-color);
+  border-color: #172330;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
 }
 
 .trainingSidebar__submitButton {
@@ -272,6 +339,15 @@
   background: transparent;
   color: #0d6b7c;
   text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.trainingSidebar__deleteButton {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #b53d32;
   cursor: pointer;
   font-weight: 600;
 }

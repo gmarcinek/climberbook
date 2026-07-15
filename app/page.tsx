@@ -11,11 +11,18 @@ import {
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
   Line,
   ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -44,6 +51,7 @@ import {
   addTraining,
   addWeightEntry,
   createEmptyUserProfile,
+  deleteTraining,
   exportDatabaseBackup,
   getUserProfile,
   importDatabaseBackup,
@@ -80,6 +88,7 @@ type UserProfileDraft = {
 
 type WeightEntryDraft = {
   date: string;
+  time: string;
   weightKg: string;
 };
 
@@ -195,6 +204,7 @@ function createWeightEntryDraft(
 ): WeightEntryDraft {
   return {
     date,
+    time: "09:00",
     weightKg: formatWeightInput(defaultWeightKg),
   };
 }
@@ -231,11 +241,15 @@ function getLatestWeightEntry(entries: WeightEntryRecord[]) {
       return entry;
     }
 
-    if (entry.date > latest.date) {
+    if (`${entry.date}-${entry.time}` > `${latest.date}-${latest.time}`) {
       return entry;
     }
 
-    if (entry.date === latest.date && entry.createdAt > latest.createdAt) {
+    if (
+      entry.date === latest.date &&
+      entry.time === latest.time &&
+      entry.createdAt > latest.createdAt
+    ) {
       return entry;
     }
 
@@ -243,12 +257,87 @@ function getLatestWeightEntry(entries: WeightEntryRecord[]) {
   }, null);
 }
 
+function getWeekStartIso(value: string) {
+  const date = toDate(value);
+  const weekday = date.getDay();
+  const daysSinceMonday = weekday === 0 ? 6 : weekday - 1;
+  date.setDate(date.getDate() - daysSinceMonday);
+  return formatDateIso(date);
+}
+
+const ROPE_GRADE_SCALE = [
+  "5a", "5a+", "5b", "5b+", "5c", "5c+",
+  "6a", "6a+", "6b", "6b+", "6c", "6c+",
+  "7a", "7a+", "7b", "7b+", "7c", "7c+",
+  "8a", "8a+", "8b", "8b+", "8c", "8c+",
+];
+
+const ROPE_GRADE_COLORS = [
+  "#a8dd9a", "#aceb96", "#79d66a", "#4ab34d", "#288e38", "#176729",
+  "#e8d353", "#ffe46f", "#ffcf3f", "#ffaf1f", "#ee8914", "#cb5f0d",
+  "#83cde7", "#86d8f6", "#4abce7", "#218fce", "#1765ac", "#103d78",
+  "#ec8dc2", "#f59acc", "#df6eb8", "#bd499e", "#913181", "#642060",
+];
+
+function getRopeGradeIndex(grade: string) {
+  return ROPE_GRADE_SCALE.indexOf(grade);
+}
+
+function getRopeGradeColor(grade: string) {
+  const gradeIndex = getRopeGradeIndex(grade);
+  return ROPE_GRADE_COLORS[gradeIndex] ?? "#e19a24";
+}
+
+function getRollingChartRange(daysBack = 28, daysForward = 3) {
+  const today = toDate(new Date());
+  const start = toDate(today);
+  const end = toDate(today);
+  start.setDate(start.getDate() - daysBack);
+  end.setDate(end.getDate() + daysForward);
+
+  return {
+    start: formatDateIso(start),
+    end: formatDateIso(end),
+  };
+}
+
+function getRollingChartTicks(start: string, end: string) {
+  const ticks: number[] = [];
+  const cursor = toDate(start);
+  const endDate = toDate(end);
+
+  while (cursor <= endDate) {
+    ticks.push(cursor.getTime());
+    cursor.setDate(cursor.getDate() + 7);
+  }
+
+  const endTimestamp = endDate.getTime();
+
+  if (ticks.at(-1) !== endTimestamp) {
+    ticks.push(endTimestamp);
+  }
+
+  return ticks;
+}
+
+function getGradeRank(grade: string) {
+  const match = /^(\d+)([abc])?(\+)?$/.exec(grade);
+
+  if (!match) {
+    return -1;
+  }
+
+  const base = Number(match[1]) * 10;
+  const letter = { a: 1, b: 3, c: 5 }[match[2] ?? ""] ?? 0;
+  return base + letter + (match[3] ? 1 : 0);
+}
+
 function getSortedWeightEntries(entries: WeightEntryRecord[]) {
   return entries
     .slice()
     .sort((left, right) =>
-      `${left.date}-${left.createdAt}`.localeCompare(
-        `${right.date}-${right.createdAt}`,
+      `${left.date}-${left.time}-${left.createdAt}`.localeCompare(
+        `${right.date}-${right.time}-${right.createdAt}`,
       ),
     );
 }
@@ -282,6 +371,10 @@ const surfaceOptions: Array<{ value: TrainingSurface; label: string }> = [
   { value: "spraywall", label: "Spraywall" },
   { value: "kilter", label: "Kilter" },
   { value: "silownia", label: "Siłownia" },
+  { value: "bieznia", label: "Bieżnia" },
+  { value: "rower", label: "Rower" },
+  { value: "bieg", label: "Bieg" },
+  { value: "treking", label: "Treking" },
 ];
 
 const frenchGradeOptions = [
@@ -587,15 +680,73 @@ function HomePageContent() {
     (sum, item) => sum + item.attemptsCount,
     0,
   );
+  const isMobileChartLayout =
+    trainingViewportWidth > 0 && trainingViewportWidth < 600;
+  const chartRange = useMemo(
+    () =>
+      getRollingChartRange(
+        isMobileChartLayout ? 13 : 28,
+        isMobileChartLayout ? 0 : 3,
+      ),
+    [isMobileChartLayout],
+  );
+  const chartRangeLabel = isMobileChartLayout
+    ? "Ostatnie 14 dni"
+    : "28 dni wstecz + 3 dni";
+  const weeklyTrainingStats = useMemo(() => {
+    const weeks = new Map<
+      string,
+      { week: string; duration: number; attempts: number }
+    >();
+    const firstWeek = getWeekStartIso(chartRange.start);
+    const lastWeek = getWeekStartIso(chartRange.end);
+    const cursor = toDate(firstWeek);
+
+    while (formatDateIso(cursor) <= lastWeek) {
+      const week = formatDateIso(cursor);
+      weeks.set(week, { week, duration: 0, attempts: 0 });
+      cursor.setDate(cursor.getDate() + 7);
+    }
+
+    trainings
+      .filter(
+        (training) =>
+          training.date >= chartRange.start && training.date <= chartRange.end,
+      )
+      .forEach((training) => {
+        const week = getWeekStartIso(training.date);
+        const current = weeks.get(week);
+
+        if (!current) {
+          return;
+        }
+
+        current.duration += training.durationMinutes;
+        current.attempts += training.attemptsCount;
+        weeks.set(week, current);
+      });
+
+    return Array.from(weeks.values()).sort((left, right) =>
+      left.week.localeCompare(right.week),
+    );
+  }, [chartRange, trainings]);
+  const gradeDistribution = useMemo(() => {
+    const grades = new Map<string, number>();
+
+    trainings.forEach((training) => {
+      training.difficultyNotes
+        .split(",")
+        .map((grade) => grade.trim())
+        .filter(Boolean)
+        .forEach((grade) => grades.set(grade, (grades.get(grade) ?? 0) + 1));
+    });
+
+    return Array.from(grades, ([grade, count]) => ({ grade, count }))
+      .sort((left, right) => getGradeRank(right.grade) - getGradeRank(left.grade));
+  }, [trainings]);
+  const highestGrade = gradeDistribution[0]?.grade ?? "-";
   const panelAscents = ascents.filter((item) => item.source === "panel").length;
   const rockAscents = ascents.filter((item) => item.source === "skala").length;
-  const topSurfaces = surfaceOptions
-    .map((option) => ({
-      label: option.label,
-      count: trainings.filter((item) => item.surfaces.includes(option.value))
-        .length,
-    }))
-    .sort((left, right) => right.count - left.count);
   const activeModuleMeta =
     moduleConfig.find((module) => module.key === activeModule) ??
     moduleConfig[0];
@@ -619,8 +770,8 @@ function HomePageContent() {
       weightEntries
         .slice()
         .sort((left, right) =>
-          (right.date + right.createdAt).localeCompare(
-            left.date + left.createdAt,
+          `${right.date}-${right.time}-${right.createdAt}`.localeCompare(
+            `${left.date}-${left.time}-${left.createdAt}`,
           ),
         )
         .slice(0, 12),
@@ -653,8 +804,13 @@ function HomePageContent() {
   const isMobileHeader =
     trainingViewportWidth > 0 && trainingViewportWidth < 600;
   const weightChartEntries = useMemo(
-    () => sortedWeightEntries.slice(-8),
-    [sortedWeightEntries],
+    () => {
+      return sortedWeightEntries.filter(
+        (entry) =>
+          entry.date >= chartRange.start && entry.date <= chartRange.end,
+      );
+    },
+    [chartRange, sortedWeightEntries],
   );
 
   function resetTrainingEditor(date = selectedDate ?? today) {
@@ -691,6 +847,32 @@ function HomePageContent() {
     setSelectedDate(training.date);
     setEditingTrainingId(training.id ?? null);
     setTrainingDraft(mapTrainingToDraft(training, profileDraft.birthDate));
+  }
+
+  async function handleDeleteTraining(training: TrainingRecord) {
+    if (
+      training.id === undefined ||
+      !window.confirm("Usunąć ten trening? Tej operacji nie można cofnąć.")
+    ) {
+      return;
+    }
+
+    setStatus("Usuwam trening...");
+
+    try {
+      await deleteTraining(training.id);
+      await refreshData();
+
+      if (editingTrainingId === training.id) {
+        resetTrainingEditor(selectedDate ?? today);
+      }
+
+      setStatus("Trening został usunięty.");
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "Nie udało się usunąć treningu.",
+      );
+    }
   }
 
   function toggleSurface(surface: TrainingSurface) {
@@ -731,6 +913,7 @@ function HomePageContent() {
       ) {
         await addWeightEntry({
           date: today,
+          time: "09:00",
           weightKg: parsedWeightKg,
         });
       }
@@ -774,11 +957,10 @@ function HomePageContent() {
       durationMinutes: Number(trainingDraft.durationMinutes),
       bodyWeightKg: roundToSingleDecimal(Number(trainingDraft.bodyWeightKg)),
       ageYears: Number(trainingDraft.ageYears || 0),
-      caloriesBurned: Number(
-        trainingDraft.caloriesBurned ||
-          estimateTrainingCalories(trainingDraft) ||
-          0,
-      ),
+      caloriesBurned:
+        trainingDraft.caloriesBurned === ""
+          ? Number(estimateTrainingCalories(trainingDraft) || 0)
+          : Number(trainingDraft.caloriesBurned),
       attemptsCount: Number(trainingDraft.attemptsCount),
       difficultyNotes: trainingDraft.difficultyNotes,
       wellbeing: trainingDraft.wellbeing,
@@ -809,23 +991,24 @@ function HomePageContent() {
         !weightEntries.some(
           (entry) =>
             entry.date === payload.date &&
+            entry.time === payload.time &&
             entry.weightKg === payload.bodyWeightKg,
         )
       ) {
         await addWeightEntry({
           date: payload.date,
+          time: payload.time,
           weightKg: payload.bodyWeightKg,
         });
       }
 
       await refreshData();
-      setSelectedDate(payload.date);
-      resetTrainingEditor(payload.date);
       setStatus(
         editingTrainingId
           ? "Trening został zaktualizowany."
           : "Trening został zapisany.",
       );
+      handleResetTrainingSelection();
     } catch (error) {
       setStatus(
         error instanceof Error
@@ -866,6 +1049,7 @@ function HomePageContent() {
     try {
       await addWeightEntry({
         date: weightEntryDraft.date,
+        time: weightEntryDraft.time,
         weightKg: parsedWeightKg,
       });
       await refreshData();
@@ -1039,6 +1223,9 @@ function HomePageContent() {
                       totalTrainingTime={totalTrainingTime}
                       totalCalories={totalCalories}
                       weightChartEntries={weightChartEntries}
+                      trainings={trainings}
+                      chartRange={chartRange}
+                      chartRangeLabel={chartRangeLabel}
                       weightEntryDraft={weightEntryDraft}
                       onWeightEntryDraftChange={setWeightEntryDraft}
                       onWeightEntrySubmit={handleWeightEntrySubmit}
@@ -1066,6 +1253,9 @@ function HomePageContent() {
                       totalTrainingTime={totalTrainingTime}
                       totalCalories={totalCalories}
                       weightChartEntries={weightChartEntries}
+                      trainings={trainings}
+                      chartRange={chartRange}
+                      chartRangeLabel={chartRangeLabel}
                       weightEntryDraft={weightEntryDraft}
                       onWeightEntryDraftChange={setWeightEntryDraft}
                       onWeightEntrySubmit={handleWeightEntrySubmit}
@@ -1130,6 +1320,7 @@ function HomePageContent() {
                       onToggleSurface={toggleSurface}
                       onSubmit={handleTrainingSubmit}
                       onEditTraining={handleEditTraining}
+                      onDeleteTraining={handleDeleteTraining}
                       onResetSelection={handleResetTrainingSelection}
                       onCancelEdit={() =>
                         resetTrainingEditor(selectedDate ?? today)
@@ -1159,6 +1350,7 @@ function HomePageContent() {
                       onToggleSurface={toggleSurface}
                       onSubmit={handleTrainingSubmit}
                       onEditTraining={handleEditTraining}
+                        onDeleteTraining={handleDeleteTraining}
                       onResetSelection={handleResetTrainingSelection}
                       onCancelEdit={() =>
                         resetTrainingEditor(selectedDate ?? today)
@@ -1586,7 +1778,9 @@ function HomePageContent() {
                       >
                         <div style={listCardHeaderStyle}>
                           <strong>{entry.weightKg.toFixed(1)} kg</strong>
-                          <span style={softPillStyle}>{entry.date}</span>
+                          <span style={softPillStyle}>
+                            {entry.date} {entry.time}
+                          </span>
                         </div>
                       </article>
                     ))}
@@ -1647,43 +1841,50 @@ function HomePageContent() {
                 <section style={panelStyle}>
                   <div style={panelHeadingStyle}>
                     <div>
-                      <span style={moduleEyebrowStyle}>Aktywność</span>
-                      <h2 style={sectionTitleStyle}>Rozkład przejść</h2>
+                      <span style={moduleEyebrowStyle}>Objętość</span>
+                      <h2 style={sectionTitleStyle}>Tygodniowy rytm treningu</h2>
                     </div>
-                    <span style={softTagStyle}>Szkielet analityki</span>
+                    <span style={softTagStyle}>{chartRangeLabel}</span>
                   </div>
 
-                  <div style={{ display: "grid", gap: 10 }}>
-                    <article style={listCardStyle}>
-                      <strong>Przejścia panelowe</strong>
-                      <p style={metricValueStyle}>{panelAscents}</p>
-                    </article>
-                    <article style={listCardStyle}>
-                      <strong>Przejścia skalne</strong>
-                      <p style={metricValueStyle}>{rockAscents}</p>
-                    </article>
-                    <article style={listCardStyle}>
-                      <strong>Kalorie z treningów</strong>
-                      <p style={metricValueStyle}>{totalCalories}</p>
-                    </article>
-                  </div>
+                  {weeklyTrainingStats.length === 0 ? (
+                    <EmptyState message="Dodaj treningi, aby zobaczyć tygodniowy rytm." />
+                  ) : (
+                    <div style={{ height: 260 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={weeklyTrainingStats}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(28, 61, 89, 0.12)" />
+                          <XAxis dataKey="week" tickFormatter={(value) => value.slice(5)} />
+                          <YAxis yAxisId="minutes" />
+                          <YAxis yAxisId="attempts" orientation="right" />
+                          <Tooltip />
+                          <Legend />
+                          <Bar yAxisId="minutes" dataKey="duration" name="Minuty" fill="#168f91" />
+                          <Bar yAxisId="attempts" dataKey="attempts" name="Wstawki" fill="#e19a24" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
                 </section>
 
                 <section style={panelStyle}>
                   <div style={panelHeadingStyle}>
                     <div>
-                      <span style={moduleEyebrowStyle}>Najczęstsze sesje</span>
-                      <h2 style={sectionTitleStyle}>Podstawa pod wykresy</h2>
+                      <span style={moduleEyebrowStyle}>Wyceny</span>
+                      <h2 style={sectionTitleStyle}>Rozkład i maksimum</h2>
                     </div>
-                    <span style={softTagStyle}>Ranking</span>
+                    <span style={softTagStyle}>Najwyższa: {highestGrade}</span>
                   </div>
 
                   <div style={scrollListStyle}>
-                    {topSurfaces.map((surface) => (
-                      <article key={surface.label} style={listCardStyle}>
+                    {gradeDistribution.length === 0 && (
+                      <EmptyState message="Nie ma jeszcze wybranych wycen w treningach." />
+                    )}
+                    {gradeDistribution.map((grade) => (
+                      <article key={grade.grade} style={listCardStyle}>
                         <div style={listCardHeaderStyle}>
-                          <strong>{surface.label}</strong>
-                          <span style={softPillStyle}>{surface.count}</span>
+                          <strong>{grade.grade}</strong>
+                          <span style={softPillStyle}>{grade.count} wstawek</span>
                         </div>
                       </article>
                     ))}
@@ -1732,6 +1933,9 @@ function TrainingAnalyticsPanel(props: {
   totalTrainingTime: number;
   totalCalories: number;
   weightChartEntries: WeightEntryRecord[];
+  trainings: TrainingRecord[];
+  chartRange: { start: string; end: string };
+  chartRangeLabel: string;
   weightEntryDraft: WeightEntryDraft;
   onWeightEntryDraftChange: (draft: WeightEntryDraft) => void;
   onWeightEntrySubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
@@ -1745,6 +1949,9 @@ function TrainingAnalyticsPanel(props: {
     totalTrainingTime,
     totalCalories,
     weightChartEntries,
+    trainings,
+    chartRange,
+    chartRangeLabel,
     weightEntryDraft,
     onWeightEntryDraftChange,
     onWeightEntrySubmit,
@@ -1834,7 +2041,29 @@ function TrainingAnalyticsPanel(props: {
             Dodaj pomiar
           </button>
         </div>
-        <WeightTrendChart entries={weightChartEntries} />
+        <WeightTrendChart entries={weightChartEntries} chartRange={chartRange} />
+      </section>
+
+      <section style={chartCardStyle}>
+        <div style={panelHeadingStyle}>
+          <div>
+            <span style={moduleEyebrowStyle}>Treningi z liną i MoonBoard</span>
+            <h3 style={sectionTitleStyle}>Wyceny na sesję</h3>
+          </div>
+          <span style={softPillStyle}>Zakres +/- 2 stopnie</span>
+        </div>
+        <RopeTrainingGradesChart trainings={trainings} chartRange={chartRange} />
+      </section>
+
+      <section style={chartCardStyle}>
+        <div style={panelHeadingStyle}>
+          <div>
+            <span style={moduleEyebrowStyle}>Kalorie</span>
+            <h3 style={sectionTitleStyle}>Dzienne spalanie</h3>
+          </div>
+          <span style={softPillStyle}>{chartRangeLabel}</span>
+        </div>
+        <TrainingCaloriesChart trainings={trainings} chartRange={chartRange} />
       </section>
 
       {isWeightEntryModalOpen && (
@@ -1878,6 +2107,21 @@ function TrainingAnalyticsPanel(props: {
                     })
                   }
                   type="date"
+                  required
+                  style={inputStyle}
+                />
+              </label>
+              <label style={fieldStyle}>
+                Godzina pomiaru
+                <input
+                  value={weightEntryDraft.time}
+                  onChange={(event) =>
+                    onWeightEntryDraftChange({
+                      ...weightEntryDraft,
+                      time: event.target.value,
+                    })
+                  }
+                  type="time"
                   required
                   style={inputStyle}
                 />
@@ -1936,7 +2180,9 @@ function TrainingAnalyticsPanel(props: {
             >
               <div style={listCardHeaderStyle}>
                 <strong>{entry.weightKg.toFixed(1)} kg</strong>
-                <span style={softPillStyle}>{entry.date}</span>
+                <span style={softPillStyle}>
+                  {entry.date} {entry.time}
+                </span>
               </div>
             </article>
           ))}
@@ -1946,7 +2192,192 @@ function TrainingAnalyticsPanel(props: {
   );
 }
 
-function WeightTrendChart({ entries }: { entries: WeightEntryRecord[] }) {
+function RopeTrainingGradesChart({
+  trainings,
+  chartRange,
+}: {
+  trainings: TrainingRecord[];
+  chartRange: { start: string; end: string };
+}) {
+  const ropeAndMoonTrainings = trainings
+    .filter(
+      (training) =>
+        (training.surfaces.includes("lina") || training.surfaces.includes("moon")) &&
+        training.date >= chartRange.start &&
+        training.date <= chartRange.end,
+    )
+    .sort((left, right) =>
+      `${left.date}-${left.time}-${left.createdAt}`.localeCompare(
+        `${right.date}-${right.time}-${right.createdAt}`,
+      ),
+    );
+  const ropeTrainings = ropeAndMoonTrainings
+    .map((training) => ({
+      ...training,
+      grades: training.difficultyNotes
+        .split(",")
+        .map((grade) => grade.trim())
+        .map((grade) => ({ grade, gradeIndex: getRopeGradeIndex(grade) }))
+        .filter((grade) => grade.gradeIndex >= 0),
+    }))
+    .filter((training) => training.grades.length > 0);
+
+  if (ropeTrainings.length === 0) {
+    return <EmptyState message="Brak treningów z Liną lub MoonBoard i wycen w wybranym okresie." />;
+  }
+
+  const gradeIndexes = ropeTrainings.flatMap((training) =>
+    training.grades.map((grade) => grade.gradeIndex),
+  );
+  const minimumGradeIndex = Math.max(0, Math.min(...gradeIndexes) - 2);
+  const maximumGradeIndex = Math.min(
+    ROPE_GRADE_SCALE.length - 1,
+    Math.max(...gradeIndexes) + 2,
+  );
+  const points = ropeTrainings.flatMap((training) =>
+    training.grades.map((grade) => ({
+      trainingTimestamp: toDate(training.date).getTime(),
+      grade: grade.grade,
+      gradeIndex: grade.gradeIndex,
+      label: `${training.date} ${training.time}`,
+    })),
+  );
+  const chartTicks = getRollingChartTicks(chartRange.start, chartRange.end);
+
+  return (
+    <>
+      <div style={weightChartCanvasStyle}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ top: 12, right: 12, bottom: 4, left: -12 }}>
+            <CartesianGrid stroke="rgba(100, 87, 77, 0.14)" strokeDasharray="3 5" />
+            <XAxis
+              type="number"
+              dataKey="trainingTimestamp"
+              domain={[
+                toDate(chartRange.start).getTime(),
+                toDate(chartRange.end).getTime(),
+              ]}
+              ticks={chartTicks}
+              tickFormatter={(value) =>
+                new Intl.DateTimeFormat("pl-PL", {
+                  day: "numeric",
+                  month: "short",
+                }).format(new Date(value))
+              }
+            />
+            <YAxis
+              type="number"
+              dataKey="gradeIndex"
+              domain={[minimumGradeIndex, maximumGradeIndex]}
+              ticks={Array.from(
+                { length: maximumGradeIndex - minimumGradeIndex + 1 },
+                (_value, index) => minimumGradeIndex + index,
+              )}
+              tickFormatter={(value) => ROPE_GRADE_SCALE[value] ?? ""}
+              label={{ value: "Wycena", angle: -90, position: "insideLeft" }}
+            />
+            <Tooltip
+              formatter={(_value, _name, item) => [
+                ROPE_GRADE_SCALE[item.payload.gradeIndex] ?? "",
+                "Wycena",
+              ]}
+              labelFormatter={(_value, payload) => payload[0]?.payload.label ?? ""}
+            />
+            <Scatter data={points} name="Wyceny">
+              {points.map((point, index) => (
+                <Cell key={`${point.label}-${point.grade}-${index}`} fill={getRopeGradeColor(point.grade)} />
+              ))}
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
+    </>
+  );
+}
+
+function TrainingCaloriesChart({
+  trainings,
+  chartRange,
+}: {
+  trainings: TrainingRecord[];
+  chartRange: { start: string; end: string };
+}) {
+  const monthlyTrainings = trainings.filter(
+    (training) =>
+      training.date >= chartRange.start && training.date <= chartRange.end,
+  );
+
+  if (monthlyTrainings.length === 0) {
+    return <EmptyState message="Brak treningów w wybranym okresie." />;
+  }
+
+  const caloriesByDate = monthlyTrainings.reduce((totals, training) => {
+    totals.set(
+      training.date,
+      (totals.get(training.date) ?? 0) + training.caloriesBurned,
+    );
+    return totals;
+  }, new Map<string, number>());
+  const dailyCalories = [] as Array<{ date: string; calories: number }>;
+  const cursor = toDate(chartRange.start);
+
+  while (formatDateIso(cursor) <= chartRange.end) {
+    const date = formatDateIso(cursor);
+    dailyCalories.push({ date, calories: caloriesByDate.get(date) ?? 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return (
+    <div style={weightChartCanvasStyle}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={dailyCalories} margin={{ top: 12, right: 8, bottom: 4, left: -20 }}>
+          <CartesianGrid stroke="rgba(100, 87, 77, 0.14)" strokeDasharray="3 5" />
+          <XAxis
+            dataKey="date"
+            minTickGap={28}
+            tickFormatter={(date) =>
+              new Intl.DateTimeFormat("pl-PL", {
+                day: "numeric",
+                month: "short",
+              }).format(toDate(date))
+            }
+          />
+          <YAxis
+            tickFormatter={(value) => `${value}`}
+            label={{ value: "kcal", angle: -90, position: "insideLeft" }}
+          />
+          <Tooltip
+            formatter={(value) => [`${value} kcal`, "Kalorie"]}
+            labelFormatter={(date) =>
+              new Intl.DateTimeFormat("pl-PL", {
+                day: "numeric",
+                month: "short",
+              }).format(toDate(String(date)))
+            }
+          />
+          <Line
+            type="monotone"
+            dataKey="calories"
+            name="Kalorie"
+            stroke="#dc5a45"
+            strokeDasharray="6 4"
+            strokeWidth={2}
+            dot={{ r: 3, fill: "#dc5a45", stroke: "white", strokeWidth: 1 }}
+            activeDot={{ r: 5 }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function WeightTrendChart({
+  entries,
+  chartRange,
+}: {
+  entries: WeightEntryRecord[];
+  chartRange: { start: string; end: string };
+}) {
   const { selectedDate } = useSelectedDates();
 
   if (entries.length === 0) {
@@ -2005,7 +2436,12 @@ function WeightTrendChart({ entries }: { entries: WeightEntryRecord[] }) {
     entry.weightedAverage,
   ]);
   const todayChartDate = formatDateIso(new Date());
-  const selectedChartDate = selectedDate ? formatDateIso(selectedDate) : null;
+  const selectedChartDate =
+    selectedDate &&
+    selectedDate >= chartRange.start &&
+    selectedDate <= chartRange.end
+      ? formatDateIso(selectedDate)
+      : null;
   const isFutureSelectedDate =
     selectedChartDate !== null && selectedChartDate > todayChartDate;
   const selectedChartPoint = selectedChartDate
@@ -2063,33 +2499,31 @@ function WeightTrendChart({ entries }: { entries: WeightEntryRecord[] }) {
   const halfKilogramMarks = fullKilogramTicks
     .slice(0, -1)
     .map((tick) => tick + 0.5);
-  const chartData = [
-    ...chartEntries.map((entry) => ({
-      ...entry,
-      projectedWeight:
-        entry.date === latestChartEntry.date ? latestChartEntry.weightKg : null,
-    })),
-    ...(selectedChartPoint &&
-    !chartEntries.some((entry) => entry.date === selectedChartDate)
-      ? [{ ...selectedChartPoint, projectedWeight }]
-      : []),
-    ...(!chartEntries.some((entry) => entry.date === todayChartDate) &&
-    todayChartDate !== selectedChartDate
-      ? [
-          {
-            date: todayChartDate,
-            label: "",
-            weightKg: null,
-            weightedAverage: null,
-            projectedWeight: null,
-          },
-        ]
-      : []),
-  ]
-    .map((entry) =>
-      entry.date === selectedChartDate ? { ...entry, projectedWeight } : entry,
-    )
-    .sort((left, right) => left.date.localeCompare(right.date));
+  const chartEntriesByDate = new Map(
+    chartEntries.map((entry) => [entry.date, entry]),
+  );
+  const chartData = [] as Array<{
+    date: string;
+    label: string;
+    weightKg: number | null;
+    weightedAverage: number | null;
+    projectedWeight: number | null;
+  }>;
+  const chartCursor = toDate(chartRange.start);
+
+  while (formatDateIso(chartCursor) <= chartRange.end) {
+    const date = formatDateIso(chartCursor);
+    const entry = chartEntriesByDate.get(date);
+
+    chartData.push({
+      date,
+      label: entry?.label ?? "",
+      weightKg: entry?.weightKg ?? null,
+      weightedAverage: entry?.weightedAverage ?? null,
+      projectedWeight: date === selectedChartDate ? projectedWeight : null,
+    });
+    chartCursor.setDate(chartCursor.getDate() + 1);
+  }
 
   return (
     <div style={weightChartCardStyle}>
@@ -2365,7 +2799,8 @@ const analyticsPanelStyle = {
   gap: 9,
   minHeight: 0,
   padding: 0,
-  overflow: "hidden",
+  overflowX: "hidden" as const,
+  overflowY: "auto" as const,
   background:
     "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
   border: "1px solid var(--border-strong)",

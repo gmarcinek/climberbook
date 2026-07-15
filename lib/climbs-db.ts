@@ -15,7 +15,11 @@ export type TrainingSurface =
   | "kilter"
   | "silownia"
   | "chwytotablica"
-  | "campus";
+  | "campus"
+  | "bieznia"
+  | "rower"
+  | "bieg"
+  | "treking";
 
 export type UserSex = "" | "kobieta" | "mezczyzna" | "inna";
 
@@ -31,6 +35,7 @@ export type UserProfileRecord = {
 export type WeightEntryRecord = {
   id?: number;
   date: string;
+  time: string;
   weightKg: number;
   createdAt: string;
 };
@@ -115,7 +120,7 @@ interface ClimberbookDb extends DBSchema {
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 let databasePromise: Promise<IDBPDatabase<ClimberbookDb>> | null = null;
 
 function createDatabase() {
@@ -170,6 +175,27 @@ function createDatabase() {
           await cursor.update({
             ...legacyValue,
             ageYears: legacyValue.ageYears ?? 0,
+          });
+
+          cursor = await cursor.continue();
+        }
+      }
+
+      if (
+        oldVersion < 8 &&
+        database.objectStoreNames.contains("weightEntries")
+      ) {
+        const weightEntryStore = transaction.objectStore("weightEntries");
+        let cursor = await weightEntryStore.openCursor();
+
+        while (cursor) {
+          const legacyValue = cursor.value as WeightEntryRecord & {
+            time?: string;
+          };
+
+          await cursor.update({
+            ...legacyValue,
+            time: legacyValue.time ?? "09:00",
           });
 
           cursor = await cursor.continue();
@@ -308,6 +334,11 @@ export async function updateTraining(input: TrainingRecord) {
   await database.put("trainings", input);
 }
 
+export async function deleteTraining(id: number) {
+  const database = await getDatabase();
+  await database.delete("trainings", id);
+}
+
 export async function listAscents() {
   const database = await getDatabase();
   return database.getAllFromIndex("ascents", "by-created-at");
@@ -342,7 +373,11 @@ export async function saveUserProfile(
 
 export async function listWeightEntries() {
   const database = await getDatabase();
-  return database.getAllFromIndex("weightEntries", "by-created-at");
+  const entries = await database.getAllFromIndex(
+    "weightEntries",
+    "by-created-at",
+  );
+  return entries.map((entry) => ({ ...entry, time: entry.time ?? "09:00" }));
 }
 
 export async function addWeightEntry(
@@ -442,7 +477,10 @@ export async function importDatabaseBackup(value: unknown) {
     ...ascents.map((record) => transaction.objectStore("ascents").put(record)),
     transaction.objectStore("settings").put(profile),
     ...weightEntries.map((record) =>
-      transaction.objectStore("weightEntries").put(record),
+      transaction.objectStore("weightEntries").put({
+        ...record,
+        time: record.time ?? "09:00",
+      }),
     ),
   ];
 

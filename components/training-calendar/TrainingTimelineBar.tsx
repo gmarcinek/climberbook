@@ -4,15 +4,16 @@ import { getTimelinePlacement } from "./training-calendar.helpers";
 type TrainingTimelineBarProps = {
   time: string;
   durationMinutes: number;
+  difficultyNotes: string;
 };
 
 export function TrainingTimelineBar(props: TrainingTimelineBarProps) {
-  const { time, durationMinutes } = props;
+  const { time, durationMinutes, difficultyNotes } = props;
   const placement = getTimelinePlacement(time, durationMinutes);
   const fillStyle = {
     ...timelineFillStyle,
     ...placement,
-    background: getTimelineFillBackground(durationMinutes),
+    background: getTimelineFillBackground(difficultyNotes),
   };
 
   return (
@@ -22,17 +23,52 @@ export function TrainingTimelineBar(props: TrainingTimelineBarProps) {
   );
 }
 
-function getTimelineFillBackground(durationMinutes: number) {
-  if (durationMinutes > 210) {
-    return "linear-gradient(90deg, rgba(188, 68, 39, 0.95), rgba(232, 104, 72, 0.95))";
+function getTimelineFillBackground(difficultyNotes: string) {
+  const gradeColors = difficultyNotes
+    .split(",")
+    .map((grade) => gradeColorByGrade[grade.trim()])
+    .filter((color): color is string => Boolean(color));
+
+  if (gradeColors.length === 0) {
+    return timelineFillStyle.background;
   }
 
-  if (durationMinutes > 150) {
-    return "linear-gradient(90deg, rgba(214, 150, 20, 0.95), rgba(239, 190, 56, 0.95))";
-  }
+  const segmentSize = 100 / gradeColors.length;
+  const colorStops = gradeColors.flatMap((color, index) => {
+    const start = index * segmentSize;
+    const end = start + segmentSize;
+    return [`${color} ${start}%`, `${color} ${end}%`];
+  });
 
-  return timelineFillStyle.background;
+  return `linear-gradient(90deg, ${colorStops.join(", ")})`;
 }
+
+const gradeColorByGrade: Record<string, string> = {
+  "5a": "#a8dd9a",
+  "5a+": "#aceb96",
+  "5b": "#79d66a",
+  "5b+": "#4ab34d",
+  "5c": "#288e38",
+  "5c+": "#176729",
+  "6a": "#e8d353",
+  "6a+": "#ffe46f",
+  "6b": "#ffcf3f",
+  "6b+": "#ffaf1f",
+  "6c": "#ee8914",
+  "6c+": "#cb5f0d",
+  "7a": "#83cde7",
+  "7a+": "#86d8f6",
+  "7b": "#4abce7",
+  "7b+": "#218fce",
+  "7c": "#1765ac",
+  "7c+": "#103d78",
+  "8a": "#ec8dc2",
+  "8a+": "#f59acc",
+  "8b": "#df6eb8",
+  "8b+": "#bd499e",
+  "8c": "#913181",
+  "8c+": "#642060",
+};
 
 const timelineTrackStyle: CSSProperties = {
   position: "relative",
