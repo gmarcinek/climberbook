@@ -1008,7 +1008,9 @@ function HomePageContent() {
                     : showTrainingSidebarColumn
                       ? "minmax(0, 2fr) minmax(0, 3fr) minmax(0, 3fr)"
                       : "minmax(0, 2fr) minmax(0, 3fr)",
-                  gridTemplateRows: isMobileTrainingLayout ? "none" : "minmax(0, 1fr)",
+                  gridTemplateRows: isMobileTrainingLayout
+                    ? "none"
+                    : "minmax(0, 1fr)",
                   height: isMobileTrainingLayout ? "auto" : "100%",
                   alignItems: isMobileTrainingLayout ? "start" : "stretch",
                 }}
@@ -1103,25 +1105,6 @@ function HomePageContent() {
                   />
                 </section>
 
-                {isMobileTrainingLayout && (
-                  <div style={{ minHeight: 0 }}>
-                    <TrainingSidebar
-                      selectedDate={selectedDate}
-                      selectedDayTrainings={selectedDayTrainings}
-                      visibleRangeTrainings={visibleRangeTrainings}
-                      trainingDraft={trainingDraft}
-                      editingTrainingId={editingTrainingId}
-                      surfaceOptions={surfaceOptions}
-                      onTrainingDraftChange={handleTrainingDraftChange}
-                      onToggleSurface={toggleSurface}
-                      onSubmit={handleTrainingSubmit}
-                      onEditTraining={handleEditTraining}
-                      onResetSelection={handleResetTrainingSelection}
-                      onCancelEdit={() => resetTrainingEditor(selectedDate ?? today)}
-                    />
-                  </div>
-                )}
-
                 {showTrainingSidebarColumn && (
                   <div style={{ gridColumn: 3, gridRow: 1, minHeight: 0 }}>
                     <TrainingSidebar
@@ -1144,7 +1127,7 @@ function HomePageContent() {
                 )}
               </div>
 
-              {!isMobileTrainingLayout && !showTrainingSidebarColumn && selectedDate && (
+              {!showTrainingSidebarColumn && selectedDate && (
                 <div style={mobileDrawerOverlayStyle}>
                   <button
                     type="button"
@@ -2649,7 +2632,7 @@ const weightStepButtonStyle = {
 };
 
 const mobileDrawerOverlayStyle = {
-  position: "absolute" as const,
+  position: "fixed" as const,
   inset: 0,
   zIndex: 40,
   display: "grid",

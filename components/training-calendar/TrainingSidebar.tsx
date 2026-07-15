@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import { type TrainingRecord, type TrainingSurface } from "@/lib/climbs-db";
 import {
   formatDateLabel,
@@ -12,6 +12,9 @@ const timeOptions = Array.from({ length: 24 * 4 }, (_value, index) => {
   const minute = String((index % 4) * 15).padStart(2, "0");
   return `${hour}:${minute}`;
 });
+
+const gradeBases = ["5", "6", "7", "8"];
+const gradeModifiers = ["a", "a+", "b", "b+", "c", "c+"];
 
 function normalizeDecimalInput(value: string) {
   return value.replaceAll(",", ".");
@@ -31,6 +34,13 @@ function formatWeightToSingleDecimal(value: string) {
   }
 
   return parsedValue.toFixed(1);
+}
+
+function splitDifficultyGrades(value: string) {
+  return value
+    .split(",")
+    .map((grade) => grade.trim())
+    .filter(Boolean);
 }
 
 export type TrainingDraftValues = {
@@ -114,6 +124,12 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     styles.trainingSidebar__input,
     styles["trainingSidebar__input--grow"],
   ].join(" ");
+  const [selectedGradeBase, setSelectedGradeBase] = useState<string | null>(
+    null,
+  );
+  const selectedDifficultyGrades = splitDifficultyGrades(
+    trainingDraft.difficultyNotes,
+  );
 
   return (
     <aside className={sidebarClassName}>
@@ -357,20 +373,103 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                   className={styles.trainingSidebar__input}
                 />
               </label>
-              <label className={fullFieldClassName}>
-                Wyceny
-                <input
-                  value={trainingDraft.difficultyNotes}
-                  onChange={(event) =>
-                    onTrainingDraftChange({
-                      ...trainingDraft,
-                      difficultyNotes: event.target.value,
-                    })
-                  }
-                  placeholder="Np. 7a, 7a+/b, projekt 7b+"
-                  className={styles.trainingSidebar__input}
-                />
-              </label>
+              <div className={fullFieldClassName}>
+                <span>Wyceny</span>
+                <div className={styles.trainingSidebar__controlGroup}>
+                  <input
+                    value={trainingDraft.difficultyNotes}
+                    readOnly
+                    placeholder="Wybierz wyceny poniżej"
+                    aria-label="Wybrane wyceny"
+                    className={growInputClassName}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Wyczyść wyceny"
+                    title="Wyczyść wyceny"
+                    onClick={() => {
+                      setSelectedGradeBase(null);
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        difficultyNotes: "",
+                      });
+                    }}
+                    className={styles.trainingSidebar__clearButton}
+                  >
+                    X
+                  </button>
+                </div>
+                <div
+                  className={[
+                    styles.trainingSidebar__chipGrid,
+                    styles.trainingSidebar__gradeChipGrid,
+                  ].join(" ")}
+                >
+                  {gradeBases.map((gradeBase) => {
+                    const active = selectedGradeBase === gradeBase;
+                    const chipClassName = [
+                      styles.trainingSidebar__chip,
+                      styles.trainingSidebar__gradeChip,
+                      active ? styles["trainingSidebar__chip--active"] : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    return (
+                      <button
+                        key={gradeBase}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setSelectedGradeBase(gradeBase)}
+                        className={chipClassName}
+                      >
+                        {gradeBase}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedGradeBase && (
+                  <div
+                    className={[
+                      styles.trainingSidebar__chipGrid,
+                      styles.trainingSidebar__gradeChipGrid,
+                    ].join(" ")}
+                  >
+                    {gradeModifiers.map((gradeModifier) => {
+                      const grade = `${selectedGradeBase}${gradeModifier}`;
+                      const active = selectedDifficultyGrades.includes(grade);
+                      const chipClassName = [
+                        styles.trainingSidebar__chip,
+                        styles.trainingSidebar__gradeChip,
+                        active ? styles["trainingSidebar__chip--active"] : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+
+                      return (
+                        <button
+                          key={gradeModifier}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => {
+                            onTrainingDraftChange({
+                              ...trainingDraft,
+                              difficultyNotes: [
+                                ...selectedDifficultyGrades,
+                                grade,
+                              ].join(", "),
+                            });
+                          }}
+                          className={chipClassName}
+                        >
+                          {gradeModifier}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
               <label className={fullFieldClassName}>
                 Samopoczucie
                 <textarea

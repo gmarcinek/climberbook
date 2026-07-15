@@ -164,10 +164,24 @@
   min-width: 42px;
 }
 
+.trainingSidebar__clearButton {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .trainingSidebar__chipGrid {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.trainingSidebar__gradeChipGrid {
+  gap: 6px;
 }
 
 .trainingSidebar__chip {
@@ -176,6 +190,15 @@
   padding: 5px 6px;
   cursor: pointer;
   background: rgba(255, 255, 255, 0.72);
+}
+
+.trainingSidebar__gradeChip {
+  min-width: 54px;
+  min-height: 54px;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .trainingSidebar__chip--active {
