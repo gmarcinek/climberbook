@@ -273,7 +273,12 @@ export function getTrainingsForDate(trainings: TrainingRecord[], date: string) {
 }
 
 export function summarizeTrainingType(training: TrainingRecord) {
-  return training.surfaces.length ? training.surfaces.join(", ") : "Sesja";
+  const types = [
+    ...training.surfaces,
+    training.customSessionType?.trim() || "",
+  ].filter(Boolean);
+
+  return types.length ? types.join(", ") : "Sesja";
 }
 
 export function getTimelinePlacement(time: string, durationMinutes: number) {

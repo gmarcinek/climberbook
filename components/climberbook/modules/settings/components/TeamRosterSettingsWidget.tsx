@@ -1,6 +1,7 @@
 import {
   actionRowStyle,
   athleteSelectStyle,
+  buttonStyle,
   deleteButtonStyle,
   ghostButtonStyle,
   moduleEyebrowStyle,
@@ -42,7 +43,7 @@ export function TeamRosterSettingsWidget({
         />
         <button
           type="button"
-          style={ghostButtonStyle}
+          style={buttonStyle}
           onClick={() => backupImportInputRef.current?.click()}
         >
           Import z pliku

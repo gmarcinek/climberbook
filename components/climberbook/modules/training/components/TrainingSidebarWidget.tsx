@@ -16,12 +16,15 @@ type TrainingSidebarWidgetProps = {
   selectedDate: string | null;
   selectedDayTrainings: TrainingRecord[];
   visibleRangeTrainings: TrainingRecord[];
+  today: string;
   trainingDraft: TrainingDraftValues;
+  validationMessage?: string;
   editingTrainingId: number | null;
   surfaceOptions: Array<{ value: TrainingSurface; label: string }>;
   onTrainingDraftChange: (draft: TrainingDraftValues) => void;
   onToggleSurface: (surface: TrainingSurface) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSelectDate: (date: string) => void;
   onEditTraining: (training: TrainingRecord) => void;
   onDeleteTraining: (training: TrainingRecord) => void;
   onResetSelection: () => void;

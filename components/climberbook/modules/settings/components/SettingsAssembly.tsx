@@ -72,6 +72,7 @@ type SettingsAssemblyProps = {
   onDeleteAthlete: (athlete: AthleteRecord) => Promise<void>;
   athleteFormMode: "add" | "edit";
   athleteForm: AthleteFormDraft;
+  status: string;
   setAthleteForm: Dispatch<SetStateAction<AthleteFormDraft>>;
   onAthleteFormSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onResetAthleteForm: () => void;
@@ -115,6 +116,7 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
     onDeleteAthlete,
     athleteFormMode,
     athleteForm,
+    status,
     setAthleteForm,
     onAthleteFormSubmit,
     onResetAthleteForm,
@@ -152,6 +154,7 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
             <AthleteFormWidget
               athleteFormMode={athleteFormMode}
               athleteForm={athleteForm}
+              validationMessage={status}
               setAthleteForm={setAthleteForm}
               sections={sections}
               onAthleteFormSubmit={onAthleteFormSubmit}

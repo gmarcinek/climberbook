@@ -84,7 +84,11 @@ export type AthleteFormWidgetProps = {
   athleteForm: AthleteFormDraft;
   setAthleteForm: Dispatch<SetStateAction<AthleteFormDraft>>;
   sections: SectionRecord[];
-  onAthleteFormSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  showSectionField?: boolean;
+  validationMessage?: string;
+  onAthleteFormSubmit: (
+    event: FormEvent<HTMLFormElement>,
+  ) => void | Promise<boolean>;
   onResetAthleteForm: () => void;
 };
 export type DangerZoneWidgetProps = {

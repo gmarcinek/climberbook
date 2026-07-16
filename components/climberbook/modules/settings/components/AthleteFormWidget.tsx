@@ -25,6 +25,8 @@ export function AthleteFormWidget({
   athleteForm,
   setAthleteForm,
   sections,
+  showSectionField = true,
+  validationMessage,
   onAthleteFormSubmit,
   onResetAthleteForm,
 }: AthleteFormWidgetProps) {
@@ -84,26 +86,28 @@ export function AthleteFormWidget({
               style={inputStyle}
             />
           </label>
-          <label style={fieldStyle}>
-            Sekcja / Team
-            <select
-              value={athleteForm.sectionId}
-              onChange={(event) =>
-                setAthleteForm((current) => ({
-                  ...current,
-                  sectionId: event.target.value,
-                }))
-              }
-              style={inputStyle}
-            >
-              <option value="">Bez sekcji</option>
-              {sections.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {showSectionField ? (
+            <label style={fieldStyle}>
+              Sekcja / Team
+              <select
+                value={athleteForm.sectionId}
+                onChange={(event) =>
+                  setAthleteForm((current) => ({
+                    ...current,
+                    sectionId: event.target.value,
+                  }))
+                }
+                style={inputStyle}
+              >
+                <option value="">Bez sekcji</option>
+                {sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label style={fieldStyle}>
             Data urodzenia
             <input
@@ -169,6 +173,17 @@ export function AthleteFormWidget({
             />
           </label>
         </div>
+        {validationMessage ? (
+          <p
+            style={{
+              margin: 0,
+              color: "#9e2e28",
+              fontSize: "0.95rem",
+            }}
+          >
+            {validationMessage}
+          </p>
+        ) : null}
         <div style={formActionsStyle}>
           <button type="submit" style={buttonStyle}>
             {athleteFormMode === "edit" ? "Zapisz zmiany" : "Dodaj zawodnika"}

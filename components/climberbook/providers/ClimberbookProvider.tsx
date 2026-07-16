@@ -37,6 +37,7 @@ import {
   useSelectedDates,
   SelectedDatesProvider,
 } from "@/contexts/SelectedDatesContext";
+import { TrainingEmptyState } from "@/components/climberbook/modules/training/components/TrainingEmptyState";
 import {
   addAscent,
   addAthlete,
@@ -128,6 +129,7 @@ const createTrainingDraft = (
       difficultyNotes: "",
       wellbeing: "",
       surfaces: [],
+      customSessionType: "",
       notes: "",
     },
     options.birthDate,
@@ -149,6 +151,7 @@ const mapTrainingToDraft = (
       difficultyNotes: training.difficultyNotes,
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
+      customSessionType: training.customSessionType ?? "",
       notes: training.notes,
     },
     birthDate,
@@ -219,7 +222,7 @@ type ClimberbookContextValue = {
   ) => Promise<void>;
   exportAthlete: (athlete: AthleteRecord) => Promise<void>;
   startAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
-  submitAthlete: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  submitAthlete: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   resetAthleteForm: () => void;
   deleteAthlete: (athlete: AthleteRecord) => Promise<void>;
   deleteDatabase: (event: FormEvent<HTMLFormElement>) => Promise<void>;
@@ -272,6 +275,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     useState<DatabaseImportPreview | null>(null);
   const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
   const [isImportingBackup, setIsImportingBackup] = useState(false);
+  const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false);
   const [isBackupDropActive, setIsBackupDropActive] = useState(false);
   const [isDatabaseDeleteModalOpen, setIsDatabaseDeleteModalOpen] =
     useState(false);
@@ -307,6 +311,12 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         listAllWeightEntries(),
         listSections(),
       ]);
+    setIsDatabaseEmpty(
+      athleteItems.length === 0 &&
+        allTrainingItems.length === 0 &&
+        allWeightItems.length === 0 &&
+        sectionItems.length === 0,
+    );
     const athleteId = athleteItems.some(
       (athlete) => athlete.id === activeAthleteId,
     )
@@ -354,11 +364,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           profileRecord.weightKg,
       ),
     );
-    setStatus(
-      trainingItems.length || ascentItems.length
-        ? "Dane zostały załadowane z lokalnej bazy."
-        : "Baza działa. Możesz zacząć wpisywać treningi i historię przejść.",
-    );
+    setStatus(trainingItems.length || ascentItems.length ? "" : "");
   }
   useEffect(() => {
     void refreshData().catch(() =>
@@ -406,11 +412,16 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   }
   async function submitTraining(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!activeAthleteId || !trainingDraft.surfaces.length) {
+    const customSessionType = trainingDraft.customSessionType.trim();
+
+    if (
+      !activeAthleteId ||
+      (!trainingDraft.surfaces.length && !customSessionType)
+    ) {
       setStatus(
         !activeAthleteId
           ? "Najpierw dodaj i wybierz zawodnika."
-          : "Wybierz co najmniej jeden rodzaj sesji.",
+          : "Wybierz co najmniej jeden rodzaj sesji lub wpisz własny typ w polu Inne.",
       );
       return;
     }
@@ -428,6 +439,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       difficultyNotes: trainingDraft.difficultyNotes,
       wellbeing: trainingDraft.wellbeing,
       surfaces: trainingDraft.surfaces,
+      customSessionType,
       notes: trainingDraft.notes,
     };
     try {
@@ -641,7 +653,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     event.preventDefault();
     if (!athleteForm.nick.trim()) {
       setStatus("Podaj przynajmniej nick zawodnika.");
-      return;
+      return false;
     }
     const identity = {
       firstName: athleteForm.firstName,
@@ -673,6 +685,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       setActiveAthleteId(athlete.id);
     }
     resetAthleteForm();
+    return true;
   }
   async function deleteAthleteAction(athlete: AthleteRecord) {
     if (
@@ -779,7 +792,26 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   };
   return (
     <ClimberbookContext.Provider value={value}>
-      {children}
+      {isDatabaseEmpty ? (
+        <TrainingEmptyState
+          athleteFormMode={athleteFormMode}
+          athleteForm={athleteForm}
+          setAthleteForm={setAthleteForm}
+          sections={sections}
+          validationMessage={status}
+          onAthleteFormSubmit={submitAthlete}
+          onResetAthleteForm={resetAthleteForm}
+          backupImportInputRef={backupImportInputRef}
+          onDatabaseImport={importDatabase}
+          importPreview={importPreview}
+          isImportPreviewOpen={isImportPreviewOpen}
+          isImportingBackup={isImportingBackup}
+          onConfirmImportPreview={confirmImportPreview}
+          onCloseImportPreview={closeImportPreview}
+        />
+      ) : (
+        children
+      )}
       {toastMessage ? (
         <div
           role="status"
@@ -834,6 +866,7 @@ export function useTrainingModule() {
     selectTrainingDate,
     setTrainingDraft,
     setWeightEntryDraft,
+    status,
     submitTraining,
     submitWeightEntry,
     teamTrainings,
@@ -858,6 +891,7 @@ export function useTrainingModule() {
     selectTrainingDate,
     setTrainingDraft,
     setWeightEntryDraft,
+    status,
     submitTraining,
     submitWeightEntry,
     teamTrainings,
@@ -974,6 +1008,7 @@ export function useSettingsModule() {
     startAthleteEdit,
     submitAthlete,
     submitSettings,
+    status,
     teamTrainings,
     today,
     trainingRangeStart,
@@ -1021,6 +1056,7 @@ export function useSettingsModule() {
     startAthleteEdit,
     submitAthlete,
     submitSettings,
+    status,
     teamTrainings,
     today,
     trainingRangeStart,

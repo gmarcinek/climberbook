@@ -56,6 +56,7 @@ export type TrainingDraftValues = {
   difficultyNotes: string;
   wellbeing: string;
   surfaces: TrainingSurface[];
+  customSessionType: string;
   notes: string;
 };
 
@@ -94,12 +95,15 @@ type TrainingSidebarProps = {
   selectedDate: string | null;
   selectedDayTrainings: TrainingRecord[];
   visibleRangeTrainings: TrainingRecord[];
+  today: string;
   trainingDraft: TrainingDraftValues;
+  validationMessage?: string;
   editingTrainingId: number | null;
   surfaceOptions: Array<{ value: TrainingSurface; label: string }>;
   onTrainingDraftChange: (draft: TrainingDraftValues) => void;
   onToggleSurface: (surface: TrainingSurface) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSelectDate: (date: string) => void;
   onEditTraining: (training: TrainingRecord) => void;
   onDeleteTraining: (training: TrainingRecord) => void;
   onResetSelection: () => void;
@@ -111,12 +115,15 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     selectedDate,
     selectedDayTrainings,
     visibleRangeTrainings,
+    today,
     trainingDraft,
+    validationMessage,
     editingTrainingId,
     surfaceOptions,
     onTrainingDraftChange,
     onToggleSurface,
     onSubmit,
+    onSelectDate,
     onEditTraining,
     onDeleteTraining,
     onResetSelection,
@@ -155,12 +162,15 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     .join("\n\n");
 
   function formatSurfaces(training: TrainingRecord) {
-    return training.surfaces
-      .map(
+    return [
+      ...training.surfaces.map(
         (surface) =>
           surfaceOptions.find((option) => option.value === surface)?.label ??
           surface,
-      )
+      ),
+      training.customSessionType?.trim() || "",
+    ]
+      .filter(Boolean)
       .join(", ");
   }
 
@@ -262,6 +272,78 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
             </div>
 
             <form onSubmit={onSubmit} className={styles.trainingSidebar__form}>
+              {validationMessage ? (
+                <p className={styles.trainingSidebar__validationMessage}>
+                  {validationMessage}
+                </p>
+              ) : null}
+              <div className={styles.trainingSidebar__stack}>
+                <strong>Rodzaj sesji</strong>
+                <div className={styles.trainingSidebar__chipGrid}>
+                  {surfaceOptions.slice(0, 8).map((option) => {
+                    const active = trainingDraft.surfaces.includes(
+                      option.value,
+                    );
+                    const chipClassName = [
+                      styles.trainingSidebar__chip,
+                      styles.trainingSidebar__sessionChip,
+                      active ? styles["trainingSidebar__chip--active"] : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => onToggleSurface(option.value)}
+                        className={chipClassName}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className={styles.trainingSidebar__chipGrid}>
+                  {surfaceOptions.slice(8).map((option) => {
+                    const active = trainingDraft.surfaces.includes(
+                      option.value,
+                    );
+                    const chipClassName = [
+                      styles.trainingSidebar__chip,
+                      styles.trainingSidebar__sessionChip,
+                      active ? styles["trainingSidebar__chip--active"] : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => onToggleSurface(option.value)}
+                        className={chipClassName}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className={styles.trainingSidebar__field}>
+                  Inne
+                  <input
+                    value={trainingDraft.customSessionType}
+                    onChange={(event) =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        customSessionType: event.target.value,
+                      })
+                    }
+                    placeholder="Np. mobility, joga, regeneracja"
+                    className={styles.trainingSidebar__input}
+                  />
+                </label>
+              </div>
               <div className={styles.trainingSidebar__formGrid}>
                 <label className={styles.trainingSidebar__field}>
                   Data
@@ -610,60 +692,6 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </div>
               </div>
 
-              <div className={styles.trainingSidebar__stack}>
-                <strong>Rodzaj sesji</strong>
-                <div className={styles.trainingSidebar__chipGrid}>
-                  {surfaceOptions.slice(0, 8).map((option) => {
-                    const active = trainingDraft.surfaces.includes(
-                      option.value,
-                    );
-                    const chipClassName = [
-                      styles.trainingSidebar__chip,
-                      styles.trainingSidebar__sessionChip,
-                      active ? styles["trainingSidebar__chip--active"] : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ");
-
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => onToggleSurface(option.value)}
-                        className={chipClassName}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className={styles.trainingSidebar__chipGrid}>
-                  {surfaceOptions.slice(8).map((option) => {
-                    const active = trainingDraft.surfaces.includes(
-                      option.value,
-                    );
-                    const chipClassName = [
-                      styles.trainingSidebar__chip,
-                      styles.trainingSidebar__sessionChip,
-                      active ? styles["trainingSidebar__chip--active"] : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ");
-
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => onToggleSurface(option.value)}
-                        className={chipClassName}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               <label className={styles.trainingSidebar__field}>
                 Samopoczucie i notatki
                 <textarea
@@ -704,9 +732,18 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                   Lista treningów w kalendarzu
                 </h1>
               </div>
-              <span className={styles.trainingSidebar__pill}>
-                {visibleRangeTrainings.length} wpisów
-              </span>
+              <div className={styles.trainingSidebar__headerActions}>
+                <span className={styles.trainingSidebar__pill}>
+                  {visibleRangeTrainings.length} wpisów
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onSelectDate(today)}
+                  className={styles.trainingSidebar__submitButton}
+                >
+                  + Nowy trening
+                </button>
+              </div>
             </div>
 
             <div className={styles.trainingSidebar__visibleList}>

@@ -57,6 +57,7 @@ export type TrainingRecord = {
   difficultyNotes: string;
   wellbeing: string;
   surfaces: TrainingSurface[];
+  customSessionType?: string;
   notes: string;
   createdAt: string;
 };

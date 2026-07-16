@@ -19,6 +19,7 @@ export function TrainingModule() {
     trainings: app.trainings,
     weightEntries: app.weightEntries,
   });
+
   return (
     <TrainingModuleContent
       isMobileTrainingLayout={viewport.isMobileTrainingLayout}
@@ -50,6 +51,7 @@ export function TrainingModule() {
       selectedDayTrainings={stats.selectedDayTrainings}
       visibleRangeTrainings={stats.visibleRangeTrainings}
       trainingDraft={app.trainingDraft}
+      validationMessage={app.status}
       editingTrainingId={app.editingTrainingId}
       surfaceOptions={surfaceOptions}
       onTrainingDraftChange={app.setTrainingDraft}

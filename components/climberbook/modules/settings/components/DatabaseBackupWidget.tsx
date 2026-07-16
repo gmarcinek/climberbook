@@ -1,7 +1,7 @@
 import {
   actionRowStyle,
   backupDropzoneStyle,
-  ghostButtonStyle,
+  buttonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
@@ -49,7 +49,7 @@ export function DatabaseBackupWidget({
         />
         <button
           type="button"
-          style={ghostButtonStyle}
+          style={buttonStyle}
           onClick={() => backupImportInputRef.current?.click()}
         >
           Import z pliku

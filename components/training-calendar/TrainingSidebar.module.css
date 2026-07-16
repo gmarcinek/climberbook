@@ -65,7 +65,7 @@
 
 .trainingSidebar__stack {
   display: grid;
-  gap: 5px;
+  gap: 1rem;
 }
 
 .trainingSidebar__helperText {
@@ -73,9 +73,15 @@
   color: var(--muted);
 }
 
+.trainingSidebar__validationMessage {
+  margin: 0;
+  color: #9e2e28;
+  font-size: 0.92rem;
+}
+
 .trainingSidebar__trainingButton {
   display: grid;
-  gap: 5px;
+  gap: 1rem;
   padding: 1rem;
   border: 1px solid rgba(28, 61, 89, 0.12);
   background: rgba(255, 255, 255, 0.84);
@@ -85,7 +91,7 @@
 
 .trainingSidebar__trainingCard {
   display: grid;
-  gap: 5px;
+  gap: 1rem;
   padding: 1rem;
   border: 1px solid rgba(28, 61, 89, 0.12);
   background: rgba(255, 255, 255, 0.84);
@@ -94,7 +100,7 @@
 .trainingSidebar__trainingButtonHeader {
   display: flex;
   justify-content: space-between;
-  gap: 5px;
+  gap: 1rem;
   align-items: center;
 }
 
@@ -135,7 +141,7 @@
 
 .trainingSidebar__form {
   display: grid;
-  gap: 8px;
+  gap: 2rem;
   margin-top: 12px;
 }
 
@@ -324,7 +330,7 @@
 
 .trainingSidebar__visibleItem {
   display: grid;
-  gap: 5px;
+  gap: 1rem;
   padding: 1rem;
   border: 1px solid rgba(28, 61, 89, 0.12);
   background: rgba(255, 255, 255, 0.78);

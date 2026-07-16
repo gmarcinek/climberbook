@@ -44,6 +44,7 @@ type TrainingModuleContentProps = {
   selectedDayTrainings: TrainingRecord[];
   visibleRangeTrainings: TrainingRecord[];
   trainingDraft: TrainingDraftValues;
+  validationMessage?: string;
   editingTrainingId: number | null;
   surfaceOptions: Array<{ value: TrainingSurface; label: string }>;
   onTrainingDraftChange: (draft: TrainingDraftValues) => void;
@@ -83,6 +84,7 @@ export function TrainingModuleContent({
   selectedDayTrainings,
   visibleRangeTrainings,
   trainingDraft,
+  validationMessage,
   editingTrainingId,
   surfaceOptions,
   onTrainingDraftChange,
@@ -98,12 +100,15 @@ export function TrainingModuleContent({
       selectedDate={selectedDate}
       selectedDayTrainings={selectedDayTrainings}
       visibleRangeTrainings={visibleRangeTrainings}
+      today={today}
       trainingDraft={trainingDraft}
+      validationMessage={validationMessage}
       editingTrainingId={editingTrainingId}
       surfaceOptions={surfaceOptions}
       onTrainingDraftChange={onTrainingDraftChange}
       onToggleSurface={onToggleSurface}
       onSubmit={onTrainingSubmit}
+      onSelectDate={onSelectDate}
       onEditTraining={onEditTraining}
       onDeleteTraining={onDeleteTraining}
       onResetSelection={onResetSelection}

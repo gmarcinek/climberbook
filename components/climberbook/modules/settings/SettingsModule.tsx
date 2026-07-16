@@ -66,6 +66,7 @@ export function SettingsModule() {
       onDeleteAthlete={app.deleteAthlete}
       athleteFormMode={app.athleteFormMode}
       athleteForm={app.athleteForm}
+      status={app.status}
       setAthleteForm={app.setAthleteForm}
       onAthleteFormSubmit={app.submitAthlete}
       onResetAthleteForm={app.resetAthleteForm}
