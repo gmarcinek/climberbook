@@ -1,5 +1,4 @@
 import {
-  actionRowStyle,
   backupDropzoneStyle,
   buttonStyle,
   moduleEyebrowStyle,
@@ -10,6 +9,7 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import styles from "./DatabaseBackupWidget.module.css";
 import type { DatabaseBackupWidgetProps } from "./SettingsWidgetTypes";
 export function DatabaseBackupWidget({
@@ -21,7 +21,7 @@ export function DatabaseBackupWidget({
   onBackupDrop,
 }: DatabaseBackupWidgetProps) {
   return (
-    <Panel>
+    <Panel gap="md">
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Dane</span>
@@ -33,7 +33,7 @@ export function DatabaseBackupWidget({
         Eksport zapisuje wszystkich zawodników i ich dane. Import rozpoznaje
         backup całej bazy albo pojedynczego zawodnika.
       </p>
-      <div style={actionRowStyle}>
+      <Stack direction="row" gap="sm" wrap>
         <button
           type="button"
           style={secondaryButtonStyle}
@@ -55,7 +55,7 @@ export function DatabaseBackupWidget({
         >
           Import z pliku
         </button>
-      </div>
+      </Stack>
       <div
         className={styles.dropzone}
         style={{

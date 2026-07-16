@@ -1,6 +1,7 @@
 "use client";
 
 import { MetricCard } from "@/components/climberbook/common/charts";
+import { Stack } from "@/components/climberbook/common/Stack";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { statsGridStyle } from "@/components/climberbook/common/styles";
 type ReportMetricsWidgetProps = {
@@ -16,7 +17,7 @@ export function ReportMetricsWidget({
   const { isMobileChartLayout } = useViewport();
 
   return (
-    <div
+    <Stack
       style={{
         ...statsGridStyle,
         gridTemplateColumns: isMobileChartLayout
@@ -39,6 +40,6 @@ export function ReportMetricsWidget({
         value={String(rockAscents)}
         detail="Liczba przejść skalnych"
       />
-    </div>
+    </Stack>
   );
 }

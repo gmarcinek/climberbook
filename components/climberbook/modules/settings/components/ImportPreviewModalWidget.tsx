@@ -11,6 +11,7 @@ import {
   weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
+import { Stack } from "@/components/climberbook/common/Stack";
 import type { ImportPreviewModalWidgetProps } from "./SettingsWidgetTypes";
 
 const countLabelMap = {
@@ -58,15 +59,15 @@ export function ImportPreviewModalWidget({
             <strong>{preview.athleteName}</strong>
           </div>
         ) : null}
-        <div style={{ display: "grid", gap: 8 }}>
+        <Stack gap="sm">
           {Object.entries(preview.counts).map(([key, value]) => (
-            <div
+            <Stack
               key={key}
+              direction="row"
+              gap="sm"
+              justify="between"
+              align="center"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
                 padding: "0.7rem 0.8rem",
                 border: "1px solid var(--border-strong)",
                 background: "rgba(255,255,255,0.45)",
@@ -74,9 +75,9 @@ export function ImportPreviewModalWidget({
             >
               <span>{countLabelMap[key as keyof typeof countLabelMap]}</span>
               <strong>{value}</strong>
-            </div>
+            </Stack>
           ))}
-        </div>
+        </Stack>
         <p style={mutedParagraphStyle}>{preview.actionLabel}</p>
         <FormActions>
           <button

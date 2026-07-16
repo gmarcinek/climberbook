@@ -4,11 +4,10 @@ import {
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  panelStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
-import { FormActions } from "@/components/climberbook/common/FormLayout";
+import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import type { SectionManagementWidgetProps } from "./SettingsWidgetTypes";
 import styles from "./SectionManagementWidget.module.css";
 
@@ -20,31 +19,29 @@ export function SectionManagementWidget({
   onDeleteSection,
 }: SectionManagementWidgetProps) {
   return (
-    <section
-      style={{ ...panelStyle, padding: undefined }}
-      className={styles.panel}
-    >
-      <div style={panelHeadingStyle}>
-        <div>
-          <span style={moduleEyebrowStyle}>Sekcje</span>
-          <h2 style={sectionTitleStyle}>Zarządzanie sekcjami</h2>
+    <Form
+      onSubmit={onAddSection}
+      header={
+        <div style={panelHeadingStyle}>
+          <div>
+            <span style={moduleEyebrowStyle}>Sekcje</span>
+            <h2 style={sectionTitleStyle}>Zarządzanie sekcjami</h2>
+          </div>
+          <span style={softTagStyle}>{sections.length}</span>
         </div>
-        <span style={softTagStyle}>{sections.length}</span>
-      </div>
-
-      <form onSubmit={onAddSection} className={styles.form}>
-        <input
-          value={newSectionName}
-          onChange={(event) => setNewSectionName(event.target.value)}
-          placeholder="Nazwa sekcji / teamu"
-          style={inputStyle}
-        />
-        <FormActions>
-          <button type="submit" style={buttonStyle}>
-            Dodaj sekcję
-          </button>
-        </FormActions>
-      </form>
+      }
+    >
+      <input
+        value={newSectionName}
+        onChange={(event) => setNewSectionName(event.target.value)}
+        placeholder="Nazwa sekcji / teamu"
+        style={inputStyle}
+      />
+      <FormActions>
+        <button type="submit" style={buttonStyle}>
+          Dodaj sekcję
+        </button>
+      </FormActions>
 
       {sections.length === 0 ? (
         <p style={mutedParagraphStyle}>Nie ma jeszcze żadnych sekcji.</p>
@@ -65,6 +62,6 @@ export function SectionManagementWidget({
           ))}
         </div>
       )}
-    </section>
+    </Form>
   );
 }

@@ -4,6 +4,7 @@ import { AnalyticsHeaderWidget } from "./AnalyticsHeaderWidget";
 import { AnalyticsMetricsWidget } from "./AnalyticsMetricsWidget";
 import { GradeDistributionWidget } from "./GradeDistributionWidget";
 import { WeeklyTrainingChartWidget } from "./WeeklyTrainingChartWidget";
+import { Stack } from "@/components/climberbook/common/Stack";
 import {
   moduleContentStyle,
   twoColumnLayoutStyle,
@@ -41,7 +42,7 @@ export function AnalyticsModuleContent({
   gradeDistribution,
 }: AnalyticsModuleContentProps) {
   return (
-    <div style={moduleContentStyle}>
+    <Stack gap="md" style={moduleContentStyle}>
       <AnalyticsHeaderWidget
         meta={moduleMeta}
         trainingsCount={trainingsCount}
@@ -72,6 +73,6 @@ export function AnalyticsModuleContent({
           gradeDistribution={gradeDistribution}
         />
       </div>
-    </div>
+    </Stack>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { moduleContentStyle } from "@/components/climberbook/common/styles";
+import { Stack } from "@/components/climberbook/common/Stack";
 import { TeamHeaderWidget } from "./TeamHeaderWidget";
 import { TeamRosterWidget } from "./TeamRosterWidget";
 import { TeamWeightChartWidget } from "./TeamWeightChartWidget";
@@ -36,7 +37,7 @@ export function TeamAssembly({
   teamWeightChartData,
 }: TeamAssemblyProps) {
   return (
-    <div style={moduleContentStyle}>
+    <Stack gap="md" style={moduleContentStyle}>
       <TeamHeaderWidget
         moduleMeta={moduleMeta}
         athletesCount={athletes.length}
@@ -52,6 +53,6 @@ export function TeamAssembly({
         athletes={athletes}
         teamWeightChartData={teamWeightChartData}
       />
-    </div>
+    </Stack>
   );
 }

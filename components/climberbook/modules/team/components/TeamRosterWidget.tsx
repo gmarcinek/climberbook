@@ -6,11 +6,12 @@ import {
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  panelStyle,
   sectionTitleStyle,
   softTagStyle,
   statsGridStyle,
 } from "@/components/climberbook/common/styles";
+import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import type { AthleteRecord } from "@/lib/climbs-db";
 type TeamSummary = {
   athlete: AthleteRecord;
@@ -35,7 +36,7 @@ export function TeamRosterWidget({
   onSelectAthlete,
 }: TeamRosterWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel gap="md">
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Skład</span>
@@ -49,7 +50,7 @@ export function TeamRosterWidget({
         </p>
       ) : null}
       {teamSummaryGroups.map((group) => (
-        <div key={group.id || "none"} style={{ display: "grid", gap: 6 }}>
+        <Stack key={group.id || "none"} gap="sm">
           <div style={panelHeadingStyle}>
             <span style={moduleEyebrowStyle}>{group.name}</span>
             <span style={softTagStyle}>{group.summaries.length}</span>
@@ -90,8 +91,8 @@ export function TeamRosterWidget({
               </article>
             ))}
           </div>
-        </div>
+        </Stack>
       ))}
-    </section>
+    </Panel>
   );
 }

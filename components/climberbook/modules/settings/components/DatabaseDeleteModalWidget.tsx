@@ -1,7 +1,6 @@
 import {
   deleteButtonStyle,
   fieldStyle,
-  formStyle,
   ghostButtonStyle,
   inputStyle,
   moduleEyebrowStyle,
@@ -11,7 +10,7 @@ import {
   weightEntryModalOverlayStyle,
   weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
-import { FormActions } from "@/components/climberbook/common/FormLayout";
+import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import type { DatabaseDeleteModalWidgetProps } from "./SettingsWidgetTypes";
 export function DatabaseDeleteModalWidget({
   databaseDeleteConfirmation,
@@ -51,7 +50,12 @@ export function DatabaseDeleteModalWidget({
           Wszystkie lokalne treningi, przejścia, ustawienia i pomiary wagi
           zostaną trwale usunięte. Wpisz „usuń”, aby potwierdzić.
         </p>
-        <form onSubmit={onDatabaseDelete} style={formStyle}>
+        <Form
+          as="div"
+          onSubmit={onDatabaseDelete}
+          panelPadding="none"
+          panelGap="none"
+        >
           <label style={fieldStyle}>
             Potwierdzenie
             <input
@@ -80,7 +84,7 @@ export function DatabaseDeleteModalWidget({
               USUŃ BAZĘ DANYCH
             </button>
           </FormActions>
-        </form>
+        </Form>
       </section>
     </div>
   );

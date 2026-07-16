@@ -1,6 +1,7 @@
 "use client";
 
 import { MetricCard } from "@/components/climberbook/common/charts";
+import { Stack } from "@/components/climberbook/common/Stack";
 import { statsGridStyle } from "@/components/climberbook/common/styles";
 
 type AnalyticsMetricsWidgetProps = {
@@ -17,7 +18,7 @@ export function AnalyticsMetricsWidget({
   totalAttempts,
 }: AnalyticsMetricsWidgetProps) {
   return (
-    <div style={statsGridStyle}>
+    <Stack style={statsGridStyle}>
       <MetricCard
         label="Liczba treningów"
         value={String(trainingsCount)}
@@ -38,6 +39,6 @@ export function AnalyticsMetricsWidget({
         value={String(totalAttempts)}
         detail="Suma prób ze wszystkich sesji"
       />
-    </div>
+    </Stack>
   );
 }

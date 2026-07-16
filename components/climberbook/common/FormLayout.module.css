@@ -1,7 +1,55 @@
+.form {
+  display: grid;
+  gap: var(--form-gap-mobile, 0.5625rem);
+}
+
+.formGap--xs {
+  --form-gap-mobile: 0.375rem;
+  --form-gap-desktop: 0.5rem;
+}
+
+.formGap--sm {
+  --form-gap-mobile: 0.5625rem;
+  --form-gap-desktop: 0.5625rem;
+}
+
+.formGap--md {
+  --form-gap-mobile: 0.75rem;
+  --form-gap-desktop: 0.75rem;
+}
+
+.formGap--lg {
+  --form-gap-mobile: 1rem;
+  --form-gap-desktop: 1rem;
+}
+
 .formGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
+  gap: var(--form-grid-gap-mobile, 1rem);
+}
+
+.formGridGap--sm {
+  --form-grid-gap-mobile: 0.75rem;
+  --form-grid-gap-desktop: 0.75rem;
+}
+
+.formGridGap--md {
+  --form-grid-gap-mobile: 1rem;
+  --form-grid-gap-desktop: 1rem;
+}
+
+.formGridGap--lg {
+  --form-grid-gap-mobile: 1.25rem;
+  --form-grid-gap-desktop: 1.25rem;
+}
+
+.formGridDesktop--single {
+  --form-grid-desktop-columns: minmax(0, 1fr);
+}
+
+.formGridDesktop--double {
+  --form-grid-desktop-columns: repeat(2, minmax(0, 1fr));
 }
 
 .fullSpan {
@@ -11,10 +59,45 @@
 .formActions {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--form-actions-gap-mobile, 0.75rem);
   align-items: stretch;
   justify-self: start;
-  margin-top: 1rem;
+  margin-top: var(--form-actions-margin-mobile, 1rem);
+}
+
+.formActionsGap--sm {
+  --form-actions-gap-mobile: 0.5625rem;
+  --form-actions-gap-desktop: 0.5625rem;
+}
+
+.formActionsGap--md {
+  --form-actions-gap-mobile: 0.75rem;
+  --form-actions-gap-desktop: 0.75rem;
+}
+
+.formActionsGap--lg {
+  --form-actions-gap-mobile: 1rem;
+  --form-actions-gap-desktop: 1rem;
+}
+
+.formActionsMargin--none {
+  --form-actions-margin-mobile: 0;
+  --form-actions-margin-desktop: 0;
+}
+
+.formActionsMargin--sm {
+  --form-actions-margin-mobile: 0.75rem;
+  --form-actions-margin-desktop: 0.75rem;
+}
+
+.formActionsMargin--md {
+  --form-actions-margin-mobile: 1rem;
+  --form-actions-margin-desktop: 1rem;
+}
+
+.formActionsMargin--lg {
+  --form-actions-margin-mobile: 1.25rem;
+  --form-actions-margin-desktop: 1.25rem;
 }
 
 .formActions > * {
@@ -22,15 +105,27 @@
 }
 
 @media (min-width: 720px) {
+  .form {
+    gap: var(--form-gap-desktop, var(--form-gap-mobile, 0.5625rem));
+  }
+
   .formGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--form-grid-gap-desktop, var(--form-grid-gap-mobile, 1rem));
+    grid-template-columns: var(
+      --form-grid-desktop-columns,
+      repeat(2, minmax(0, 1fr))
+    );
   }
 
   .formActions {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: var(--form-actions-gap-desktop, var(--form-actions-gap-mobile, 0.75rem));
+    margin-top: var(
+      --form-actions-margin-desktop,
+      var(--form-actions-margin-mobile, 1rem)
+    );
   }
 
   .formActions > * {

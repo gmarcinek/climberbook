@@ -1,9 +1,56 @@
 .panel {
-  padding: 0.75rem;
+  padding: var(--panel-padding-mobile, 0.75rem);
+  gap: var(--panel-gap-mobile, 0.5625rem);
+}
+
+.padding--none {
+  --panel-padding-mobile: 0;
+  --panel-padding-desktop: 0;
+}
+
+.padding--compact {
+  --panel-padding-mobile: 0.5625rem;
+  --panel-padding-desktop: 0.75rem;
+}
+
+.padding--panel {
+  --panel-padding-mobile: 0.75rem;
+  --panel-padding-desktop: 1.5rem;
+}
+
+.padding--roomy {
+  --panel-padding-mobile: 1rem;
+  --panel-padding-desktop: 1.75rem;
+}
+
+.gap--none {
+  --panel-gap-mobile: 0;
+  --panel-gap-desktop: 0;
+}
+
+.gap--xs {
+  --panel-gap-mobile: 0.375rem;
+  --panel-gap-desktop: 0.5rem;
+}
+
+.gap--sm {
+  --panel-gap-mobile: 0.5625rem;
+  --panel-gap-desktop: 0.5625rem;
+}
+
+.gap--md {
+  --panel-gap-mobile: 0.75rem;
+  --panel-gap-desktop: 0.75rem;
+}
+
+.gap--lg {
+  --panel-gap-mobile: 1rem;
+  --panel-gap-desktop: 1.25rem;
 }
 
 @media (min-width: 720px) {
   .panel {
-    padding: 1.5rem;
+    padding: var(--panel-padding-desktop, var(--panel-padding-mobile, 0.75rem));
+    gap: var(--panel-gap-desktop, var(--panel-gap-mobile, 0.5625rem));
   }
 }

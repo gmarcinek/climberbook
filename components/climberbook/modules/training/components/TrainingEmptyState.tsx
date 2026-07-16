@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  actionRowStyle,
   buttonStyle,
   ghostButtonStyle,
   moduleContainerStyle,
@@ -9,11 +8,12 @@ import {
   moduleEyebrowStyle,
   mutedParagraphStyle,
   pageStyle,
-  panelStyle,
   sectionTitleStyle,
   settingsMainColumnStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import { MainHeader } from "@/components/climberbook/layout/MainHeader";
 import { AthleteFormWidget } from "@/components/climberbook/modules/settings/components/AthleteFormWidget";
 import { ImportPreviewModalWidget } from "@/components/climberbook/modules/settings/components/ImportPreviewModalWidget";
@@ -79,20 +79,22 @@ export function TrainingEmptyState({
       <main style={pageStyle}>
         <MainHeader activeModule="treningowy" />
         <div style={{ padding: "24px 8px 24px" }}>
-          <div
+          <Stack
+            gap="md"
             style={{ ...moduleContainerStyle, ...moduleContentStyle }}
             className={styles.contentStack}
           >
-            <section
+            <Panel
+              as="section"
+              gap="md"
               style={{
-                ...panelStyle,
                 display: "flex",
                 padding: undefined,
               }}
               className={`${styles.introPanelShell} ${styles.introPanels}`}
             >
-              <div className={styles.introPrimary}>
-                <div className={styles.sectionHeader}>
+              <Stack className={styles.introPrimary} gap="md">
+                <Stack className={styles.sectionHeader} gap="sm">
                   <span style={moduleEyebrowStyle}>Start</span>
                   <h1
                     style={{
@@ -106,12 +108,12 @@ export function TrainingEmptyState({
                   <span style={softTagStyle}>
                     Dodaj zawodnika albo zaimportuj backup
                   </span>
-                </div>
+                </Stack>
                 <p style={mutedParagraphStyle}>
                   Żeby zacząć pracę w Climberbook, utwórz pierwszego zawodnika
                   albo wczytaj istniejącą bazę z pliku JSON.
                 </p>
-                <div style={actionRowStyle}>
+                <Stack direction="row" gap="sm" wrap>
                   <input
                     ref={backupImportInputRef}
                     type="file"
@@ -126,18 +128,19 @@ export function TrainingEmptyState({
                   >
                     Import bazy
                   </button>
-                </div>
-              </div>
+                </Stack>
+              </Stack>
 
-              <div
+              <Stack
                 className={`${styles.introSecondary} ${styles.generatorPanel}`}
+                gap="md"
                 style={{
                   border: "1px solid rgba(41, 109, 63, 0.16)",
                   background:
                     "linear-gradient(135deg, rgba(236, 248, 239, 0.92), rgba(244, 251, 245, 0.82))",
                 }}
               >
-                <div className={styles.sectionHeader}>
+                <Stack className={styles.sectionHeader} gap="sm">
                   <span style={{ ...moduleEyebrowStyle, color: "#2b7a46" }}>
                     Generator
                   </span>
@@ -150,7 +153,7 @@ export function TrainingEmptyState({
                   >
                     Załaduj przykładowe dane
                   </h2>
-                </div>
+                </Stack>
                 <p style={{ ...mutedParagraphStyle, margin: 0 }}>
                   Wczyta gotowy przykładowy dump z dynamicznymi datami i wagą z
                   bieżącego miesiąca.
@@ -169,8 +172,8 @@ export function TrainingEmptyState({
                 >
                   Załaduj przykładowe dane
                 </button>
-              </div>
-            </section>
+              </Stack>
+            </Panel>
 
             <div style={settingsMainColumnStyle} className={styles.formSection}>
               <AthleteFormWidget
@@ -185,7 +188,7 @@ export function TrainingEmptyState({
                 onResetAthleteForm={onResetAthleteForm}
               />
             </div>
-          </div>
+          </Stack>
         </div>
       </main>
 

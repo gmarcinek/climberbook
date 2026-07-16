@@ -1,6 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
+import { Panel } from "@/components/climberbook/common/Panel";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { TrainingAnalyticsPanel } from "@/components/climberbook/common/charts";
 import type { WeightEntryDraft } from "@/components/climberbook/common/training";
@@ -30,7 +31,10 @@ export function TrainingAnalyticsWidget({
   ...panelProps
 }: TrainingAnalyticsWidgetProps) {
   return (
-    <section
+    <Panel
+      as="section"
+      padding="none"
+      gap="none"
       style={
         isMobileLayout
           ? analyticsPanelStyle
@@ -43,6 +47,6 @@ export function TrainingAnalyticsWidget({
       >
         <TrainingAnalyticsPanel {...panelProps} />
       </ScrollPane>
-    </section>
+    </Panel>
   );
 }

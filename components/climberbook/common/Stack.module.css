@@ -1,0 +1,144 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap-mobile, 0.5625rem);
+  padding: var(--stack-padding-mobile, 0);
+  margin-top: var(--stack-margin-top-mobile, 0);
+}
+
+.direction--row {
+  flex-direction: row;
+}
+
+.direction--column {
+  flex-direction: column;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.align--start {
+  align-items: flex-start;
+}
+
+.align--center {
+  align-items: center;
+}
+
+.align--end {
+  align-items: flex-end;
+}
+
+.align--stretch {
+  align-items: stretch;
+}
+
+.justify--start {
+  justify-content: flex-start;
+}
+
+.justify--center {
+  justify-content: center;
+}
+
+.justify--between {
+  justify-content: space-between;
+}
+
+.justify--end {
+  justify-content: flex-end;
+}
+
+.gap--none {
+  --stack-gap-mobile: 0;
+  --stack-gap-desktop: 0;
+}
+
+.gap--xs {
+  --stack-gap-mobile: 0.375rem;
+  --stack-gap-desktop: 0.5rem;
+}
+
+.gap--sm {
+  --stack-gap-mobile: 0.5625rem;
+  --stack-gap-desktop: 0.5625rem;
+}
+
+.gap--md {
+  --stack-gap-mobile: 0.75rem;
+  --stack-gap-desktop: 0.75rem;
+}
+
+.gap--lg {
+  --stack-gap-mobile: 1rem;
+  --stack-gap-desktop: 1.25rem;
+}
+
+.padding--none {
+  --stack-padding-mobile: 0;
+  --stack-padding-desktop: 0;
+}
+
+.padding--xs {
+  --stack-padding-mobile: 0.375rem;
+  --stack-padding-desktop: 0.5rem;
+}
+
+.padding--sm {
+  --stack-padding-mobile: 0.5625rem;
+  --stack-padding-desktop: 0.75rem;
+}
+
+.padding--md {
+  --stack-padding-mobile: 0.75rem;
+  --stack-padding-desktop: 1rem;
+}
+
+.padding--lg {
+  --stack-padding-mobile: 1rem;
+  --stack-padding-desktop: 1.5rem;
+}
+
+.marginTop--none {
+  --stack-margin-top-mobile: 0;
+  --stack-margin-top-desktop: 0;
+}
+
+.marginTop--xs {
+  --stack-margin-top-mobile: 0.375rem;
+  --stack-margin-top-desktop: 0.5rem;
+}
+
+.marginTop--sm {
+  --stack-margin-top-mobile: 0.5625rem;
+  --stack-margin-top-desktop: 0.75rem;
+}
+
+.marginTop--md {
+  --stack-margin-top-mobile: 0.75rem;
+  --stack-margin-top-desktop: 1rem;
+}
+
+.marginTop--lg {
+  --stack-margin-top-mobile: 1rem;
+  --stack-margin-top-desktop: 1.25rem;
+}
+
+@media (min-width: 720px) {
+  .stack {
+    gap: var(--stack-gap-desktop, var(--stack-gap-mobile, 0.5625rem));
+    padding: var(
+      --stack-padding-desktop,
+      var(--stack-padding-mobile, 0)
+    );
+    margin-top: var(
+      --stack-margin-top-desktop,
+      var(--stack-margin-top-mobile, 0)
+    );
+  }
+}

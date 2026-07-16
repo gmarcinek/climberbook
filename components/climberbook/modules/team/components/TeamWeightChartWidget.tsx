@@ -11,10 +11,10 @@ import {
   YAxis,
 } from "recharts";
 import { EmptyState } from "@/components/climberbook/common/charts";
+import { Panel } from "@/components/climberbook/common/Panel";
 import {
   moduleEyebrowStyle,
   panelHeadingStyle,
-  panelStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
@@ -35,7 +35,7 @@ export function TeamWeightChartWidget({
   teamWeightChartData,
 }: TeamWeightChartWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Porównanie</span>
@@ -73,6 +73,6 @@ export function TeamWeightChartWidget({
           </ResponsiveContainer>
         </div>
       )}
-    </section>
+    </Panel>
   );
 }

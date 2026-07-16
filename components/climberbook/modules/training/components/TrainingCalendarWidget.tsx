@@ -1,8 +1,9 @@
 "use client";
 
+import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import {
   calendarNavLabelStyle,
-  calendarNavStyle,
   calendarPanelStyle,
   navButtonStyle,
 } from "@/components/climberbook/common/styles";
@@ -33,15 +34,25 @@ export function TrainingCalendarWidget({
   onSelectDate,
 }: TrainingCalendarWidgetProps) {
   return (
-    <section
+    <Panel
+      as="section"
+      padding="none"
+      gap="none"
       style={{
         ...calendarPanelStyle,
+        padding: undefined,
         gridColumn: isMobileLayout ? "auto" : 1,
         gridRow: isMobileLayout ? "auto" : 1,
         order: isMobileLayout ? -1 : 0,
       }}
     >
-      <div style={calendarNavStyle}>
+      <Stack
+        direction="row"
+        gap="sm"
+        justify="between"
+        align="center"
+        style={{ padding: 11 }}
+      >
         <button type="button" onClick={onPreviousMonth} style={navButtonStyle}>
           Wstecz
         </button>
@@ -51,7 +62,7 @@ export function TrainingCalendarWidget({
         <button type="button" onClick={onNextMonth} style={navButtonStyle}>
           Dalej
         </button>
-      </div>
+      </Stack>
 
       <TrainingCalendar
         anchorMonthStart={trainingRangeStart}
@@ -62,6 +73,6 @@ export function TrainingCalendarWidget({
         today={today}
         onSelectDate={onSelectDate}
       />
-    </section>
+    </Panel>
   );
 }

@@ -1,11 +1,3 @@
-.panel {
-  padding: 0.75rem;
-}
-
-.form {
-  display: grid;
-}
-
 .sectionList {
   display: flex;
   flex-wrap: wrap;
@@ -28,10 +20,4 @@
   color: var(--muted);
   font-size: 1rem;
   line-height: 1;
-}
-
-@media (min-width: 720px) {
-  .panel {
-    padding: 1.5rem;
-  }
 }

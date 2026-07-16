@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { AscentFormWidget } from "./AscentFormWidget";
 import { ReportHeaderWidget } from "./ReportHeaderWidget";
 import { ReportMetricsWidget } from "./ReportMetricsWidget";
+import { Stack } from "@/components/climberbook/common/Stack";
 import {
   moduleContentStyle,
   twoColumnLayoutStyle,
@@ -39,7 +40,7 @@ export function ReportsAssembly({
   frenchGradeOptions,
 }: ReportsAssemblyProps) {
   return (
-    <div style={moduleContentStyle}>
+    <Stack gap="md" style={moduleContentStyle}>
       <ReportHeaderWidget
         meta={moduleMeta}
         ascentsCount={ascentsCount}
@@ -59,6 +60,6 @@ export function ReportsAssembly({
           frenchGradeOptions={frenchGradeOptions}
         />
       </div>
-    </div>
+    </Stack>
   );
 }

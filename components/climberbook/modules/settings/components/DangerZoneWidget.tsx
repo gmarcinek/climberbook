@@ -1,5 +1,4 @@
 import {
-  actionRowStyle,
   deleteButtonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
@@ -8,12 +7,13 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import type { DangerZoneWidgetProps } from "./SettingsWidgetTypes";
 export function DangerZoneWidget({
   setIsDatabaseDeleteModalOpen,
 }: DangerZoneWidgetProps) {
   return (
-    <Panel>
+    <Panel gap="md">
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Zaawansowane</span>
@@ -25,7 +25,7 @@ export function DangerZoneWidget({
         Usunięcie bazy danych trwale kasuje wszystkich zawodników i ich dane.
         Zalecany wcześniejszy eksport całości.
       </p>
-      <div style={actionRowStyle}>
+      <Stack direction="row" gap="sm" wrap>
         <button
           type="button"
           style={deleteButtonStyle}
@@ -33,7 +33,7 @@ export function DangerZoneWidget({
         >
           USUŃ BAZĘ DANYCH
         </button>
-      </div>
+      </Stack>
     </Panel>
   );
 }

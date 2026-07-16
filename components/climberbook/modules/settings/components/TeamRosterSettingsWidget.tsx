@@ -1,5 +1,4 @@
 import {
-  actionRowStyle,
   athleteSelectStyle,
   deleteButtonStyle,
   ghostButtonStyle,
@@ -11,6 +10,7 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import type { TeamRosterSettingsWidgetProps } from "./SettingsWidgetTypes";
 export function TeamRosterSettingsWidget({
   athletes,
@@ -22,7 +22,7 @@ export function TeamRosterSettingsWidget({
   onDeleteAthlete,
 }: TeamRosterSettingsWidgetProps) {
   return (
-    <Panel>
+    <Panel gap="md">
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Zespół</span>
@@ -35,16 +35,16 @@ export function TeamRosterSettingsWidget({
           Brak zawodników. Dodaj pierwszego w formularzu obok.
         </p>
       ) : (
-        <div style={{ display: "grid", gap: 6 }}>
+        <Stack gap="sm">
           {athletes.map((athlete) => (
-            <div
+            <Stack
               key={athlete.id}
+              direction="row"
+              gap="sm"
+              wrap
+              justify="between"
+              align="center"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
-                flexWrap: "wrap" as const,
                 padding: "7px 8px",
                 border: "1px solid var(--border-strong)",
                 background:
@@ -54,7 +54,7 @@ export function TeamRosterSettingsWidget({
               }}
             >
               <strong style={{ minWidth: 0 }}>{athlete.name}</strong>
-              <div style={actionRowStyle}>
+              <Stack direction="row" gap="sm" wrap>
                 <select
                   value={athlete.sectionId ?? ""}
                   onChange={(event) =>
@@ -90,10 +90,10 @@ export function TeamRosterSettingsWidget({
                 >
                   Usuń
                 </button>
-              </div>
-            </div>
+              </Stack>
+            </Stack>
           ))}
-        </div>
+        </Stack>
       )}
     </Panel>
   );

@@ -2,12 +2,11 @@
 
 import {
   eyebrowStyle,
-  headerBadgeRowStyle,
   headerBadgeStyle,
-  moduleIntroStyle,
   mutedParagraphStyle,
   pageTitleStyle,
 } from "@/components/climberbook/common/styles";
+import { Stack } from "@/components/climberbook/common/Stack";
 type ReportHeaderWidgetProps = {
   meta: { eyebrow: string; title: string; description: string };
   ascentsCount: number;
@@ -21,17 +20,17 @@ export function ReportHeaderWidget({
   rockAscents,
 }: ReportHeaderWidgetProps) {
   return (
-    <div style={moduleIntroStyle}>
-      <div>
+    <Stack direction="row" gap="md" justify="between" align="start" wrap>
+      <Stack>
         <p style={eyebrowStyle}>{meta.eyebrow}</p>
         <h1 style={pageTitleStyle}>{meta.title}</h1>
         <p style={mutedParagraphStyle}>{meta.description}</p>
-      </div>
-      <div style={headerBadgeRowStyle}>
+      </Stack>
+      <Stack direction="row" gap="sm" wrap align="center">
         <span style={headerBadgeStyle}>Przejścia: {ascentsCount}</span>
         <span style={headerBadgeStyle}>Panel: {panelAscents}</span>
         <span style={headerBadgeStyle}>Skała: {rockAscents}</span>
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
