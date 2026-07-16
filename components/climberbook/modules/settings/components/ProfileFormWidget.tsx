@@ -1,14 +1,16 @@
 import {
   buttonStyle,
   fieldStyle,
-  inputStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
   softTagStyle,
-  weightControlStyle,
-  weightStepButtonStyle,
 } from "@/components/climberbook/common/styles";
+import {
+  Input,
+  NumericStepperControl,
+  Select,
+} from "@/components/climberbook/common/FormControls";
 import {
   Form,
   FormActions,
@@ -43,7 +45,7 @@ export function ProfileFormWidget({
       <FormGrid>
         <label style={fieldStyle}>
           Data urodzenia
-          <input
+          <Input
             value={profileDraft.birthDate}
             onChange={(event) =>
               setProfileDraft((current) => ({
@@ -52,12 +54,11 @@ export function ProfileFormWidget({
               }))
             }
             type="date"
-            style={inputStyle}
           />
         </label>
         <label style={fieldStyle}>
           Płeć
-          <select
+          <Select
             value={profileDraft.sex}
             onChange={(event) =>
               setProfileDraft((current) => ({
@@ -65,17 +66,16 @@ export function ProfileFormWidget({
                 sex: event.target.value as UserSex,
               }))
             }
-            style={inputStyle}
           >
             <option value="">Nie podano</option>
             <option value="kobieta">Kobieta</option>
             <option value="mezczyzna">Mężczyzna</option>
             <option value="inna">Inna</option>
-          </select>
+          </Select>
         </label>
         <label style={fieldStyle}>
           Wzrost (cm)
-          <input
+          <Input
             value={profileDraft.heightCm}
             onChange={(event) =>
               setProfileDraft((current) => ({
@@ -92,65 +92,47 @@ export function ProfileFormWidget({
             type="number"
             min="1"
             step="1"
-            style={inputStyle}
           />
         </label>
         <label style={fieldStyle} className={formLayoutClassNames.fullSpan}>
           Waga (kg)
-          <div style={weightControlStyle}>
-            <button
-              type="button"
-              style={weightStepButtonStyle}
-              onClick={() =>
-                setProfileDraft((current) => ({
-                  ...current,
-                  weightKg: formatWeightInput(
-                    Math.max(
-                      0,
-                      (parseWeightInput(current.weightKg) ?? 0) - 0.1,
-                    ),
-                  ),
-                }))
-              }
-            >
-              -
-            </button>
-            <input
-              value={profileDraft.weightKg}
-              onChange={(event) =>
-                setProfileDraft((current) => ({
-                  ...current,
-                  weightKg: event.target.value.replaceAll(",", "."),
-                }))
-              }
-              onBlur={() =>
+          <NumericStepperControl
+            value={profileDraft.weightKg}
+            onChange={(event) =>
+              setProfileDraft((current) => ({
+                ...current,
+                weightKg: event.target.value.replaceAll(",", "."),
+              }))
+            }
+            onDecrement={() =>
+              setProfileDraft((current) => ({
+                ...current,
+                weightKg: formatWeightInput(
+                  Math.max(0, (parseWeightInput(current.weightKg) ?? 0) - 0.1),
+                ),
+              }))
+            }
+            onIncrement={() =>
+              setProfileDraft((current) => ({
+                ...current,
+                weightKg: formatWeightInput(
+                  (parseWeightInput(current.weightKg) ?? 0) + 0.1,
+                ),
+              }))
+            }
+            inputProps={{
+              onBlur: () =>
                 setProfileDraft((current) => ({
                   ...current,
                   weightKg: formatWeightInput(
                     parseWeightInput(current.weightKg),
                   ),
-                }))
-              }
-              type="number"
-              min="0"
-              step="0.1"
-              style={{ ...inputStyle, flex: 1 }}
-            />
-            <button
-              type="button"
-              style={weightStepButtonStyle}
-              onClick={() =>
-                setProfileDraft((current) => ({
-                  ...current,
-                  weightKg: formatWeightInput(
-                    (parseWeightInput(current.weightKg) ?? 0) + 0.1,
-                  ),
-                }))
-              }
-            >
-              +
-            </button>
-          </div>
+                })),
+              type: "number",
+              min: "0",
+              step: "0.1",
+            }}
+          />
         </label>
       </FormGrid>
       <FormActions>

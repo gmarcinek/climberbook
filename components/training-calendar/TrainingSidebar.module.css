@@ -163,72 +163,10 @@
   grid-column: 1 / -1;
 }
 
-.trainingSidebar__input {
-  border: 1px solid var(--border-strong);
-  padding: 6px 7px;
-  background: rgba(255, 255, 255, 0.86);
-  color: var(--text);
-  width: 100%;
-}
-
-.trainingSidebar__input--grow {
-  flex: 1;
-}
-
-.trainingSidebar__textarea {
-  resize: vertical;
-}
-
 @media (min-width: 720px) {
   .trainingSidebar__formGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-
-.trainingSidebar__controlGroup {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.trainingSidebar__stepButton {
-  border: 1px solid var(--border-strong);
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.74);
-  cursor: pointer;
-  min-width: 42px;
-}
-
-.trainingSidebar__durationControl {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.trainingSidebar__durationSlider {
-  width: 100%;
-  margin: 0;
-  accent-color: #168f91;
-  cursor: pointer;
-}
-
-.trainingSidebar__durationValue {
-  min-width: 60px;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  text-align: right;
-}
-
-.trainingSidebar__clearButton {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border-strong);
-  background: rgba(255, 255, 255, 0.74);
-  color: var(--muted);
-  cursor: pointer;
-  font-weight: 700;
 }
 
 .trainingSidebar__chipGrid {

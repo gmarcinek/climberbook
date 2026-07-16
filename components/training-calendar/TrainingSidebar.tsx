@@ -1,4 +1,13 @@
 import { FormEvent, useState } from "react";
+import {
+  formControlClassNames,
+  Input,
+  InputActionControl,
+  NumericRangeControl,
+  NumericStepperControl,
+  Select,
+  TextArea,
+} from "@/components/climberbook/common/FormControls";
 import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { type TrainingRecord, type TrainingSurface } from "@/lib/climbs-db";
@@ -147,10 +156,6 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
   const fullFieldClassName = [
     styles.trainingSidebar__field,
     formLayoutClassNames.fullSpan,
-  ].join(" ");
-  const growInputClassName = [
-    styles.trainingSidebar__input,
-    styles["trainingSidebar__input--grow"],
   ].join(" ");
   const [selectedGradeBase, setSelectedGradeBase] = useState<string | null>(
     null,
@@ -332,7 +337,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </div>
                 <label className={styles.trainingSidebar__field}>
                   Inne
-                  <input
+                  <Input
                     value={trainingDraft.customSessionType}
                     onChange={(event) =>
                       onTrainingDraftChange({
@@ -348,7 +353,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               <div className={styles.trainingSidebar__formGrid}>
                 <label className={styles.trainingSidebar__field}>
                   Data
-                  <input
+                  <Input
                     value={trainingDraft.date}
                     onChange={(event) =>
                       onTrainingDraftChange({
@@ -363,7 +368,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </label>
                 <label className={styles.trainingSidebar__field}>
                   Godzina
-                  <select
+                  <Select
                     value={trainingDraft.time}
                     onChange={(event) =>
                       onTrainingDraftChange({
@@ -379,237 +384,195 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                         {timeOption}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 <label className={styles.trainingSidebar__field}>
                   Czas (min)
-                  <div className={styles.trainingSidebar__durationControl}>
-                    <input
-                      value={trainingDraft.durationMinutes}
-                      onChange={(event) =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          durationMinutes: event.target.value,
-                        })
-                      }
-                      type="range"
-                      min="15"
-                      max="300"
-                      step="15"
-                      aria-label="Długość treningu w minutach"
-                      className={styles.trainingSidebar__durationSlider}
-                    />
-                    <output className={styles.trainingSidebar__durationValue}>
-                      {trainingDraft.durationMinutes} min
-                    </output>
-                  </div>
+                  <NumericRangeControl
+                    value={trainingDraft.durationMinutes}
+                    onChange={(event) =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        durationMinutes: event.target.value,
+                      })
+                    }
+                    min="15"
+                    max="300"
+                    step="15"
+                    ariaLabel="Długość treningu w minutach"
+                    valueLabel={`${trainingDraft.durationMinutes} min`}
+                    className={styles.trainingSidebar__durationControl}
+                  />
                 </label>
                 <label className={styles.trainingSidebar__field}>
                   Waga (kg)
-                  <div className={styles.trainingSidebar__controlGroup}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          bodyWeightKg: adjustWeightValue(
-                            trainingDraft.bodyWeightKg,
-                            -0.1,
-                          ),
-                        })
-                      }
-                      className={styles.trainingSidebar__stepButton}
-                    >
-                      -
-                    </button>
-                    <input
-                      value={trainingDraft.bodyWeightKg}
-                      onChange={(event) =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          bodyWeightKg: normalizeDecimalInput(
-                            event.target.value,
-                          ),
-                        })
-                      }
-                      onBlur={() =>
+                  <NumericStepperControl
+                    value={trainingDraft.bodyWeightKg}
+                    onChange={(event) =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        bodyWeightKg: normalizeDecimalInput(event.target.value),
+                      })
+                    }
+                    onDecrement={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        bodyWeightKg: adjustWeightValue(
+                          trainingDraft.bodyWeightKg,
+                          -0.1,
+                        ),
+                      })
+                    }
+                    onIncrement={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        bodyWeightKg: adjustWeightValue(
+                          trainingDraft.bodyWeightKg,
+                          0.1,
+                        ),
+                      })
+                    }
+                    inputProps={{
+                      onBlur: () =>
                         onTrainingDraftChange({
                           ...trainingDraft,
                           bodyWeightKg: formatWeightToSingleDecimal(
                             trainingDraft.bodyWeightKg,
                           ),
-                        })
-                      }
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      required
-                      className={growInputClassName}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          bodyWeightKg: adjustWeightValue(
-                            trainingDraft.bodyWeightKg,
-                            0.1,
-                          ),
-                        })
-                      }
-                      className={styles.trainingSidebar__stepButton}
-                    >
-                      +
-                    </button>
-                  </div>
+                        }),
+                      type: "number",
+                      min: "0",
+                      step: "0.1",
+                      required: true,
+                    }}
+                    className={styles.trainingSidebar__controlGroup}
+                  />
                 </label>
                 <label className={styles.trainingSidebar__field}>
                   Kalorie
-                  <div className={styles.trainingSidebar__controlGroup}>
-                    <button
-                      type="button"
-                      aria-label="Odejmij 100 kalorii"
-                      title="Odejmij 100 kalorii"
-                      onClick={() =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          caloriesBurned: adjustCaloriesValue(
-                            trainingDraft.caloriesBurned,
-                            -100,
-                          ),
-                          caloriesMode: "manual",
-                        })
-                      }
-                      className={styles.trainingSidebar__stepButton}
-                    >
-                      -
-                    </button>
-                    <input
-                      value={trainingDraft.caloriesBurned}
-                      onChange={(event) =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          caloriesBurned: event.target.value,
-                          caloriesMode: "manual",
-                        })
-                      }
-                      placeholder="Auto z wagi, wieku i czasu"
-                      type="number"
-                      className={growInputClassName}
-                    />
-                    <button
-                      type="button"
-                      aria-label="Dodaj 100 kalorii"
-                      title="Dodaj 100 kalorii"
-                      onClick={() =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          caloriesBurned: adjustCaloriesValue(
-                            trainingDraft.caloriesBurned,
-                            100,
-                          ),
-                          caloriesMode: "manual",
-                        })
-                      }
-                      className={styles.trainingSidebar__stepButton}
-                    >
-                      +
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          caloriesBurned: "",
-                          caloriesMode: "auto",
-                        })
-                      }
-                      className={styles.trainingSidebar__stepButton}
-                    >
-                      Auto
-                    </button>
-                  </div>
+                  <NumericStepperControl
+                    value={trainingDraft.caloriesBurned}
+                    onChange={(event) =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        caloriesBurned: event.target.value,
+                        caloriesMode: "manual",
+                      })
+                    }
+                    onDecrement={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        caloriesBurned: adjustCaloriesValue(
+                          trainingDraft.caloriesBurned,
+                          -100,
+                        ),
+                        caloriesMode: "manual",
+                      })
+                    }
+                    onIncrement={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        caloriesBurned: adjustCaloriesValue(
+                          trainingDraft.caloriesBurned,
+                          100,
+                        ),
+                        caloriesMode: "manual",
+                      })
+                    }
+                    decrementAriaLabel="Odejmij 100 kalorii"
+                    incrementAriaLabel="Dodaj 100 kalorii"
+                    decrementTitle="Odejmij 100 kalorii"
+                    incrementTitle="Dodaj 100 kalorii"
+                    trailingActions={
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onTrainingDraftChange({
+                            ...trainingDraft,
+                            caloriesBurned: "",
+                            caloriesMode: "auto",
+                          })
+                        }
+                        className={formControlClassNames.stepButton}
+                      >
+                        Auto
+                      </button>
+                    }
+                    inputProps={{
+                      placeholder: "Auto z wagi, wieku i czasu",
+                      type: "number",
+                    }}
+                    className={styles.trainingSidebar__controlGroup}
+                  />
                 </label>
                 <label className={styles.trainingSidebar__field}>
                   Wstawki
-                  <div className={styles.trainingSidebar__controlGroup}>
-                    <button
-                      type="button"
-                      aria-label="Odejmij jedną wstawkę"
-                      title="Odejmij jedną wstawkę"
-                      onClick={() =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          attemptsCount: adjustAttemptsValue(
-                            trainingDraft.attemptsCount,
-                            -1,
-                          ),
-                        })
-                      }
-                      className={styles.trainingSidebar__stepButton}
-                    >
-                      -
-                    </button>
-                    <input
-                      value={trainingDraft.attemptsCount}
-                      onChange={(event) =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          attemptsCount: event.target.value,
-                        })
-                      }
-                      type="number"
-                      min="0"
-                      step="1"
-                      required
-                      className={growInputClassName}
-                    />
-                    <button
-                      type="button"
-                      aria-label="Dodaj jedną wstawkę"
-                      title="Dodaj jedną wstawkę"
-                      onClick={() =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          attemptsCount: adjustAttemptsValue(
-                            trainingDraft.attemptsCount,
-                            1,
-                          ),
-                        })
-                      }
-                      className={styles.trainingSidebar__stepButton}
-                    >
-                      +
-                    </button>
-                  </div>
+                  <NumericStepperControl
+                    value={trainingDraft.attemptsCount}
+                    onChange={(event) =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        attemptsCount: event.target.value,
+                      })
+                    }
+                    onDecrement={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        attemptsCount: adjustAttemptsValue(
+                          trainingDraft.attemptsCount,
+                          -1,
+                        ),
+                      })
+                    }
+                    onIncrement={() =>
+                      onTrainingDraftChange({
+                        ...trainingDraft,
+                        attemptsCount: adjustAttemptsValue(
+                          trainingDraft.attemptsCount,
+                          1,
+                        ),
+                      })
+                    }
+                    decrementAriaLabel="Odejmij jedną wstawkę"
+                    incrementAriaLabel="Dodaj jedną wstawkę"
+                    decrementTitle="Odejmij jedną wstawkę"
+                    incrementTitle="Dodaj jedną wstawkę"
+                    inputProps={{
+                      type: "number",
+                      min: "0",
+                      step: "1",
+                      required: true,
+                    }}
+                    className={styles.trainingSidebar__controlGroup}
+                  />
                 </label>
                 <div className={fullFieldClassName}>
                   <span>Wyceny</span>
-                  <div className={styles.trainingSidebar__controlGroup}>
-                    <input
-                      value={trainingDraft.difficultyNotes}
-                      readOnly
-                      placeholder="Wybierz wyceny poniżej"
-                      aria-label="Wybrane wyceny"
-                      className={growInputClassName}
-                    />
-                    <button
-                      type="button"
-                      aria-label="Wyczyść wyceny"
-                      title="Wyczyść wyceny"
-                      onClick={() => {
-                        setSelectedGradeBase(null);
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          difficultyNotes: "",
-                          attemptsCount: "0",
-                        });
-                      }}
-                      className={styles.trainingSidebar__clearButton}
-                    >
-                      X
-                    </button>
-                  </div>
+                  <InputActionControl
+                    value={trainingDraft.difficultyNotes}
+                    readOnly
+                    placeholder="Wybierz wyceny poniżej"
+                    aria-label="Wybrane wyceny"
+                    className={styles.trainingSidebar__input}
+                    action={
+                      <button
+                        type="button"
+                        aria-label="Wyczyść wyceny"
+                        title="Wyczyść wyceny"
+                        onClick={() => {
+                          setSelectedGradeBase(null);
+                          onTrainingDraftChange({
+                            ...trainingDraft,
+                            difficultyNotes: "",
+                            attemptsCount: "0",
+                          });
+                        }}
+                        className={formControlClassNames.trailingAction}
+                      >
+                        X
+                      </button>
+                    }
+                  />
                   <div
                     className={[
                       styles.trainingSidebar__chipGrid,
@@ -695,7 +658,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
 
               <label className={styles.trainingSidebar__field}>
                 Samopoczucie i notatki
-                <textarea
+                <TextArea
                   value={combinedNotes}
                   onChange={(event) =>
                     onTrainingDraftChange({
@@ -705,10 +668,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     })
                   }
                   rows={4}
-                  className={[
-                    styles.trainingSidebar__input,
-                    styles.trainingSidebar__textarea,
-                  ].join(" ")}
+                  className={styles.trainingSidebar__input}
                 />
               </label>
 
