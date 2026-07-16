@@ -10,6 +10,7 @@ import { ReportHeaderWidget } from "./ReportHeaderWidget";
 import { ReportMetricsWidget } from "./ReportMetricsWidget";
 import { Stack } from "@/components/climberbook/common/Stack";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
+import type { AscentRecord } from "@/lib/climbs-db";
 import {
   buttonStyle,
   mobileDrawerBackdropStyle,
@@ -29,16 +30,7 @@ type AscentDraftValues = {
 };
 type ReportsAssemblyProps = {
   moduleMeta: { eyebrow: string; title: string; description: string };
-  ascents: Array<{
-    id?: number;
-    date: string;
-    source: "panel" | "skala";
-    routeName: string;
-    suggestedGrade: string;
-    subjectiveGrade: string;
-    notes: string;
-    createdAt: string;
-  }>;
+  ascents: AscentRecord[];
   ascentsCount: number;
   panelAscents: number;
   rockAscents: number;
@@ -67,7 +59,7 @@ type ReportsAssemblyProps = {
   editingAscentId: number | null;
   onAscentDraftChange: (draft: AscentDraftValues) => void;
   onAscentSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onAscentEdit: (ascent: ReportsAssemblyProps["ascents"][number]) => void;
+  onAscentEdit: (ascent: AscentRecord) => void;
   onCancelAscentEdit: () => void;
   frenchGradeOptions: string[];
 };

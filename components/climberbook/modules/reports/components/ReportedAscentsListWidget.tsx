@@ -11,20 +11,12 @@ import {
   getRopeGradeColor,
   getRopeGradeIndex,
 } from "@/components/climberbook/common/training";
+import type { AscentRecord } from "@/lib/climbs-db";
 
 type ReportedAscentsListWidgetProps = {
-  ascents: Array<{
-    id?: number;
-    date: string;
-    source: "panel" | "skala";
-    routeName: string;
-    suggestedGrade: string;
-    subjectiveGrade: string;
-    notes: string;
-    createdAt: string;
-  }>;
+  ascents: AscentRecord[];
   editingAscentId: number | null;
-  onEdit: (ascent: ReportedAscentsListWidgetProps["ascents"][number]) => void;
+  onEdit: (ascent: AscentRecord) => void;
 };
 
 function resolveGradeColor(grade: string) {
