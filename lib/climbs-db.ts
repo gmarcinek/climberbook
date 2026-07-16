@@ -78,6 +78,13 @@ export type AthleteRecord = {
   firstName?: string;
   lastName?: string;
   nick?: string;
+  sectionId?: string | null;
+  createdAt: string;
+};
+
+export type SectionRecord = {
+  id: string;
+  name: string;
   createdAt: string;
 };
 
@@ -86,6 +93,7 @@ export type AthleteInput = {
   lastName?: string;
   nick?: string;
   name?: string;
+  sectionId?: string | null;
 };
 
 export function computeAthleteName(input: AthleteInput) {
@@ -170,10 +178,17 @@ interface ClimberbookDb extends DBSchema {
       "by-created-at": string;
     };
   };
+  sections: {
+    key: string;
+    value: SectionRecord;
+    indexes: {
+      "by-created-at": string;
+    };
+  };
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 const DEFAULT_ATHLETE: AthleteRecord = {
   id: "primary",
   name: "Ja",
@@ -375,6 +390,13 @@ function createDatabase() {
           await settingsStore.delete("primary");
         }
       }
+
+      if (!database.objectStoreNames.contains("sections")) {
+        const store = database.createObjectStore("sections", {
+          keyPath: "id",
+        });
+        store.createIndex("by-created-at", "createdAt");
+      }
     },
   });
 }
@@ -535,6 +557,7 @@ export async function addAthlete(input: AthleteInput) {
     firstName: input.firstName?.trim() ?? "",
     lastName: input.lastName?.trim() ?? "",
     nick: input.nick?.trim() ?? "",
+    sectionId: input.sectionId ?? null,
     createdAt: new Date().toISOString(),
   };
 
@@ -556,7 +579,75 @@ export async function updateAthlete(id: string, input: AthleteInput) {
     firstName: input.firstName?.trim() ?? "",
     lastName: input.lastName?.trim() ?? "",
     nick: input.nick?.trim() ?? "",
+    sectionId: input.sectionId ?? null,
   });
+}
+
+export async function listSections() {
+  const database = await getDatabase();
+  return database.getAllFromIndex("sections", "by-created-at");
+}
+
+export async function addSection(name: string) {
+  const database = await getDatabase();
+  const section: SectionRecord = {
+    id: crypto.randomUUID(),
+    name: name.trim() || "Sekcja",
+    createdAt: new Date().toISOString(),
+  };
+
+  await database.add("sections", section);
+  return section;
+}
+
+export async function updateSection(id: string, name: string) {
+  const database = await getDatabase();
+  const existing = await database.get("sections", id);
+
+  if (!existing) {
+    throw new Error("Nie znaleziono sekcji do edycji.");
+  }
+
+  await database.put("sections", {
+    ...existing,
+    name: name.trim() || "Sekcja",
+  });
+}
+
+export async function deleteSection(id: string) {
+  const database = await getDatabase();
+  const transaction = database.transaction(
+    ["sections", "athletes"],
+    "readwrite",
+  );
+
+  await transaction.objectStore("sections").delete(id);
+
+  const athletesStore = transaction.objectStore("athletes");
+  let cursor = await athletesStore.openCursor();
+
+  while (cursor) {
+    if (cursor.value.sectionId === id) {
+      await cursor.update({ ...cursor.value, sectionId: null });
+    }
+    cursor = await cursor.continue();
+  }
+
+  await transaction.done;
+}
+
+export async function assignAthleteToSection(
+  athleteId: string,
+  sectionId: string | null,
+) {
+  const database = await getDatabase();
+  const existing = await database.get("athletes", athleteId);
+
+  if (!existing) {
+    throw new Error("Nie znaleziono zawodnika.");
+  }
+
+  await database.put("athletes", { ...existing, sectionId });
 }
 
 export async function deleteAthlete(id: string) {
@@ -610,6 +701,7 @@ function normalizeImportedProfile(value: unknown): UserProfileRecord {
 
   return {
     key: "primary",
+    athleteId: profile.athleteId ?? "primary",
     birthDate: profile.birthDate ?? "",
     sex: profile.sex ?? "",
     heightCm: profile.heightCm ?? null,
@@ -680,9 +772,17 @@ export async function importDatabaseBackup(
     throw new Error("Nieprawidłowy plik backupu.");
   }
 
-  const backup = value as Partial<
-    ClimberbookDatabaseBackup & ClimberbookFullDatabaseBackup
-  >;
+  const backup = value as {
+    formatVersion?: number;
+    athlete?: AthleteRecord;
+    athletes?: AthleteRecord[];
+    climbs?: ClimbRecord[];
+    trainings?: TrainingRecord[];
+    ascents?: AscentRecord[];
+    profile?: unknown;
+    profiles?: UserProfileRecord[];
+    weightEntries?: WeightEntryRecord[];
+  };
 
   if (
     backup.formatVersion !== 1 &&

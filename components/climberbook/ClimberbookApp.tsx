@@ -67,6 +67,10 @@ import {
   addAthlete,
   updateAthlete,
   deleteAthlete,
+  addSection,
+  deleteSection,
+  listSections,
+  assignAthleteToSection,
   addTraining,
   addWeightEntry,
   createEmptyUserProfile,
@@ -86,6 +90,7 @@ import {
   updateTraining,
   type AscentRecord,
   type AthleteRecord,
+  type SectionRecord,
   type TrainingRecord,
   type TrainingSurface,
   type UserProfileRecord,
@@ -119,6 +124,7 @@ type AthleteFormDraft = {
   firstName: string;
   lastName: string;
   nick: string;
+  sectionId: string;
   birthDate: string;
   sex: UserSex;
   heightCm: string;
@@ -130,6 +136,7 @@ function createEmptyAthleteForm(): AthleteFormDraft {
     firstName: "",
     lastName: "",
     nick: "",
+    sectionId: "",
     birthDate: "",
     sex: "",
     heightCm: "",
@@ -530,6 +537,8 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
   const [athleteForm, setAthleteForm] = useState<AthleteFormDraft>(() =>
     createEmptyAthleteForm(),
   );
+  const [sections, setSections] = useState<SectionRecord[]>([]);
+  const [newSectionName, setNewSectionName] = useState("");
   const [trainings, setTrainings] = useState<TrainingRecord[]>([]);
   const [teamTrainings, setTeamTrainings] = useState<TrainingRecord[]>([]);
   const [ascents, setAscents] = useState<AscentRecord[]>([]);
@@ -566,14 +575,17 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
   const backupImportInputRef = useRef<HTMLInputElement | null>(null);
 
   async function refreshData() {
-    const [athleteItems, allTrainingItems, allWeightItems] = await Promise.all([
-      listAthletes(),
-      listAllTrainings(),
-      listAllWeightEntries(),
-    ]);
+    const [athleteItems, allTrainingItems, allWeightItems, sectionItems] =
+      await Promise.all([
+        listAthletes(),
+        listAllTrainings(),
+        listAllWeightEntries(),
+        listSections(),
+      ]);
     const athleteId = activeAthleteId ?? athleteItems[0]?.id;
 
     setAthletes(athleteItems);
+    setSections(sectionItems);
     setTeamTrainings(allTrainingItems);
     setTeamWeightEntries(allWeightItems);
 
@@ -860,6 +872,26 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
       }),
     [athletes, teamTrainings, teamWeightEntries],
   );
+  const teamSummaryGroups = useMemo(() => {
+    const groups = sections.map((section) => ({
+      id: section.id,
+      name: section.name,
+      summaries: teamSummaries.filter(
+        (summary) => summary.athlete.sectionId === section.id,
+      ),
+    }));
+    const unassigned = teamSummaries.filter(
+      (summary) =>
+        !summary.athlete.sectionId ||
+        !sections.some((section) => section.id === summary.athlete.sectionId),
+    );
+
+    if (unassigned.length > 0) {
+      groups.push({ id: "", name: "Bez sekcji", summaries: unassigned });
+    }
+
+    return groups.filter((group) => group.summaries.length > 0);
+  }, [sections, teamSummaries]);
   const teamWeightChartData = useMemo(() => {
     const weightsByDate = new Map<string, Record<string, number | string>>();
 
@@ -1244,6 +1276,60 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
     setAthleteForm(createEmptyAthleteForm());
   }
 
+  async function handleAddSection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = newSectionName.trim();
+
+    if (!name) {
+      return;
+    }
+
+    try {
+      await addSection(name);
+      setNewSectionName("");
+      await refreshData();
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "Nie udało się dodać sekcji.",
+      );
+    }
+  }
+
+  async function handleDeleteSection(section: SectionRecord) {
+    if (
+      !window.confirm(
+        `Usunąć sekcję ${section.name}? Zawodnicy pozostaną, ale bez przypisania.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteSection(section.id);
+      await refreshData();
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "Nie udało się usunąć sekcji.",
+      );
+    }
+  }
+
+  async function handleAssignAthleteSection(
+    athlete: AthleteRecord,
+    sectionId: string,
+  ) {
+    try {
+      await assignAthleteToSection(athlete.id, sectionId || null);
+      await refreshData();
+    } catch (error) {
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Nie udało się przypisać zawodnika.",
+      );
+    }
+  }
+
   async function startAthleteEdit(athlete: AthleteRecord) {
     setSettingsTab("zespol");
     setAthleteFormMode("edit");
@@ -1260,6 +1346,7 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
       firstName: athlete.firstName ?? "",
       lastName: athlete.lastName ?? "",
       nick: athlete.nick ?? "",
+      sectionId: athlete.sectionId ?? "",
       birthDate: profile?.birthDate ?? "",
       sex: profile?.sex ?? "",
       heightCm: profile?.heightCm?.toString() ?? "",
@@ -1284,6 +1371,7 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
       firstName: athleteForm.firstName,
       lastName: athleteForm.lastName,
       nick: athleteForm.nick,
+      sectionId: athleteForm.sectionId || null,
     };
     const profileData = {
       birthDate: athleteForm.birthDate,
@@ -1856,46 +1944,57 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
                     Settings.
                   </p>
                 ) : null}
-                <div style={statsGridStyle}>
-                  {teamSummaries.map((summary) => (
-                    <article
-                      key={summary.athlete.id}
-                      style={{
-                        ...metricCardStyle,
-                        background:
-                          summary.athlete.id === activeAthleteId
-                            ? "rgba(195, 102, 58, 0.1)"
-                            : metricCardStyle.background,
-                      }}
-                    >
-                      <div style={panelHeadingStyle}>
-                        <strong>{summary.athlete.name}</strong>
-                        {summary.athlete.id === activeAthleteId ? (
-                          <span style={softTagStyle}>Wybrany</span>
-                        ) : (
-                          <button
-                            type="button"
-                            style={ghostButtonStyle}
-                            onClick={() =>
-                              setActiveAthleteId(summary.athlete.id)
-                            }
-                          >
-                            Otwórz
-                          </button>
-                        )}
-                      </div>
-                      <span style={mutedParagraphStyle}>
-                        {summary.trainingCount} sesji | {summary.volume} min
-                      </span>
-                      <strong>
-                        Waga:{" "}
-                        {summary.latestWeight
-                          ? `${summary.latestWeight} kg`
-                          : "-"}
-                      </strong>
-                    </article>
-                  ))}
-                </div>
+                {teamSummaryGroups.map((group) => (
+                  <div
+                    key={group.id || "none"}
+                    style={{ display: "grid", gap: 6 }}
+                  >
+                    <div style={panelHeadingStyle}>
+                      <span style={moduleEyebrowStyle}>{group.name}</span>
+                      <span style={softTagStyle}>{group.summaries.length}</span>
+                    </div>
+                    <div style={statsGridStyle}>
+                      {group.summaries.map((summary) => (
+                        <article
+                          key={summary.athlete.id}
+                          style={{
+                            ...metricCardStyle,
+                            background:
+                              summary.athlete.id === activeAthleteId
+                                ? "rgba(195, 102, 58, 0.1)"
+                                : metricCardStyle.background,
+                          }}
+                        >
+                          <div style={panelHeadingStyle}>
+                            <strong>{summary.athlete.name}</strong>
+                            {summary.athlete.id === activeAthleteId ? (
+                              <span style={softTagStyle}>Wybrany</span>
+                            ) : (
+                              <button
+                                type="button"
+                                style={ghostButtonStyle}
+                                onClick={() =>
+                                  setActiveAthleteId(summary.athlete.id)
+                                }
+                              >
+                                Otwórz
+                              </button>
+                            )}
+                          </div>
+                          <span style={mutedParagraphStyle}>
+                            {summary.trainingCount} sesji | {summary.volume} min
+                          </span>
+                          <strong>
+                            Waga:{" "}
+                            {summary.latestWeight
+                              ? `${summary.latestWeight} kg`
+                              : "-"}
+                          </strong>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </section>
 
               <section style={panelStyle}>
@@ -2299,6 +2398,59 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
                         Import z pliku
                       </button>
                     </div>
+                    <form onSubmit={handleAddSection} style={actionRowStyle}>
+                      <input
+                        value={newSectionName}
+                        onChange={(event) =>
+                          setNewSectionName(event.target.value)
+                        }
+                        placeholder="Nazwa sekcji / teamu"
+                        style={{ ...inputStyle, flex: 1 }}
+                      />
+                      <button type="submit" style={buttonStyle}>
+                        Dodaj sekcję
+                      </button>
+                    </form>
+                    {sections.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap" as const,
+                          gap: 6,
+                        }}
+                      >
+                        {sections.map((section) => (
+                          <span
+                            key={section.id}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                              padding: "4px 8px",
+                              border: "1px solid var(--border-strong)",
+                              background: "rgba(255,255,255,0.4)",
+                            }}
+                          >
+                            {section.name}
+                            <button
+                              type="button"
+                              style={{
+                                border: 0,
+                                background: "transparent",
+                                cursor: "pointer",
+                                color: "var(--muted)",
+                                fontSize: "1rem",
+                                lineHeight: 1,
+                              }}
+                              onClick={() => void handleDeleteSection(section)}
+                              aria-label={`Usuń sekcję ${section.name}`}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     {athletes.length === 0 ? (
                       <p style={mutedParagraphStyle}>
                         Brak zawodników. Dodaj pierwszego w formularzu obok.
@@ -2326,6 +2478,23 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
                               {athlete.name}
                             </strong>
                             <div style={actionRowStyle}>
+                              <select
+                                value={athlete.sectionId ?? ""}
+                                onChange={(event) =>
+                                  void handleAssignAthleteSection(
+                                    athlete,
+                                    event.target.value,
+                                  )
+                                }
+                                style={athleteSelectStyle}
+                              >
+                                <option value="">Bez sekcji</option>
+                                {sections.map((section) => (
+                                  <option key={section.id} value={section.id}>
+                                    {section.name}
+                                  </option>
+                                ))}
+                              </select>
                               <button
                                 type="button"
                                 style={secondaryButtonStyle}
@@ -2412,6 +2581,26 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
                             placeholder="Wyświetlana nazwa"
                             style={inputStyle}
                           />
+                        </label>
+                        <label style={fieldStyle}>
+                          Sekcja / Team
+                          <select
+                            value={athleteForm.sectionId}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                sectionId: event.target.value,
+                              }))
+                            }
+                            style={inputStyle}
+                          >
+                            <option value="">Bez sekcji</option>
+                            {sections.map((section) => (
+                              <option key={section.id} value={section.id}>
+                                {section.name}
+                              </option>
+                            ))}
+                          </select>
                         </label>
                         <label style={fieldStyle}>
                           Data urodzenia
