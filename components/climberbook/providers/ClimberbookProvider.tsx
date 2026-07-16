@@ -62,6 +62,7 @@ import {
   listTrainings,
   listWeightEntries,
   saveUserProfile,
+  updateAscent,
   updateAthlete,
   updateTraining,
   type AscentRecord,
@@ -184,6 +185,7 @@ type ClimberbookContextValue = {
   setWeightEntryDraft: Dispatch<SetStateAction<WeightEntryDraft>>;
   trainingDraft: TrainingDraftValues;
   editingTrainingId: number | null;
+  editingAscentId: number | null;
   ascentDraft: AscentDraft;
   setAscentDraft: Dispatch<SetStateAction<AscentDraft>>;
   status: string;
@@ -209,6 +211,8 @@ type ClimberbookContextValue = {
   deleteTraining: (training: TrainingRecord) => Promise<void>;
   submitWeightEntry: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   submitAscent: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  editAscent: (ascent: AscentRecord) => void;
+  cancelAscentEdit: () => void;
   submitSettings: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   exportDatabase: () => Promise<void>;
   importDatabase: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
@@ -258,6 +262,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const [editingTrainingId, setEditingTrainingId] = useState<number | null>(
     null,
   );
+  const [editingAscentId, setEditingAscentId] = useState<number | null>(null);
   const [ascentDraft, setAscentDraft] = useState<AscentDraft>(emptyAscentDraft);
   const [profileDraft, setProfileDraft] = useState<UserProfileDraft>(
     createUserProfileDraft,
@@ -331,6 +336,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     if (!athleteId) {
       setTrainings([]);
       setAscents([]);
+      setEditingAscentId(null);
       setProfileDraft(createUserProfileDraft());
       setWeightEntries([]);
       return;
@@ -510,8 +516,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function submitAscent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!activeAthleteId) return;
-    await addAscent({ ...ascentDraft, athleteId: activeAthleteId });
+    if (editingAscentId !== null) {
+      await updateAscent({
+        id: editingAscentId,
+        athleteId: activeAthleteId,
+        ...ascentDraft,
+      });
+    } else {
+      await addAscent({ ...ascentDraft, athleteId: activeAthleteId });
+    }
     await refreshData();
+    setEditingAscentId(null);
     setAscentDraft(emptyAscentDraft());
   }
   async function submitSettings(event: FormEvent<HTMLFormElement>) {
@@ -746,6 +761,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setWeightEntryDraft,
     trainingDraft,
     editingTrainingId,
+    editingAscentId,
     ascentDraft,
     setAscentDraft,
     status,
@@ -785,6 +801,21 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     deleteTraining: deleteTrainingAction,
     submitWeightEntry,
     submitAscent,
+    editAscent: (ascent) => {
+      setEditingAscentId(ascent.id ?? null);
+      setAscentDraft({
+        date: ascent.date,
+        source: ascent.source,
+        routeName: ascent.routeName,
+        suggestedGrade: ascent.suggestedGrade,
+        subjectiveGrade: ascent.subjectiveGrade,
+        notes: ascent.notes,
+      });
+    },
+    cancelAscentEdit: () => {
+      setEditingAscentId(null);
+      setAscentDraft(emptyAscentDraft());
+    },
     submitSettings,
     exportDatabase,
     importDatabase,
@@ -873,6 +904,7 @@ export function useTrainingModule() {
   const {
     ascents,
     editingTrainingId,
+    editingAscentId,
     editTraining,
     deleteTraining,
     nextTrainingMonth,
@@ -925,6 +957,9 @@ export function useReportsModule() {
   const {
     ascents,
     ascentDraft,
+    cancelAscentEdit,
+    editAscent,
+    editingAscentId,
     profileDraft,
     selectedDate,
     setAscentDraft,
@@ -937,6 +972,9 @@ export function useReportsModule() {
   return {
     ascents,
     ascentDraft,
+    cancelAscentEdit,
+    editAscent,
+    editingAscentId,
     profileDraft,
     selectedDate,
     setAscentDraft,

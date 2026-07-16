@@ -28,7 +28,7 @@ export const moduleConfig: ClimberbookModule[] = [
     route: "/raporty",
     title: "Moduł raportowy",
     navLabel: "Raporty",
-    description: "Historia przejść panel i skała oraz eksport CSV.",
+    description: "",
     eyebrow: "Historia i eksport",
   },
   {

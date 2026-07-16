@@ -698,6 +698,23 @@ export async function addAscent(input: Omit<AscentRecord, "id" | "createdAt">) {
   });
 }
 
+export async function updateAscent(
+  input: Omit<AscentRecord, "createdAt"> & { id: number },
+) {
+  const database = await getDatabase();
+  const existing = await database.get("ascents", input.id);
+
+  if (!existing) {
+    throw new Error("Ascent not found");
+  }
+
+  await database.put("ascents", {
+    ...existing,
+    ...input,
+    createdAt: existing.createdAt,
+  });
+}
+
 export async function getUserProfile(athleteId: string) {
   const database = await getDatabase();
   const record = await database.get("settings", `athlete:${athleteId}`);

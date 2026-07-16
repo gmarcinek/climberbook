@@ -14,15 +14,17 @@ export function ReportMetricsWidget({
   panelAscents,
   rockAscents,
 }: ReportMetricsWidgetProps) {
-  const { isMobileChartLayout } = useViewport();
+  const { width, isMobileChartLayout } = useViewport();
+  const isTabletReportLayout = width > 0 && width < 1024;
 
   return (
     <Stack
       style={{
         ...statsGridStyle,
-        gridTemplateColumns: isMobileChartLayout
-          ? "minmax(0, 1fr)"
-          : statsGridStyle.gridTemplateColumns,
+        gridTemplateColumns:
+          isMobileChartLayout || isTabletReportLayout
+            ? "minmax(0, 1fr)"
+            : statsGridStyle.gridTemplateColumns,
       }}
     >
       <MetricCard

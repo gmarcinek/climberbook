@@ -28,17 +28,23 @@ type AscentDraftValues = {
 };
 type AscentFormWidgetProps = {
   ascentDraft: AscentDraftValues;
+  editingAscentId: number | null;
   onAscentDraftChange: (draft: AscentDraftValues) => void;
   onAscentSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onCancelEdit: () => void;
   frenchGradeOptions: string[];
 };
 
 export function AscentFormWidget({
   ascentDraft,
+  editingAscentId,
   onAscentDraftChange,
   onAscentSubmit,
+  onCancelEdit,
   frenchGradeOptions,
 }: AscentFormWidgetProps) {
+  const isEditing = editingAscentId !== null;
+
   return (
     <Form
       onSubmit={onAscentSubmit}
@@ -48,7 +54,9 @@ export function AscentFormWidget({
             <span style={moduleEyebrowStyle}>Historia przejść</span>
             <h2 style={sectionTitleStyle}>Panel i skała</h2>
           </div>
-          <span style={softTagStyle}>Dodawanie ręczne</span>
+          <span style={softTagStyle}>
+            {isEditing ? "Edycja wpisu" : "Dodawanie ręczne"}
+          </span>
         </div>
       }
     >
@@ -155,8 +163,13 @@ export function AscentFormWidget({
       </FormGrid>
       <FormActions>
         <button type="submit" style={buttonStyle}>
-          Dodaj przejście
+          {isEditing ? "Zapisz zmiany" : "Dodaj przejście"}
         </button>
+        {isEditing ? (
+          <button type="button" style={buttonStyle} onClick={onCancelEdit}>
+            Anuluj edycję
+          </button>
+        ) : null}
       </FormActions>
     </Form>
   );

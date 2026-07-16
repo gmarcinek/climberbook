@@ -21,12 +21,17 @@ export function ModuleLayout({
   activeModule: Exclude<ModuleKey, "treningowy">;
   children: ReactNode;
 }) {
+  const moduleContainer =
+    activeModule === "raportowy"
+      ? { width: "100%", maxWidth: "none", margin: 0 }
+      : moduleContainerStyle;
+
   return (
     <main style={pageStyle}>
       <section style={{ ...shellStyle, ...moduleShellStyles[activeModule] }}>
         <MainHeader activeModule={activeModule} />
         <div style={moduleContentStyle}>
-          <div style={moduleContainerStyle}>{children}</div>
+          <div style={moduleContainer}>{children}</div>
         </div>
       </section>
     </main>

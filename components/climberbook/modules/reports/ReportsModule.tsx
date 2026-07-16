@@ -22,12 +22,19 @@ export function ReportsModule() {
   return (
     <ReportsAssembly
       moduleMeta={moduleConfig[1]}
+      ascents={app.ascents}
       ascentsCount={app.ascents.length}
       panelAscents={stats.panelAscents}
       rockAscents={stats.rockAscents}
+      ascentChartRangeLabel={stats.ascentChartRangeLabel}
+      ascentTimelineStats={stats.ascentTimelineStats}
+      ascentGradeFrequency={stats.ascentGradeFrequency}
       ascentDraft={app.ascentDraft}
+      editingAscentId={app.editingAscentId}
       onAscentDraftChange={app.setAscentDraft}
       onAscentSubmit={app.submitAscent}
+      onAscentEdit={app.editAscent}
+      onCancelAscentEdit={app.cancelAscentEdit}
       frenchGradeOptions={frenchGradeOptions}
     />
   );

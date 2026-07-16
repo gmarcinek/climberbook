@@ -1,6 +1,9 @@
 .root {
   position: relative;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .viewport {
@@ -19,6 +22,7 @@
 
 .content {
   min-width: 0;
+  max-width: 100%;
 }
 
 .indicator {
