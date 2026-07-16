@@ -1,4 +1,9 @@
-export type ModuleKey = "treningowy" | "raportowy" | "analityka" | "ustawienia";
+export type ModuleKey =
+  | "treningowy"
+  | "raportowy"
+  | "analityka"
+  | "team"
+  | "ustawienia";
 
 export type ClimberbookModule = {
   key: ModuleKey;
@@ -35,11 +40,19 @@ export const moduleConfig: ClimberbookModule[] = [
     eyebrow: "Przegląd trendów",
   },
   {
+    key: "team",
+    route: "/team",
+    title: "Team",
+    navLabel: "Team",
+    description: "Edycja zawodników i porównanie aktualnych wyników.",
+    eyebrow: "Drużyna",
+  },
+  {
     key: "ustawienia",
     route: "/ustawienia",
     title: "Settings",
     navLabel: "Settings",
-    description: "Profil użytkownika i historia zmian wagi.",
+    description: "Profil, zarządzanie zespołem i ustawienia zaawansowane.",
     eyebrow: "Dane bazowe",
   },
 ];

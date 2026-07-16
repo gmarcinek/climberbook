@@ -64,20 +64,28 @@ import {
 } from "@/components/training-calendar/training-calendar.helpers";
 import {
   addAscent,
+  addAthlete,
+  updateAthlete,
+  deleteAthlete,
   addTraining,
   addWeightEntry,
   createEmptyUserProfile,
   deleteClimberbookDatabase,
   deleteTraining,
   exportDatabaseBackup,
+  exportFullDatabaseBackup,
   getUserProfile,
   importDatabaseBackup,
   listAscents,
+  listAthletes,
+  listAllTrainings,
+  listAllWeightEntries,
   listTrainings,
   listWeightEntries,
   saveUserProfile,
   updateTraining,
   type AscentRecord,
+  type AthleteRecord,
   type TrainingRecord,
   type TrainingSurface,
   type UserProfileRecord,
@@ -105,6 +113,60 @@ type WeightEntryDraft = {
   date: string;
   time: string;
   weightKg: string;
+};
+
+type AthleteFormDraft = {
+  firstName: string;
+  lastName: string;
+  nick: string;
+  birthDate: string;
+  sex: UserSex;
+  heightCm: string;
+  weightKg: string;
+};
+
+function createEmptyAthleteForm(): AthleteFormDraft {
+  return {
+    firstName: "",
+    lastName: "",
+    nick: "",
+    birthDate: "",
+    sex: "",
+    heightCm: "",
+    weightKg: "",
+  };
+}
+
+const TEAM_CHART_COLORS = [
+  "#c3663a",
+  "#2f7d6c",
+  "#3f6099",
+  "#a2465b",
+  "#8b6b2d",
+];
+
+const SETTINGS_TABS: {
+  key: "profil" | "zespol" | "zaawansowane";
+  label: string;
+}[] = [
+  { key: "profil", label: "Profil" },
+  { key: "zespol", label: "Zespół" },
+  { key: "zaawansowane", label: "Zaawansowane" },
+];
+
+const settingsTabNavStyle = {
+  display: "flex",
+  gap: 4,
+  flexWrap: "wrap" as const,
+  borderBottom: "1px solid var(--border-strong)",
+};
+
+const settingsTabButtonStyle = {
+  border: 0,
+  background: "transparent",
+  padding: "8px 12px",
+  cursor: "pointer",
+  fontSize: "0.9rem",
 };
 
 function estimateTrainingCalories(input: {
@@ -452,7 +514,24 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
   const today = formatDateIso(new Date());
   const router = useRouter();
   const [activeModule, setActiveModule] = useState<ModuleKey>(initialModule);
+  const [athletes, setAthletes] = useState<AthleteRecord[]>([]);
+  const [activeAthleteId, setActiveAthleteId] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    return window.localStorage.getItem("climberbook:activeAthleteId");
+  });
+  const [settingsTab, setSettingsTab] = useState<
+    "profil" | "zespol" | "zaawansowane"
+  >("profil");
+  const [athleteFormMode, setAthleteFormMode] = useState<"add" | "edit">("add");
+  const [athleteFormId, setAthleteFormId] = useState<string | null>(null);
+  const [athleteForm, setAthleteForm] = useState<AthleteFormDraft>(() =>
+    createEmptyAthleteForm(),
+  );
   const [trainings, setTrainings] = useState<TrainingRecord[]>([]);
+  const [teamTrainings, setTeamTrainings] = useState<TrainingRecord[]>([]);
   const [ascents, setAscents] = useState<AscentRecord[]>([]);
   const { selectedDate, setSelectedDate } = useSelectedDates();
   const [trainingRangeStart, setTrainingRangeStart] = useState(
@@ -475,6 +554,9 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
     () => createWeightEntryDraft(today),
   );
   const [weightEntries, setWeightEntries] = useState<WeightEntryRecord[]>([]);
+  const [teamWeightEntries, setTeamWeightEntries] = useState<
+    WeightEntryRecord[]
+  >([]);
   const [status, setStatus] = useState("Ładowanie danych z IndexedDB...");
   const [isBackupDropActive, setIsBackupDropActive] = useState(false);
   const [isDatabaseDeleteModalOpen, setIsDatabaseDeleteModalOpen] =
@@ -484,12 +566,37 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
   const backupImportInputRef = useRef<HTMLInputElement | null>(null);
 
   async function refreshData() {
+    const [athleteItems, allTrainingItems, allWeightItems] = await Promise.all([
+      listAthletes(),
+      listAllTrainings(),
+      listAllWeightEntries(),
+    ]);
+    const athleteId = activeAthleteId ?? athleteItems[0]?.id;
+
+    setAthletes(athleteItems);
+    setTeamTrainings(allTrainingItems);
+    setTeamWeightEntries(allWeightItems);
+
+    if (!athleteId) {
+      setTrainings([]);
+      setAscents([]);
+      setProfileDraft(createUserProfileDraft());
+      setWeightEntries([]);
+      setWeightEntryDraft(createWeightEntryDraft(today));
+      return;
+    }
+
+    if (athleteId !== activeAthleteId) {
+      setActiveAthleteId(athleteId);
+      return;
+    }
+
     const [trainingItems, ascentItems, profileRecord, weightItems] =
       await Promise.all([
-        listTrainings(),
-        listAscents(),
-        getUserProfile(),
-        listWeightEntries(),
+        listTrainings(athleteId),
+        listAscents(athleteId),
+        getUserProfile(athleteId),
+        listWeightEntries(athleteId),
       ]);
 
     setTrainings(trainingItems);
@@ -527,7 +634,22 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
     refreshData().catch(() => {
       setStatus("Nie udało się otworzyć IndexedDB w tej przeglądarce.");
     });
-  }, []);
+  }, [activeAthleteId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (activeAthleteId) {
+      window.localStorage.setItem(
+        "climberbook:activeAthleteId",
+        activeAthleteId,
+      );
+    } else {
+      window.localStorage.removeItem("climberbook:activeAthleteId");
+    }
+  }, [activeAthleteId]);
 
   useEffect(() => {
     const updateLayoutWidth = () => {
@@ -712,6 +834,47 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
       (entry) => entry.date >= chartRange.start && entry.date <= chartRange.end,
     );
   }, [chartRange, sortedWeightEntries]);
+  const teamSummaries = useMemo(
+    () =>
+      athletes.map((athlete) => {
+        const athleteTrainings = teamTrainings.filter(
+          (training) => training.athleteId === athlete.id,
+        );
+        const athleteWeights = teamWeightEntries
+          .filter((entry) => entry.athleteId === athlete.id)
+          .sort((left, right) =>
+            `${left.date}-${left.time}`.localeCompare(
+              `${right.date}-${right.time}`,
+            ),
+          );
+
+        return {
+          athlete,
+          trainingCount: athleteTrainings.length,
+          volume: athleteTrainings.reduce(
+            (sum, training) => sum + training.durationMinutes,
+            0,
+          ),
+          latestWeight: athleteWeights.at(-1)?.weightKg ?? null,
+        };
+      }),
+    [athletes, teamTrainings, teamWeightEntries],
+  );
+  const teamWeightChartData = useMemo(() => {
+    const weightsByDate = new Map<string, Record<string, number | string>>();
+
+    teamWeightEntries.forEach((entry) => {
+      const current = weightsByDate.get(entry.date) ?? { date: entry.date };
+      current[entry.athleteId] = entry.weightKg;
+      weightsByDate.set(entry.date, current);
+    });
+
+    return Array.from(weightsByDate.values())
+      .sort((left, right) =>
+        String(left.date).localeCompare(String(right.date)),
+      )
+      .slice(-30);
+  }, [teamWeightEntries]);
 
   function resetTrainingEditor(date = selectedDate ?? today) {
     setEditingTrainingId(null);
@@ -792,6 +955,13 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
 
   async function handleSettingsSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const athleteId = activeAthleteId;
+
+    if (!athleteId) {
+      setStatus("Najpierw dodaj i wybierz zawodnika.");
+      return;
+    }
+
     setStatus("Zapisuję settings...");
 
     const parsedWeightKg = parseWeightInput(profileDraft.weightKg);
@@ -799,7 +969,8 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
 
     try {
       await saveUserProfile({
-        key: "primary",
+        key: `athlete:${athleteId}`,
+        athleteId,
         birthDate: profileDraft.birthDate,
         sex: profileDraft.sex,
         heightCm: parsedHeightCm,
@@ -814,6 +985,7 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
           latestRecordedWeight.date !== today)
       ) {
         await addWeightEntry({
+          athleteId,
           date: today,
           time: "09:00",
           weightKg: parsedWeightKg,
@@ -843,6 +1015,12 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
 
   async function handleTrainingSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const athleteId = activeAthleteId;
+
+    if (!athleteId) {
+      setStatus("Najpierw dodaj i wybierz zawodnika.");
+      return;
+    }
 
     if (trainingDraft.surfaces.length === 0) {
       setStatus("Wybierz co najmniej jeden rodzaj sesji.");
@@ -885,7 +1063,7 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
           ...payload,
         });
       } else {
-        await addTraining(payload);
+        await addTraining({ ...payload, athleteId });
       }
 
       if (
@@ -898,6 +1076,7 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
         )
       ) {
         await addWeightEntry({
+          athleteId,
           date: payload.date,
           time: payload.time,
           weightKg: payload.bodyWeightKg,
@@ -922,10 +1101,17 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
 
   async function handleAscentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const athleteId = activeAthleteId;
+
+    if (!athleteId) {
+      setStatus("Najpierw dodaj i wybierz zawodnika.");
+      return;
+    }
+
     setStatus("Zapisuję przejście...");
 
     try {
-      await addAscent(ascentDraft);
+      await addAscent({ ...ascentDraft, athleteId });
       await refreshData();
       setAscentDraft(createAscentDraft());
     } catch {
@@ -935,6 +1121,13 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
 
   async function handleWeightEntrySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const athleteId = activeAthleteId;
+
+    if (!athleteId) {
+      setStatus("Najpierw dodaj i wybierz zawodnika.");
+      return false;
+    }
+
     setStatus("Zapisuję pomiar wagi...");
 
     const parsedWeightKg = parseWeightInput(weightEntryDraft.weightKg);
@@ -950,6 +1143,7 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
 
     try {
       await addWeightEntry({
+        athleteId,
         date: weightEntryDraft.date,
         time: weightEntryDraft.time,
         weightKg: parsedWeightKg,
@@ -968,9 +1162,9 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
     }
   }
 
-  async function handleDatabaseExport() {
+  async function handleAthleteExport(activeAthlete: AthleteRecord) {
     try {
-      const backup = await exportDatabaseBackup();
+      const backup = await exportDatabaseBackup(activeAthlete.id);
       const blob = new Blob([JSON.stringify(backup, null, 2)], {
         type: "application/json",
       });
@@ -978,10 +1172,20 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
       const link = document.createElement("a");
 
       link.href = url;
-      link.download = `climberbook-backup-${formatDateIso(new Date())}.json`;
+      const athleteFileName = activeAthlete.name
+        .trim()
+        .toLocaleLowerCase("pl-PL")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      link.download = `climberbook-${athleteFileName || "zawodnik"}-${formatDateIso(new Date())}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      setStatus("Backup bazy został wyeksportowany.");
+      setStatus(
+        `Backup zawodnika ${activeAthlete.name} został wyeksportowany.`,
+      );
     } catch (error) {
       setStatus(
         error instanceof Error
@@ -991,16 +1195,154 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
     }
   }
 
+  async function handleDatabaseExport() {
+    try {
+      const backup = await exportFullDatabaseBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `climberbook-calosciowy-${formatDateIso(new Date())}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus("Pełny backup bazy został wyeksportowany.");
+    } catch (error) {
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Eksport pełnego backupu nie powiódł się.",
+      );
+    }
+  }
+
   async function handleDatabaseImportFile(file: File) {
     try {
-      await importDatabaseBackup(JSON.parse(await file.text()));
-      await refreshData();
-      setStatus("Backup bazy został zaimportowany.");
+      const athlete = await importDatabaseBackup(JSON.parse(await file.text()));
+
+      if (athlete) {
+        setActiveAthleteId(athlete.id);
+        setStatus(`Zaimportowano zawodnika ${athlete.name}.`);
+      } else {
+        setActiveAthleteId(null);
+        setStatus("Zaimportowano pełny backup bazy.");
+      }
     } catch (error) {
       setStatus(
         error instanceof Error
           ? error.message
           : "Import backupu nie powiódł się.",
+      );
+    }
+  }
+
+  function resetAthleteForm() {
+    setAthleteFormMode("add");
+    setAthleteFormId(null);
+    setAthleteForm(createEmptyAthleteForm());
+  }
+
+  async function startAthleteEdit(athlete: AthleteRecord) {
+    setSettingsTab("zespol");
+    setAthleteFormMode("edit");
+    setAthleteFormId(athlete.id);
+
+    let profile;
+    try {
+      profile = await getUserProfile(athlete.id);
+    } catch {
+      profile = undefined;
+    }
+
+    setAthleteForm({
+      firstName: athlete.firstName ?? "",
+      lastName: athlete.lastName ?? "",
+      nick: athlete.nick ?? "",
+      birthDate: profile?.birthDate ?? "",
+      sex: profile?.sex ?? "",
+      heightCm: profile?.heightCm?.toString() ?? "",
+      weightKg: formatWeightInput(profile?.weightKg ?? null),
+    });
+  }
+
+  async function handleAthleteFormSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const hasIdentity =
+      athleteForm.firstName.trim() ||
+      athleteForm.lastName.trim() ||
+      athleteForm.nick.trim();
+
+    if (!hasIdentity) {
+      setStatus("Podaj imię, nazwisko lub nick zawodnika.");
+      return;
+    }
+
+    const identity = {
+      firstName: athleteForm.firstName,
+      lastName: athleteForm.lastName,
+      nick: athleteForm.nick,
+    };
+    const profileData = {
+      birthDate: athleteForm.birthDate,
+      sex: athleteForm.sex,
+      heightCm: parseHeightInput(athleteForm.heightCm),
+      weightKg: parseWeightInput(athleteForm.weightKg),
+    };
+
+    try {
+      if (athleteFormMode === "edit" && athleteFormId) {
+        await updateAthlete(athleteFormId, identity);
+        await saveUserProfile({
+          key: `athlete:${athleteFormId}`,
+          athleteId: athleteFormId,
+          ...profileData,
+        });
+        resetAthleteForm();
+        await refreshData();
+      } else {
+        const athlete = await addAthlete(identity);
+        await saveUserProfile({
+          key: `athlete:${athlete.id}`,
+          athleteId: athlete.id,
+          ...profileData,
+        });
+        resetAthleteForm();
+        setActiveAthleteId(athlete.id);
+      }
+    } catch (error) {
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Nie udało się zapisać zawodnika.",
+      );
+    }
+  }
+
+  async function handleDeleteAthlete(athlete: AthleteRecord) {
+    if (
+      !window.confirm(
+        `Usunąć zawodnika ${athlete.name} wraz z jego danymi? Tej operacji nie można cofnąć.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteAthlete(athlete.id);
+
+      if (activeAthleteId === athlete.id) {
+        setActiveAthleteId(null);
+      } else {
+        await refreshData();
+      }
+    } catch (error) {
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Nie udało się usunąć zawodnika.",
       );
     }
   }
@@ -1069,14 +1411,32 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
               gap: isMobileHeader ? 0 : 12,
             }}
           >
-            <strong
+            <div
               style={{
-                ...brandStyle,
+                ...headerLeftGroupStyle,
                 gridRow: isMobileHeader ? 1 : "auto",
               }}
             >
-              Climberbook
-            </strong>
+              <strong style={brandStyle}>Climberbook</strong>
+
+              <label style={athleteSelectorStyle}>
+                <span style={athleteSelectorLabelStyle}>Zawodnik</span>
+                <select
+                  value={activeAthleteId ?? ""}
+                  onChange={(event) =>
+                    setActiveAthleteId(event.target.value || null)
+                  }
+                  style={athleteSelectStyle}
+                >
+                  <option value="">Wybierz zawodnika</option>
+                  {athletes.map((athlete) => (
+                    <option key={athlete.id} value={athlete.id}>
+                      {athlete.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
             {activeModule === "treningowy" && !isMobileHeader && (
               <div style={headerMetricsStyle}>
@@ -1461,6 +1821,129 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
             </div>
           )}
 
+          {activeModule === "team" && (
+            <div style={moduleContentStyle}>
+              <div style={moduleIntroStyle}>
+                <div>
+                  <p style={eyebrowStyle}>{activeModuleMeta.eyebrow}</p>
+                  <h1 style={pageTitleStyle}>{activeModuleMeta.title}</h1>
+                  <p style={mutedParagraphStyle}>
+                    Podgląd drużyny, porównanie bieżących wyników oraz backupy
+                    zawodników.
+                  </p>
+                </div>
+                <div style={headerBadgeRowStyle}>
+                  <span style={headerBadgeStyle}>
+                    Zawodnicy: {athletes.length}
+                  </span>
+                  <span style={headerBadgeStyle}>
+                    Sesje: {teamTrainings.length}
+                  </span>
+                </div>
+              </div>
+
+              <section style={panelStyle}>
+                <div style={panelHeadingStyle}>
+                  <div>
+                    <span style={moduleEyebrowStyle}>Skład</span>
+                    <h2 style={sectionTitleStyle}>Zawodnicy</h2>
+                  </div>
+                  <span style={softTagStyle}>{athletes.length}</span>
+                </div>
+                {athletes.length === 0 ? (
+                  <p style={mutedParagraphStyle}>
+                    Brak zawodników. Dodaj pierwszego w zakładce Zespół w
+                    Settings.
+                  </p>
+                ) : null}
+                <div style={statsGridStyle}>
+                  {teamSummaries.map((summary) => (
+                    <article
+                      key={summary.athlete.id}
+                      style={{
+                        ...metricCardStyle,
+                        background:
+                          summary.athlete.id === activeAthleteId
+                            ? "rgba(195, 102, 58, 0.1)"
+                            : metricCardStyle.background,
+                      }}
+                    >
+                      <div style={panelHeadingStyle}>
+                        <strong>{summary.athlete.name}</strong>
+                        {summary.athlete.id === activeAthleteId ? (
+                          <span style={softTagStyle}>Wybrany</span>
+                        ) : (
+                          <button
+                            type="button"
+                            style={ghostButtonStyle}
+                            onClick={() =>
+                              setActiveAthleteId(summary.athlete.id)
+                            }
+                          >
+                            Otwórz
+                          </button>
+                        )}
+                      </div>
+                      <span style={mutedParagraphStyle}>
+                        {summary.trainingCount} sesji | {summary.volume} min
+                      </span>
+                      <strong>
+                        Waga:{" "}
+                        {summary.latestWeight
+                          ? `${summary.latestWeight} kg`
+                          : "-"}
+                      </strong>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section style={panelStyle}>
+                <div style={panelHeadingStyle}>
+                  <div>
+                    <span style={moduleEyebrowStyle}>Porównanie</span>
+                    <h2 style={sectionTitleStyle}>Waga zawodników</h2>
+                  </div>
+                  <span style={softTagStyle}>Ostatnie 30 dat</span>
+                </div>
+                {teamWeightChartData.length === 0 ? (
+                  <EmptyState message="Dodaj pomiary wagi, aby porównać zawodników." />
+                ) : (
+                  <div style={{ height: 260 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={teamWeightChartData}>
+                        <CartesianGrid
+                          vertical={false}
+                          stroke="rgba(100, 87, 77, 0.14)"
+                        />
+                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} width={34} />
+                        <Tooltip />
+                        <Legend />
+                        {athletes.map((athlete, index) => (
+                          <Line
+                            key={athlete.id}
+                            type="monotone"
+                            dataKey={athlete.id}
+                            name={athlete.name}
+                            stroke={
+                              TEAM_CHART_COLORS[
+                                index % TEAM_CHART_COLORS.length
+                              ]
+                            }
+                            strokeWidth={2}
+                            dot={false}
+                            connectNulls
+                          />
+                        ))}
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
           {activeModule === "ustawienia" && (
             <div style={moduleContentStyle}>
               <div style={moduleIntroStyle}>
@@ -1494,234 +1977,545 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
                 </div>
               </div>
 
-              <div
-                style={{
-                  ...settingsContentLayoutStyle,
-                  gridTemplateColumns:
-                    trainingViewportWidth > 0 && trainingViewportWidth < 980
-                      ? "minmax(0, 1fr)"
-                      : "minmax(0, 3fr) minmax(240px, 1fr)",
-                }}
-              >
-                <div style={settingsMainColumnStyle}>
-                  <div style={statsGridStyle}>
-                    <MetricCard
-                      label="Data urodzenia"
-                      value={profileDraft.birthDate || "-"}
-                      detail="Wiek liczony automatycznie"
-                    />
-                    <MetricCard
-                      label="Płeć"
-                      value={profileDraft.sex || "-"}
-                      detail="Pole bazowe profilu"
-                    />
-                    <MetricCard
-                      label="Wzrost"
-                      value={
-                        profileDraft.heightCm
-                          ? `${profileDraft.heightCm} cm`
-                          : "-"
-                      }
-                      detail="Ustawienie bazowe"
-                    />
-                    <MetricCard
-                      label="Aktualna waga"
-                      value={
-                        profileDraft.weightKg
-                          ? `${profileDraft.weightKg} kg`
-                          : "-"
-                      }
-                      detail="Ustawienie bazowe"
-                    />
-                    <MetricCard
-                      label="Zmiany wagi"
-                      value={String(weightEntries.length)}
-                      detail="Oddzielne encje: data i waga"
-                    />
-                  </div>
+              <div style={settingsTabNavStyle}>
+                {SETTINGS_TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setSettingsTab(tab.key)}
+                    style={{
+                      ...settingsTabButtonStyle,
+                      color:
+                        settingsTab === tab.key
+                          ? "var(--text)"
+                          : "var(--muted)",
+                      fontWeight: settingsTab === tab.key ? 700 : 500,
+                      borderBottom:
+                        settingsTab === tab.key
+                          ? "2px solid var(--accent)"
+                          : "2px solid transparent",
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
+              {settingsTab === "profil" && (
+                <div
+                  style={{
+                    ...settingsContentLayoutStyle,
+                    gridTemplateColumns:
+                      trainingViewportWidth > 0 && trainingViewportWidth < 980
+                        ? "minmax(0, 1fr)"
+                        : "minmax(0, 3fr) minmax(240px, 1fr)",
+                  }}
+                >
                   <div style={settingsMainColumnStyle}>
-                    <section style={panelStyle}>
-                      <div style={panelHeadingStyle}>
-                        <div>
-                          <span style={moduleEyebrowStyle}>Profil</span>
-                          <h2 style={sectionTitleStyle}>
-                            Settings użytkownika
-                          </h2>
-                        </div>
-                        <span style={softTagStyle}>
-                          Data urodzenia, płeć, wzrost, waga
-                        </span>
-                      </div>
+                    <div style={statsGridStyle}>
+                      <MetricCard
+                        label="Data urodzenia"
+                        value={profileDraft.birthDate || "-"}
+                        detail="Wiek liczony automatycznie"
+                      />
+                      <MetricCard
+                        label="Płeć"
+                        value={profileDraft.sex || "-"}
+                        detail="Pole bazowe profilu"
+                      />
+                      <MetricCard
+                        label="Wzrost"
+                        value={
+                          profileDraft.heightCm
+                            ? `${profileDraft.heightCm} cm`
+                            : "-"
+                        }
+                        detail="Ustawienie bazowe"
+                      />
+                      <MetricCard
+                        label="Aktualna waga"
+                        value={
+                          profileDraft.weightKg
+                            ? `${profileDraft.weightKg} kg`
+                            : "-"
+                        }
+                        detail="Ustawienie bazowe"
+                      />
+                      <MetricCard
+                        label="Zmiany wagi"
+                        value={String(weightEntries.length)}
+                        detail="Oddzielne encje: data i waga"
+                      />
+                    </div>
 
-                      <form onSubmit={handleSettingsSubmit} style={formStyle}>
-                        <div style={formGridStyle}>
-                          <label style={fieldStyle}>
-                            Data urodzenia
-                            <input
-                              value={profileDraft.birthDate}
-                              onChange={(event) =>
-                                setProfileDraft((current) => ({
-                                  ...current,
-                                  birthDate: event.target.value,
-                                }))
-                              }
-                              type="date"
-                              style={inputStyle}
-                            />
-                          </label>
-                          <label style={fieldStyle}>
-                            Płeć
-                            <select
-                              value={profileDraft.sex}
-                              onChange={(event) =>
-                                setProfileDraft((current) => ({
-                                  ...current,
-                                  sex: event.target.value as UserSex,
-                                }))
-                              }
-                              style={inputStyle}
-                            >
-                              <option value="">Nie podano</option>
-                              <option value="kobieta">Kobieta</option>
-                              <option value="mezczyzna">Mężczyzna</option>
-                              <option value="inna">Inna</option>
-                            </select>
-                          </label>
-                          <label style={fieldStyle}>
-                            Wzrost (cm)
-                            <input
-                              value={profileDraft.heightCm}
-                              onChange={(event) =>
-                                setProfileDraft((current) => ({
-                                  ...current,
-                                  heightCm: event.target.value,
-                                }))
-                              }
-                              onBlur={() =>
-                                setProfileDraft((current) => ({
-                                  ...current,
-                                  heightCm:
-                                    parseHeightInput(
-                                      current.heightCm,
-                                    )?.toString() ?? "",
-                                }))
-                              }
-                              type="number"
-                              min="1"
-                              step="1"
-                              style={inputStyle}
-                            />
-                          </label>
-                          <label
-                            style={{ ...fieldStyle, gridColumn: "1 / -1" }}
-                          >
-                            Waga (kg)
-                            <div style={weightControlStyle}>
-                              <button
-                                type="button"
-                                style={weightStepButtonStyle}
-                                onClick={() =>
-                                  setProfileDraft((current) => ({
-                                    ...current,
-                                    weightKg: formatWeightInput(
-                                      Math.max(
-                                        0,
-                                        (parseWeightInput(current.weightKg) ??
-                                          0) - 0.1,
-                                      ),
-                                    ),
-                                  }))
-                                }
-                              >
-                                -
-                              </button>
+                    <div style={settingsMainColumnStyle}>
+                      <section style={panelStyle}>
+                        <div style={panelHeadingStyle}>
+                          <div>
+                            <span style={moduleEyebrowStyle}>Profil</span>
+                            <h2 style={sectionTitleStyle}>
+                              Settings użytkownika
+                            </h2>
+                          </div>
+                          <span style={softTagStyle}>
+                            Data urodzenia, płeć, wzrost, waga
+                          </span>
+                        </div>
+
+                        <form onSubmit={handleSettingsSubmit} style={formStyle}>
+                          <div style={formGridStyle}>
+                            <label style={fieldStyle}>
+                              Data urodzenia
                               <input
-                                value={profileDraft.weightKg}
+                                value={profileDraft.birthDate}
                                 onChange={(event) =>
                                   setProfileDraft((current) => ({
                                     ...current,
-                                    weightKg: event.target.value.replaceAll(
-                                      ",",
-                                      ".",
-                                    ),
+                                    birthDate: event.target.value,
+                                  }))
+                                }
+                                type="date"
+                                style={inputStyle}
+                              />
+                            </label>
+                            <label style={fieldStyle}>
+                              Płeć
+                              <select
+                                value={profileDraft.sex}
+                                onChange={(event) =>
+                                  setProfileDraft((current) => ({
+                                    ...current,
+                                    sex: event.target.value as UserSex,
+                                  }))
+                                }
+                                style={inputStyle}
+                              >
+                                <option value="">Nie podano</option>
+                                <option value="kobieta">Kobieta</option>
+                                <option value="mezczyzna">Mężczyzna</option>
+                                <option value="inna">Inna</option>
+                              </select>
+                            </label>
+                            <label style={fieldStyle}>
+                              Wzrost (cm)
+                              <input
+                                value={profileDraft.heightCm}
+                                onChange={(event) =>
+                                  setProfileDraft((current) => ({
+                                    ...current,
+                                    heightCm: event.target.value,
                                   }))
                                 }
                                 onBlur={() =>
                                   setProfileDraft((current) => ({
                                     ...current,
-                                    weightKg: formatWeightInput(
-                                      parseWeightInput(current.weightKg),
-                                    ),
+                                    heightCm:
+                                      parseHeightInput(
+                                        current.heightCm,
+                                      )?.toString() ?? "",
                                   }))
                                 }
                                 type="number"
-                                min="0"
-                                step="0.1"
-                                style={{ ...inputStyle, flex: 1 }}
+                                min="1"
+                                step="1"
+                                style={inputStyle}
                               />
+                            </label>
+                            <label
+                              style={{ ...fieldStyle, gridColumn: "1 / -1" }}
+                            >
+                              Waga (kg)
+                              <div style={weightControlStyle}>
+                                <button
+                                  type="button"
+                                  style={weightStepButtonStyle}
+                                  onClick={() =>
+                                    setProfileDraft((current) => ({
+                                      ...current,
+                                      weightKg: formatWeightInput(
+                                        Math.max(
+                                          0,
+                                          (parseWeightInput(current.weightKg) ??
+                                            0) - 0.1,
+                                        ),
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  -
+                                </button>
+                                <input
+                                  value={profileDraft.weightKg}
+                                  onChange={(event) =>
+                                    setProfileDraft((current) => ({
+                                      ...current,
+                                      weightKg: event.target.value.replaceAll(
+                                        ",",
+                                        ".",
+                                      ),
+                                    }))
+                                  }
+                                  onBlur={() =>
+                                    setProfileDraft((current) => ({
+                                      ...current,
+                                      weightKg: formatWeightInput(
+                                        parseWeightInput(current.weightKg),
+                                      ),
+                                    }))
+                                  }
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  style={{ ...inputStyle, flex: 1 }}
+                                />
+                                <button
+                                  type="button"
+                                  style={weightStepButtonStyle}
+                                  onClick={() =>
+                                    setProfileDraft((current) => ({
+                                      ...current,
+                                      weightKg: formatWeightInput(
+                                        (parseWeightInput(current.weightKg) ??
+                                          0) + 0.1,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </label>
+                          </div>
+
+                          <button type="submit" style={buttonStyle}>
+                            Zapisz settings
+                          </button>
+                        </form>
+                      </section>
+                    </div>
+                  </div>
+
+                  <section style={panelStyle}>
+                    <div style={panelHeadingStyle}>
+                      <div>
+                        <span style={moduleEyebrowStyle}>Dane</span>
+                        <h2 style={sectionTitleStyle}>Pełna kopia bazy</h2>
+                      </div>
+                      <span style={softTagStyle}>Całość danych</span>
+                    </div>
+                    <p style={mutedParagraphStyle}>
+                      Eksport zapisuje wszystkich zawodników i ich dane. Import
+                      rozpoznaje backup całej bazy albo pojedynczego zawodnika.
+                    </p>
+                    <div style={actionRowStyle}>
+                      <button
+                        type="button"
+                        style={secondaryButtonStyle}
+                        onClick={handleDatabaseExport}
+                      >
+                        Eksport całości
+                      </button>
+                      <input
+                        ref={backupImportInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        onChange={handleDatabaseImport}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        type="button"
+                        style={ghostButtonStyle}
+                        onClick={() => backupImportInputRef.current?.click()}
+                      >
+                        Import z pliku
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        ...backupDropzoneStyle,
+                        borderColor: isBackupDropActive
+                          ? "var(--accent)"
+                          : "var(--border-strong)",
+                        background: isBackupDropActive
+                          ? "rgba(195, 102, 58, 0.1)"
+                          : "rgba(255,255,255,0.38)",
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => backupImportInputRef.current?.click()}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          backupImportInputRef.current?.click();
+                        }
+                      }}
+                      onDragEnter={(event) => {
+                        event.preventDefault();
+                        setIsBackupDropActive(true);
+                      }}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDragLeave={() => setIsBackupDropActive(false)}
+                      onDrop={handleBackupDrop}
+                    >
+                      {isBackupDropActive
+                        ? "Upuść backup JSON"
+                        : "Przeciągnij backup JSON tutaj"}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {settingsTab === "zespol" && (
+                <div
+                  style={{
+                    ...settingsContentLayoutStyle,
+                    gridTemplateColumns:
+                      trainingViewportWidth > 0 && trainingViewportWidth < 980
+                        ? "minmax(0, 1fr)"
+                        : "minmax(0, 3fr) minmax(280px, 1fr)",
+                  }}
+                >
+                  <section style={panelStyle}>
+                    <div style={panelHeadingStyle}>
+                      <div>
+                        <span style={moduleEyebrowStyle}>Zespół</span>
+                        <h2 style={sectionTitleStyle}>Lista zawodników</h2>
+                      </div>
+                      <span style={softTagStyle}>{athletes.length}</span>
+                    </div>
+                    <div style={actionRowStyle}>
+                      <input
+                        ref={backupImportInputRef}
+                        type="file"
+                        accept="application/json,.json"
+                        onChange={handleDatabaseImport}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        type="button"
+                        style={ghostButtonStyle}
+                        onClick={() => backupImportInputRef.current?.click()}
+                      >
+                        Import z pliku
+                      </button>
+                    </div>
+                    {athletes.length === 0 ? (
+                      <p style={mutedParagraphStyle}>
+                        Brak zawodników. Dodaj pierwszego w formularzu obok.
+                      </p>
+                    ) : (
+                      <div style={{ display: "grid", gap: 6 }}>
+                        {athletes.map((athlete) => (
+                          <div
+                            key={athlete.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 8,
+                              flexWrap: "wrap" as const,
+                              padding: "7px 8px",
+                              border: "1px solid var(--border-strong)",
+                              background:
+                                athlete.id === activeAthleteId
+                                  ? "rgba(195, 102, 58, 0.1)"
+                                  : "rgba(255,255,255,0.35)",
+                            }}
+                          >
+                            <strong style={{ minWidth: 0 }}>
+                              {athlete.name}
+                            </strong>
+                            <div style={actionRowStyle}>
                               <button
                                 type="button"
-                                style={weightStepButtonStyle}
+                                style={secondaryButtonStyle}
                                 onClick={() =>
-                                  setProfileDraft((current) => ({
-                                    ...current,
-                                    weightKg: formatWeightInput(
-                                      (parseWeightInput(current.weightKg) ??
-                                        0) + 0.1,
-                                    ),
-                                  }))
+                                  void handleAthleteExport(athlete)
                                 }
                               >
-                                +
+                                Eksport
+                              </button>
+                              <button
+                                type="button"
+                                style={ghostButtonStyle}
+                                onClick={() => void startAthleteEdit(athlete)}
+                              >
+                                Edytuj
+                              </button>
+                              <button
+                                type="button"
+                                style={deleteButtonStyle}
+                                onClick={() =>
+                                  void handleDeleteAthlete(athlete)
+                                }
+                              >
+                                Usuń
                               </button>
                             </div>
-                          </label>
-                        </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
 
+                  <section style={panelStyle}>
+                    <div style={panelHeadingStyle}>
+                      <div>
+                        <span style={moduleEyebrowStyle}>
+                          {athleteFormMode === "edit" ? "Edycja" : "Nowy"}
+                        </span>
+                        <h2 style={sectionTitleStyle}>
+                          {athleteFormMode === "edit"
+                            ? "Edytuj zawodnika"
+                            : "Dodaj zawodnika"}
+                        </h2>
+                      </div>
+                    </div>
+                    <form onSubmit={handleAthleteFormSubmit} style={formStyle}>
+                      <div style={formGridStyle}>
+                        <label style={fieldStyle}>
+                          Imię
+                          <input
+                            value={athleteForm.firstName}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                firstName: event.target.value,
+                              }))
+                            }
+                            style={inputStyle}
+                          />
+                        </label>
+                        <label style={fieldStyle}>
+                          Nazwisko
+                          <input
+                            value={athleteForm.lastName}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                lastName: event.target.value,
+                              }))
+                            }
+                            style={inputStyle}
+                          />
+                        </label>
+                        <label style={fieldStyle}>
+                          Nick
+                          <input
+                            value={athleteForm.nick}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                nick: event.target.value,
+                              }))
+                            }
+                            placeholder="Wyświetlana nazwa"
+                            style={inputStyle}
+                          />
+                        </label>
+                        <label style={fieldStyle}>
+                          Data urodzenia
+                          <input
+                            value={athleteForm.birthDate}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                birthDate: event.target.value,
+                              }))
+                            }
+                            type="date"
+                            style={inputStyle}
+                          />
+                        </label>
+                        <label style={fieldStyle}>
+                          Płeć
+                          <select
+                            value={athleteForm.sex}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                sex: event.target.value as UserSex,
+                              }))
+                            }
+                            style={inputStyle}
+                          >
+                            <option value="">Nie podano</option>
+                            <option value="kobieta">Kobieta</option>
+                            <option value="mezczyzna">Mężczyzna</option>
+                            <option value="inna">Inna</option>
+                          </select>
+                        </label>
+                        <label style={fieldStyle}>
+                          Wzrost (cm)
+                          <input
+                            value={athleteForm.heightCm}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                heightCm: event.target.value,
+                              }))
+                            }
+                            type="number"
+                            min="1"
+                            step="1"
+                            style={inputStyle}
+                          />
+                        </label>
+                        <label style={fieldStyle}>
+                          Waga (kg)
+                          <input
+                            value={athleteForm.weightKg}
+                            onChange={(event) =>
+                              setAthleteForm((current) => ({
+                                ...current,
+                                weightKg: event.target.value.replaceAll(
+                                  ",",
+                                  ".",
+                                ),
+                              }))
+                            }
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            style={inputStyle}
+                          />
+                        </label>
+                      </div>
+                      <div style={actionRowStyle}>
                         <button type="submit" style={buttonStyle}>
-                          Zapisz settings
+                          {athleteFormMode === "edit"
+                            ? "Zapisz zmiany"
+                            : "Dodaj zawodnika"}
                         </button>
-                      </form>
-                    </section>
-                  </div>
+                        {athleteFormMode === "edit" && (
+                          <button
+                            type="button"
+                            style={ghostButtonStyle}
+                            onClick={resetAthleteForm}
+                          >
+                            Anuluj
+                          </button>
+                        )}
+                      </div>
+                    </form>
+                  </section>
                 </div>
+              )}
 
+              {settingsTab === "zaawansowane" && (
                 <section style={panelStyle}>
                   <div style={panelHeadingStyle}>
                     <div>
-                      <span style={moduleEyebrowStyle}>Dane</span>
-                      <h2 style={sectionTitleStyle}>Kopia zapasowa</h2>
+                      <span style={moduleEyebrowStyle}>Zaawansowane</span>
+                      <h2 style={sectionTitleStyle}>Strefa niebezpieczna</h2>
                     </div>
-                    <span style={softTagStyle}>Import i eksport</span>
+                    <span style={softTagStyle}>Nieodwracalne</span>
                   </div>
                   <p style={mutedParagraphStyle}>
-                    Eksport zapisuje pełną kopię lokalnych danych. Aby odtworzyć
-                    backup, przeciągnij plik JSON poniżej lub wybierz go z
-                    dysku.
+                    Usunięcie bazy danych trwale kasuje wszystkich zawodników i
+                    ich dane. Zalecany wcześniejszy eksport całości.
                   </p>
                   <div style={actionRowStyle}>
-                    <button
-                      type="button"
-                      style={secondaryButtonStyle}
-                      onClick={handleDatabaseExport}
-                    >
-                      Eksport całości
-                    </button>
-                    <input
-                      ref={backupImportInputRef}
-                      type="file"
-                      accept="application/json,.json"
-                      onChange={handleDatabaseImport}
-                      style={{ display: "none" }}
-                    />
-                    <button
-                      type="button"
-                      style={ghostButtonStyle}
-                      onClick={() => backupImportInputRef.current?.click()}
-                    >
-                      Import całości z pliku
-                    </button>
                     <button
                       type="button"
                       style={deleteButtonStyle}
@@ -1730,39 +2524,8 @@ function HomePageContent({ initialModule }: { initialModule: ModuleKey }) {
                       USUŃ BAZĘ DANYCH
                     </button>
                   </div>
-                  <div
-                    style={{
-                      ...backupDropzoneStyle,
-                      borderColor: isBackupDropActive
-                        ? "var(--accent)"
-                        : "var(--border-strong)",
-                      background: isBackupDropActive
-                        ? "rgba(195, 102, 58, 0.1)"
-                        : "rgba(255,255,255,0.38)",
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => backupImportInputRef.current?.click()}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        backupImportInputRef.current?.click();
-                      }
-                    }}
-                    onDragEnter={(event) => {
-                      event.preventDefault();
-                      setIsBackupDropActive(true);
-                    }}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDragLeave={() => setIsBackupDropActive(false)}
-                    onDrop={handleBackupDrop}
-                  >
-                    {isBackupDropActive
-                      ? "Upuść backup JSON"
-                      : "Przeciągnij backup JSON tutaj"}
-                  </div>
                 </section>
-              </div>
+              )}
             </div>
           )}
 
@@ -3308,6 +4071,9 @@ const moduleShellStyles: Record<
   analityka: {
     background: "#ffffff9e",
   },
+  team: {
+    background: "#ffffff9e",
+  },
   ustawienia: {
     background: "#ffffff9e",
   },
@@ -3327,4 +4093,33 @@ const brandStyle = {
   fontSize: "1rem",
   letterSpacing: "0.08em",
   textTransform: "uppercase" as const,
+  whiteSpace: "nowrap" as const,
+};
+
+const headerLeftGroupStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  minWidth: 0,
+};
+
+const athleteSelectorStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  minWidth: 0,
+};
+
+const athleteSelectorLabelStyle = {
+  color: "var(--muted)",
+  fontSize: "0.75rem",
+  whiteSpace: "nowrap" as const,
+};
+
+const athleteSelectStyle = {
+  maxWidth: 180,
+  border: "1px solid var(--border-strong)",
+  padding: "5px 7px",
+  background: "rgba(255, 250, 243, 0.92)",
+  color: "var(--text)",
 };
