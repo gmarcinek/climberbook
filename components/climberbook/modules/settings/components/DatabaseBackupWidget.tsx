@@ -5,11 +5,12 @@ import {
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  panelStyle,
   secondaryButtonStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Panel } from "@/components/climberbook/common/Panel";
+import styles from "./DatabaseBackupWidget.module.css";
 import type { DatabaseBackupWidgetProps } from "./SettingsWidgetTypes";
 export function DatabaseBackupWidget({
   backupImportInputRef,
@@ -20,7 +21,7 @@ export function DatabaseBackupWidget({
   onBackupDrop,
 }: DatabaseBackupWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Dane</span>
@@ -56,6 +57,7 @@ export function DatabaseBackupWidget({
         </button>
       </div>
       <div
+        className={styles.dropzone}
         style={{
           ...backupDropzoneStyle,
           borderColor: isBackupDropActive
@@ -86,6 +88,6 @@ export function DatabaseBackupWidget({
           ? "Upuść backup JSON"
           : "Przeciągnij backup JSON tutaj"}
       </div>
-    </section>
+    </Panel>
   );
 }

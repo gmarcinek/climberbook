@@ -83,6 +83,7 @@ export type AthleteFormWidgetProps = {
   setAthleteForm: Dispatch<SetStateAction<AthleteFormDraft>>;
   sections: SectionRecord[];
   showSectionField?: boolean;
+  panelClassName?: string;
   validationMessage?: string;
   onAthleteFormSubmit: (
     event: FormEvent<HTMLFormElement>,

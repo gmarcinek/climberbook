@@ -4,16 +4,16 @@ import {
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  panelStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Panel } from "@/components/climberbook/common/Panel";
 import type { DangerZoneWidgetProps } from "./SettingsWidgetTypes";
 export function DangerZoneWidget({
   setIsDatabaseDeleteModalOpen,
 }: DangerZoneWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Zaawansowane</span>
@@ -34,6 +34,6 @@ export function DangerZoneWidget({
           USUŃ BAZĘ DANYCH
         </button>
       </div>
-    </section>
+    </Panel>
   );
 }

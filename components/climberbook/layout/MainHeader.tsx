@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import {
   moduleConfig,
@@ -12,6 +12,9 @@ import {
   athleteSelectorStyle,
   brandStyle,
   headerLeftGroupStyle,
+  mobileDrawerBackdropStyle,
+  mobileDrawerOverlayStyle,
+  mobileDrawerSheetStyle,
   moduleButtonStyle,
   moduleNavStyle,
   navSeparatorStyle,
@@ -28,73 +31,220 @@ type MainHeaderProps = {
 export function MainHeader({ activeModule }: MainHeaderProps) {
   const { athletes, activeAthleteId, setActiveAthleteId } = useClimberbook();
   const { isMobileHeader } = useViewport();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navLinks = moduleConfig.map((module, index) => {
+    const link = (
+      <Link
+        href={module.route}
+        onClick={() => setIsMobileMenuOpen(false)}
+        style={
+          isMobileHeader
+            ? {
+                display: "block",
+                width: "100%",
+                padding: "14px 16px",
+                border: "1px solid var(--border-strong)",
+                background:
+                  activeModule === module.key
+                    ? "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.72))"
+                    : "linear-gradient(135deg, rgba(255,255,255,0.78), rgba(255,255,255,0.54))",
+                color:
+                  activeModule === module.key ? "var(--text)" : "var(--muted)",
+                fontSize: "1.05rem",
+                fontWeight: activeModule === module.key ? 700 : 600,
+                lineHeight: 1.2,
+                textDecoration: "none",
+              }
+            : {
+                ...moduleButtonStyle,
+                color:
+                  activeModule === module.key ? "var(--text)" : "var(--muted)",
+                fontWeight: activeModule === module.key ? 700 : 500,
+              }
+        }
+      >
+        {module.navLabel}
+      </Link>
+    );
+
+    if (isMobileHeader) {
+      return <Fragment key={module.key}>{link}</Fragment>;
+    }
+
+    return (
+      <Fragment key={module.key}>
+        {index > 0 && <span style={navSeparatorStyle}>|</span>}
+        {link}
+      </Fragment>
+    );
+  });
 
   return (
-    <header style={{ ...pageHeaderStyle, height: isMobileHeader ? 112 : 80 }}>
-      <div
+    <>
+      <header
         style={{
-          ...topBarStyle,
-          height: isMobileHeader ? 112 : 80,
-          gridTemplateColumns: isMobileHeader
-            ? "minmax(0, 1fr)"
-            : "auto minmax(0, 1fr) auto",
-          gridTemplateRows: isMobileHeader ? "48px 40px" : "none",
-          gap: isMobileHeader ? 0 : 12,
+          ...pageHeaderStyle,
+          position: isMobileHeader ? "relative" : pageHeaderStyle.position,
+          top: isMobileHeader ? undefined : pageHeaderStyle.top,
+          left: isMobileHeader ? undefined : pageHeaderStyle.left,
+          right: isMobileHeader ? undefined : pageHeaderStyle.right,
+          height: isMobileHeader ? "auto" : 80,
+          overflow: isMobileHeader ? "visible" : pageHeaderStyle.overflow,
         }}
       >
         <div
           style={{
-            ...headerLeftGroupStyle,
-            gridRow: isMobileHeader ? 1 : "auto",
+            ...topBarStyle,
+            height: isMobileHeader ? "auto" : 80,
+            gridTemplateColumns: isMobileHeader
+              ? "minmax(0, 1fr)"
+              : "auto minmax(0, 1fr) auto",
+            gridTemplateRows: isMobileHeader ? "auto" : "none",
+            gap: isMobileHeader ? 8 : 12,
+            overflow: isMobileHeader ? "visible" : topBarStyle.overflow,
+            padding: isMobileHeader ? "8px 12px" : topBarStyle.padding,
           }}
         >
-          <strong style={brandStyle}>Climberbook</strong>
-          <label style={athleteSelectorStyle}>
-            <span style={athleteSelectorLabelStyle}>Zawodnik</span>
-            <select
-              value={activeAthleteId ?? ""}
-              onChange={(event) =>
-                setActiveAthleteId(event.target.value || null)
-              }
-              style={athleteSelectStyle}
-            >
-              <option value="">Wybierz zawodnika</option>
-              {athletes.map((athlete) => (
-                <option key={athlete.id} value={athlete.id}>
-                  {athlete.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <nav
-          style={{
-            ...moduleNavStyle,
-            gridRow: isMobileHeader ? 2 : "auto",
-            justifyContent: isMobileHeader ? "flex-start" : "flex-end",
-          }}
-        >
-          {moduleConfig.map((module, index) => (
-            <Fragment key={module.key}>
-              {index > 0 && <span style={navSeparatorStyle}>|</span>}
-              <Link
-                href={module.route}
+          <div
+            style={{
+              ...headerLeftGroupStyle,
+              gridRow: isMobileHeader ? 1 : "auto",
+              flexWrap: isMobileHeader ? "wrap" : undefined,
+              justifyContent: isMobileHeader ? "space-between" : undefined,
+              alignItems: isMobileHeader
+                ? "flex-start"
+                : headerLeftGroupStyle.alignItems,
+              width: isMobileHeader ? "100%" : undefined,
+            }}
+          >
+            <strong style={brandStyle}>Climberbook</strong>
+            {isMobileHeader ? (
+              <button
+                type="button"
+                aria-label="Otwórz menu"
+                aria-expanded={isMobileMenuOpen}
+                onClick={() => setIsMobileMenuOpen(true)}
                 style={{
-                  ...moduleButtonStyle,
-                  color:
-                    activeModule === module.key
-                      ? "var(--text)"
-                      : "var(--muted)",
-                  fontWeight: activeModule === module.key ? 700 : 500,
+                  border: "0px solid var(--border-strong)",
+                  padding: "0px 0px",
+                  background: "rgba(255, 255, 255, 0.72)",
+                  color: "var(--text)",
+                  cursor: "pointer",
+                  fontSize: "2rem",
+                  lineHeight: 0,
+                  height: 21,
                 }}
               >
-                {module.navLabel}
-              </Link>
-            </Fragment>
-          ))}
-        </nav>
-      </div>
-    </header>
+                ≡
+              </button>
+            ) : null}
+            <label
+              style={{
+                ...athleteSelectorStyle,
+                flexWrap: isMobileHeader ? "wrap" : undefined,
+                width: isMobileHeader ? "100%" : undefined,
+              }}
+            >
+              <span style={athleteSelectorLabelStyle}>Zawodnik</span>
+              <select
+                value={activeAthleteId ?? ""}
+                onChange={(event) =>
+                  setActiveAthleteId(event.target.value || null)
+                }
+                style={{
+                  ...athleteSelectStyle,
+                  maxWidth: isMobileHeader
+                    ? "100%"
+                    : athleteSelectStyle.maxWidth,
+                  minWidth: isMobileHeader ? 0 : 180,
+                  width: isMobileHeader ? "100%" : undefined,
+                }}
+              >
+                <option value="">Wybierz zawodnika</option>
+                {athletes.map((athlete) => (
+                  <option key={athlete.id} value={athlete.id}>
+                    {athlete.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {!isMobileHeader ? (
+            <nav
+              style={{
+                ...moduleNavStyle,
+                justifyContent: "flex-end",
+              }}
+            >
+              {navLinks}
+            </nav>
+          ) : null}
+        </div>
+      </header>
+
+      {isMobileHeader && isMobileMenuOpen ? (
+        <div style={{ ...mobileDrawerOverlayStyle, zIndex: 50 }}>
+          <button
+            type="button"
+            aria-label="Zamknij menu"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={mobileDrawerBackdropStyle}
+          />
+          <div
+            style={{
+              ...mobileDrawerSheetStyle,
+              gridTemplateRows: "auto minmax(0, 1fr)",
+              alignContent: "start",
+              height: "100%",
+              padding: 16,
+              borderTop: 0,
+              borderLeft: "1px solid var(--border-strong)",
+              marginLeft: "auto",
+              width: "min(100%, 320px)",
+              boxShadow: "-20px 0 40px rgba(35, 29, 25, 0.16)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <strong style={brandStyle}>Menu</strong>
+              <button
+                type="button"
+                aria-label="Zamknij menu"
+                onClick={() => setIsMobileMenuOpen(false)}
+                style={{
+                  border: "1px solid var(--border-strong)",
+                  padding: "8px 10px",
+                  background: "rgba(255, 255, 255, 0.72)",
+                  color: "var(--text)",
+                  cursor: "pointer",
+                  fontSize: "1rem",
+                  lineHeight: 1,
+                }}
+              >
+                Zamknij
+              </button>
+            </div>
+            <nav
+              style={{
+                display: "grid",
+                gap: 10,
+                alignContent: "start",
+              }}
+            >
+              {navLinks}
+            </nav>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

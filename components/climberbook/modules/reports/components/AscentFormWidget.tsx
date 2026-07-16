@@ -2,15 +2,18 @@
 
 import type { FormEvent } from "react";
 import {
+  FormActions,
+  FormGrid,
+  formLayoutClassNames,
+} from "@/components/climberbook/common/FormLayout";
+import { Panel } from "@/components/climberbook/common/Panel";
+import {
   buttonStyle,
   fieldStyle,
-  formActionsStyle,
-  formGridStyle,
   formStyle,
   inputStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
-  panelStyle,
   sectionTitleStyle,
   softTagStyle,
   textAreaStyle,
@@ -38,7 +41,7 @@ export function AscentFormWidget({
   frenchGradeOptions,
 }: AscentFormWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Historia przejść</span>
@@ -47,7 +50,7 @@ export function AscentFormWidget({
         <span style={softTagStyle}>Dodawanie ręczne</span>
       </div>
       <form onSubmit={onAscentSubmit} style={formStyle}>
-        <div style={formGridStyle}>
+        <FormGrid>
           <label style={fieldStyle}>
             Data
             <input
@@ -79,7 +82,7 @@ export function AscentFormWidget({
               <option value="skala">Skała</option>
             </select>
           </label>
-          <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>
+          <label style={fieldStyle} className={formLayoutClassNames.fullSpan}>
             Nazwa drogi / problemu
             <input
               value={ascentDraft.routeName}
@@ -133,7 +136,7 @@ export function AscentFormWidget({
               ))}
             </select>
           </label>
-          <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>
+          <label style={fieldStyle} className={formLayoutClassNames.fullSpan}>
             Notatki
             <textarea
               value={ascentDraft.notes}
@@ -147,13 +150,13 @@ export function AscentFormWidget({
               style={textAreaStyle}
             />
           </label>
-        </div>
-        <div style={formActionsStyle}>
+        </FormGrid>
+        <FormActions>
           <button type="submit" style={buttonStyle}>
             Dodaj przejście
           </button>
-        </div>
+        </FormActions>
       </form>
-    </section>
+    </Panel>
   );
 }

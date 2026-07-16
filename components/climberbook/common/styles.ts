@@ -491,7 +491,7 @@ export const scrollListStyle = {
 
 export const twoColumnLayoutStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(520px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))",
   gap: 9,
   alignItems: "start",
 };
@@ -603,8 +603,8 @@ export const athleteSelectorLabelStyle = {
 };
 
 export const athleteSelectStyle = {
-  maxWidth: 280,
-  minWidth: 280,
+  width: "100%",
+  maxWidth: 400,
   border: "1px solid var(--border-strong)",
   padding: "5px 7px",
   background: "rgba(255, 250, 243, 0.92)",

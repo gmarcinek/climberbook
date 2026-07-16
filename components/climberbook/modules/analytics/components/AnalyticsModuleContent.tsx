@@ -11,6 +11,7 @@ import {
 
 type AnalyticsModuleContentProps = {
   moduleMeta: { eyebrow: string; title: string; description: string };
+  isMobileChartLayout: boolean;
   trainingsCount: number;
   averageWeight: string;
   totalCalories: number;
@@ -28,6 +29,7 @@ type AnalyticsModuleContentProps = {
 
 export function AnalyticsModuleContent({
   moduleMeta,
+  isMobileChartLayout,
   trainingsCount,
   averageWeight,
   totalCalories,
@@ -53,7 +55,14 @@ export function AnalyticsModuleContent({
         totalAttempts={totalAttempts}
       />
 
-      <div style={twoColumnLayoutStyle}>
+      <div
+        style={{
+          ...twoColumnLayoutStyle,
+          gridTemplateColumns: isMobileChartLayout
+            ? "minmax(0, 1fr)"
+            : twoColumnLayoutStyle.gridTemplateColumns,
+        }}
+      >
         <WeeklyTrainingChartWidget
           chartRangeLabel={chartRangeLabel}
           weeklyTrainingStats={weeklyTrainingStats}

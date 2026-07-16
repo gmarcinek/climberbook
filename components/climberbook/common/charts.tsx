@@ -39,7 +39,6 @@ import {
   buttonStyle,
   chartCardStyle,
   fieldStyle,
-  formActionsStyle,
   formStyle,
   ghostButtonStyle,
   inputStyle,
@@ -60,6 +59,7 @@ import {
   weightEntryModalOverlayStyle,
   weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
+import { FormActions } from "@/components/climberbook/common/FormLayout";
 import type { TrainingRecord, WeightEntryRecord } from "@/lib/climbs-db";
 
 export function MetricCard({
@@ -321,11 +321,11 @@ export function TrainingAnalyticsPanel(props: {
                 />
               </label>
 
-              <div style={formActionsStyle}>
+              <FormActions>
                 <button type="submit" style={buttonStyle}>
                   Zapisz pomiar
                 </button>
-              </div>
+              </FormActions>
             </form>
           </section>
         </div>

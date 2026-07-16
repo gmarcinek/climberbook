@@ -6,11 +6,11 @@ import {
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  panelStyle,
   secondaryButtonStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Panel } from "@/components/climberbook/common/Panel";
 import type { TeamRosterSettingsWidgetProps } from "./SettingsWidgetTypes";
 export function TeamRosterSettingsWidget({
   athletes,
@@ -22,7 +22,7 @@ export function TeamRosterSettingsWidget({
   onDeleteAthlete,
 }: TeamRosterSettingsWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Zespół</span>
@@ -95,6 +95,6 @@ export function TeamRosterSettingsWidget({
           ))}
         </div>
       )}
-    </section>
+    </Panel>
   );
 }

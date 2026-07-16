@@ -1,13 +1,13 @@
 "use client";
 
 import { EmptyState } from "@/components/climberbook/common/charts";
+import { Panel } from "@/components/climberbook/common/Panel";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import {
   listCardHeaderStyle,
   listCardStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
-  panelStyle,
   scrollListStyle,
   sectionTitleStyle,
   softPillStyle,
@@ -24,7 +24,7 @@ export function GradeDistributionWidget({
   gradeDistribution,
 }: GradeDistributionWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Wyceny</span>
@@ -45,6 +45,6 @@ export function GradeDistributionWidget({
           </article>
         ))}
       </ScrollPane>
-    </section>
+    </Panel>
   );
 }

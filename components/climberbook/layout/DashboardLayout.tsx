@@ -11,17 +11,23 @@ import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { MainHeader } from "./MainHeader";
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  useViewport();
+  const { isMobileTrainingLayout } = useViewport();
 
   return (
-    <main style={{ ...pageStyle, height: "100vh", overflow: "hidden" }}>
+    <main
+      style={{
+        ...pageStyle,
+        height: isMobileTrainingLayout ? "auto" : "100vh",
+        overflow: isMobileTrainingLayout ? "visible" : "hidden",
+      }}
+    >
       <section
         style={{
           ...shellStyle,
           ...moduleShellStyles.treningowy,
           minHeight: "100vh",
-          height: "100vh",
-          overflow: "hidden",
+          height: isMobileTrainingLayout ? "auto" : "100vh",
+          overflow: isMobileTrainingLayout ? "visible" : "hidden",
         }}
       >
         <MainHeader activeModule="treningowy" />
@@ -29,10 +35,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           style={{
             ...contentBodyStyle,
             position: "relative",
-            minHeight: "calc(-83px + 100vh)",
+            minHeight: isMobileTrainingLayout ? "auto" : "calc(-83px + 100vh)",
             padding: 0,
-            height: "calc(-83px + 100vh)",
-            overflow: "hidden",
+            height: isMobileTrainingLayout ? "auto" : "calc(-83px + 100vh)",
+            overflow: isMobileTrainingLayout ? "visible" : "hidden",
           }}
         >
           {children}

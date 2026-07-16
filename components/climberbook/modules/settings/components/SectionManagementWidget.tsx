@@ -8,6 +8,7 @@ import {
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { FormActions } from "@/components/climberbook/common/FormLayout";
 import type { SectionManagementWidgetProps } from "./SettingsWidgetTypes";
 import styles from "./SectionManagementWidget.module.css";
 
@@ -19,7 +20,10 @@ export function SectionManagementWidget({
   onDeleteSection,
 }: SectionManagementWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <section
+      style={{ ...panelStyle, padding: undefined }}
+      className={styles.panel}
+    >
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Sekcje</span>
@@ -35,11 +39,11 @@ export function SectionManagementWidget({
           placeholder="Nazwa sekcji / teamu"
           style={inputStyle}
         />
-        <div className={styles.actions}>
+        <FormActions>
           <button type="submit" style={buttonStyle}>
             Dodaj sekcję
           </button>
-        </div>
+        </FormActions>
       </form>
 
       {sections.length === 0 ? (

@@ -1,14 +1,9 @@
-.form {
-  display: grid;
+.panel {
+  padding: 0.75rem;
 }
 
-.actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-self: start;
-  margin-top: 1rem;
+.form {
+  display: grid;
 }
 
 .sectionList {
@@ -33,4 +28,10 @@
   color: var(--muted);
   font-size: 1rem;
   line-height: 1;
+}
+
+@media (min-width: 720px) {
+  .panel {
+    padding: 1.5rem;
+  }
 }

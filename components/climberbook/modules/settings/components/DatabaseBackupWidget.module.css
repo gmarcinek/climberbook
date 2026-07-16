@@ -1,0 +1,9 @@
+.dropzone {
+  display: none !important;
+}
+
+@media (min-width: 720px) {
+  .dropzone {
+    display: grid !important;
+  }
+}

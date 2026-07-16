@@ -11,10 +11,10 @@ import {
   YAxis,
 } from "recharts";
 import { EmptyState } from "@/components/climberbook/common/charts";
+import { Panel } from "@/components/climberbook/common/Panel";
 import {
   moduleEyebrowStyle,
   panelHeadingStyle,
-  panelStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
@@ -33,7 +33,7 @@ export function WeeklyTrainingChartWidget({
   weeklyTrainingStats,
 }: WeeklyTrainingChartWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Objętość</span>
@@ -72,6 +72,6 @@ export function WeeklyTrainingChartWidget({
           </ResponsiveContainer>
         </div>
       )}
-    </section>
+    </Panel>
   );
 }

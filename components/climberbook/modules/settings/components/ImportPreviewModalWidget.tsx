@@ -1,6 +1,5 @@
 import {
   fieldStyle,
-  formActionsStyle,
   ghostButtonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
@@ -11,6 +10,7 @@ import {
   weightEntryModalOverlayStyle,
   weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
+import { FormActions } from "@/components/climberbook/common/FormLayout";
 import type { ImportPreviewModalWidgetProps } from "./SettingsWidgetTypes";
 
 const countLabelMap = {
@@ -78,7 +78,7 @@ export function ImportPreviewModalWidget({
           ))}
         </div>
         <p style={mutedParagraphStyle}>{preview.actionLabel}</p>
-        <div style={formActionsStyle}>
+        <FormActions>
           <button
             type="button"
             onClick={onCloseImportPreview}
@@ -95,7 +95,7 @@ export function ImportPreviewModalWidget({
           >
             {isImporting ? "Importowanie..." : "Importuj"}
           </button>
-        </div>
+        </FormActions>
       </section>
     </div>
   );

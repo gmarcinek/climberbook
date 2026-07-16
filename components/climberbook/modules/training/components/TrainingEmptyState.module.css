@@ -1,0 +1,76 @@
+.contentStack {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.introPanelShell {
+  padding: 0.5rem;
+}
+
+.introPanels {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+  order: 2;
+}
+
+.formSection {
+  order: 1;
+}
+
+.generatorPanel {
+  padding: 0.5rem;
+}
+
+.formPanelShell {
+  padding: 0.5rem;
+}
+
+.introPrimary {
+  flex: 1.7 1 0;
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.introSecondary {
+  flex: 0.9 1 202px;
+  min-width: 0;
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.sectionHeader {
+  display: grid;
+  gap: 6px;
+}
+
+@media (min-width: 900px) {
+  .contentStack {
+    display: grid;
+  }
+
+  .introPanelShell {
+    padding: 1.5rem;
+  }
+
+  .introPanels {
+    flex-direction: row;
+    order: 1;
+  }
+
+  .formSection {
+    order: 2;
+  }
+
+  .generatorPanel {
+    padding: 1rem;
+  }
+
+  .formPanelShell {
+    padding: 1.5rem;
+  }
+}

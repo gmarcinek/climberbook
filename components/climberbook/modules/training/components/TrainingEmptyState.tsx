@@ -17,6 +17,7 @@ import {
 import { MainHeader } from "@/components/climberbook/layout/MainHeader";
 import { AthleteFormWidget } from "@/components/climberbook/modules/settings/components/AthleteFormWidget";
 import { ImportPreviewModalWidget } from "@/components/climberbook/modules/settings/components/ImportPreviewModalWidget";
+import styles from "./TrainingEmptyState.module.css";
 import { useRouter } from "next/navigation";
 import type { AthleteFormDraft } from "@/components/climberbook/providers/ClimberbookProvider";
 import type { DatabaseImportPreview, SectionRecord } from "@/lib/climbs-db";
@@ -78,24 +79,20 @@ export function TrainingEmptyState({
       <main style={pageStyle}>
         <MainHeader activeModule="treningowy" />
         <div style={{ padding: "24px 8px 24px" }}>
-          <div style={{ ...moduleContainerStyle, ...moduleContentStyle }}>
+          <div
+            style={{ ...moduleContainerStyle, ...moduleContentStyle }}
+            className={styles.contentStack}
+          >
             <section
               style={{
                 ...panelStyle,
-                display: "grid",
-                gap: "1rem",
-                gridTemplateColumns: "minmax(0, 1.7fr) minmax(260px, 0.9fr)",
-                alignItems: "stretch",
+                display: "flex",
+                padding: undefined,
               }}
+              className={`${styles.introPanelShell} ${styles.introPanels}`}
             >
-              <div
-                style={{
-                  display: "grid",
-                  gap: "0.85rem",
-                  alignContent: "start",
-                }}
-              >
-                <div style={{ display: "grid", gap: 6 }}>
+              <div className={styles.introPrimary}>
+                <div className={styles.sectionHeader}>
                   <span style={moduleEyebrowStyle}>Start</span>
                   <h1
                     style={{
@@ -133,17 +130,14 @@ export function TrainingEmptyState({
               </div>
 
               <div
+                className={`${styles.introSecondary} ${styles.generatorPanel}`}
                 style={{
-                  display: "grid",
-                  gap: "0.85rem",
-                  alignContent: "start",
-                  padding: "1rem",
                   border: "1px solid rgba(41, 109, 63, 0.16)",
                   background:
                     "linear-gradient(135deg, rgba(236, 248, 239, 0.92), rgba(244, 251, 245, 0.82))",
                 }}
               >
-                <div style={{ display: "grid", gap: 6 }}>
+                <div className={styles.sectionHeader}>
                   <span style={{ ...moduleEyebrowStyle, color: "#2b7a46" }}>
                     Generator
                   </span>
@@ -178,13 +172,14 @@ export function TrainingEmptyState({
               </div>
             </section>
 
-            <div style={settingsMainColumnStyle}>
+            <div style={settingsMainColumnStyle} className={styles.formSection}>
               <AthleteFormWidget
                 athleteFormMode={athleteFormMode}
                 athleteForm={athleteForm}
                 setAthleteForm={setAthleteForm}
                 sections={sections}
                 showSectionField={false}
+                panelClassName={styles.formPanelShell}
                 validationMessage={validationMessage}
                 onAthleteFormSubmit={handleAthleteFormSubmit}
                 onResetAthleteForm={onResetAthleteForm}

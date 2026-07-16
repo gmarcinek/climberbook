@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { type TrainingRecord, type TrainingSurface } from "@/lib/climbs-db";
 import {
@@ -145,7 +146,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     .join(" ");
   const fullFieldClassName = [
     styles.trainingSidebar__field,
-    styles["trainingSidebar__field--full"],
+    formLayoutClassNames.fullSpan,
   ].join(" ");
   const growInputClassName = [
     styles.trainingSidebar__input,

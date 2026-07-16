@@ -1,18 +1,21 @@
 import {
   buttonStyle,
   fieldStyle,
-  formActionsStyle,
-  formGridStyle,
   formStyle,
   inputStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
-  panelStyle,
   sectionTitleStyle,
   softTagStyle,
   weightControlStyle,
   weightStepButtonStyle,
 } from "@/components/climberbook/common/styles";
+import {
+  FormActions,
+  FormGrid,
+  formLayoutClassNames,
+} from "@/components/climberbook/common/FormLayout";
+import { Panel } from "@/components/climberbook/common/Panel";
 import {
   formatWeightInput,
   parseHeightInput,
@@ -26,7 +29,7 @@ export function ProfileFormWidget({
   onSettingsSubmit,
 }: ProfileFormWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Profil</span>
@@ -35,7 +38,7 @@ export function ProfileFormWidget({
         <span style={softTagStyle}>Data urodzenia, płeć, wzrost, waga</span>
       </div>
       <form onSubmit={onSettingsSubmit} style={formStyle}>
-        <div style={formGridStyle}>
+        <FormGrid>
           <label style={fieldStyle}>
             Data urodzenia
             <input
@@ -91,7 +94,7 @@ export function ProfileFormWidget({
               style={inputStyle}
             />
           </label>
-          <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>
+          <label style={fieldStyle} className={formLayoutClassNames.fullSpan}>
             Waga (kg)
             <div style={weightControlStyle}>
               <button
@@ -148,13 +151,13 @@ export function ProfileFormWidget({
               </button>
             </div>
           </label>
-        </div>
-        <div style={formActionsStyle}>
+        </FormGrid>
+        <FormActions>
           <button type="submit" style={buttonStyle}>
             Zapisz settings
           </button>
-        </div>
+        </FormActions>
       </form>
-    </section>
+    </Panel>
   );
 }

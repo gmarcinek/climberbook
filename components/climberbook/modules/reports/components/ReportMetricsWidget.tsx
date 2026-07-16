@@ -1,6 +1,7 @@
 "use client";
 
 import { MetricCard } from "@/components/climberbook/common/charts";
+import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { statsGridStyle } from "@/components/climberbook/common/styles";
 type ReportMetricsWidgetProps = {
   ascentsCount: number;
@@ -12,8 +13,17 @@ export function ReportMetricsWidget({
   panelAscents,
   rockAscents,
 }: ReportMetricsWidgetProps) {
+  const { isMobileChartLayout } = useViewport();
+
   return (
-    <div style={statsGridStyle}>
+    <div
+      style={{
+        ...statsGridStyle,
+        gridTemplateColumns: isMobileChartLayout
+          ? "minmax(0, 1fr)"
+          : statsGridStyle.gridTemplateColumns,
+      }}
+    >
       <MetricCard
         label="Wpisy raportowe"
         value={String(ascentsCount)}

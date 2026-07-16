@@ -1,7 +1,6 @@
 import {
   deleteButtonStyle,
   fieldStyle,
-  formActionsStyle,
   formStyle,
   ghostButtonStyle,
   inputStyle,
@@ -12,6 +11,7 @@ import {
   weightEntryModalOverlayStyle,
   weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
+import { FormActions } from "@/components/climberbook/common/FormLayout";
 import type { DatabaseDeleteModalWidgetProps } from "./SettingsWidgetTypes";
 export function DatabaseDeleteModalWidget({
   databaseDeleteConfirmation,
@@ -64,7 +64,7 @@ export function DatabaseDeleteModalWidget({
               style={inputStyle}
             />
           </label>
-          <div style={formActionsStyle}>
+          <FormActions>
             <button
               type="submit"
               disabled={databaseDeleteConfirmation !== "usuń"}
@@ -79,7 +79,7 @@ export function DatabaseDeleteModalWidget({
             >
               USUŃ BAZĘ DANYCH
             </button>
-          </div>
+          </FormActions>
         </form>
       </section>
     </div>

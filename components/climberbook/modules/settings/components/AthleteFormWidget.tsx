@@ -1,8 +1,6 @@
 import {
   buttonStyle,
   fieldStyle,
-  formActionsStyle,
-  formGridStyle,
   formStyle,
   ghostButtonStyle,
   inputStyle,
@@ -11,14 +9,12 @@ import {
   panelStyle,
   sectionTitleStyle,
 } from "@/components/climberbook/common/styles";
+import {
+  FormActions,
+  FormGrid,
+} from "@/components/climberbook/common/FormLayout";
 import type { UserSex } from "@/lib/climbs-db";
 import type { AthleteFormWidgetProps } from "./SettingsWidgetTypes";
-
-const athleteFormGridStyle = {
-  ...formGridStyle,
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gridAutoRows: "auto",
-};
 
 export function AthleteFormWidget({
   athleteFormMode,
@@ -26,12 +22,16 @@ export function AthleteFormWidget({
   setAthleteForm,
   sections,
   showSectionField = true,
+  panelClassName,
   validationMessage,
   onAthleteFormSubmit,
   onResetAthleteForm,
 }: AthleteFormWidgetProps) {
   return (
-    <section style={panelStyle}>
+    <section
+      style={{ ...panelStyle, padding: undefined }}
+      className={panelClassName}
+    >
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>
@@ -45,7 +45,7 @@ export function AthleteFormWidget({
         </div>
       </div>
       <form onSubmit={onAthleteFormSubmit} style={formStyle}>
-        <div style={athleteFormGridStyle}>
+        <FormGrid>
           <label style={fieldStyle}>
             Imię
             <input
@@ -172,7 +172,7 @@ export function AthleteFormWidget({
               style={inputStyle}
             />
           </label>
-        </div>
+        </FormGrid>
         {validationMessage ? (
           <p
             style={{
@@ -184,7 +184,7 @@ export function AthleteFormWidget({
             {validationMessage}
           </p>
         ) : null}
-        <div style={formActionsStyle}>
+        <FormActions>
           <button type="submit" style={buttonStyle}>
             {athleteFormMode === "edit" ? "Zapisz zmiany" : "Dodaj zawodnika"}
           </button>
@@ -197,7 +197,7 @@ export function AthleteFormWidget({
               Anuluj
             </button>
           )}
-        </div>
+        </FormActions>
       </form>
     </section>
   );
