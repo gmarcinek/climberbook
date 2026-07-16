@@ -4,22 +4,28 @@
   "athletes": [
     {
       "id": "primary",
-      "name": "Grzegorz Marcinek",
+      "name": "Piotrek",
+      "firstName": "Piot",
+      "lastName": "Koksowski",
+      "nick": "Koksu",
       "createdAt": "2026-07-15T23:42:31.725Z",
       "sectionId": "807988f5-64be-4330-9b96-554a6c817290"
     },
     {
       "id": "322dd89b-1d62-4a2b-b10d-8b52e11bea88",
-      "name": "Blanka Wysocka",
+      "name": "Aloha",
+      "firstName": "Alicja",
+      "lastName": "Kowalska",
+      "nick": "Alice",
       "createdAt": "2026-07-15T23:43:40.860Z",
       "sectionId": "807988f5-64be-4330-9b96-554a6c817290"
     },
     {
       "id": "15e50776-5512-4780-af99-549522f38cca",
-      "name": "MaciekNieTOmek",
+      "name": "Maciek",
       "firstName": "Maciej",
-      "lastName": "Tomkiewicz",
-      "nick": "MaciekNieTOmek",
+      "lastName": "Maciejewski",
+      "nick": "Maciek",
       "createdAt": "2026-07-16T00:16:26.214Z"
     }
   ],

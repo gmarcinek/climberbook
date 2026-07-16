@@ -73,6 +73,7 @@ import {
   type UserSex,
   type WeightEntryRecord,
 } from "@/lib/climbs-db";
+import { createSampleBackupData } from "@/lib/sample-backup";
 
 export type AscentDraft = {
   date: string;
@@ -211,6 +212,7 @@ type ClimberbookContextValue = {
   submitSettings: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   exportDatabase: () => Promise<void>;
   importDatabase: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  loadSampleData: () => Promise<void>;
   dropBackup: (event: DragEvent<HTMLDivElement>) => void;
   confirmImportPreview: () => Promise<void>;
   closeImportPreview: () => void;
@@ -269,7 +271,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const [athleteForm, setAthleteForm] =
     useState<AthleteFormDraft>(emptyAthleteForm);
   const [newSectionName, setNewSectionName] = useState("");
-  const [status, setStatus] = useState("Ładowanie danych z IndexedDB...");
+  const [status, setStatus] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [importPreview, setImportPreview] =
     useState<DatabaseImportPreview | null>(null);
@@ -574,10 +576,23 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setImportPreview(preview);
     setIsImportPreviewOpen(true);
   }
+  async function prepareImportValue(value: unknown) {
+    const preview = await inspectDatabaseBackup(value);
+    pendingImportFileRef.current = new File(
+      [JSON.stringify(value, null, 2)],
+      "climberbook-sample-data.json",
+      { type: "application/json" },
+    );
+    setImportPreview(preview);
+    setIsImportPreviewOpen(true);
+  }
   async function importDatabase(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (file) await prepareImportFile(file);
     event.target.value = "";
+  }
+  async function loadSampleData() {
+    await prepareImportValue(createSampleBackupData());
   }
   function dropBackup(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
@@ -773,6 +788,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     submitSettings,
     exportDatabase,
     importDatabase,
+    loadSampleData,
     dropBackup,
     confirmImportPreview,
     closeImportPreview,
@@ -803,6 +819,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           onResetAthleteForm={resetAthleteForm}
           backupImportInputRef={backupImportInputRef}
           onDatabaseImport={importDatabase}
+          onLoadSampleData={loadSampleData}
           importPreview={importPreview}
           isImportPreviewOpen={isImportPreviewOpen}
           isImportingBackup={isImportingBackup}
@@ -986,6 +1003,7 @@ export function useSettingsModule() {
     exportAthlete,
     exportDatabase,
     importDatabase,
+    loadSampleData,
     confirmImportPreview,
     closeImportPreview,
     isBackupDropActive,
@@ -1034,6 +1052,7 @@ export function useSettingsModule() {
     exportAthlete,
     exportDatabase,
     importDatabase,
+    loadSampleData,
     confirmImportPreview,
     closeImportPreview,
     importPreview,

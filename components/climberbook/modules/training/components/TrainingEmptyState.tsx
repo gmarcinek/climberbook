@@ -38,6 +38,7 @@ type TrainingEmptyStateProps = {
   onResetAthleteForm: () => void;
   backupImportInputRef: RefObject<HTMLInputElement | null>;
   onDatabaseImport: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onLoadSampleData: () => Promise<void>;
   importPreview: DatabaseImportPreview | null;
   isImportPreviewOpen: boolean;
   isImportingBackup: boolean;
@@ -55,6 +56,7 @@ export function TrainingEmptyState({
   onResetAthleteForm,
   backupImportInputRef,
   onDatabaseImport,
+  onLoadSampleData,
   importPreview,
   isImportPreviewOpen,
   isImportingBackup,
@@ -77,40 +79,101 @@ export function TrainingEmptyState({
         <MainHeader activeModule="treningowy" />
         <div style={{ padding: "24px 8px 24px" }}>
           <div style={{ ...moduleContainerStyle, ...moduleContentStyle }}>
-            <section style={panelStyle}>
-              <div style={{ display: "grid", gap: 6 }}>
-                <span style={moduleEyebrowStyle}>Start</span>
-                <h1
-                  style={{
-                    ...sectionTitleStyle,
-                    fontSize: "1.35rem",
-                    margin: 0,
-                  }}
-                >
-                  Baza jest pusta
-                </h1>
-                <span style={softTagStyle}>
-                  Dodaj zawodnika albo zaimportuj backup
-                </span>
+            <section
+              style={{
+                ...panelStyle,
+                display: "grid",
+                gap: "1rem",
+                gridTemplateColumns: "minmax(0, 1.7fr) minmax(260px, 0.9fr)",
+                alignItems: "stretch",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gap: "0.85rem",
+                  alignContent: "start",
+                }}
+              >
+                <div style={{ display: "grid", gap: 6 }}>
+                  <span style={moduleEyebrowStyle}>Start</span>
+                  <h1
+                    style={{
+                      ...sectionTitleStyle,
+                      fontSize: "1.35rem",
+                      margin: 0,
+                    }}
+                  >
+                    Baza jest pusta
+                  </h1>
+                  <span style={softTagStyle}>
+                    Dodaj zawodnika albo zaimportuj backup
+                  </span>
+                </div>
+                <p style={mutedParagraphStyle}>
+                  Żeby zacząć pracę w Climberbook, utwórz pierwszego zawodnika
+                  albo wczytaj istniejącą bazę z pliku JSON.
+                </p>
+                <div style={actionRowStyle}>
+                  <input
+                    ref={backupImportInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    onChange={onDatabaseImport}
+                    style={{ display: "none" }}
+                  />
+                  <button
+                    type="button"
+                    style={buttonStyle}
+                    onClick={() => backupImportInputRef.current?.click()}
+                  >
+                    Import bazy
+                  </button>
+                </div>
               </div>
-              <p style={mutedParagraphStyle}>
-                Żeby zacząć pracę w Climberbook, utwórz pierwszego zawodnika
-                albo wczytaj istniejącą bazę z pliku JSON.
-              </p>
-              <div style={actionRowStyle}>
-                <input
-                  ref={backupImportInputRef}
-                  type="file"
-                  accept="application/json,.json"
-                  onChange={onDatabaseImport}
-                  style={{ display: "none" }}
-                />
+
+              <div
+                style={{
+                  display: "grid",
+                  gap: "0.85rem",
+                  alignContent: "start",
+                  padding: "1rem",
+                  border: "1px solid rgba(41, 109, 63, 0.16)",
+                  background:
+                    "linear-gradient(135deg, rgba(236, 248, 239, 0.92), rgba(244, 251, 245, 0.82))",
+                }}
+              >
+                <div style={{ display: "grid", gap: 6 }}>
+                  <span style={{ ...moduleEyebrowStyle, color: "#2b7a46" }}>
+                    Generator
+                  </span>
+                  <h2
+                    style={{
+                      ...sectionTitleStyle,
+                      fontSize: "1.05rem",
+                      margin: 0,
+                    }}
+                  >
+                    Załaduj przykładowe dane
+                  </h2>
+                </div>
+                <p style={{ ...mutedParagraphStyle, margin: 0 }}>
+                  Wczyta gotowy przykładowy dump z dynamicznymi datami i wagą z
+                  bieżącego miesiąca.
+                </p>
                 <button
                   type="button"
-                  style={buttonStyle}
-                  onClick={() => backupImportInputRef.current?.click()}
+                  style={{
+                    ...ghostButtonStyle,
+                    border: 0,
+                    padding: "7px 9px",
+                    background: "linear-gradient(135deg, #2f8f57, #49b36f)",
+                    color: "#ffffff",
+                    boxShadow: "0 18px 30px rgba(54, 143, 87, 0.24)",
+                  }}
+                  onClick={() => void onLoadSampleData()}
                 >
-                  Import bazy
+                  Załaduj przykładowe dane
                 </button>
               </div>
             </section>
