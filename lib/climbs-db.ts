@@ -649,10 +649,7 @@ export async function listTrainings(athleteId: string) {
 
 export async function listAllTrainings() {
   const database = await getDatabase();
-  const records = await database.getAllFromIndex(
-    "trainings",
-    "by-created-at",
-  );
+  const records = await database.getAllFromIndex("trainings", "by-created-at");
   return ensureTrainingSourceIds(records);
 }
 
@@ -750,10 +747,7 @@ export async function listUserProfiles() {
 
 export async function listAthletes() {
   const database = await getDatabase();
-  const records = await database.getAllFromIndex(
-    "athletes",
-    "by-created-at",
-  );
+  const records = await database.getAllFromIndex("athletes", "by-created-at");
   return ensureAthleteSourceIds(records);
 }
 
@@ -796,10 +790,7 @@ export async function updateAthlete(id: string, input: AthleteInput) {
 
 export async function listSections() {
   const database = await getDatabase();
-  const records = await database.getAllFromIndex(
-    "sections",
-    "by-created-at",
-  );
+  const records = await database.getAllFromIndex("sections", "by-created-at");
   return ensureSectionSourceIds(records);
 }
 
@@ -1036,10 +1027,19 @@ export async function inspectDatabaseBackup(
       ? asRecordArray<SectionRecord>(backup.sections, "sections")
       : [];
     const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
-    const trainings = asRecordArray<TrainingRecord>(backup.trainings, "trainings");
+    const trainings = asRecordArray<TrainingRecord>(
+      backup.trainings,
+      "trainings",
+    );
     const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
-    const profiles = asRecordArray<UserProfileRecord>(backup.profiles, "profiles");
-    const weightEntries = asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries");
+    const profiles = asRecordArray<UserProfileRecord>(
+      backup.profiles,
+      "profiles",
+    );
+    const weightEntries = asRecordArray<WeightEntryRecord>(
+      backup.weightEntries,
+      "weightEntries",
+    );
 
     return {
       formatVersion: 3,
@@ -1062,16 +1062,26 @@ export async function inspectDatabaseBackup(
 
   const backupAthlete = backup.athlete as AthleteRecord | undefined;
 
-  if (backup.formatVersion === 2 && (!backupAthlete?.id || !backupAthlete.name)) {
+  if (
+    backup.formatVersion === 2 &&
+    (!backupAthlete?.id || !backupAthlete.name)
+  ) {
     throw new Error("Nieprawidłowy backup: brakuje zawodnika.");
   }
 
   const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
-  const trainings = asRecordArray<TrainingRecord>(backup.trainings, "trainings");
+  const trainings = asRecordArray<TrainingRecord>(
+    backup.trainings,
+    "trainings",
+  );
   const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
-  const weightEntries = asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries");
+  const weightEntries = asRecordArray<WeightEntryRecord>(
+    backup.weightEntries,
+    "weightEntries",
+  );
   normalizeImportedProfile(backup.profile);
-  const importedAthleteSourceId = getStableSourceId(backupAthlete) ?? crypto.randomUUID();
+  const importedAthleteSourceId =
+    getStableSourceId(backupAthlete) ?? crypto.randomUUID();
   const athletes = await listAthletes();
   const matchedAthlete = athletes.find(
     (athlete) => getStableSourceId(athlete) === importedAthleteSourceId,
@@ -1088,7 +1098,9 @@ export async function inspectDatabaseBackup(
       ? `Nadpisze zawodnika ${matchedAthlete.name}.`
       : "Utworzy nowego zawodnika.",
     athleteName:
-      backupAthlete?.name?.trim() || backupAthlete?.nick?.trim() || "Zaimportowany zawodnik",
+      backupAthlete?.name?.trim() ||
+      backupAthlete?.nick?.trim() ||
+      "Zaimportowany zawodnik",
     counts: {
       athletes: 1,
       sections: 0,

@@ -192,27 +192,6 @@ export function TrainingAnalyticsPanel(props: {
       <section style={chartCardStyle}>
         <div style={panelHeadingStyle}>
           <div>
-            <span style={moduleEyebrowStyle}>Wykres wagi</span>
-            <h3 style={sectionTitleStyle}>Ostatnie pomiary</h3>
-          </div>
-          <span style={softPillStyle}>{weightChartEntries.length} pkt</span>
-          <button
-            type="button"
-            onClick={() => setIsWeightEntryModalOpen(true)}
-            style={{ ...buttonStyle, justifySelf: "start" }}
-          >
-            Dodaj pomiar
-          </button>
-        </div>
-        <WeightTrendChart
-          entries={weightChartEntries}
-          chartRange={chartRange}
-        />
-      </section>
-
-      <section style={chartCardStyle}>
-        <div style={panelHeadingStyle}>
-          <div>
             <span style={moduleEyebrowStyle}>Treningi z liną i MoonBoard</span>
             <h3 style={sectionTitleStyle}>Wyceny na sesję</h3>
           </div>
@@ -233,6 +212,27 @@ export function TrainingAnalyticsPanel(props: {
           <span style={softPillStyle}>{chartRangeLabel}</span>
         </div>
         <TrainingCaloriesChart trainings={trainings} chartRange={chartRange} />
+      </section>
+
+      <section style={chartCardStyle}>
+        <div style={panelHeadingStyle}>
+          <div>
+            <span style={moduleEyebrowStyle}>Wykres wagi</span>
+            <h3 style={sectionTitleStyle}>Ostatnie pomiary</h3>
+          </div>
+          <span style={softPillStyle}>{weightChartEntries.length} pkt</span>
+          <button
+            type="button"
+            onClick={() => setIsWeightEntryModalOpen(true)}
+            style={{ ...buttonStyle, justifySelf: "start" }}
+          >
+            Dodaj pomiar
+          </button>
+        </div>
+        <WeightTrendChart
+          entries={weightChartEntries}
+          chartRange={chartRange}
+        />
       </section>
 
       {isWeightEntryModalOpen && (
