@@ -120,9 +120,9 @@ export function TrainingHistoryWidget({
                     }}
                   >
                     <span>Wyceny:</span>
-                    {grades.map((grade) => (
+                    {grades.map((grade, index) => (
                       <span
-                        key={`${training.id ?? training.createdAt}-${grade}`}
+                        key={`${training.id ?? training.createdAt}-${grade}-${index}`}
                         style={getGradeChipStyle(grade)}
                       >
                         {grade}
