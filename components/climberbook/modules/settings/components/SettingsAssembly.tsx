@@ -151,6 +151,13 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
         )}
         {settingsTab === "zespol" && (
           <div style={settingsMainColumnStyle}>
+            <SectionManagementWidget
+              sections={sections}
+              newSectionName={newSectionName}
+              setNewSectionName={setNewSectionName}
+              onAddSection={onAddSection}
+              onDeleteSection={onDeleteSection}
+            />
             <AthleteFormWidget
               athleteFormMode={athleteFormMode}
               athleteForm={athleteForm}
@@ -160,13 +167,6 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               onAthleteFormSubmit={onAthleteFormSubmit}
               onResetAthleteForm={onResetAthleteForm}
             />
-            <SectionManagementWidget
-              sections={sections}
-              newSectionName={newSectionName}
-              setNewSectionName={setNewSectionName}
-              onAddSection={onAddSection}
-              onDeleteSection={onDeleteSection}
-            />
             <TeamRosterSettingsWidget
               athletes={athletes}
               activeAthleteId={activeAthleteId}
@@ -175,8 +175,6 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               onAthleteExport={onAthleteExport}
               onStartAthleteEdit={onStartAthleteEdit}
               onDeleteAthlete={onDeleteAthlete}
-              backupImportInputRef={backupImportInputRef}
-              onDatabaseImport={onDatabaseImport}
             />
           </div>
         )}

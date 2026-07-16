@@ -69,8 +69,6 @@ export type TeamRosterSettingsWidgetProps = {
   onAthleteExport: (athlete: AthleteRecord) => Promise<void>;
   onStartAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
   onDeleteAthlete: (athlete: AthleteRecord) => Promise<void>;
-  backupImportInputRef: RefObject<HTMLInputElement | null>;
-  onDatabaseImport: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 export type SectionManagementWidgetProps = {
   sections: SectionRecord[];

@@ -1,7 +1,6 @@
 import {
   actionRowStyle,
   athleteSelectStyle,
-  buttonStyle,
   deleteButtonStyle,
   ghostButtonStyle,
   moduleEyebrowStyle,
@@ -21,8 +20,6 @@ export function TeamRosterSettingsWidget({
   onAthleteExport,
   onStartAthleteEdit,
   onDeleteAthlete,
-  backupImportInputRef,
-  onDatabaseImport,
 }: TeamRosterSettingsWidgetProps) {
   return (
     <section style={panelStyle}>
@@ -32,22 +29,6 @@ export function TeamRosterSettingsWidget({
           <h2 style={sectionTitleStyle}>Lista zawodników</h2>
         </div>
         <span style={softTagStyle}>{athletes.length}</span>
-      </div>
-      <div style={actionRowStyle}>
-        <input
-          ref={backupImportInputRef}
-          type="file"
-          accept="application/json,.json"
-          onChange={onDatabaseImport}
-          style={{ display: "none" }}
-        />
-        <button
-          type="button"
-          style={buttonStyle}
-          onClick={() => backupImportInputRef.current?.click()}
-        >
-          Import z pliku
-        </button>
       </div>
       {athletes.length === 0 ? (
         <p style={mutedParagraphStyle}>
