@@ -301,6 +301,8 @@
   border: 0;
   width: min(100%, 160px);
   justify-self: start;
+  display: block;
+  margin-top: 1rem;
   padding: 7px 9px;
   background: linear-gradient(135deg, #0f6d82, #2595a1);
   color: white;

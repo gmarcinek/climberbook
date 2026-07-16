@@ -1,7 +1,7 @@
 .calendarMonth {
   min-width: 0;
   padding: 0;
-  margin-top: 2rem;
+  margin-top: 1rem;
   margin-bottom: 0;
   border-top: 1px solid rgba(146, 146, 146, 0.45);
   box-sizing: border-box;

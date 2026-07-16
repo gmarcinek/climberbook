@@ -1,21 +1,20 @@
 import type { ModuleKey } from "@/components/climberbook/common/modules";
 
 export const pageStyle = {
-  width: "100vw",
-  height: "100vh",
+  width: "100%",
+  minHeight: "100vh",
   padding: 0,
 };
 
 export const shellStyle = {
   position: "relative" as const,
-  height: "100vh",
+  minHeight: "100vh",
   boxShadow: "var(--glass-shadow)",
   backdropFilter: "blur(var(--glass-blur)) saturate(160%)",
-  overflow: "hidden",
 };
 
 export const pageHeaderStyle = {
-  position: "absolute" as const,
+  position: "sticky" as const,
   top: 0,
   left: 0,
   right: 0,
@@ -91,9 +90,7 @@ export const headerMetricStyle = {
 
 export const contentBodyStyle = {
   position: "relative" as const,
-  height: "calc(100vh - 80px)",
-  marginTop: 80,
-  overflow: "hidden",
+  minHeight: "calc(100vh - 100px)",
   padding: "12px 8px 8px",
 };
 
@@ -223,6 +220,12 @@ export const moduleContentStyle = {
   gap: 9,
 };
 
+export const moduleContainerStyle = {
+  width: "100%",
+  maxWidth: 1280,
+  margin: "0 auto",
+};
+
 export const settingsContentLayoutStyle = {
   display: "grid",
   gap: 9,
@@ -321,7 +324,7 @@ export const panelStyle = {
   display: "grid",
   gap: 9,
   minHeight: 0,
-  padding: 11,
+  padding: "1.5rem",
   background:
     "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
   border: "1px solid var(--border-strong)",
@@ -345,9 +348,18 @@ export const formStyle = {
   gap: 9,
 };
 
+export const formActionsStyle = {
+  display: "flex",
+  gap: 6,
+  flexWrap: "wrap" as const,
+  alignItems: "center",
+  justifySelf: "start" as const,
+  marginTop: "1rem",
+};
+
 export const formGridStyle = {
   display: "grid",
-  gap: 7,
+  gap: "1rem",
   gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
 };
 
@@ -359,8 +371,8 @@ export const fieldStyle = {
 };
 
 export const inputStyle = {
-  border: "1px solid var(--border-strong)",
-  padding: "7px 8px",
+  border: "1px solid rgb(227 215 215 / 68%)",
+  padding: "0.75rem 1rem",
   background:
     "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))",
   color: "var(--text)",
@@ -591,7 +603,8 @@ export const athleteSelectorLabelStyle = {
 };
 
 export const athleteSelectStyle = {
-  maxWidth: 180,
+  maxWidth: 280,
+  minWidth: 280,
   border: "1px solid var(--border-strong)",
   padding: "5px 7px",
   background: "rgba(255, 250, 243, 0.92)",

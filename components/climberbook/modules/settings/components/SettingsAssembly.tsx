@@ -1,0 +1,194 @@
+"use client";
+
+import type {
+  ChangeEvent,
+  Dispatch,
+  DragEvent,
+  FormEvent,
+  RefObject,
+  SetStateAction,
+} from "react";
+import {
+  moduleContainerStyle,
+  moduleContentStyle,
+  settingsMainColumnStyle,
+} from "@/components/climberbook/common/styles";
+import type { UserProfileDraft } from "@/components/climberbook/common/training";
+import type {
+  AthleteRecord,
+  SectionRecord,
+  WeightEntryRecord,
+} from "@/lib/climbs-db";
+import { AthleteFormWidget } from "./AthleteFormWidget";
+import { DangerZoneWidget } from "./DangerZoneWidget";
+import { DatabaseBackupWidget } from "./DatabaseBackupWidget";
+import { DatabaseDeleteModalWidget } from "./DatabaseDeleteModalWidget";
+import { ProfileFormWidget } from "./ProfileFormWidget";
+import { ProfileMetricsWidget } from "./ProfileMetricsWidget";
+import { SectionManagementWidget } from "./SectionManagementWidget";
+import { SettingsHeaderWidget } from "./SettingsHeaderWidget";
+import { SettingsTabsWidget } from "./SettingsTabsWidget";
+import { TeamRosterSettingsWidget } from "./TeamRosterSettingsWidget";
+import type {
+  AthleteFormDraft,
+  ModuleMeta,
+  SettingsTab,
+} from "./SettingsWidgetTypes";
+export type { AthleteFormDraft } from "./SettingsWidgetTypes";
+type SettingsAssemblyProps = {
+  meta: ModuleMeta;
+  currentAge: string;
+  profileDraft: UserProfileDraft;
+  setProfileDraft: Dispatch<SetStateAction<UserProfileDraft>>;
+  weightEntries: WeightEntryRecord[];
+  settingsTab: SettingsTab;
+  onSettingsSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onDatabaseExport: () => void;
+  backupImportInputRef: RefObject<HTMLInputElement | null>;
+  onDatabaseImport: (event: ChangeEvent<HTMLInputElement>) => void;
+  isBackupDropActive: boolean;
+  setIsBackupDropActive: Dispatch<SetStateAction<boolean>>;
+  onBackupDrop: (event: DragEvent<HTMLDivElement>) => void;
+  athletes: AthleteRecord[];
+  activeAthleteId: string | null;
+  sections: SectionRecord[];
+  newSectionName: string;
+  setNewSectionName: Dispatch<SetStateAction<string>>;
+  onAddSection: (event: FormEvent<HTMLFormElement>) => void;
+  onDeleteSection: (section: SectionRecord) => Promise<void>;
+  onAssignAthleteSection: (
+    athlete: AthleteRecord,
+    sectionId: string,
+  ) => Promise<void>;
+  onAthleteExport: (athlete: AthleteRecord) => Promise<void>;
+  onStartAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
+  onDeleteAthlete: (athlete: AthleteRecord) => Promise<void>;
+  athleteFormMode: "add" | "edit";
+  athleteForm: AthleteFormDraft;
+  setAthleteForm: Dispatch<SetStateAction<AthleteFormDraft>>;
+  onAthleteFormSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onResetAthleteForm: () => void;
+  isDatabaseDeleteModalOpen: boolean;
+  setIsDatabaseDeleteModalOpen: Dispatch<SetStateAction<boolean>>;
+  databaseDeleteConfirmation: string;
+  setDatabaseDeleteConfirmation: Dispatch<SetStateAction<string>>;
+  onDatabaseDelete: (event: FormEvent<HTMLFormElement>) => void;
+  onCloseDatabaseDeleteModal: () => void;
+};
+export function SettingsAssembly(props: SettingsAssemblyProps) {
+  const {
+    meta,
+    currentAge,
+    profileDraft,
+    setProfileDraft,
+    weightEntries,
+    settingsTab,
+    onSettingsSubmit,
+    onDatabaseExport,
+    backupImportInputRef,
+    onDatabaseImport,
+    isBackupDropActive,
+    setIsBackupDropActive,
+    onBackupDrop,
+    athletes,
+    activeAthleteId,
+    sections,
+    newSectionName,
+    setNewSectionName,
+    onAddSection,
+    onDeleteSection,
+    onAssignAthleteSection,
+    onAthleteExport,
+    onStartAthleteEdit,
+    onDeleteAthlete,
+    athleteFormMode,
+    athleteForm,
+    setAthleteForm,
+    onAthleteFormSubmit,
+    onResetAthleteForm,
+    isDatabaseDeleteModalOpen,
+    setIsDatabaseDeleteModalOpen,
+    databaseDeleteConfirmation,
+    setDatabaseDeleteConfirmation,
+    onDatabaseDelete,
+    onCloseDatabaseDeleteModal,
+  } = props;
+  return (
+    <>
+      <div style={{ ...moduleContainerStyle, ...moduleContentStyle }}>
+        <SettingsHeaderWidget meta={meta} />
+        <SettingsTabsWidget settingsTab={settingsTab} />
+        {settingsTab === "profil" && (
+          <div style={settingsMainColumnStyle}>
+            <div style={settingsMainColumnStyle}>
+              <ProfileMetricsWidget
+                profileDraft={profileDraft}
+                weightEntries={weightEntries}
+              />
+              <div style={settingsMainColumnStyle}>
+                <ProfileFormWidget
+                  profileDraft={profileDraft}
+                  setProfileDraft={setProfileDraft}
+                  onSettingsSubmit={onSettingsSubmit}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        {settingsTab === "zespol" && (
+          <div style={settingsMainColumnStyle}>
+            <AthleteFormWidget
+              athleteFormMode={athleteFormMode}
+              athleteForm={athleteForm}
+              setAthleteForm={setAthleteForm}
+              sections={sections}
+              onAthleteFormSubmit={onAthleteFormSubmit}
+              onResetAthleteForm={onResetAthleteForm}
+            />
+            <SectionManagementWidget
+              sections={sections}
+              newSectionName={newSectionName}
+              setNewSectionName={setNewSectionName}
+              onAddSection={onAddSection}
+              onDeleteSection={onDeleteSection}
+            />
+            <TeamRosterSettingsWidget
+              athletes={athletes}
+              activeAthleteId={activeAthleteId}
+              sections={sections}
+              onAssignAthleteSection={onAssignAthleteSection}
+              onAthleteExport={onAthleteExport}
+              onStartAthleteEdit={onStartAthleteEdit}
+              onDeleteAthlete={onDeleteAthlete}
+              backupImportInputRef={backupImportInputRef}
+              onDatabaseImport={onDatabaseImport}
+            />
+          </div>
+        )}
+        {settingsTab === "zaawansowane" && (
+          <div style={settingsMainColumnStyle}>
+            <DatabaseBackupWidget
+              backupImportInputRef={backupImportInputRef}
+              onDatabaseExport={onDatabaseExport}
+              onDatabaseImport={onDatabaseImport}
+              isBackupDropActive={isBackupDropActive}
+              setIsBackupDropActive={setIsBackupDropActive}
+              onBackupDrop={onBackupDrop}
+            />
+            <DangerZoneWidget
+              setIsDatabaseDeleteModalOpen={setIsDatabaseDeleteModalOpen}
+            />
+          </div>
+        )}
+      </div>
+      {isDatabaseDeleteModalOpen && (
+        <DatabaseDeleteModalWidget
+          databaseDeleteConfirmation={databaseDeleteConfirmation}
+          setDatabaseDeleteConfirmation={setDatabaseDeleteConfirmation}
+          onDatabaseDelete={onDatabaseDelete}
+          onCloseDatabaseDeleteModal={onCloseDatabaseDeleteModal}
+        />
+      )}
+    </>
+  );
+}

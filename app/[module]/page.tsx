@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
-import ClimberbookApp from "@/components/climberbook/ClimberbookApp";
 import { getModuleKeyFromRoute } from "@/components/climberbook/common/modules";
+import { DashboardLayout } from "@/components/climberbook/layout/DashboardLayout";
+import { ModuleLayout } from "@/components/climberbook/layout/ModuleLayout";
+import { moduleComponents } from "@/components/climberbook/modules/module-components";
 
 export default async function ModulePage({
   params,
@@ -8,11 +10,25 @@ export default async function ModulePage({
   params: Promise<{ module: string }>;
 }) {
   const { module } = await params;
-  const initialModule = getModuleKeyFromRoute(module);
+  const key = getModuleKeyFromRoute(module);
 
-  if (!initialModule) {
+  if (!key) {
     notFound();
   }
 
-  return <ClimberbookApp initialModule={initialModule} />;
+  const ModuleComponent = moduleComponents[key];
+
+  if (key === "treningowy") {
+    return (
+      <DashboardLayout>
+        <ModuleComponent />
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <ModuleLayout activeModule={key}>
+      <ModuleComponent />
+    </ModuleLayout>
+  );
 }

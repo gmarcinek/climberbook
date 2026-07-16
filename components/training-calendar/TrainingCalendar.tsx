@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { type TrainingRecord } from "@/lib/climbs-db";
 import { buildCalendarMonths } from "./training-calendar.helpers";
 import { TrainingCalendarMonth } from "./TrainingCalendarMonth";
@@ -16,9 +23,18 @@ function getCalendarMetrics(containerWidth: number) {
   }
 
   const monthGap =
-    containerWidth >= 1800 ? 12 : containerWidth >= 1480 ? 10 : containerWidth >= 1180 ? 8 : containerWidth >= 860 ? 6 : 4;
+    containerWidth >= 1800
+      ? 12
+      : containerWidth >= 1480
+        ? 10
+        : containerWidth >= 1180
+          ? 8
+          : containerWidth >= 860
+            ? 6
+            : 4;
   const weekGap = containerWidth >= 1480 ? 6 : 4;
-  const minMonthWidth = DAYS_IN_WEEK * MIN_DAY_WIDTH + (DAYS_IN_WEEK - 1) * weekGap;
+  const minMonthWidth =
+    DAYS_IN_WEEK * MIN_DAY_WIDTH + (DAYS_IN_WEEK - 1) * weekGap;
 
   return {
     monthGap,
@@ -38,12 +54,26 @@ type TrainingCalendarProps = {
 };
 
 export function TrainingCalendar(props: TrainingCalendarProps) {
-  const { anchorMonthStart, monthCount = 3, visibleColumns = monthCount, trainingsByDate, selectedDate, today, onSelectDate } = props;
+  const {
+    anchorMonthStart,
+    monthCount = 3,
+    visibleColumns = monthCount,
+    trainingsByDate,
+    selectedDate,
+    today,
+    onSelectDate,
+  } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  const months = useMemo(() => buildCalendarMonths(anchorMonthStart, monthCount), [anchorMonthStart, monthCount]);
-  const metrics = useMemo(() => getCalendarMetrics(containerWidth), [containerWidth]);
+  const months = useMemo(
+    () => buildCalendarMonths(anchorMonthStart, monthCount),
+    [anchorMonthStart, monthCount],
+  );
+  const metrics = useMemo(
+    () => getCalendarMetrics(containerWidth),
+    [containerWidth],
+  );
 
   useEffect(() => {
     const node = containerRef.current;
@@ -53,7 +83,9 @@ export function TrainingCalendar(props: TrainingCalendarProps) {
     }
 
     const updateWidth = (width: number) => {
-      setContainerWidth((current) => (Math.abs(current - width) < 1 ? current : width));
+      setContainerWidth((current) =>
+        Math.abs(current - width) < 1 ? current : width,
+      );
     };
 
     updateWidth(node.getBoundingClientRect().width);
@@ -84,18 +116,23 @@ export function TrainingCalendar(props: TrainingCalendarProps) {
 
   return (
     <div ref={containerRef} className={styles.calendarRoot}>
-      <div className={styles.calendarGrid} style={calendarStyle}>
-        {months.map((month) => (
-          <TrainingCalendarMonth
-            key={`${month.year}-${month.monthIndex}`}
-            month={month}
-            selectedDate={selectedDate}
-            today={today}
-            trainingMap={trainingsByDate}
-            onSelectDate={onSelectDate}
-          />
-        ))}
-      </div>
+      <ScrollPane
+        style={{ height: "100%", minHeight: 0 }}
+        viewportClassName={styles.calendarViewport}
+      >
+        <div className={styles.calendarGrid} style={calendarStyle}>
+          {months.map((month) => (
+            <TrainingCalendarMonth
+              key={`${month.year}-${month.monthIndex}`}
+              month={month}
+              selectedDate={selectedDate}
+              today={today}
+              trainingMap={trainingsByDate}
+              onSelectDate={onSelectDate}
+            />
+          ))}
+        </div>
+      </ScrollPane>
     </div>
   );
 }

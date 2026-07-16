@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ClimberbookProvider } from "@/components/climberbook/providers/ClimberbookProvider";
 
 export const metadata: Metadata = {
   title: "Climberbook",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
-      <body>{children}</body>
+      <body>
+        <ClimberbookProvider>{children}</ClimberbookProvider>
+      </body>
     </html>
   );
 }

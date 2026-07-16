@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import {
   Area,
   AreaChart,
@@ -38,6 +39,7 @@ import {
   buttonStyle,
   chartCardStyle,
   fieldStyle,
+  formActionsStyle,
   formStyle,
   ghostButtonStyle,
   inputStyle,
@@ -319,9 +321,11 @@ export function TrainingAnalyticsPanel(props: {
                 />
               </label>
 
-              <button type="submit" style={buttonStyle}>
-                Zapisz pomiar
-              </button>
+              <div style={formActionsStyle}>
+                <button type="submit" style={buttonStyle}>
+                  Zapisz pomiar
+                </button>
+              </div>
             </form>
           </section>
         </div>
@@ -336,7 +340,7 @@ export function TrainingAnalyticsPanel(props: {
           <span style={softPillStyle}>Max 5</span>
         </div>
 
-        <div style={scrollListStyle}>
+        <ScrollPane viewportStyle={scrollListStyle}>
           {recentWeightEntries.length === 0 && (
             <EmptyState message="Nie ma jeszcze osobnych pomiarów wagi." />
           )}
@@ -353,7 +357,7 @@ export function TrainingAnalyticsPanel(props: {
               </div>
             </article>
           ))}
-        </div>
+        </ScrollPane>
       </section>
     </div>
   );
