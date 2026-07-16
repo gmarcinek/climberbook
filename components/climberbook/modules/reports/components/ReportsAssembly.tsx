@@ -40,6 +40,7 @@ type ReportsAssemblyProps = {
     date: string;
     routeName: string;
     source: "panel" | "skala";
+    notes: string;
     suggestedGrade: string;
     subjectiveGrade: string;
     suggestedGradeIndex: number;

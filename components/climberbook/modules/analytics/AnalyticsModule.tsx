@@ -23,6 +23,7 @@ export function AnalyticsModule() {
     <AnalyticsModuleContent
       moduleMeta={moduleConfig[2]}
       isMobileChartLayout={isMobileChartLayout}
+      trainings={app.trainings}
       trainingsCount={app.trainings.length}
       averageWeight={stats.averageWeight}
       totalCalories={stats.totalCalories}

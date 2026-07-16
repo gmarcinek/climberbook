@@ -3,16 +3,19 @@
 import { AnalyticsHeaderWidget } from "./AnalyticsHeaderWidget";
 import { AnalyticsMetricsWidget } from "./AnalyticsMetricsWidget";
 import { GradeDistributionWidget } from "./GradeDistributionWidget";
+import { TrainingHistoryWidget } from "./TrainingHistoryWidget";
 import { WeeklyTrainingChartWidget } from "./WeeklyTrainingChartWidget";
 import { Stack } from "@/components/climberbook/common/Stack";
 import {
   moduleContentStyle,
   twoColumnLayoutStyle,
 } from "@/components/climberbook/common/styles";
+import type { TrainingRecord } from "@/lib/climbs-db";
 
 type AnalyticsModuleContentProps = {
   moduleMeta: { eyebrow: string; title: string; description: string };
   isMobileChartLayout: boolean;
+  trainings: TrainingRecord[];
   trainingsCount: number;
   averageWeight: string;
   totalCalories: number;
@@ -31,6 +34,7 @@ type AnalyticsModuleContentProps = {
 export function AnalyticsModuleContent({
   moduleMeta,
   isMobileChartLayout,
+  trainings,
   trainingsCount,
   averageWeight,
   totalCalories,
@@ -56,6 +60,11 @@ export function AnalyticsModuleContent({
         totalAttempts={totalAttempts}
       />
 
+      <WeeklyTrainingChartWidget
+        chartRangeLabel={chartRangeLabel}
+        weeklyTrainingStats={weeklyTrainingStats}
+      />
+
       <div
         style={{
           ...twoColumnLayoutStyle,
@@ -64,14 +73,11 @@ export function AnalyticsModuleContent({
             : twoColumnLayoutStyle.gridTemplateColumns,
         }}
       >
-        <WeeklyTrainingChartWidget
-          chartRangeLabel={chartRangeLabel}
-          weeklyTrainingStats={weeklyTrainingStats}
-        />
         <GradeDistributionWidget
           highestGrade={highestGrade}
           gradeDistribution={gradeDistribution}
         />
+        <TrainingHistoryWidget trainings={trainings} />
       </div>
     </Stack>
   );

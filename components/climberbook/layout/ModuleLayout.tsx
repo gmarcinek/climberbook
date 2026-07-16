@@ -22,7 +22,7 @@ export function ModuleLayout({
   children: ReactNode;
 }) {
   const moduleContainer =
-    activeModule === "raportowy"
+    activeModule === "raportowy" || activeModule === "analityka"
       ? { width: "100%", maxWidth: "none", margin: 0 }
       : moduleContainerStyle;
 

@@ -36,7 +36,7 @@ export const moduleConfig: ClimberbookModule[] = [
     route: "/analityka",
     title: "Moduł analityki",
     navLabel: "Analiza",
-    description: "Zbiorcze wskaźniki i miejsce pod późniejsze wykresy.",
+    description: "Trendy, rozklad wycen i historia danych treningowych.",
     eyebrow: "Przegląd trendów",
   },
   {
