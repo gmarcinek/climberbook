@@ -337,14 +337,14 @@ export function TrainingAnalyticsPanel(props: {
             <span style={moduleEyebrowStyle}>Szybki przegląd</span>
             <h3 style={sectionTitleStyle}>Ostatnie wpisy</h3>
           </div>
-          <span style={softPillStyle}>Max 5</span>
+          <span style={softPillStyle}>Max 28</span>
         </div>
 
         <ScrollPane viewportStyle={scrollListStyle}>
           {recentWeightEntries.length === 0 && (
             <EmptyState message="Nie ma jeszcze osobnych pomiarów wagi." />
           )}
-          {recentWeightEntries.slice(0, 5).map((entry) => (
+          {recentWeightEntries.slice(0, 28).map((entry) => (
             <article
               key={`${entry.id ?? entry.createdAt}-${entry.date}`}
               style={listCardStyle}
