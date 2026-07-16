@@ -7,7 +7,12 @@ import type {
   SetStateAction,
 } from "react";
 import type { UserProfileDraft } from "@/components/climberbook/common/training";
-import type { AthleteRecord, SectionRecord, UserSex } from "@/lib/climbs-db";
+import type {
+  AthleteRecord,
+  DatabaseImportPreview,
+  SectionRecord,
+  UserSex,
+} from "@/lib/climbs-db";
 export type AthleteFormDraft = {
   firstName: string;
   lastName: string;
@@ -46,6 +51,12 @@ export type DatabaseBackupWidgetProps = {
   isBackupDropActive: boolean;
   setIsBackupDropActive: Dispatch<SetStateAction<boolean>>;
   onBackupDrop: (event: DragEvent<HTMLDivElement>) => void;
+};
+export type ImportPreviewModalWidgetProps = {
+  preview: DatabaseImportPreview;
+  isImporting: boolean;
+  onConfirmImport: () => Promise<void>;
+  onCloseImportPreview: () => void;
 };
 export type TeamRosterSettingsWidgetProps = {
   athletes: AthleteRecord[];

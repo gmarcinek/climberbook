@@ -45,6 +45,11 @@ export function SettingsModule() {
       onDatabaseExport={app.exportDatabase}
       backupImportInputRef={app.backupImportInputRef}
       onDatabaseImport={app.importDatabase}
+      importPreview={app.importPreview}
+      isImportPreviewOpen={app.isImportPreviewOpen}
+      isImportingBackup={app.isImportingBackup}
+      onConfirmImportPreview={app.confirmImportPreview}
+      onCloseImportPreview={app.closeImportPreview}
       isBackupDropActive={app.isBackupDropActive}
       setIsBackupDropActive={app.setIsBackupDropActive}
       onBackupDrop={app.dropBackup}

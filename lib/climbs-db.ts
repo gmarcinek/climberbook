@@ -45,6 +45,7 @@ export type WeightEntryRecord = {
 
 export type TrainingRecord = {
   id?: number;
+  sourceId?: string;
   athleteId: string;
   date: string;
   time: string;
@@ -74,6 +75,7 @@ export type AscentRecord = {
 
 export type AthleteRecord = {
   id: string;
+  sourceId?: string;
   name: string;
   firstName?: string;
   lastName?: string;
@@ -84,6 +86,7 @@ export type AthleteRecord = {
 
 export type SectionRecord = {
   id: string;
+  sourceId?: string;
   name: string;
   createdAt: string;
 };
@@ -105,6 +108,94 @@ export function computeAthleteName(input: AthleteInput) {
   return input.nick?.trim() || fullName || input.name?.trim() || "Zawodnik";
 }
 
+function getStableSourceId<T extends { id?: string; sourceId?: string | null }>(
+  record: T | null | undefined,
+) {
+  const sourceId = record?.sourceId?.trim();
+  return sourceId || record?.id || null;
+}
+
+function isUuid(value: string | null | undefined) {
+  return Boolean(
+    value?.match(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    ),
+  );
+}
+
+function ensureAthleteSourceId(record: AthleteRecord) {
+  const sourceId = isUuid(record.sourceId)
+    ? record.sourceId
+    : isUuid(record.id)
+      ? record.id
+      : crypto.randomUUID();
+
+  return record.sourceId === sourceId ? record : { ...record, sourceId };
+}
+
+function ensureSectionSourceId(record: SectionRecord) {
+  const sourceId = isUuid(record.sourceId)
+    ? record.sourceId
+    : isUuid(record.id)
+      ? record.id
+      : crypto.randomUUID();
+
+  return record.sourceId === sourceId ? record : { ...record, sourceId };
+}
+
+function ensureTrainingSourceId(record: TrainingRecord) {
+  const sourceId = isUuid(record.sourceId)
+    ? record.sourceId
+    : crypto.randomUUID();
+
+  return record.sourceId === sourceId ? record : { ...record, sourceId };
+}
+
+async function ensureAthleteSourceIds(records: AthleteRecord[]) {
+  const database = await getDatabase();
+  return Promise.all(
+    records.map(async (record) => {
+      const normalized = ensureAthleteSourceId(record);
+
+      if (normalized !== record) {
+        await database.put("athletes", normalized);
+      }
+
+      return normalized;
+    }),
+  );
+}
+
+async function ensureSectionSourceIds(records: SectionRecord[]) {
+  const database = await getDatabase();
+  return Promise.all(
+    records.map(async (record) => {
+      const normalized = ensureSectionSourceId(record);
+
+      if (normalized !== record) {
+        await database.put("sections", normalized);
+      }
+
+      return normalized;
+    }),
+  );
+}
+
+async function ensureTrainingSourceIds(records: TrainingRecord[]) {
+  const database = await getDatabase();
+  return Promise.all(
+    records.map(async (record) => {
+      const normalized = ensureTrainingSourceId(record);
+
+      if (normalized !== record) {
+        await database.put("trainings", normalized);
+      }
+
+      return normalized;
+    }),
+  );
+}
+
 export type ClimberbookDatabaseBackup = {
   formatVersion: 2;
   exportedAt: string;
@@ -120,11 +211,30 @@ export type ClimberbookFullDatabaseBackup = {
   formatVersion: 3;
   exportedAt: string;
   athletes: AthleteRecord[];
+  sections: SectionRecord[];
   climbs: ClimbRecord[];
   trainings: TrainingRecord[];
   ascents: AscentRecord[];
   profiles: UserProfileRecord[];
   weightEntries: WeightEntryRecord[];
+};
+
+export type DatabaseImportPreview = {
+  formatVersion: number;
+  kind: "athlete" | "full";
+  title: string;
+  summary: string;
+  actionLabel: string;
+  athleteName?: string;
+  counts: {
+    athletes: number;
+    sections: number;
+    climbs: number;
+    trainings: number;
+    ascents: number;
+    profiles: number;
+    weightEntries: number;
+  };
 };
 
 interface ClimberbookDb extends DBSchema {
@@ -188,13 +298,51 @@ interface ClimberbookDb extends DBSchema {
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 10;
+const DB_VERSION = 11;
 const DEFAULT_ATHLETE: AthleteRecord = {
   id: "primary",
   name: "Ja",
   createdAt: "",
 };
 let databasePromise: Promise<IDBPDatabase<ClimberbookDb>> | null = null;
+
+async function resetDatabaseConnection() {
+  if (!databasePromise) {
+    return;
+  }
+
+  try {
+    const database = await databasePromise;
+    database.close();
+  } catch {
+    // Ignore stale connection cleanup failures and reopen on next access.
+  } finally {
+    databasePromise = null;
+  }
+}
+
+type StoreName = keyof ClimberbookDb;
+
+function isClosingDatabaseError(error: unknown) {
+  return error instanceof DOMException && error.name === "InvalidStateError";
+}
+
+async function withDatabaseRetry<T>(
+  action: (database: IDBPDatabase<ClimberbookDb>) => Promise<T>,
+) {
+  try {
+    const database = await getDatabase();
+    return await action(database);
+  } catch (error) {
+    if (!isClosingDatabaseError(error)) {
+      throw error;
+    }
+
+    await resetDatabaseConnection();
+    const database = await getDatabase();
+    return await action(database);
+  }
+}
 
 function createDatabase() {
   return openDB<ClimberbookDb>(DB_NAME, DB_VERSION, {
@@ -206,6 +354,7 @@ function createDatabase() {
         });
 
         store.createIndex("by-created-at", "createdAt");
+        store.createIndex("by-athlete", "athleteId");
       }
 
       if (!database.objectStoreNames.contains("athletes")) {
@@ -221,6 +370,7 @@ function createDatabase() {
 
         store.createIndex("by-created-at", "createdAt");
         store.createIndex("by-date", "date");
+        store.createIndex("by-athlete", "athleteId");
       }
 
       if (oldVersion < 4 && database.objectStoreNames.contains("trainings")) {
@@ -289,6 +439,7 @@ function createDatabase() {
         store.createIndex("by-created-at", "createdAt");
         store.createIndex("by-date", "date");
         store.createIndex("by-source", "source");
+        store.createIndex("by-athlete", "athleteId");
       }
 
       if (oldVersion < 3 && database.objectStoreNames.contains("ascents")) {
@@ -347,6 +498,40 @@ function createDatabase() {
 
         store.createIndex("by-created-at", "createdAt");
         store.createIndex("by-date", "date");
+        store.createIndex("by-athlete", "athleteId");
+      }
+
+      if (oldVersion < 11) {
+        const stores = [
+          "climbs",
+          "trainings",
+          "ascents",
+          "weightEntries",
+        ] as const;
+
+        for (const storeName of stores) {
+          if (!database.objectStoreNames.contains(storeName)) {
+            continue;
+          }
+
+          const store = transaction.objectStore(storeName);
+
+          if (!store.indexNames.contains("by-athlete")) {
+            store.createIndex("by-athlete", "athleteId");
+          }
+
+          let cursor = await store.openCursor();
+
+          while (cursor) {
+            const value = cursor.value as { athleteId?: string | null };
+
+            if (!value.athleteId) {
+              await cursor.update({ ...cursor.value, athleteId: "primary" });
+            }
+
+            cursor = await cursor.continue();
+          }
+        }
       }
 
       if (oldVersion > 0 && oldVersion < 9) {
@@ -398,6 +583,12 @@ function createDatabase() {
         store.createIndex("by-created-at", "createdAt");
       }
     },
+    blocking() {
+      void resetDatabaseConnection();
+    },
+    terminated() {
+      databasePromise = null;
+    },
   });
 }
 
@@ -448,12 +639,21 @@ export async function addClimb(input: Omit<ClimbRecord, "id" | "createdAt">) {
 
 export async function listTrainings(athleteId: string) {
   const database = await getDatabase();
-  return database.getAllFromIndex("trainings", "by-athlete", athleteId);
+  const records = await database.getAllFromIndex(
+    "trainings",
+    "by-athlete",
+    athleteId,
+  );
+  return ensureTrainingSourceIds(records);
 }
 
 export async function listAllTrainings() {
   const database = await getDatabase();
-  return database.getAllFromIndex("trainings", "by-created-at");
+  const records = await database.getAllFromIndex(
+    "trainings",
+    "by-created-at",
+  );
+  return ensureTrainingSourceIds(records);
 }
 
 export async function addTraining(
@@ -463,6 +663,7 @@ export async function addTraining(
 
   await database.add("trainings", {
     ...input,
+    sourceId: input.sourceId ?? crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   });
 }
@@ -474,7 +675,10 @@ export async function updateTraining(input: TrainingRecord) {
     throw new Error("Training id is required for update.");
   }
 
-  await database.put("trainings", input);
+  await database.put("trainings", {
+    ...input,
+    sourceId: input.sourceId ?? crypto.randomUUID(),
+  });
 }
 
 export async function deleteTraining(id: number) {
@@ -546,13 +750,19 @@ export async function listUserProfiles() {
 
 export async function listAthletes() {
   const database = await getDatabase();
-  return database.getAllFromIndex("athletes", "by-created-at");
+  const records = await database.getAllFromIndex(
+    "athletes",
+    "by-created-at",
+  );
+  return ensureAthleteSourceIds(records);
 }
 
 export async function addAthlete(input: AthleteInput) {
   const database = await getDatabase();
+  const athleteId = crypto.randomUUID();
   const athlete: AthleteRecord = {
-    id: crypto.randomUUID(),
+    id: athleteId,
+    sourceId: athleteId,
     name: computeAthleteName(input),
     firstName: input.firstName?.trim() ?? "",
     lastName: input.lastName?.trim() ?? "",
@@ -575,6 +785,7 @@ export async function updateAthlete(id: string, input: AthleteInput) {
 
   await database.put("athletes", {
     ...existing,
+    sourceId: existing.sourceId ?? existing.id,
     name: computeAthleteName(input),
     firstName: input.firstName?.trim() ?? "",
     lastName: input.lastName?.trim() ?? "",
@@ -585,13 +796,19 @@ export async function updateAthlete(id: string, input: AthleteInput) {
 
 export async function listSections() {
   const database = await getDatabase();
-  return database.getAllFromIndex("sections", "by-created-at");
+  const records = await database.getAllFromIndex(
+    "sections",
+    "by-created-at",
+  );
+  return ensureSectionSourceIds(records);
 }
 
 export async function addSection(name: string) {
   const database = await getDatabase();
+  const sectionId = crypto.randomUUID();
   const section: SectionRecord = {
-    id: crypto.randomUUID(),
+    id: sectionId,
+    sourceId: sectionId,
     name: name.trim() || "Sekcja",
     createdAt: new Date().toISOString(),
   };
@@ -610,6 +827,7 @@ export async function updateSection(id: string, name: string) {
 
   await database.put("sections", {
     ...existing,
+    sourceId: existing.sourceId ?? existing.id,
     name: name.trim() || "Sekcja",
   });
 }
@@ -653,14 +871,19 @@ export async function assignAthleteToSection(
 export async function deleteAthlete(id: string) {
   const database = await getDatabase();
   const transaction = database.transaction(
-    ["athletes", "trainings", "ascents", "weightEntries", "settings"],
+    ["athletes", "climbs", "trainings", "ascents", "weightEntries", "settings"],
     "readwrite",
   );
 
   await transaction.objectStore("athletes").delete(id);
   await transaction.objectStore("settings").delete(`athlete:${id}`);
 
-  for (const storeName of ["trainings", "ascents", "weightEntries"] as const) {
+  for (const storeName of [
+    "climbs",
+    "trainings",
+    "ascents",
+    "weightEntries",
+  ] as const) {
     const index = transaction.objectStore(storeName).index("by-athlete");
     let cursor = await index.openCursor(id);
 
@@ -722,7 +945,12 @@ export async function exportDatabaseBackup(
       listWeightEntries(athleteId),
     ]);
   const database = await getDatabase();
-  const athlete = await database.get("athletes", athleteId);
+  const athleteRecord = await database.get("athletes", athleteId);
+  const athlete = athleteRecord ? ensureAthleteSourceId(athleteRecord) : null;
+
+  if (athlete && athlete !== athleteRecord) {
+    await database.put("athletes", athlete);
+  }
 
   if (!athlete) {
     throw new Error("Nie znaleziono zawodnika do eksportu.");
@@ -741,33 +969,42 @@ export async function exportDatabaseBackup(
 }
 
 export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabaseBackup> {
-  const [athletes, climbs, trainings, ascents, profiles, weightEntries] =
-    await Promise.all([
-      listAthletes(),
-      listClimbs(),
-      listAllTrainings(),
-      getDatabase().then((database) =>
-        database.getAllFromIndex("ascents", "by-created-at"),
-      ),
-      listUserProfiles(),
-      listAllWeightEntries(),
-    ]);
+  const [
+    athletes,
+    sections,
+    climbs,
+    trainings,
+    ascents,
+    profiles,
+    weightEntries,
+  ] = await Promise.all([
+    listAthletes(),
+    listSections(),
+    listClimbs(),
+    listAllTrainings(),
+    getDatabase().then((database) =>
+      database.getAllFromIndex("ascents", "by-created-at"),
+    ),
+    listUserProfiles(),
+    listAllWeightEntries(),
+  ]);
 
   return {
     formatVersion: 3,
     exportedAt: new Date().toISOString(),
-    athletes,
+    athletes: await ensureAthleteSourceIds(athletes),
+    sections: await ensureSectionSourceIds(sections),
     climbs,
-    trainings,
+    trainings: await ensureTrainingSourceIds(trainings),
     ascents,
     profiles,
     weightEntries,
   };
 }
 
-export async function importDatabaseBackup(
+export async function inspectDatabaseBackup(
   value: unknown,
-): Promise<AthleteRecord | null> {
+): Promise<DatabaseImportPreview> {
   if (!value || typeof value !== "object") {
     throw new Error("Nieprawidłowy plik backupu.");
   }
@@ -776,6 +1013,7 @@ export async function importDatabaseBackup(
     formatVersion?: number;
     athlete?: AthleteRecord;
     athletes?: AthleteRecord[];
+    sections?: SectionRecord[];
     climbs?: ClimbRecord[];
     trainings?: TrainingRecord[];
     ascents?: AscentRecord[];
@@ -794,6 +1032,108 @@ export async function importDatabaseBackup(
 
   if (backup.formatVersion === 3) {
     const athletes = asRecordArray<AthleteRecord>(backup.athletes, "athletes");
+    const sections = backup.sections
+      ? asRecordArray<SectionRecord>(backup.sections, "sections")
+      : [];
+    const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
+    const trainings = asRecordArray<TrainingRecord>(backup.trainings, "trainings");
+    const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
+    const profiles = asRecordArray<UserProfileRecord>(backup.profiles, "profiles");
+    const weightEntries = asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries");
+
+    return {
+      formatVersion: 3,
+      kind: "full",
+      title: "Pełny import bazy",
+      summary:
+        "Ten import wyczyści obecną lokalną bazę i odtworzy ją dokładnie z pliku backupu.",
+      actionLabel: "Zastąpi całą lokalną bazę danych.",
+      counts: {
+        athletes: athletes.length,
+        sections: sections.length,
+        climbs: climbs.length,
+        trainings: trainings.length,
+        ascents: ascents.length,
+        profiles: profiles.length,
+        weightEntries: weightEntries.length,
+      },
+    };
+  }
+
+  const backupAthlete = backup.athlete as AthleteRecord | undefined;
+
+  if (backup.formatVersion === 2 && (!backupAthlete?.id || !backupAthlete.name)) {
+    throw new Error("Nieprawidłowy backup: brakuje zawodnika.");
+  }
+
+  const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
+  const trainings = asRecordArray<TrainingRecord>(backup.trainings, "trainings");
+  const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
+  const weightEntries = asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries");
+  normalizeImportedProfile(backup.profile);
+  const importedAthleteSourceId = getStableSourceId(backupAthlete) ?? crypto.randomUUID();
+  const athletes = await listAthletes();
+  const matchedAthlete = athletes.find(
+    (athlete) => getStableSourceId(athlete) === importedAthleteSourceId,
+  );
+
+  return {
+    formatVersion: backup.formatVersion,
+    kind: "athlete",
+    title: "Import zawodnika",
+    summary: matchedAthlete
+      ? "Ten import nadpisze dane wcześniej zaimportowanego zawodnika o tym samym sourceId."
+      : "Ten import utworzy nowego zawodnika i doda jego dane do lokalnej bazy.",
+    actionLabel: matchedAthlete
+      ? `Nadpisze zawodnika ${matchedAthlete.name}.`
+      : "Utworzy nowego zawodnika.",
+    athleteName:
+      backupAthlete?.name?.trim() || backupAthlete?.nick?.trim() || "Zaimportowany zawodnik",
+    counts: {
+      athletes: 1,
+      sections: 0,
+      climbs: climbs.length,
+      trainings: trainings.length,
+      ascents: ascents.length,
+      profiles: 1,
+      weightEntries: weightEntries.length,
+    },
+  };
+}
+
+export async function importDatabaseBackup(
+  value: unknown,
+): Promise<AthleteRecord | null> {
+  if (!value || typeof value !== "object") {
+    throw new Error("Nieprawidłowy plik backupu.");
+  }
+
+  const backup = value as {
+    formatVersion?: number;
+    athlete?: AthleteRecord;
+    athletes?: AthleteRecord[];
+    sections?: SectionRecord[];
+    climbs?: ClimbRecord[];
+    trainings?: TrainingRecord[];
+    ascents?: AscentRecord[];
+    profile?: unknown;
+    profiles?: UserProfileRecord[];
+    weightEntries?: WeightEntryRecord[];
+  };
+
+  if (
+    backup.formatVersion !== 1 &&
+    backup.formatVersion !== 2 &&
+    backup.formatVersion !== 3
+  ) {
+    throw new Error("Nieobsługiwana wersja backupu.");
+  }
+
+  if (backup.formatVersion === 3) {
+    const athletes = asRecordArray<AthleteRecord>(backup.athletes, "athletes");
+    const sections = backup.sections
+      ? asRecordArray<SectionRecord>(backup.sections, "sections")
+      : [];
     const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
     const trainings = asRecordArray<TrainingRecord>(
       backup.trainings,
@@ -808,48 +1148,56 @@ export async function importDatabaseBackup(
       backup.weightEntries,
       "weightEntries",
     );
-    const database = await getDatabase();
-    const transaction = database.transaction(
-      [
-        "climbs",
-        "trainings",
-        "ascents",
-        "settings",
-        "weightEntries",
-        "athletes",
-      ],
-      "readwrite",
-    );
-    const requests = [
-      transaction.objectStore("climbs").clear(),
-      transaction.objectStore("trainings").clear(),
-      transaction.objectStore("ascents").clear(),
-      transaction.objectStore("settings").clear(),
-      transaction.objectStore("weightEntries").clear(),
-      transaction.objectStore("athletes").clear(),
-      ...athletes.map((record) =>
-        transaction.objectStore("athletes").put(record),
-      ),
-      ...climbs.map((record) => transaction.objectStore("climbs").put(record)),
-      ...trainings.map((record) =>
-        transaction.objectStore("trainings").put(record),
-      ),
-      ...ascents.map((record) =>
-        transaction.objectStore("ascents").put(record),
-      ),
-      ...profiles.map((record) =>
-        transaction.objectStore("settings").put(record),
-      ),
-      ...weightEntries.map((record) =>
-        transaction.objectStore("weightEntries").put({
-          ...record,
-          time: record.time ?? "09:00",
-        }),
-      ),
-    ];
+    await withDatabaseRetry(async (database) => {
+      const transaction = database.transaction(
+        [
+          "climbs",
+          "trainings",
+          "ascents",
+          "settings",
+          "weightEntries",
+          "athletes",
+          "sections",
+        ] as const,
+        "readwrite",
+      );
+      const requests = [
+        transaction.objectStore("climbs").clear(),
+        transaction.objectStore("trainings").clear(),
+        transaction.objectStore("ascents").clear(),
+        transaction.objectStore("settings").clear(),
+        transaction.objectStore("weightEntries").clear(),
+        transaction.objectStore("athletes").clear(),
+        transaction.objectStore("sections").clear(),
+        ...athletes.map((record) =>
+          transaction.objectStore("athletes").put(record),
+        ),
+        ...sections.map((record) =>
+          transaction.objectStore("sections").put(record),
+        ),
+        ...climbs.map((record) =>
+          transaction.objectStore("climbs").put(record),
+        ),
+        ...trainings.map((record) =>
+          transaction.objectStore("trainings").put(record),
+        ),
+        ...ascents.map((record) =>
+          transaction.objectStore("ascents").put(record),
+        ),
+        ...profiles.map((record) =>
+          transaction.objectStore("settings").put(record),
+        ),
+        ...weightEntries.map((record) =>
+          transaction.objectStore("weightEntries").put({
+            ...record,
+            time: record.time ?? "09:00",
+          }),
+        ),
+      ];
 
-    await Promise.all(requests);
-    await transaction.done;
+      await Promise.all(requests);
+      await transaction.done;
+    });
     return null;
   }
 
@@ -860,14 +1208,8 @@ export async function importDatabaseBackup(
   ) {
     throw new Error("Nieprawidłowy backup: brakuje zawodnika.");
   }
-  const importedAthleteId = crypto.randomUUID();
-  const athlete: AthleteRecord = {
-    id: importedAthleteId,
-    name: backupAthlete?.name
-      ? `${backupAthlete.name} (import)`
-      : "Zaimportowany zawodnik",
-    createdAt: new Date().toISOString(),
-  };
+  const importedAthleteSourceId =
+    getStableSourceId(backupAthlete) ?? crypto.randomUUID();
   const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
   const trainings = asRecordArray<TrainingRecord>(
     backup.trainings,
@@ -878,48 +1220,114 @@ export async function importDatabaseBackup(
     backup.weightEntries,
     "weightEntries",
   );
-  const profile = {
-    ...normalizeImportedProfile(backup.profile),
-    key: `athlete:${importedAthleteId}`,
-    athleteId: importedAthleteId,
+  const withoutGeneratedId = <T extends { id?: number }>(record: T) => {
+    const { id: _id, ...rest } = record;
+    return rest;
   };
-  const database = await getDatabase();
-  const transaction = database.transaction(
-    ["climbs", "trainings", "ascents", "settings", "weightEntries", "athletes"],
-    "readwrite",
-  );
-  const requests = [
-    transaction.objectStore("athletes").put({
-      ...athlete,
-    }),
-    ...climbs.map((record) =>
-      transaction
-        .objectStore("climbs")
-        .put({ ...record, id: undefined, athleteId: importedAthleteId }),
-    ),
-    ...trainings.map((record) =>
-      transaction
-        .objectStore("trainings")
-        .put({ ...record, id: undefined, athleteId: importedAthleteId }),
-    ),
-    ...ascents.map((record) =>
-      transaction
-        .objectStore("ascents")
-        .put({ ...record, id: undefined, athleteId: importedAthleteId }),
-    ),
-    transaction.objectStore("settings").put(profile),
-    ...weightEntries.map((record) =>
-      transaction.objectStore("weightEntries").put({
-        ...record,
-        id: undefined,
-        athleteId: importedAthleteId,
-        time: record.time ?? "09:00",
+  let importedAthleteId: string | null = null;
+  let importedAthlete: AthleteRecord | null = null;
+
+  await withDatabaseRetry(async (database) => {
+    const transaction = database.transaction(
+      [
+        "athletes",
+        "climbs",
+        "trainings",
+        "ascents",
+        "settings",
+        "weightEntries",
+      ] as const,
+      "readwrite",
+    );
+
+    const athletesStore = transaction.objectStore("athletes");
+    let athleteCursor = await athletesStore.openCursor();
+
+    while (athleteCursor) {
+      if (getStableSourceId(athleteCursor.value) === importedAthleteSourceId) {
+        importedAthleteId = athleteCursor.value.id;
+        break;
+      }
+
+      athleteCursor = await athleteCursor.continue();
+    }
+
+    importedAthleteId ??= crypto.randomUUID();
+    const targetAthleteId = importedAthleteId;
+
+    const athlete: AthleteRecord = {
+      id: targetAthleteId,
+      sourceId: importedAthleteSourceId,
+      name: backupAthlete?.name?.trim() || "Zaimportowany zawodnik",
+      firstName: backupAthlete?.firstName?.trim() ?? "",
+      lastName: backupAthlete?.lastName?.trim() ?? "",
+      nick: backupAthlete?.nick?.trim() ?? "",
+      sectionId: backupAthlete?.sectionId ?? null,
+      createdAt: backupAthlete?.createdAt || new Date().toISOString(),
+    };
+    importedAthlete = athlete;
+    const profile = {
+      ...normalizeImportedProfile(backup.profile),
+      key: `athlete:${targetAthleteId}`,
+      athleteId: targetAthleteId,
+    };
+
+    await transaction.objectStore("athletes").delete(targetAthleteId);
+    await transaction
+      .objectStore("settings")
+      .delete(`athlete:${targetAthleteId}`);
+
+    for (const storeName of [
+      "climbs",
+      "trainings",
+      "ascents",
+      "weightEntries",
+    ] as const) {
+      const index = transaction.objectStore(storeName).index("by-athlete");
+      let cursor = await index.openCursor(targetAthleteId);
+
+      while (cursor) {
+        await cursor.delete();
+        cursor = await cursor.continue();
+      }
+    }
+
+    const requests = [
+      transaction.objectStore("athletes").put({
+        ...athlete,
       }),
-    ),
-  ];
+      ...climbs.map((record) =>
+        transaction.objectStore("climbs").put({
+          ...withoutGeneratedId(record),
+          athleteId: targetAthleteId,
+        }),
+      ),
+      ...trainings.map((record) =>
+        transaction.objectStore("trainings").put({
+          ...withoutGeneratedId(record),
+          sourceId: record.sourceId ?? crypto.randomUUID(),
+          athleteId: targetAthleteId,
+        }),
+      ),
+      ...ascents.map((record) =>
+        transaction.objectStore("ascents").put({
+          ...withoutGeneratedId(record),
+          athleteId: targetAthleteId,
+        }),
+      ),
+      transaction.objectStore("settings").put(profile),
+      ...weightEntries.map((record) =>
+        transaction.objectStore("weightEntries").put({
+          ...withoutGeneratedId(record),
+          athleteId: targetAthleteId,
+          time: record.time ?? "09:00",
+        }),
+      ),
+    ];
 
-  await Promise.all(requests);
-  await transaction.done;
+    await Promise.all(requests);
+    await transaction.done;
+  });
 
-  return athlete;
+  return importedAthlete;
 }

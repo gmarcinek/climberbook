@@ -23,6 +23,7 @@ import { AthleteFormWidget } from "./AthleteFormWidget";
 import { DangerZoneWidget } from "./DangerZoneWidget";
 import { DatabaseBackupWidget } from "./DatabaseBackupWidget";
 import { DatabaseDeleteModalWidget } from "./DatabaseDeleteModalWidget";
+import { ImportPreviewModalWidget } from "./ImportPreviewModalWidget";
 import { ProfileFormWidget } from "./ProfileFormWidget";
 import { ProfileMetricsWidget } from "./ProfileMetricsWidget";
 import { SectionManagementWidget } from "./SectionManagementWidget";
@@ -34,6 +35,7 @@ import type {
   ModuleMeta,
   SettingsTab,
 } from "./SettingsWidgetTypes";
+import type { DatabaseImportPreview } from "@/lib/climbs-db";
 export type { AthleteFormDraft } from "./SettingsWidgetTypes";
 type SettingsAssemblyProps = {
   meta: ModuleMeta;
@@ -46,6 +48,11 @@ type SettingsAssemblyProps = {
   onDatabaseExport: () => void;
   backupImportInputRef: RefObject<HTMLInputElement | null>;
   onDatabaseImport: (event: ChangeEvent<HTMLInputElement>) => void;
+  importPreview: DatabaseImportPreview | null;
+  isImportPreviewOpen: boolean;
+  isImportingBackup: boolean;
+  onConfirmImportPreview: () => Promise<void>;
+  onCloseImportPreview: () => void;
   isBackupDropActive: boolean;
   setIsBackupDropActive: Dispatch<SetStateAction<boolean>>;
   onBackupDrop: (event: DragEvent<HTMLDivElement>) => void;
@@ -87,6 +94,11 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
     onDatabaseExport,
     backupImportInputRef,
     onDatabaseImport,
+    importPreview,
+    isImportPreviewOpen,
+    isImportingBackup,
+    onConfirmImportPreview,
+    onCloseImportPreview,
     isBackupDropActive,
     setIsBackupDropActive,
     onBackupDrop,
@@ -189,6 +201,14 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
           onCloseDatabaseDeleteModal={onCloseDatabaseDeleteModal}
         />
       )}
+      {isImportPreviewOpen && importPreview ? (
+        <ImportPreviewModalWidget
+          preview={importPreview}
+          isImporting={isImportingBackup}
+          onConfirmImport={onConfirmImportPreview}
+          onCloseImportPreview={onCloseImportPreview}
+        />
+      ) : null}
     </>
   );
 }

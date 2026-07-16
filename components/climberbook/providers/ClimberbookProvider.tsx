@@ -51,6 +51,7 @@ import {
   exportDatabaseBackup,
   exportFullDatabaseBackup,
   getUserProfile,
+  inspectDatabaseBackup,
   importDatabaseBackup,
   listAllTrainings,
   listAllWeightEntries,
@@ -64,6 +65,7 @@ import {
   updateTraining,
   type AscentRecord,
   type AthleteRecord,
+  type DatabaseImportPreview,
   type SectionRecord,
   type TrainingRecord,
   type TrainingSurface,
@@ -181,6 +183,9 @@ type ClimberbookContextValue = {
   ascentDraft: AscentDraft;
   setAscentDraft: Dispatch<SetStateAction<AscentDraft>>;
   status: string;
+  importPreview: DatabaseImportPreview | null;
+  isImportPreviewOpen: boolean;
+  isImportingBackup: boolean;
   isBackupDropActive: boolean;
   setIsBackupDropActive: Dispatch<SetStateAction<boolean>>;
   isDatabaseDeleteModalOpen: boolean;
@@ -204,6 +209,8 @@ type ClimberbookContextValue = {
   exportDatabase: () => Promise<void>;
   importDatabase: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   dropBackup: (event: DragEvent<HTMLDivElement>) => void;
+  confirmImportPreview: () => Promise<void>;
+  closeImportPreview: () => void;
   addSection: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   deleteSection: (section: SectionRecord) => Promise<void>;
   assignAthleteSection: (
@@ -260,12 +267,38 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     useState<AthleteFormDraft>(emptyAthleteForm);
   const [newSectionName, setNewSectionName] = useState("");
   const [status, setStatus] = useState("Ładowanie danych z IndexedDB...");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [importPreview, setImportPreview] =
+    useState<DatabaseImportPreview | null>(null);
+  const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
+  const [isImportingBackup, setIsImportingBackup] = useState(false);
   const [isBackupDropActive, setIsBackupDropActive] = useState(false);
   const [isDatabaseDeleteModalOpen, setIsDatabaseDeleteModalOpen] =
     useState(false);
   const [databaseDeleteConfirmation, setDatabaseDeleteConfirmation] =
     useState("");
   const backupImportInputRef = useRef<HTMLInputElement>(null);
+  const toastTimeoutRef = useRef<number | null>(null);
+  const pendingImportFileRef = useRef<File | null>(null);
+
+  function showSuccessToast(message: string) {
+    if (toastTimeoutRef.current !== null)
+      window.clearTimeout(toastTimeoutRef.current);
+    setToastMessage(message);
+    toastTimeoutRef.current = window.setTimeout(() => {
+      setToastMessage(null);
+      toastTimeoutRef.current = null;
+    }, 2800);
+  }
+
+  useEffect(
+    () => () => {
+      if (toastTimeoutRef.current !== null)
+        window.clearTimeout(toastTimeoutRef.current);
+    },
+    [],
+  );
+
   async function refreshData() {
     const [athleteItems, allTrainingItems, allWeightItems, sectionItems] =
       await Promise.all([
@@ -274,7 +307,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         listAllWeightEntries(),
         listSections(),
       ]);
-    const athleteId = activeAthleteId ?? athleteItems[0]?.id;
+    const athleteId = athleteItems.some(
+      (athlete) => athlete.id === activeAthleteId,
+    )
+      ? activeAthleteId
+      : (athleteItems[0]?.id ?? null);
     setAthletes(athleteItems);
     setSections(sectionItems);
     setTeamTrainings(allTrainingItems);
@@ -503,28 +540,56 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       await exportFullDatabaseBackup(),
       `climberbook-calosciowy-${today}.json`,
     );
+    showSuccessToast("Eksport bazy zakończony sukcesem.");
   }
   async function exportAthlete(athlete: AthleteRecord) {
     await download(
       await exportDatabaseBackup(athlete.id),
       `climberbook-${athlete.name || "zawodnik"}-${today}.json`,
     );
+    showSuccessToast(`Eksport zawodnika ${athlete.name} zakończony sukcesem.`);
   }
   async function importFile(file: File) {
     const athlete = await importDatabaseBackup(JSON.parse(await file.text()));
     setActiveAthleteId(athlete?.id ?? null);
     await refreshData();
+    showSuccessToast("Import backupu zakończony sukcesem.");
+  }
+  async function prepareImportFile(file: File) {
+    const text = await file.text();
+    const preview = await inspectDatabaseBackup(JSON.parse(text));
+    pendingImportFileRef.current = file;
+    setImportPreview(preview);
+    setIsImportPreviewOpen(true);
   }
   async function importDatabase(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) await importFile(file);
+    if (file) await prepareImportFile(file);
     event.target.value = "";
   }
   function dropBackup(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setIsBackupDropActive(false);
     const file = event.dataTransfer.files[0];
-    if (file) void importFile(file);
+    if (file) void prepareImportFile(file);
+  }
+  async function confirmImportPreview() {
+    const file = pendingImportFileRef.current;
+    if (!file) return;
+    setIsImportingBackup(true);
+    try {
+      await importFile(file);
+      pendingImportFileRef.current = null;
+      setImportPreview(null);
+      setIsImportPreviewOpen(false);
+    } finally {
+      setIsImportingBackup(false);
+    }
+  }
+  function closeImportPreview() {
+    pendingImportFileRef.current = null;
+    setImportPreview(null);
+    setIsImportPreviewOpen(false);
   }
   async function addSectionAction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -656,6 +721,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     ascentDraft,
     setAscentDraft,
     status,
+    importPreview,
+    isImportPreviewOpen,
+    isImportingBackup,
     isBackupDropActive,
     setIsBackupDropActive,
     isDatabaseDeleteModalOpen,
@@ -693,6 +761,8 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     exportDatabase,
     importDatabase,
     dropBackup,
+    confirmImportPreview,
+    closeImportPreview,
     addSection: addSectionAction,
     deleteSection: deleteSectionAction,
     assignAthleteSection,
@@ -710,6 +780,30 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   return (
     <ClimberbookContext.Provider value={value}>
       {children}
+      {toastMessage ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            right: "1.5rem",
+            bottom: "1.5rem",
+            zIndex: 1000,
+            maxWidth: "min(26rem, calc(100vw - 2rem))",
+            padding: "0.85rem 1rem",
+            borderRadius: "14px",
+            border: "1px solid rgba(195, 102, 58, 0.28)",
+            background: "rgba(18, 18, 18, 0.92)",
+            color: "#fff7f2",
+            boxShadow: "0 18px 38px rgba(0, 0, 0, 0.24)",
+            fontSize: "0.94rem",
+            lineHeight: 1.4,
+            backdropFilter: "blur(14px)",
+          }}
+        >
+          {toastMessage}
+        </div>
+      ) : null}
     </ClimberbookContext.Provider>
   );
 }
@@ -858,7 +952,12 @@ export function useSettingsModule() {
     exportAthlete,
     exportDatabase,
     importDatabase,
+    confirmImportPreview,
+    closeImportPreview,
     isBackupDropActive,
+    importPreview,
+    isImportPreviewOpen,
+    isImportingBackup,
     isDatabaseDeleteModalOpen,
     newSectionName,
     profileDraft,
@@ -900,6 +999,11 @@ export function useSettingsModule() {
     exportAthlete,
     exportDatabase,
     importDatabase,
+    confirmImportPreview,
+    closeImportPreview,
+    importPreview,
+    isImportPreviewOpen,
+    isImportingBackup,
     isBackupDropActive,
     isDatabaseDeleteModalOpen,
     newSectionName,
