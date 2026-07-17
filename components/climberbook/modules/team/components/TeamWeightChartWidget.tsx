@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { EmptyState } from "@/components/climberbook/common/charts";
+import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { Panel } from "@/components/climberbook/common/Panel";
 import {
   moduleEyebrowStyle,
@@ -34,6 +35,8 @@ export function TeamWeightChartWidget({
   athletes,
   teamWeightChartData,
 }: TeamWeightChartWidgetProps) {
+  const { isMobileChartLayout } = useViewport();
+
   return (
     <Panel>
       <div style={panelHeadingStyle}>
@@ -48,13 +51,27 @@ export function TeamWeightChartWidget({
       ) : (
         <div style={{ height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={teamWeightChartData}>
+            <ComposedChart
+              data={teamWeightChartData}
+              margin={
+                isMobileChartLayout
+                  ? { top: 0, right: 0, bottom: 0, left: -10 }
+                  : undefined
+              }
+            >
               <CartesianGrid
                 vertical={false}
                 stroke="rgba(100, 87, 77, 0.14)"
               />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} width={34} />
+              <XAxis
+                dataKey="date"
+                height={isMobileChartLayout ? 24 : undefined}
+                tick={{ fontSize: isMobileChartLayout ? "0.7rem" : 11 }}
+              />
+              <YAxis
+                width={34}
+                tick={{ fontSize: isMobileChartLayout ? "0.7rem" : 11 }}
+              />
               <Tooltip />
               <Legend />
               {athletes.map((athlete, index) => (

@@ -6,7 +6,6 @@ import {
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
-  softTagStyle,
 } from "@/components/climberbook/common/styles";
 
 type AscentGradeDistributionWidgetProps = {
@@ -29,7 +28,6 @@ export function AscentGradeDistributionWidget({
           <span style={moduleEyebrowStyle}>Wyceny</span>
           <h2 style={sectionTitleStyle}>Rozkład od najwyższej do najniższej</h2>
         </div>
-        <span style={softTagStyle}>Znormalizowane do max</span>
       </div>
       {gradeFrequency.length === 0 ? (
         <EmptyState message="Dodaj wpisy raportowe, aby zobaczyć rozkład wycen." />
@@ -40,12 +38,21 @@ export function AscentGradeDistributionWidget({
               key={item.grade}
               style={{
                 display: "grid",
-                gridTemplateColumns: "64px minmax(0, 1fr)",
+                gridTemplateColumns: "64px 32px minmax(0, 1fr)",
                 gap: 8,
                 alignItems: "center",
               }}
             >
               <strong>{item.grade}</strong>
+              <span
+                style={{
+                  color: "var(--muted)",
+                  fontVariantNumeric: "tabular-nums",
+                  textAlign: "right",
+                }}
+              >
+                {item.totalCount}
+              </span>
               <div
                 style={{
                   position: "relative",

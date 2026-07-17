@@ -170,6 +170,8 @@ export const weightChartTooltipStyle = {
 export const weightEntryModalOverlayStyle = {
   position: "fixed" as const,
   inset: 0,
+  width: "100vw",
+  height: "100dvh",
   zIndex: 60,
   display: "grid",
   placeItems: "center",

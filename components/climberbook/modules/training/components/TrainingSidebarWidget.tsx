@@ -27,6 +27,8 @@ type TrainingSidebarWidgetProps = {
   onSelectDate: (date: string) => void;
   onEditTraining: (training: TrainingRecord) => void;
   onDeleteTraining: (training: TrainingRecord) => void;
+  requestedPreviewTraining: TrainingRecord | null;
+  onRequestedPreviewClose: () => void;
   onResetSelection: () => void;
   onCancelEdit: () => void;
 };

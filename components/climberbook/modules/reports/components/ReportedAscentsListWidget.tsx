@@ -1,7 +1,11 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
 import { Panel } from "@/components/climberbook/common/Panel";
 import {
+  inputStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
@@ -11,6 +15,7 @@ import {
   getRopeGradeColor,
   getRopeGradeIndex,
 } from "@/components/climberbook/common/training";
+import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import type { AscentRecord } from "@/lib/climbs-db";
 
 type ReportedAscentsListWidgetProps = {
@@ -76,17 +81,122 @@ export function ReportedAscentsListWidget({
   editingAscentId,
   onEdit,
 }: ReportedAscentsListWidgetProps) {
+  const { isMobileHeader } = useViewport();
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchAnchorRef = useRef<HTMLDivElement>(null);
+  const [isSearchPinned, setIsSearchPinned] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [searchBounds, setSearchBounds] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase("pl-PL");
+  const visibleAscents = normalizedQuery
+    ? ascents.filter((ascent) =>
+        [ascent.routeName, ascent.suggestedGrade, ascent.subjectiveGrade].some(
+          (value) => value.toLocaleLowerCase("pl-PL").includes(normalizedQuery),
+        ),
+      )
+    : ascents;
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileHeader) {
+      setIsSearchPinned(false);
+      return;
+    }
+
+    const updateSearchPosition = () => {
+      const anchor = searchAnchorRef.current;
+
+      if (!anchor) {
+        return;
+      }
+
+      const { left, top, width } = anchor.getBoundingClientRect();
+
+      setIsSearchPinned(top <= 8);
+      setSearchBounds((current) =>
+        current?.left === left && current.width === width
+          ? current
+          : { left, width },
+      );
+    };
+
+    updateSearchPosition();
+    window.addEventListener("scroll", updateSearchPosition, { passive: true });
+    window.addEventListener("resize", updateSearchPosition);
+
+    return () => {
+      window.removeEventListener("scroll", updateSearchPosition);
+      window.removeEventListener("resize", updateSearchPosition);
+    };
+  }, [isMobileHeader]);
+
+  const searchInput = (
+    <input
+      type="search"
+      value={searchQuery}
+      onChange={(event) => setSearchQuery(event.target.value)}
+      placeholder="Szukaj po nazwie lub wycenie"
+      aria-label="Szukaj przejść po nazwie lub wycenie"
+      style={inputStyle}
+    />
+  );
+
   return (
-    <Panel style={{ width: "100%", minWidth: 0 }}>
+    <Panel
+      style={{
+        width: "100%",
+        minWidth: 0,
+        padding: isMobileHeader ? "1rem 0rem" : undefined,
+      }}
+    >
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Raporty</span>
           <h2 style={sectionTitleStyle}>Lista zaraportowanych przejść</h2>
         </div>
-        <span style={softTagStyle}>{ascents.length} wpisów</span>
+        <span style={softTagStyle}>
+          {visibleAscents.length} z {ascents.length} wpisów
+        </span>
       </div>
+      <div
+        ref={searchAnchorRef}
+        style={{
+          minHeight: 47,
+        }}
+      >
+        {isSearchPinned ? null : searchInput}
+      </div>
+      {isClient && isMobileHeader && isSearchPinned && searchBounds
+        ? createPortal(
+            <div
+              style={{
+                position: "fixed",
+                top: 8,
+                left: searchBounds.left,
+                width: searchBounds.width,
+                zIndex: 20,
+                background: "rgb(255, 250, 243)",
+                boxShadow: "0 6px 14px rgba(72, 49, 33, 0.14)",
+              }}
+            >
+              {searchInput}
+            </div>,
+            document.body,
+          )
+        : null}
       <div style={{ display: "grid", gap: 10 }}>
-        {ascents.map((ascent) => {
+        {visibleAscents.length === 0 ? (
+          <p style={{ margin: 0, color: "var(--muted)" }}>
+            Brak przejść pasujących do wyszukiwania.
+          </p>
+        ) : null}
+        {visibleAscents.map((ascent) => {
           const isEditing = ascent.id === editingAscentId;
 
           return (
@@ -118,7 +228,9 @@ export function ReportedAscentsListWidget({
                     {ascent.source === "panel" ? "Panel" : "Skała"}
                   </div>
                   <h3 style={{ margin: 0, fontSize: "1rem" }}>
-                    {ascent.routeName}
+                    {ascent.style?.trim()
+                      ? `${ascent.style.trim().toUpperCase()} - ${ascent.routeName}`
+                      : ascent.routeName}
                   </h3>
                 </div>
                 <button

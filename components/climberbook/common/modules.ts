@@ -24,14 +24,6 @@ export const moduleConfig: ClimberbookModule[] = [
     eyebrow: "Codzienna praca",
   },
   {
-    key: "raportowy",
-    route: "/raporty",
-    title: "Moduł raportowy",
-    navLabel: "Raporty",
-    description: "",
-    eyebrow: "Historia i eksport",
-  },
-  {
     key: "analityka",
     route: "/analityka",
     title: "Moduł analityki",
@@ -46,6 +38,14 @@ export const moduleConfig: ClimberbookModule[] = [
     navLabel: "Team",
     description: "Edycja zawodników i porównanie aktualnych wyników.",
     eyebrow: "Drużyna",
+  },
+  {
+    key: "raportowy",
+    route: "/raporty",
+    title: "Moduł raportowy",
+    navLabel: "Raporty",
+    description: "",
+    eyebrow: "Historia przejść",
   },
   {
     key: "ustawienia",

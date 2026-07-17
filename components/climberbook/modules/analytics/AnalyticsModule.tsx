@@ -9,6 +9,7 @@ import { AnalyticsModuleContent } from "./components/AnalyticsModuleContent";
 export function AnalyticsModule() {
   const app = useAnalyticsModule();
   const { isMobileChartLayout } = useViewport();
+  const moduleMeta = moduleConfig.find((module) => module.key === "analityka")!;
   const stats = useClimberbookStats({
     ascents: app.ascents,
     isMobileChartLayout,
@@ -21,7 +22,7 @@ export function AnalyticsModule() {
   });
   return (
     <AnalyticsModuleContent
-      moduleMeta={moduleConfig[2]}
+      moduleMeta={moduleMeta}
       isMobileChartLayout={isMobileChartLayout}
       trainings={app.trainings}
       trainingsCount={app.trainings.length}
@@ -31,7 +32,6 @@ export function AnalyticsModule() {
       totalAttempts={stats.totalAttempts}
       chartRangeLabel={stats.chartRangeLabel}
       weeklyTrainingStats={stats.weeklyTrainingStats}
-      highestGrade={stats.highestGrade}
       gradeDistribution={stats.gradeDistribution}
     />
   );

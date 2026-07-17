@@ -41,12 +41,14 @@ import {
 import { TrainingEmptyState } from "@/components/climberbook/modules/training/components/TrainingEmptyState";
 import {
   addAscent,
+  addAscents,
   addAthlete,
   addSection,
   addTraining,
   addWeightEntry,
   assignAthleteToSection,
   deleteAthlete,
+  deleteAscentsByImportSource,
   deleteClimberbookDatabase,
   deleteSection,
   deleteTraining,
@@ -75,6 +77,8 @@ import {
   type UserSex,
   type WeightEntryRecord,
 } from "@/lib/climbs-db";
+import { parse8aNuCsv } from "@/lib/8a-nu-csv";
+import type { CsvSkippedAscentRow } from "@/lib/8a-nu-csv";
 import { createSampleBackupData } from "@/lib/sample-backup";
 
 export type AscentDraft = {
@@ -83,7 +87,21 @@ export type AscentDraft = {
   routeName: string;
   suggestedGrade: string;
   subjectiveGrade: string;
+  style: string;
   notes: string;
+};
+export type AscentCsvImportPreview = {
+  fileName: string;
+  source: "8a.nu";
+  ascents: Array<Omit<AscentRecord, "id" | "createdAt" | "athleteId">>;
+  optionalAscents: Array<Omit<AscentRecord, "id" | "createdAt" | "athleteId">>;
+  skippedRows: number;
+  skippedAscentRows: CsvSkippedAscentRow[];
+  skippedGoProjects: number;
+  skippedTopropes: number;
+  skippedOtherStyles: number;
+  firstDate: string;
+  lastDate: string;
 };
 export type AthleteFormDraft = {
   firstName: string;
@@ -113,12 +131,22 @@ const emptyAscentDraft = (): AscentDraft => ({
   routeName: "Projekt A",
   suggestedGrade: "7a",
   subjectiveGrade: "7a",
+  style: "",
   notes: "",
 });
-const createPullUpProtocolSet = () => ({ sets: "1", loadDeloadKg: "0" });
+const createPullUpProtocolSet = () => ({
+  sets: "1",
+  repetitions: "1",
+  isOneRepMax: "nie" as const,
+  loadDeloadKg: "0",
+});
 const createHangboardProtocolSet = () => ({
   sets: "1",
+  mode: "hangs" as const,
   usesRpm: "nie" as const,
+  hangSeconds: "7",
+  restSeconds: "3",
+  repetitions: "6",
   loadDeloadKg: "0",
   edgeDepthMm: "20",
 });
@@ -145,6 +173,7 @@ const createTrainingDraft = (
       protocol: {
         pullUp: [createPullUpProtocolSet()],
         hangboard: [createHangboardProtocolSet()],
+        spraywallIntensity: "medium",
       },
       wellbeing: "",
       surfaces: [],
@@ -172,17 +201,24 @@ const mapTrainingToDraft = (
         pullUp: asProtocolSetList(training.protocol?.pullUp).map(
           (protocolSet) => ({
             sets: String(protocolSet.sets),
+            repetitions: String(protocolSet.repetitions ?? 1),
+            isOneRepMax: protocolSet.isOneRepMax ? "tak" : "nie",
             loadDeloadKg: String(protocolSet.loadDeloadKg),
           }),
         ),
         hangboard: asProtocolSetList(training.protocol?.hangboard).map(
           (protocolSet) => ({
             sets: String(protocolSet.sets),
+            mode: protocolSet.mode ?? "hangs",
             usesRpm: protocolSet.usesRpm ? "tak" : "nie",
+            hangSeconds: String(protocolSet.hangSeconds ?? 7),
+            restSeconds: String(protocolSet.restSeconds ?? 3),
+            repetitions: String(protocolSet.repetitions ?? 6),
             loadDeloadKg: String(protocolSet.loadDeloadKg),
             edgeDepthMm: String(protocolSet.edgeDepthMm),
           }),
         ),
+        spraywallIntensity: training.protocol?.spraywallIntensity ?? "medium",
       },
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
@@ -221,6 +257,9 @@ type ClimberbookContextValue = {
   editingAscentId: number | null;
   ascentDraft: AscentDraft;
   setAscentDraft: Dispatch<SetStateAction<AscentDraft>>;
+  ascentImportMessage: string;
+  ascentCsvImportPreview: AscentCsvImportPreview | null;
+  isImportingAscentsCsv: boolean;
   status: string;
   importPreview: DatabaseImportPreview | null;
   isImportPreviewOpen: boolean;
@@ -244,6 +283,10 @@ type ClimberbookContextValue = {
   deleteTraining: (training: TrainingRecord) => Promise<void>;
   submitWeightEntry: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   submitAscent: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  previewAscentsCsv: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  confirmAscentsCsvImport: (includeOtherStyles: boolean) => Promise<void>;
+  closeAscentsCsvImportPreview: () => void;
+  delete8aNuAscents: () => Promise<void>;
   editAscent: (ascent: AscentRecord) => void;
   cancelAscentEdit: () => void;
   submitSettings: (event: FormEvent<HTMLFormElement>) => Promise<void>;
@@ -297,6 +340,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   );
   const [editingAscentId, setEditingAscentId] = useState<number | null>(null);
   const [ascentDraft, setAscentDraft] = useState<AscentDraft>(emptyAscentDraft);
+  const [ascentImportMessage, setAscentImportMessage] = useState("");
+  const [ascentCsvImportPreview, setAscentCsvImportPreview] =
+    useState<AscentCsvImportPreview | null>(null);
+  const [isImportingAscentsCsv, setIsImportingAscentsCsv] = useState(false);
   const [profileDraft, setProfileDraft] = useState<UserProfileDraft>(
     createUserProfileDraft,
   );
@@ -498,16 +545,25 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         ...(trainingDraft.surfaces.includes("drazek") && {
           pullUp: trainingDraft.protocol.pullUp.map((protocolSet) => ({
             sets: Number(protocolSet.sets || 0),
+            repetitions: Number(protocolSet.repetitions || 0),
+            isOneRepMax: protocolSet.isOneRepMax === "tak",
             loadDeloadKg: Number(protocolSet.loadDeloadKg),
           })),
         }),
         ...(trainingDraft.surfaces.includes("chwytotablica") && {
           hangboard: trainingDraft.protocol.hangboard.map((protocolSet) => ({
             sets: Number(protocolSet.sets || 0),
+            mode: protocolSet.mode,
             usesRpm: protocolSet.usesRpm === "tak",
+            hangSeconds: Number(protocolSet.hangSeconds || 0),
+            restSeconds: Number(protocolSet.restSeconds || 0),
+            repetitions: Number(protocolSet.repetitions || 0),
             loadDeloadKg: Number(protocolSet.loadDeloadKg),
             edgeDepthMm: Number(protocolSet.edgeDepthMm || 0),
           })),
+        }),
+        ...(trainingDraft.surfaces.includes("spraywall") && {
+          spraywallIntensity: trainingDraft.protocol.spraywallIntensity,
         }),
       },
       wellbeing: trainingDraft.wellbeing,
@@ -578,6 +634,88 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     await refreshData();
     setEditingAscentId(null);
     setAscentDraft(emptyAscentDraft());
+  }
+  async function previewAscentsCsv(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !activeAthleteId) return;
+
+    try {
+      const {
+        ascents: importedAscents,
+        optionalAscents,
+        skippedRows,
+        skippedAscentRows,
+        skippedGoProjects,
+        skippedTopropes,
+        skippedOtherStyles,
+      } = parse8aNuCsv(await file.text());
+
+      const availableAscents = [...importedAscents, ...optionalAscents];
+
+      if (!availableAscents.length) {
+        setAscentImportMessage("Nie znaleziono poprawnych przejść do importu.");
+        return;
+      }
+
+      const dates = availableAscents.map((ascent) => ascent.date).sort();
+      setAscentCsvImportPreview({
+        fileName: file.name,
+        source: "8a.nu",
+        ascents: importedAscents,
+        optionalAscents,
+        skippedRows,
+        skippedAscentRows,
+        skippedGoProjects,
+        skippedTopropes,
+        skippedOtherStyles,
+        firstDate: dates[0],
+        lastDate: dates.at(-1) ?? dates[0],
+      });
+    } catch (error) {
+      setAscentImportMessage(
+        error instanceof Error ? error.message : "Import CSV nie powiódł się.",
+      );
+    }
+  }
+  async function confirmAscentsCsvImport(includeOtherStyles: boolean) {
+    if (!activeAthleteId || !ascentCsvImportPreview) return;
+
+    const ascentsToImport = [
+      ...ascentCsvImportPreview.ascents,
+      ...(includeOtherStyles ? ascentCsvImportPreview.optionalAscents : []),
+    ];
+    setIsImportingAscentsCsv(true);
+    try {
+      await addAscents(
+        ascentsToImport.map((ascent) => ({
+          ...ascent,
+          athleteId: activeAthleteId,
+        })),
+      );
+      await refreshData();
+      setAscentImportMessage(
+        `Zaimportowano ${ascentsToImport.length} przejść z 8a.nu${ascentCsvImportPreview.skippedRows - (includeOtherStyles ? ascentCsvImportPreview.optionalAscents.length : 0) ? `, pominięto ${ascentCsvImportPreview.skippedRows - (includeOtherStyles ? ascentCsvImportPreview.optionalAscents.length : 0)}` : ""}.`,
+      );
+      setAscentCsvImportPreview(null);
+    } catch (error) {
+      setAscentImportMessage(
+        error instanceof Error ? error.message : "Import CSV nie powiódł się.",
+      );
+    } finally {
+      setIsImportingAscentsCsv(false);
+    }
+  }
+  function closeAscentsCsvImportPreview() {
+    setAscentCsvImportPreview(null);
+  }
+  async function delete8aNuAscents() {
+    if (!activeAthleteId) return;
+
+    await deleteAscentsByImportSource(activeAthleteId, "8a.nu");
+    await refreshData();
+    setAscentImportMessage("Usunięto przejścia zaimportowane z 8a.nu.");
   }
   async function submitSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -814,6 +952,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     editingAscentId,
     ascentDraft,
     setAscentDraft,
+    ascentImportMessage,
+    ascentCsvImportPreview,
+    isImportingAscentsCsv,
     status,
     importPreview,
     isImportPreviewOpen,
@@ -851,6 +992,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     deleteTraining: deleteTrainingAction,
     submitWeightEntry,
     submitAscent,
+    previewAscentsCsv,
+    confirmAscentsCsvImport,
+    closeAscentsCsvImportPreview,
+    delete8aNuAscents,
     editAscent: (ascent) => {
       setEditingAscentId(ascent.id ?? null);
       setAscentDraft({
@@ -859,6 +1004,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         routeName: ascent.routeName,
         suggestedGrade: ascent.suggestedGrade,
         subjectiveGrade: ascent.subjectiveGrade,
+        style: ascent.style ?? "",
         notes: ascent.notes,
       });
     },
@@ -1007,6 +1153,9 @@ export function useReportsModule() {
   const {
     ascents,
     ascentDraft,
+    ascentImportMessage,
+    ascentCsvImportPreview,
+    isImportingAscentsCsv,
     cancelAscentEdit,
     editAscent,
     editingAscentId,
@@ -1014,6 +1163,10 @@ export function useReportsModule() {
     selectedDate,
     setAscentDraft,
     submitAscent,
+    previewAscentsCsv,
+    confirmAscentsCsvImport,
+    closeAscentsCsvImportPreview,
+    delete8aNuAscents,
     today,
     trainingRangeStart,
     trainings,
@@ -1022,6 +1175,9 @@ export function useReportsModule() {
   return {
     ascents,
     ascentDraft,
+    ascentImportMessage,
+    ascentCsvImportPreview,
+    isImportingAscentsCsv,
     cancelAscentEdit,
     editAscent,
     editingAscentId,
@@ -1029,6 +1185,10 @@ export function useReportsModule() {
     selectedDate,
     setAscentDraft,
     submitAscent,
+    previewAscentsCsv,
+    confirmAscentsCsvImport,
+    closeAscentsCsvImportPreview,
+    delete8aNuAscents,
     today,
     trainingRangeStart,
     trainings,

@@ -6,6 +6,7 @@ import { TeamAssembly } from "./components/TeamAssembly";
 import { useTeamModule } from "@/components/climberbook/providers/ClimberbookProvider";
 export function TeamModule() {
   const app = useTeamModule();
+  const moduleMeta = moduleConfig.find((module) => module.key === "team")!;
   const summaries = useTeamSummaries({
     athletes: app.athletes,
     sections: app.sections,
@@ -14,7 +15,7 @@ export function TeamModule() {
   });
   return (
     <TeamAssembly
-      moduleMeta={moduleConfig[3]}
+      moduleMeta={moduleMeta}
       athletes={app.athletes}
       teamTrainingsCount={app.teamTrainings.length}
       teamSummaryGroups={summaries.teamSummaryGroups}

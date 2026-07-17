@@ -9,6 +9,7 @@ import { frenchGradeOptions } from "@/components/climberbook/common/constants";
 export function ReportsModule() {
   const app = useReportsModule();
   const { isMobileChartLayout } = useViewport();
+  const moduleMeta = moduleConfig.find((module) => module.key === "raportowy")!;
   const stats = useClimberbookStats({
     ascents: app.ascents,
     isMobileChartLayout,
@@ -21,7 +22,7 @@ export function ReportsModule() {
   });
   return (
     <ReportsAssembly
-      moduleMeta={moduleConfig[1]}
+      moduleMeta={moduleMeta}
       ascents={app.ascents}
       ascentsCount={app.ascents.length}
       panelAscents={stats.panelAscents}
@@ -31,8 +32,18 @@ export function ReportsModule() {
       ascentGradeFrequency={stats.ascentGradeFrequency}
       ascentDraft={app.ascentDraft}
       editingAscentId={app.editingAscentId}
+      ascentImportMessage={app.ascentImportMessage}
+      ascentCsvImportPreview={app.ascentCsvImportPreview}
+      isImportingAscentsCsv={app.isImportingAscentsCsv}
+      imported8aNuAscentsCount={
+        app.ascents.filter((ascent) => ascent.importSource === "8a.nu").length
+      }
       onAscentDraftChange={app.setAscentDraft}
       onAscentSubmit={app.submitAscent}
+      onAscentsCsvImport={app.previewAscentsCsv}
+      onConfirmAscentsCsvImport={app.confirmAscentsCsvImport}
+      onCloseAscentsCsvImportPreview={app.closeAscentsCsvImportPreview}
+      onDelete8aNuAscents={app.delete8aNuAscents}
       onAscentEdit={app.editAscent}
       onCancelAscentEdit={app.cancelAscentEdit}
       frenchGradeOptions={frenchGradeOptions}

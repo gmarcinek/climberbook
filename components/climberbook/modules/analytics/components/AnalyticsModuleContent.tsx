@@ -25,10 +25,12 @@ type AnalyticsModuleContentProps = {
   chartRangeLabel: string;
   weeklyTrainingStats: Array<{
     week: string;
-    duration: number;
-    attempts: number;
+    totalHours: number;
+    ropeHours: number;
+    boulderHours: number;
+    boardHours: number;
+    sprayCircuitHours: number;
   }>;
-  highestGrade: string;
   gradeDistribution: Array<{
     grade: string;
     surface: TrainingSurface | "lina";
@@ -47,7 +49,6 @@ export function AnalyticsModuleContent({
   totalAttempts,
   chartRangeLabel,
   weeklyTrainingStats,
-  highestGrade,
   gradeDistribution,
 }: AnalyticsModuleContentProps) {
   return (
@@ -66,6 +67,7 @@ export function AnalyticsModuleContent({
       />
 
       <WeeklyTrainingChartWidget
+        isMobileLayout={isMobileChartLayout}
         chartRangeLabel={chartRangeLabel}
         weeklyTrainingStats={weeklyTrainingStats}
       />
@@ -78,11 +80,11 @@ export function AnalyticsModuleContent({
             : twoColumnLayoutStyle.gridTemplateColumns,
         }}
       >
-        <GradeDistributionWidget
-          highestGrade={highestGrade}
-          gradeDistribution={gradeDistribution}
+        <GradeDistributionWidget gradeDistribution={gradeDistribution} />
+        <TrainingHistoryWidget
+          isMobileLayout={isMobileChartLayout}
+          trainings={trainings}
         />
-        <TrainingHistoryWidget trainings={trainings} />
       </div>
     </Stack>
   );

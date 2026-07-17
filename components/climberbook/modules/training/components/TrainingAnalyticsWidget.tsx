@@ -45,7 +45,10 @@ export function TrainingAnalyticsWidget({
         style={{ height: "100%", minHeight: 0 }}
         viewportStyle={{ height: "100%", minHeight: 0, overflowY: "auto" }}
       >
-        <TrainingAnalyticsPanel {...panelProps} />
+        <TrainingAnalyticsPanel
+          isMobileLayout={isMobileLayout}
+          {...panelProps}
+        />
       </ScrollPane>
     </Panel>
   );

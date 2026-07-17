@@ -24,6 +24,36 @@ import type { TrainingRecord } from "@/lib/climbs-db";
 const surfaceLabelByValue = new Map(
   surfaceOptions.map((surface) => [surface.value, surface.label]),
 );
+const boardSurfaces = ["moon", "kilter", "baldy"] as const;
+
+function getBoardGradeRange(
+  surface: (typeof boardSurfaces)[number],
+  grades: string,
+) {
+  const values = grades
+    .split(",")
+    .map((grade) => grade.trim())
+    .map((grade) =>
+      surface === "baldy"
+        ? Number(grade)
+        : Number(/^V(\d+)$/i.exec(grade)?.[1]),
+    )
+    .filter(
+      (grade) =>
+        Number.isInteger(grade) &&
+        grade >= 1 &&
+        grade <= (surface === "baldy" ? 9 : 17),
+    );
+
+  if (!values.length) {
+    return null;
+  }
+
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+
+  return minimum === maximum ? `V${minimum}` : `V${minimum}-V${maximum}`;
+}
 
 function getGradeChipStyle(grade: string) {
   if (getRopeGradeIndex(grade) < 0) {
@@ -48,8 +78,10 @@ function getGradeChipStyle(grade: string) {
 }
 
 export function TrainingHistoryWidget({
+  isMobileLayout,
   trainings,
 }: {
+  isMobileLayout: boolean;
   trainings: TrainingRecord[];
 }) {
   const chronologicalTrainings = trainings
@@ -59,6 +91,17 @@ export function TrainingHistoryWidget({
         `${left.date}-${left.time}-${left.createdAt}`,
       ),
     );
+  const responsiveTrainingCardStyle = isMobileLayout
+    ? {
+        ...listCardStyle,
+        padding: 0,
+        paddingBottom: 12,
+        marginBottom: 12,
+        background: "transparent",
+        border: 0,
+        borderBottom: "1px solid rgb(215 212 212)",
+      }
+    : listCardStyle;
 
   return (
     <Panel>
@@ -74,10 +117,26 @@ export function TrainingHistoryWidget({
           <EmptyState message="Dodaj treningi, aby zobaczyc historie sesji." />
         ) : null}
         {chronologicalTrainings.map((training) => {
-          const grades = training.difficultyNotes
+          const ropeGrades = (
+            training.difficultyBySurface?.lina ??
+            (training.surfaces.includes("lina") ? training.difficultyNotes : "")
+          )
             .split(",")
             .map((grade) => grade.trim())
             .filter(Boolean);
+          const boardGradeRanges = boardSurfaces.flatMap((surface) => {
+            if (!training.surfaces.includes(surface)) {
+              return [];
+            }
+
+            const range = getBoardGradeRange(
+              surface,
+              training.difficultyBySurface?.[surface] ??
+                training.difficultyNotes,
+            );
+
+            return range ? [{ surface, range }] : [];
+          });
           const surfaces = training.surfaces
             .map((surface) => surfaceLabelByValue.get(surface) ?? surface)
             .join(", ");
@@ -88,7 +147,7 @@ export function TrainingHistoryWidget({
                 training.id ??
                 `${training.date}-${training.time}-${training.createdAt}`
               }
-              style={listCardStyle}
+              style={responsiveTrainingCardStyle}
             >
               <div style={listCardHeaderStyle}>
                 <strong>
@@ -107,7 +166,7 @@ export function TrainingHistoryWidget({
                 {training.wellbeing ? (
                   <div>Samopoczucie: {training.wellbeing}</div>
                 ) : null}
-                {grades.length > 0 ? (
+                {ropeGrades.length > 0 ? (
                   <div
                     style={{
                       display: "flex",
@@ -117,7 +176,7 @@ export function TrainingHistoryWidget({
                     }}
                   >
                     <span>Wyceny:</span>
-                    {grades.map((grade, index) => (
+                    {ropeGrades.map((grade, index) => (
                       <span
                         key={`${training.id ?? training.createdAt}-${grade}-${index}`}
                         style={getGradeChipStyle(grade)}
@@ -127,9 +186,18 @@ export function TrainingHistoryWidget({
                     ))}
                   </div>
                 ) : null}
-                <div style={{ color: "var(--text)", overflowWrap: "anywhere" }}>
-                  {training.notes?.trim() || "Brak notatki dla tej sesji."}
-                </div>
+                {boardGradeRanges.map(({ surface, range }) => (
+                  <div key={surface}>
+                    {surfaceLabelByValue.get(surface)}: {range}
+                  </div>
+                ))}
+                {training.notes?.trim() ? (
+                  <div
+                    style={{ color: "var(--text)", overflowWrap: "anywhere" }}
+                  >
+                    {training.notes.trim()}
+                  </div>
+                ) : null}
               </div>
             </article>
           );

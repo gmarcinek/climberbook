@@ -105,6 +105,25 @@ select {
   outline: none;
 }
 
+.recharts-surface:focus,
+.recharts-surface:focus-visible {
+  outline: none;
+}
+
+.ascent-timeline-chart .recharts-surface,
+.ascent-timeline-chart .recharts-bar-rectangle,
+.ascent-timeline-chart .recharts-reference-dot {
+  cursor: crosshair;
+}
+
+.recharts-brush-texts text:first-child {
+  transform: translateX(84px);
+}
+
+.recharts-brush-texts text:last-child {
+  transform: translateX(-84px);
+}
+
 input::placeholder,
 textarea::placeholder {
   color: color-mix(in srgb, var(--muted) 72%, white);

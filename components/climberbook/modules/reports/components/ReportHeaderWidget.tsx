@@ -8,6 +8,7 @@ import {
   pageTitleStyle,
 } from "@/components/climberbook/common/styles";
 import { Stack } from "@/components/climberbook/common/Stack";
+import { useViewport } from "@/components/climberbook/hooks/useViewport";
 type ReportHeaderWidgetProps = {
   meta: { eyebrow: string; title: string; description: string };
   ascentsCount: number;
@@ -22,6 +23,8 @@ export function ReportHeaderWidget({
   rockAscents,
   mobileAction,
 }: ReportHeaderWidgetProps) {
+  const { isMobileHeader } = useViewport();
+
   return (
     <Stack
       direction="row"
@@ -31,26 +34,25 @@ export function ReportHeaderWidget({
       wrap
       fullWidth
     >
-      <Stack style={{ flex: "1 1 320px", minWidth: 0 }}>
+      <Stack
+        style={{
+          flex: "1 1 320px",
+          minWidth: 0,
+          order: isMobileHeader ? 2 : 1,
+        }}
+      >
+        {mobileAction}
         <p style={eyebrowStyle}>{meta.eyebrow}</p>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "nowrap",
-            width: "100%",
-          }}
-        >
-          <h1 style={{ ...pageTitleStyle, flex: "1 1 auto", minWidth: 0 }}>
-            {meta.title}
-          </h1>
-          {mobileAction}
-        </div>
+        <h1 style={pageTitleStyle}>{meta.title}</h1>
         <p style={mutedParagraphStyle}>{meta.description}</p>
       </Stack>
-      <Stack direction="row" gap="sm" wrap align="center">
+      <Stack
+        direction="row"
+        gap="sm"
+        wrap
+        align="center"
+        style={{ order: isMobileHeader ? 1 : 2 }}
+      >
         <span style={headerBadgeStyle}>Przejścia: {ascentsCount}</span>
         <span style={headerBadgeStyle}>Panel: {panelAscents}</span>
         <span style={headerBadgeStyle}>Skała: {rockAscents}</span>

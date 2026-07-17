@@ -46,19 +46,30 @@ export type WeightEntryRecord = {
 
 export type PullUpProtocolSet = {
   sets: number;
+  repetitions?: number;
+  isOneRepMax?: boolean;
   loadDeloadKg: number;
 };
 
+export type HangboardMode = "hangs" | "intervals";
+
 export type HangboardProtocolSet = {
   sets: number;
+  mode?: HangboardMode;
   usesRpm: boolean;
+  hangSeconds?: number;
+  restSeconds?: number;
+  repetitions?: number;
   loadDeloadKg: number;
   edgeDepthMm: number;
 };
 
+export type SpraywallIntensity = "soft" | "medium" | "hard";
+
 export type TrainingProtocol = {
   pullUp?: PullUpProtocolSet[];
   hangboard?: HangboardProtocolSet[];
+  spraywallIntensity?: SpraywallIntensity;
 };
 
 export type TrainingRecord = {
@@ -87,9 +98,11 @@ export type AscentRecord = {
   athleteId: string;
   date: string;
   source: "panel" | "skala";
+  importSource?: "8a.nu";
   routeName: string;
   suggestedGrade: string;
   subjectiveGrade: string;
+  style?: string;
   notes: string;
   createdAt: string;
 };
@@ -796,6 +809,47 @@ export async function addAscent(input: Omit<AscentRecord, "id" | "createdAt">) {
     ...input,
     createdAt: new Date().toISOString(),
   });
+}
+
+export async function addAscents(
+  inputs: Array<Omit<AscentRecord, "id" | "createdAt">>,
+) {
+  if (!inputs.length) return;
+
+  const database = await getDatabase();
+  const createdAt = new Date().toISOString();
+  const transaction = database.transaction("ascents", "readwrite");
+
+  await Promise.all(
+    inputs.map((input) =>
+      transaction.store.add({
+        ...input,
+        createdAt,
+      }),
+    ),
+  );
+  await transaction.done;
+}
+
+export async function deleteAscentsByImportSource(
+  athleteId: string,
+  importSource: NonNullable<AscentRecord["importSource"]>,
+) {
+  const database = await getDatabase();
+  const transaction = database.transaction("ascents", "readwrite");
+  let cursor = await transaction.store
+    .index("by-athlete")
+    .openCursor(athleteId);
+
+  while (cursor) {
+    if (cursor.value.importSource === importSource) {
+      await cursor.delete();
+    }
+
+    cursor = await cursor.continue();
+  }
+
+  await transaction.done;
 }
 
 export async function updateAscent(

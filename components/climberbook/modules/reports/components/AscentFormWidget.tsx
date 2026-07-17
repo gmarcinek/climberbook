@@ -24,6 +24,7 @@ type AscentDraftValues = {
   routeName: string;
   suggestedGrade: string;
   subjectiveGrade: string;
+  style: string;
   notes: string;
 };
 type AscentFormWidgetProps = {
@@ -44,6 +45,10 @@ export function AscentFormWidget({
   frenchGradeOptions,
 }: AscentFormWidgetProps) {
   const isEditing = editingAscentId !== null;
+  const styleOptions = ["", "OS", "FL", "RP", "TR", "GO"];
+  const availableStyleOptions = styleOptions.includes(ascentDraft.style)
+    ? styleOptions
+    : [...styleOptions, ascentDraft.style];
 
   return (
     <Form
@@ -142,6 +147,25 @@ export function AscentFormWidget({
             {frenchGradeOptions.map((grade) => (
               <option key={grade} value={grade}>
                 {grade}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={fieldStyle}>
+          Styl (opcjonalnie)
+          <select
+            value={ascentDraft.style}
+            onChange={(event) =>
+              onAscentDraftChange({
+                ...ascentDraft,
+                style: event.target.value,
+              })
+            }
+            style={inputStyle}
+          >
+            {availableStyleOptions.map((style) => (
+              <option key={style || "none"} value={style}>
+                {style || "Nie podano"}
               </option>
             ))}
           </select>

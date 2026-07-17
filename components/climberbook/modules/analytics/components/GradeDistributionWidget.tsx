@@ -13,7 +13,6 @@ import {
 } from "@/components/climberbook/common/styles";
 
 type GradeDistributionWidgetProps = {
-  highestGrade: string;
   gradeDistribution: Array<{
     grade: string;
     surface: TrainingSurface | "lina";
@@ -34,7 +33,6 @@ const gradeDistributionTabs: Array<{
 ];
 
 export function GradeDistributionWidget({
-  highestGrade,
   gradeDistribution,
 }: GradeDistributionWidgetProps) {
   const [activeTab, setActiveTab] = useState<GradeDistributionTab>("lina");
@@ -46,7 +44,6 @@ export function GradeDistributionWidget({
     (highest, grade) => Math.max(highest, grade.count),
     0,
   );
-  const highestVisibleGrade = visibleGrades[0]?.grade ?? "-";
 
   return (
     <Panel>
@@ -55,11 +52,6 @@ export function GradeDistributionWidget({
           <span style={moduleEyebrowStyle}>Wyceny</span>
           <h2 style={sectionTitleStyle}>Rozkład i maksimum</h2>
         </div>
-        <span style={softTagStyle}>
-          {visibleGrades.length > 0
-            ? `Najwyższa: ${highestVisibleGrade} · max ${maxCount}`
-            : `Najwyższa: ${highestGrade}`}
-        </span>
       </div>
       <div
         style={gradeDistributionTabsStyle}

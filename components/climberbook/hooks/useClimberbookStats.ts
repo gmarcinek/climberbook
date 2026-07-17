@@ -181,7 +181,14 @@ export function useClimberbookStats({
   const weeklyTrainingStats = useMemo(() => {
     const weeks = new Map<
       string,
-      { week: string; duration: number; attempts: number }
+      {
+        week: string;
+        totalHours: number;
+        ropeHours: number;
+        boulderHours: number;
+        boardHours: number;
+        sprayCircuitHours: number;
+      }
     >();
     const firstWeek = getWeekStartIso(chartRange.start);
     const lastWeek = getWeekStartIso(chartRange.end);
@@ -189,7 +196,14 @@ export function useClimberbookStats({
 
     while (formatDateIso(cursor) <= lastWeek) {
       const week = formatDateIso(cursor);
-      weeks.set(week, { week, duration: 0, attempts: 0 });
+      weeks.set(week, {
+        week,
+        totalHours: 0,
+        ropeHours: 0,
+        boulderHours: 0,
+        boardHours: 0,
+        sprayCircuitHours: 0,
+      });
       cursor.setDate(cursor.getDate() + 7);
     }
 
@@ -206,14 +220,51 @@ export function useClimberbookStats({
           return;
         }
 
-        current.duration += training.durationMinutes;
-        current.attempts += training.attemptsCount;
+        const durationHours = training.durationMinutes / 60;
+        const hourGroups = [
+          training.surfaces.includes("lina") ? "ropeHours" : null,
+          training.surfaces.includes("baldy") ? "boulderHours" : null,
+          training.surfaces.some(
+            (surface) => surface === "moon" || surface === "kilter",
+          )
+            ? "boardHours"
+            : null,
+          training.surfaces.includes("spraywall") ||
+          /obw[oó]d/i.test(training.customSessionType ?? "")
+            ? "sprayCircuitHours"
+            : null,
+        ].filter(
+          (
+            group,
+          ): group is
+            | "ropeHours"
+            | "boulderHours"
+            | "boardHours"
+            | "sprayCircuitHours" => group !== null,
+        );
+
+        current.totalHours += durationHours;
+
+        if (hourGroups.length) {
+          const hoursPerGroup = durationHours / hourGroups.length;
+
+          hourGroups.forEach((group) => {
+            current[group] += hoursPerGroup;
+          });
+        }
         weeks.set(week, current);
       });
 
-    return Array.from(weeks.values()).sort((left, right) =>
-      left.week.localeCompare(right.week),
-    );
+    return Array.from(weeks.values())
+      .map((week) => ({
+        ...week,
+        totalHours: roundToSingleDecimal(week.totalHours),
+        ropeHours: roundToSingleDecimal(week.ropeHours),
+        boulderHours: roundToSingleDecimal(week.boulderHours),
+        boardHours: roundToSingleDecimal(week.boardHours),
+        sprayCircuitHours: roundToSingleDecimal(week.sprayCircuitHours),
+      }))
+      .sort((left, right) => left.week.localeCompare(right.week));
   }, [chartRange, trainings]);
   const weeklyAscentStats = useMemo(() => {
     const weeks = new Map<
@@ -316,7 +367,6 @@ export function useClimberbookStats({
 
     ascents.forEach((ascent) => {
       const suggestedGrade = ascent.suggestedGrade.trim();
-      const subjectiveGrade = ascent.subjectiveGrade.trim();
 
       if (suggestedGrade) {
         const suggestedMeta = resolveAscentGrade(suggestedGrade);
@@ -335,25 +385,6 @@ export function useClimberbookStats({
         current.suggestedCount += 1;
         current.totalCount += 1;
         grades.set(suggestedGrade, current);
-      }
-
-      if (subjectiveGrade) {
-        const subjectiveMeta = resolveAscentGrade(subjectiveGrade);
-        const current = grades.get(subjectiveGrade) ?? {
-          grade: subjectiveGrade,
-          suggestedCount: 0,
-          subjectiveCount: 0,
-          totalCount: 0,
-        };
-        if (
-          current.grade === subjectiveGrade &&
-          subjectiveMeta.gradeRank > getGradeRank(current.grade)
-        ) {
-          current.grade = subjectiveGrade;
-        }
-        current.subjectiveCount += 1;
-        current.totalCount += 1;
-        grades.set(subjectiveGrade, current);
       }
     });
 

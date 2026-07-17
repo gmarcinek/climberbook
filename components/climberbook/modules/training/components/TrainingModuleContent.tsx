@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { WeightEntryDraft } from "@/components/climberbook/common/training";
 import {
   mobileDrawerSheetStyle,
@@ -98,6 +98,8 @@ export function TrainingModuleContent({
   onResetSelection,
   onCancelEdit,
 }: TrainingModuleContentProps) {
+  const [requestedPreviewTraining, setRequestedPreviewTraining] =
+    useState<TrainingRecord | null>(null);
   const showMediumInlineDrawer =
     isMediumTrainingDrawerLayout && selectedDate !== null;
   const sidebar = (
@@ -116,6 +118,8 @@ export function TrainingModuleContent({
       onSelectDate={onSelectDate}
       onEditTraining={onEditTraining}
       onDeleteTraining={onDeleteTraining}
+      requestedPreviewTraining={requestedPreviewTraining}
+      onRequestedPreviewClose={() => setRequestedPreviewTraining(null)}
       onResetSelection={onResetSelection}
       onCancelEdit={onCancelEdit}
     />
@@ -189,7 +193,10 @@ export function TrainingModuleContent({
           today={today}
           onSelectDate={onSelectDate}
           onEditTraining={onEditTraining}
-          onDeleteTraining={onDeleteTraining}
+          onPreviewTraining={(training) => {
+            setRequestedPreviewTraining(training);
+            onSelectDate(training.date);
+          }}
         />
 
         {showTrainingSidebarColumn && (

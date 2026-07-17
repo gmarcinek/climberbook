@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { WeeklyAscentChartWidget } from "@/components/climberbook/common/WeeklyAscentChartWidget";
 import { AscentGradeDistributionWidget } from "./AscentGradeDistributionWidget";
@@ -11,6 +11,7 @@ import { ReportMetricsWidget } from "./ReportMetricsWidget";
 import { Stack } from "@/components/climberbook/common/Stack";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import type { AscentRecord } from "@/lib/climbs-db";
+import type { AscentCsvImportPreview } from "@/components/climberbook/providers/ClimberbookProvider";
 import {
   buttonStyle,
   mobileDrawerBackdropStyle,
@@ -26,6 +27,7 @@ type AscentDraftValues = {
   routeName: string;
   suggestedGrade: string;
   subjectiveGrade: string;
+  style: string;
   notes: string;
 };
 type ReportsAssemblyProps = {
@@ -58,8 +60,16 @@ type ReportsAssemblyProps = {
   }>;
   ascentDraft: AscentDraftValues;
   editingAscentId: number | null;
+  ascentImportMessage: string;
+  ascentCsvImportPreview: AscentCsvImportPreview | null;
+  isImportingAscentsCsv: boolean;
+  imported8aNuAscentsCount: number;
   onAscentDraftChange: (draft: AscentDraftValues) => void;
   onAscentSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onAscentsCsvImport: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onConfirmAscentsCsvImport: (includeOtherStyles: boolean) => Promise<void>;
+  onCloseAscentsCsvImportPreview: () => void;
+  onDelete8aNuAscents: () => Promise<void>;
   onAscentEdit: (ascent: AscentRecord) => void;
   onCancelAscentEdit: () => void;
   frenchGradeOptions: string[];
@@ -76,8 +86,16 @@ export function ReportsAssembly({
   ascentGradeFrequency,
   ascentDraft,
   editingAscentId,
+  ascentImportMessage,
+  ascentCsvImportPreview,
+  isImportingAscentsCsv,
+  imported8aNuAscentsCount,
   onAscentDraftChange,
   onAscentSubmit,
+  onAscentsCsvImport,
+  onConfirmAscentsCsvImport,
+  onCloseAscentsCsvImportPreview,
+  onDelete8aNuAscents,
   onAscentEdit,
   onCancelAscentEdit,
   frenchGradeOptions,
@@ -178,12 +196,22 @@ export function ReportsAssembly({
           ascentsCount={ascentsCount}
           panelAscents={panelAscents}
           rockAscents={rockAscents}
+          importMessage={ascentImportMessage}
+          onCsvImport={onAscentsCsvImport}
+          importPreview={ascentCsvImportPreview}
+          isImporting={isImportingAscentsCsv}
+          imported8aNuAscentsCount={imported8aNuAscentsCount}
+          onConfirmImport={onConfirmAscentsCsvImport}
+          onCloseImportPreview={onCloseAscentsCsvImportPreview}
+          onDelete8aNuAscents={onDelete8aNuAscents}
         />
       )}
-      <WeeklyAscentChartWidget
-        chartRangeLabel={ascentChartRangeLabel}
-        ascentTimelineStats={ascentTimelineStats}
-      />
+      {isMobile ? null : (
+        <WeeklyAscentChartWidget
+          chartRangeLabel={ascentChartRangeLabel}
+          ascentTimelineStats={ascentTimelineStats}
+        />
+      )}
       <div
         style={{
           ...twoColumnLayoutStyle,

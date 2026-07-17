@@ -25,7 +25,7 @@ type TrainingCalendarWidgetProps = {
   today: string;
   onSelectDate: (date: string) => void;
   onEditTraining: (training: TrainingRecord) => void;
-  onDeleteTraining: (training: TrainingRecord) => void;
+  onPreviewTraining: (training: TrainingRecord) => void;
 };
 
 export function TrainingCalendarWidget({
@@ -40,7 +40,7 @@ export function TrainingCalendarWidget({
   today,
   onSelectDate,
   onEditTraining,
-  onDeleteTraining,
+  onPreviewTraining,
 }: TrainingCalendarWidgetProps) {
   return (
     <Panel
@@ -129,7 +129,7 @@ export function TrainingCalendarWidget({
             {visibleRangeTrainings.map((training) => (
               <article
                 key={`${training.id ?? training.createdAt}-${training.time}`}
-                className={sidebarStyles.trainingSidebar__visibleItem}
+                className={sidebarStyles.trainingSidebar__trainingCard}
               >
                 <div
                   className={
@@ -169,10 +169,10 @@ export function TrainingCalendarWidget({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onDeleteTraining(training)}
-                    className={sidebarStyles.trainingSidebar__deleteButton}
+                    onClick={() => onPreviewTraining(training)}
+                    className={sidebarStyles.trainingSidebar__linkButton}
                   >
-                    Usuń
+                    Podgląd
                   </button>
                 </div>
               </article>

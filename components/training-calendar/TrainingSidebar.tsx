@@ -1,3 +1,9 @@
+import type {
+  HangboardMode,
+  SpraywallIntensity,
+  TrainingRecord,
+  TrainingSurface,
+} from "@/lib/climbs-db";
 import { FormEvent, useEffect, useState } from "react";
 import {
   formControlClassNames,
@@ -11,7 +17,6 @@ import {
 import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts";
-import { type TrainingRecord, type TrainingSurface } from "@/lib/climbs-db";
 import {
   formatDateLabel,
   summarizeTrainingType,
@@ -103,14 +108,21 @@ export type TrainingDraftValues = {
   protocol: {
     pullUp: Array<{
       sets: string;
+      repetitions: string;
+      isOneRepMax: "tak" | "nie";
       loadDeloadKg: string;
     }>;
     hangboard: Array<{
       sets: string;
+      mode: HangboardMode;
       usesRpm: "tak" | "nie";
+      hangSeconds: string;
+      restSeconds: string;
+      repetitions: string;
       loadDeloadKg: string;
       edgeDepthMm: string;
     }>;
+    spraywallIntensity: SpraywallIntensity;
   };
   wellbeing: string;
   surfaces: TrainingSurface[];
@@ -184,6 +196,8 @@ type TrainingSidebarProps = {
   onSelectDate: (date: string) => void;
   onEditTraining: (training: TrainingRecord) => void;
   onDeleteTraining: (training: TrainingRecord) => void;
+  requestedPreviewTraining: TrainingRecord | null;
+  onRequestedPreviewClose: () => void;
   onResetSelection: () => void;
   onCancelEdit: () => void;
 };
@@ -204,6 +218,8 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     onSelectDate,
     onEditTraining,
     onDeleteTraining,
+    requestedPreviewTraining,
+    onRequestedPreviewClose,
     onResetSelection,
     onCancelEdit,
   } = props;
@@ -225,6 +241,10 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     styles.trainingSidebar__field,
     formLayoutClassNames.fullSpan,
   ].join(" ");
+  const protocolHeadingClassName = [
+    fullFieldClassName,
+    styles.trainingSidebar__protocolHeading,
+  ].join(" ");
   const [expandedGradeSurface, setExpandedGradeSurface] =
     useState<TrainingSurface | null>(null);
   const [selectedRopeGradeBase, setSelectedRopeGradeBase] = useState<
@@ -240,6 +260,11 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     setSelectedDayTab("form");
   }, [selectedDate]);
   useEffect(() => {
+    if (requestedPreviewTraining) {
+      setPreviewedTraining(requestedPreviewTraining);
+    }
+  }, [requestedPreviewTraining]);
+  useEffect(() => {
     if (!previewedTraining) {
       return;
     }
@@ -254,6 +279,11 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
   }, [previewedTraining]);
+
+  function closePreview() {
+    setPreviewedTraining(null);
+    onRequestedPreviewClose();
+  }
   const gradeSurfaces = trainingDraft.surfaces.filter(
     (surface) => gradeSurfaceLabels[surface],
   );
@@ -414,9 +444,11 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                         {training.caloriesBurned}
                       </span>
                     </div>
-                    <div className={styles.trainingSidebar__details}>
-                      <span>Wyceny: {training.difficultyNotes || "Brak"}</span>
-                    </div>
+                    {training.difficultyNotes?.trim() ? (
+                      <div className={styles.trainingSidebar__details}>
+                        <span>Wyceny: {training.difficultyNotes}</span>
+                      </div>
+                    ) : null}
                     <div className={styles.trainingSidebar__cardActions}>
                       <button
                         type="button"
@@ -455,7 +487,9 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 className={`${styles.trainingSidebar__stack} ${styles.trainingSidebar__formSectionStack}`}
               >
                 <div className={styles.trainingSidebar__stack}>
-                  <strong>Rodzaj sesji</strong>
+                  <strong className={styles.trainingSidebar__protocolHeading}>
+                    Rodzaj sesji
+                  </strong>
                   <div className={styles.trainingSidebar__chipGrid}>
                     {renderSurfaceOptions(primarySurfaceOptions)}
                   </div>
@@ -621,11 +655,12 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </div>
               </div>
               {(trainingDraft.surfaces.includes("drazek") ||
-                trainingDraft.surfaces.includes("chwytotablica")) && (
+                trainingDraft.surfaces.includes("chwytotablica") ||
+                trainingDraft.surfaces.includes("spraywall")) && (
                 <div className={styles.trainingSidebar__protocolStacks}>
                   {trainingDraft.surfaces.includes("drazek") && (
                     <div className={styles.trainingSidebar__protocolStack}>
-                      <strong className={fullFieldClassName}>
+                      <strong className={protocolHeadingClassName}>
                         Protokół - Drążek
                       </strong>
                       {trainingDraft.protocol.pullUp.map(
@@ -637,8 +672,10 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                             <strong className={fullFieldClassName}>
                               Seria {String.fromCharCode(65 + index)}
                             </strong>
-                            <label className={styles.trainingSidebar__field}>
-                              Ilość serii
+                            <label
+                              className={`${styles.trainingSidebar__field} ${styles.trainingSidebar__pullUpSets}`}
+                            >
+                              Ilość takich serii
                               <NumericStepperControl
                                 value={protocolSet.sets}
                                 onChange={(event) =>
@@ -708,7 +745,112 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                                 className={styles.trainingSidebar__controlGroup}
                               />
                             </label>
-                            <label className={styles.trainingSidebar__field}>
+                            <label
+                              className={`${styles.trainingSidebar__field} ${styles.trainingSidebar__pullUpRepetitions}`}
+                            >
+                              Powtórzenia w serii
+                              <NumericStepperControl
+                                value={protocolSet.repetitions}
+                                onChange={(event) =>
+                                  onTrainingDraftChange({
+                                    ...trainingDraft,
+                                    protocol: {
+                                      ...trainingDraft.protocol,
+                                      pullUp: trainingDraft.protocol.pullUp.map(
+                                        (item, itemIndex) =>
+                                          itemIndex === index
+                                            ? {
+                                                ...item,
+                                                repetitions: event.target.value,
+                                              }
+                                            : item,
+                                      ),
+                                    },
+                                  })
+                                }
+                                onDecrement={() =>
+                                  onTrainingDraftChange({
+                                    ...trainingDraft,
+                                    protocol: {
+                                      ...trainingDraft.protocol,
+                                      pullUp: trainingDraft.protocol.pullUp.map(
+                                        (item, itemIndex) =>
+                                          itemIndex === index
+                                            ? {
+                                                ...item,
+                                                repetitions: adjustSeriesValue(
+                                                  item.repetitions,
+                                                  -1,
+                                                ),
+                                              }
+                                            : item,
+                                      ),
+                                    },
+                                  })
+                                }
+                                onIncrement={() =>
+                                  onTrainingDraftChange({
+                                    ...trainingDraft,
+                                    protocol: {
+                                      ...trainingDraft.protocol,
+                                      pullUp: trainingDraft.protocol.pullUp.map(
+                                        (item, itemIndex) =>
+                                          itemIndex === index
+                                            ? {
+                                                ...item,
+                                                repetitions: adjustSeriesValue(
+                                                  item.repetitions,
+                                                  1,
+                                                ),
+                                              }
+                                            : item,
+                                      ),
+                                    },
+                                  })
+                                }
+                                decrementAriaLabel={`Odejmij powtórzenie w serii ${String.fromCharCode(65 + index)} drążka`}
+                                incrementAriaLabel={`Dodaj powtórzenie w serii ${String.fromCharCode(65 + index)} drążka`}
+                                inputProps={{
+                                  type: "number",
+                                  min: "1",
+                                  step: "1",
+                                }}
+                                className={styles.trainingSidebar__controlGroup}
+                              />
+                            </label>
+                            <label
+                              className={`${styles.trainingSidebar__field} ${styles.trainingSidebar__pullUpOneRepMax}`}
+                            >
+                              Maks. 1 powtórzenie
+                              <Select
+                                value={protocolSet.isOneRepMax}
+                                onChange={(event) =>
+                                  onTrainingDraftChange({
+                                    ...trainingDraft,
+                                    protocol: {
+                                      ...trainingDraft.protocol,
+                                      pullUp: trainingDraft.protocol.pullUp.map(
+                                        (item, itemIndex) =>
+                                          itemIndex === index
+                                            ? {
+                                                ...item,
+                                                isOneRepMax: event.target
+                                                  .value as "tak" | "nie",
+                                              }
+                                            : item,
+                                      ),
+                                    },
+                                  })
+                                }
+                                className={styles.trainingSidebar__input}
+                              >
+                                <option value="nie">Nie</option>
+                                <option value="tak">Tak</option>
+                              </Select>
+                            </label>
+                            <label
+                              className={`${styles.trainingSidebar__field} ${styles.trainingSidebar__pullUpLoad}`}
+                            >
                               Load / deload (kg)
                               <NumericStepperControl
                                 value={protocolSet.loadDeloadKg}
@@ -822,7 +964,12 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                               ...trainingDraft.protocol,
                               pullUp: [
                                 ...trainingDraft.protocol.pullUp,
-                                { sets: "1", loadDeloadKg: "0" },
+                                {
+                                  sets: "1",
+                                  repetitions: "1",
+                                  isOneRepMax: "nie",
+                                  loadDeloadKg: "0",
+                                },
                               ],
                             },
                           })
@@ -835,7 +982,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                   )}
                   {trainingDraft.surfaces.includes("chwytotablica") && (
                     <div className={styles.trainingSidebar__protocolStack}>
-                      <strong className={fullFieldClassName}>
+                      <strong className={protocolHeadingClassName}>
                         Protokół - Chwytotablica
                       </strong>
                       {trainingDraft.protocol.hangboard.map(
@@ -847,6 +994,51 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                             <strong className={fullFieldClassName}>
                               Seria {String.fromCharCode(65 + index)}
                             </strong>
+                            <div
+                              className={
+                                styles.trainingSidebar__hangboardModeTabs
+                              }
+                              role="tablist"
+                              aria-label={`Tryb serii ${String.fromCharCode(65 + index)} chwytotablicy`}
+                            >
+                              {(
+                                [
+                                  ["hangs", "Zwisy"],
+                                  ["intervals", "Interwały"],
+                                ] as const
+                              ).map(([mode, label]) => (
+                                <button
+                                  key={mode}
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={protocolSet.mode === mode}
+                                  className={`${styles.trainingSidebar__hangboardModeTab} ${
+                                    protocolSet.mode === mode
+                                      ? styles[
+                                          "trainingSidebar__hangboardModeTab--active"
+                                        ]
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    onTrainingDraftChange({
+                                      ...trainingDraft,
+                                      protocol: {
+                                        ...trainingDraft.protocol,
+                                        hangboard:
+                                          trainingDraft.protocol.hangboard.map(
+                                            (item, itemIndex) =>
+                                              itemIndex === index
+                                                ? { ...item, mode }
+                                                : item,
+                                          ),
+                                      },
+                                    })
+                                  }
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
                             <label className={styles.trainingSidebar__field}>
                               Ilość serii
                               <NumericStepperControl
@@ -921,35 +1113,280 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                                 className={styles.trainingSidebar__controlGroup}
                               />
                             </label>
-                            <label className={styles.trainingSidebar__field}>
-                              RPM
-                              <Select
-                                value={protocolSet.usesRpm}
-                                onChange={(event) =>
-                                  onTrainingDraftChange({
-                                    ...trainingDraft,
-                                    protocol: {
-                                      ...trainingDraft.protocol,
-                                      hangboard:
-                                        trainingDraft.protocol.hangboard.map(
-                                          (item, itemIndex) =>
-                                            itemIndex === index
-                                              ? {
-                                                  ...item,
-                                                  usesRpm: event.target
-                                                    .value as "tak" | "nie",
-                                                }
-                                              : item,
-                                        ),
-                                    },
-                                  })
-                                }
-                                className={styles.trainingSidebar__input}
-                              >
-                                <option value="nie">Nie</option>
-                                <option value="tak">Tak</option>
-                              </Select>
-                            </label>
+                            {protocolSet.mode === "hangs" && (
+                              <label className={styles.trainingSidebar__field}>
+                                Maks. 1 powtórzenie
+                                <Select
+                                  value={protocolSet.usesRpm}
+                                  onChange={(event) =>
+                                    onTrainingDraftChange({
+                                      ...trainingDraft,
+                                      protocol: {
+                                        ...trainingDraft.protocol,
+                                        hangboard:
+                                          trainingDraft.protocol.hangboard.map(
+                                            (item, itemIndex) =>
+                                              itemIndex === index
+                                                ? {
+                                                    ...item,
+                                                    usesRpm: event.target
+                                                      .value as "tak" | "nie",
+                                                  }
+                                                : item,
+                                          ),
+                                      },
+                                    })
+                                  }
+                                  className={styles.trainingSidebar__input}
+                                >
+                                  <option value="nie">Nie</option>
+                                  <option value="tak">Tak</option>
+                                </Select>
+                              </label>
+                            )}
+                            {protocolSet.mode === "intervals" && (
+                              <>
+                                <label
+                                  className={`${styles.trainingSidebar__field} ${styles.trainingSidebar__intervalHangTime}`}
+                                >
+                                  Czas zwisu (s)
+                                  <NumericStepperControl
+                                    value={protocolSet.hangSeconds}
+                                    onChange={(event) =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      hangSeconds:
+                                                        event.target.value,
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    onDecrement={() =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      hangSeconds:
+                                                        adjustSeriesValue(
+                                                          item.hangSeconds,
+                                                          -1,
+                                                        ),
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    onIncrement={() =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      hangSeconds:
+                                                        adjustSeriesValue(
+                                                          item.hangSeconds,
+                                                          1,
+                                                        ),
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    decrementAriaLabel={`Odejmij sekundę zwisu w serii ${String.fromCharCode(65 + index)}`}
+                                    incrementAriaLabel={`Dodaj sekundę zwisu w serii ${String.fromCharCode(65 + index)}`}
+                                    inputProps={{
+                                      type: "number",
+                                      min: "1",
+                                      step: "1",
+                                    }}
+                                    inputSuffix="s"
+                                    className={styles.trainingSidebar__input}
+                                  />
+                                </label>
+                                <label
+                                  className={`${styles.trainingSidebar__field} ${styles.trainingSidebar__intervalRestTime}`}
+                                >
+                                  Czas odpoczynku (s)
+                                  <NumericStepperControl
+                                    value={protocolSet.restSeconds}
+                                    onChange={(event) =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      restSeconds:
+                                                        event.target.value,
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    onDecrement={() =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      restSeconds:
+                                                        adjustCaloriesValue(
+                                                          item.restSeconds,
+                                                          -1,
+                                                        ),
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    onIncrement={() =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      restSeconds:
+                                                        adjustCaloriesValue(
+                                                          item.restSeconds,
+                                                          1,
+                                                        ),
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    decrementAriaLabel={`Odejmij sekundę odpoczynku w serii ${String.fromCharCode(65 + index)}`}
+                                    incrementAriaLabel={`Dodaj sekundę odpoczynku w serii ${String.fromCharCode(65 + index)}`}
+                                    inputProps={{
+                                      type: "number",
+                                      min: "0",
+                                      step: "1",
+                                    }}
+                                    inputSuffix="s"
+                                    className={styles.trainingSidebar__input}
+                                  />
+                                </label>
+                                <label
+                                  className={styles.trainingSidebar__field}
+                                >
+                                  Powtórzenia w serii
+                                  <NumericStepperControl
+                                    value={protocolSet.repetitions}
+                                    onChange={(event) =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      repetitions:
+                                                        event.target.value,
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    onDecrement={() =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      repetitions:
+                                                        adjustSeriesValue(
+                                                          item.repetitions,
+                                                          -1,
+                                                        ),
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    onIncrement={() =>
+                                      onTrainingDraftChange({
+                                        ...trainingDraft,
+                                        protocol: {
+                                          ...trainingDraft.protocol,
+                                          hangboard:
+                                            trainingDraft.protocol.hangboard.map(
+                                              (item, itemIndex) =>
+                                                itemIndex === index
+                                                  ? {
+                                                      ...item,
+                                                      repetitions:
+                                                        adjustSeriesValue(
+                                                          item.repetitions,
+                                                          1,
+                                                        ),
+                                                    }
+                                                  : item,
+                                            ),
+                                        },
+                                      })
+                                    }
+                                    decrementAriaLabel={`Odejmij powtórzenie w serii ${String.fromCharCode(65 + index)} chwytotablicy`}
+                                    incrementAriaLabel={`Dodaj powtórzenie w serii ${String.fromCharCode(65 + index)} chwytotablicy`}
+                                    inputProps={{
+                                      type: "number",
+                                      min: "1",
+                                      step: "1",
+                                    }}
+                                    className={styles.trainingSidebar__input}
+                                  />
+                                </label>
+                              </>
+                            )}
                             <label className={styles.trainingSidebar__field}>
                               Load / deload (kg)
                               <NumericStepperControl
@@ -1147,7 +1584,11 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                                 ...trainingDraft.protocol.hangboard,
                                 {
                                   sets: "1",
+                                  mode: "hangs",
                                   usesRpm: "nie",
+                                  hangSeconds: "7",
+                                  restSeconds: "3",
+                                  repetitions: "6",
                                   loadDeloadKg: "0",
                                   edgeDepthMm: "20",
                                 },
@@ -1159,6 +1600,71 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                       >
                         + Seria
                       </button>
+                    </div>
+                  )}
+                  {trainingDraft.surfaces.includes("spraywall") && (
+                    <div className={styles.trainingSidebar__protocolStack}>
+                      <span className={protocolHeadingClassName}>
+                        Protokół - Spraywall
+                      </span>
+                      <div
+                        className={styles.trainingSidebar__spraywallOptions}
+                        role="radiogroup"
+                        aria-label="Intensywność Spraywall"
+                      >
+                        {[
+                          {
+                            value: "soft" as const,
+                            name: "Soft",
+                            grades: "V1-V3",
+                            description: "Regeneracja i spokojna technika.",
+                          },
+                          {
+                            value: "medium" as const,
+                            name: "Medium",
+                            grades: "V3-V6",
+                            description: "Wytrzymałość i ciągła praca.",
+                          },
+                          {
+                            value: "hard" as const,
+                            name: "Hard",
+                            grades: "V4-V7",
+                            description: "Siła i wymagające ruchy.",
+                          },
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={
+                              trainingDraft.protocol.spraywallIntensity ===
+                              option.value
+                            }
+                            className={`${styles.trainingSidebar__spraywallOption} ${
+                              trainingDraft.protocol.spraywallIntensity ===
+                              option.value
+                                ? styles[
+                                    "trainingSidebar__spraywallOption--active"
+                                  ]
+                                : ""
+                            }`}
+                            onClick={() =>
+                              onTrainingDraftChange({
+                                ...trainingDraft,
+                                protocol: {
+                                  ...trainingDraft.protocol,
+                                  spraywallIntensity: option.value,
+                                },
+                              })
+                            }
+                          >
+                            <span>
+                              {option.name} · {option.grades}
+                            </span>
+                            <small>{option.description}</small>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1319,7 +1825,9 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               </div>
 
               <label className={styles.trainingSidebar__field}>
-                Samopoczucie i notatki
+                <strong className={styles.trainingSidebar__protocolHeading}>
+                  Samopoczucie i notatki
+                </strong>
                 <TextArea
                   value={combinedNotes}
                   onChange={(event) =>
@@ -1375,7 +1883,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               {visibleRangeTrainings.map((training) => (
                 <article
                   key={`${training.id ?? training.createdAt}-${training.time}`}
-                  className={styles.trainingSidebar__visibleItem}
+                  className={styles.trainingSidebar__trainingCard}
                 >
                   <div className={styles.trainingSidebar__trainingButtonHeader}>
                     <strong>{summarizeTrainingType(training)}</strong>
@@ -1397,10 +1905,11 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     difficultyBySurface={training.difficultyBySurface}
                     surfaces={training.surfaces}
                   />
-                  <div className={styles.trainingSidebar__details}>
-                    <span>Wyceny: {training.difficultyNotes || "Brak"}</span>
-                    <span>Rodzaj: {formatSurfaces(training) || "Brak"}</span>
-                  </div>
+                  {training.difficultyNotes?.trim() ? (
+                    <div className={styles.trainingSidebar__details}>
+                      <span>Wyceny: {training.difficultyNotes}</span>
+                    </div>
+                  ) : null}
                   <div className={styles.trainingSidebar__cardActions}>
                     <button
                       type="button"
@@ -1427,7 +1936,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
         <div
           className={styles.trainingSidebar__drawerOverlay}
           role="presentation"
-          onMouseDown={() => setPreviewedTraining(null)}
+          onMouseDown={closePreview}
         >
           <section
             className={styles.trainingSidebar__drawer}
@@ -1457,7 +1966,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setPreviewedTraining(null)}
+                  onClick={closePreview}
                   className={styles.trainingSidebar__ghostButton}
                 >
                   Zamknij
@@ -1565,7 +2074,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                   type="button"
                   onClick={() => {
                     onEditTraining(previewedTraining);
-                    setPreviewedTraining(null);
+                    closePreview();
                     setSelectedDayTab("form");
                   }}
                   className={styles.trainingSidebar__submitButton}
@@ -1576,7 +2085,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                   type="button"
                   onClick={() => {
                     onDeleteTraining(previewedTraining);
-                    setPreviewedTraining(null);
+                    closePreview();
                   }}
                   className={styles.trainingSidebar__deleteButton}
                 >
@@ -1629,7 +2138,7 @@ function formatPullUpProtocol(training: TrainingRecord) {
   return (training.protocol?.pullUp ?? [])
     .map(
       (set, index) =>
-        `Seria ${index + 1}: ${set.sets} powt., ${set.loadDeloadKg} kg`,
+        `Seria ${index + 1}: ${set.sets} takich serii × ${set.repetitions ?? 1} powt., ${set.isOneRepMax ? "1RM, " : ""}${set.loadDeloadKg} kg`,
     )
     .join(" · ");
 }
@@ -1638,7 +2147,7 @@ function formatHangboardProtocol(training: TrainingRecord) {
   return (training.protocol?.hangboard ?? [])
     .map(
       (set, index) =>
-        `Seria ${index + 1}: ${set.sets} powt., ${set.usesRpm ? "RPM" : "bez RPM"}, ${set.loadDeloadKg} kg, ${set.edgeDepthMm} mm`,
+        `Seria ${index + 1}: ${set.sets} powt., ${set.usesRpm ? "maks. 1 powt." : "bez maksa"}, ${set.loadDeloadKg} kg, ${set.edgeDepthMm} mm`,
     )
     .join(" · ");
 }
