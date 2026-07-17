@@ -10,6 +10,7 @@ import {
 } from "@/components/climberbook/common/FormControls";
 import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
+import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts";
 import { type TrainingRecord, type TrainingSurface } from "@/lib/climbs-db";
 import {
   formatDateLabel,
@@ -35,7 +36,32 @@ const ropeGradeModifiers = ["a", "a+", "b", "b+", "c", "c+"];
 const boulderGymGrades = Array.from({ length: 9 }, (_value, index) =>
   String(index + 1),
 );
-const boardGrades = Array.from({ length: 18 }, (_value, index) => `V${index}`);
+const boardGrades = Array.from(
+  { length: 10 },
+  (_value, index) => `V${index + 1}`,
+);
+const primarySurfaceOrder: TrainingSurface[] = [
+  "lina",
+  "baldy",
+  "moon",
+  "kilter",
+  "spraywall",
+];
+const secondarySurfaceOrder: TrainingSurface[] = [
+  "chwytotablica",
+  "campus",
+  "drazek",
+];
+
+function getSurfaceOptionsInOrder(
+  surfaceOptions: Array<{ value: TrainingSurface; label: string }>,
+  surfaceOrder: TrainingSurface[],
+) {
+  return surfaceOrder.flatMap((surface) => {
+    const option = surfaceOptions.find((item) => item.value === surface);
+    return option ? [option] : [];
+  });
+}
 
 function normalizeDecimalInput(value: string) {
   return value.replaceAll(",", ".");
@@ -208,15 +234,50 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     "form",
   );
   const [isCustomSessionExpanded, setIsCustomSessionExpanded] = useState(false);
+  const [previewedTraining, setPreviewedTraining] =
+    useState<TrainingRecord | null>(null);
   useEffect(() => {
     setSelectedDayTab("form");
   }, [selectedDate]);
+  useEffect(() => {
+    if (!previewedTraining) {
+      return;
+    }
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [previewedTraining]);
   const gradeSurfaces = trainingDraft.surfaces.filter(
     (surface) => gradeSurfaceLabels[surface],
+  );
+  const primarySurfaceOptions = getSurfaceOptionsInOrder(
+    surfaceOptions,
+    primarySurfaceOrder,
+  );
+  const secondarySurfaceOptions = getSurfaceOptionsInOrder(
+    surfaceOptions,
+    secondarySurfaceOrder,
+  );
+  const orderedSurfaceValues = new Set([
+    ...primarySurfaceOrder,
+    ...secondarySurfaceOrder,
+  ]);
+  const remainingSurfaceOptions = surfaceOptions.filter(
+    (option) => !orderedSurfaceValues.has(option.value),
   );
   const combinedNotes = [trainingDraft.wellbeing, trainingDraft.notes]
     .filter(Boolean)
     .join("\n\n");
+  const previewCalories = previewedTraining
+    ? Math.min(Math.max(previewedTraining.caloriesBurned, 0), 1000)
+    : 0;
 
   function formatSurfaces(training: TrainingRecord) {
     return [
@@ -229,6 +290,32 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
     ]
       .filter(Boolean)
       .join(", ");
+  }
+
+  function renderSurfaceOptions(
+    options: Array<{ value: TrainingSurface; label: string }>,
+  ) {
+    return options.map((option) => {
+      const active = trainingDraft.surfaces.includes(option.value);
+      const chipClassName = [
+        styles.trainingSidebar__chip,
+        styles.trainingSidebar__sessionChip,
+        active ? styles["trainingSidebar__chip--active"] : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      return (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onToggleSurface(option.value)}
+          className={chipClassName}
+        >
+          {option.label}
+        </button>
+      );
+    });
   }
 
   return (
@@ -317,6 +404,8 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                       time={training.time}
                       durationMinutes={training.durationMinutes}
                       difficultyNotes={training.difficultyNotes}
+                      difficultyBySurface={training.difficultyBySurface}
+                      surfaces={training.surfaces}
                     />
                     <div className={styles.trainingSidebar__metaLine}>
                       <span>
@@ -341,10 +430,10 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => onDeleteTraining(training)}
-                        className={styles.trainingSidebar__deleteButton}
+                        onClick={() => setPreviewedTraining(training)}
+                        className={styles.trainingSidebar__linkButton}
                       >
-                        Usuń
+                        Podgląd
                       </button>
                     </div>
                   </article>
@@ -368,54 +457,13 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 <div className={styles.trainingSidebar__stack}>
                   <strong>Rodzaj sesji</strong>
                   <div className={styles.trainingSidebar__chipGrid}>
-                    {surfaceOptions.slice(0, 8).map((option) => {
-                      const active = trainingDraft.surfaces.includes(
-                        option.value,
-                      );
-                      const chipClassName = [
-                        styles.trainingSidebar__chip,
-                        styles.trainingSidebar__sessionChip,
-                        active ? styles["trainingSidebar__chip--active"] : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ");
-
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => onToggleSurface(option.value)}
-                          className={chipClassName}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
+                    {renderSurfaceOptions(primarySurfaceOptions)}
                   </div>
                   <div className={styles.trainingSidebar__chipGrid}>
-                    {surfaceOptions.slice(8).map((option) => {
-                      const active = trainingDraft.surfaces.includes(
-                        option.value,
-                      );
-                      const chipClassName = [
-                        styles.trainingSidebar__chip,
-                        styles.trainingSidebar__sessionChip,
-                        active ? styles["trainingSidebar__chip--active"] : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ");
-
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => onToggleSurface(option.value)}
-                          className={chipClassName}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
+                    {renderSurfaceOptions(secondarySurfaceOptions)}
+                  </div>
+                  <div className={styles.trainingSidebar__chipGrid}>
+                    {renderSurfaceOptions(remainingSurfaceOptions)}
                     <button
                       type="button"
                       aria-expanded={
@@ -1144,7 +1192,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                               ? "Kliknij, aby wybrać wyceny"
                               : surface === "baldy"
                                 ? "Skala boulderowni 1-9"
-                                : "Skala V0-V17"
+                                : "Skala V1-V10"
                           }
                           onClick={() => {
                             setSelectedRopeGradeBase(null);
@@ -1308,9 +1356,6 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </h1>
               </div>
               <div className={styles.trainingSidebar__headerActions}>
-                <span className={styles.trainingSidebar__pill}>
-                  {visibleRangeTrainings.length} wpisów
-                </span>
                 <button
                   type="button"
                   onClick={() => onSelectDate(today)}
@@ -1349,6 +1394,8 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     time={training.time}
                     durationMinutes={training.durationMinutes}
                     difficultyNotes={training.difficultyNotes}
+                    difficultyBySurface={training.difficultyBySurface}
+                    surfaces={training.surfaces}
                   />
                   <div className={styles.trainingSidebar__details}>
                     <span>Wyceny: {training.difficultyNotes || "Brak"}</span>
@@ -1364,10 +1411,10 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => onDeleteTraining(training)}
-                      className={styles.trainingSidebar__deleteButton}
+                      onClick={() => setPreviewedTraining(training)}
+                      className={styles.trainingSidebar__linkButton}
                     >
-                      Usuń
+                      Podgląd
                     </button>
                   </div>
                 </article>
@@ -1376,6 +1423,222 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
           </section>
         )}
       </ScrollPane>
+      {previewedTraining && (
+        <div
+          className={styles.trainingSidebar__drawerOverlay}
+          role="presentation"
+          onMouseDown={() => setPreviewedTraining(null)}
+        >
+          <section
+            className={styles.trainingSidebar__drawer}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="training-preview-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <ScrollPane
+              className={styles.trainingSidebar__drawerScroll}
+              viewportClassName={styles.trainingSidebar__drawerViewport}
+              contentClassName={styles.trainingSidebar__drawerContent}
+              thumbColor="rgba(13, 107, 124, 0.3)"
+              thumbHoverColor="rgba(13, 107, 124, 0.68)"
+            >
+              <div className={styles.trainingSidebar__drawerHeader}>
+                <div>
+                  <p className={styles.trainingSidebar__eyebrow}>
+                    Podgląd treningu
+                  </p>
+                  <h2
+                    id="training-preview-title"
+                    className={styles.trainingSidebar__drawerTitle}
+                  >
+                    {summarizeTrainingType(previewedTraining)}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewedTraining(null)}
+                  className={styles.trainingSidebar__ghostButton}
+                >
+                  Zamknij
+                </button>
+              </div>
+              <dl className={styles.trainingSidebar__previewDetails}>
+                <div>
+                  <dt>Data</dt>
+                  <dd>{formatDateLabel(previewedTraining.date)}</dd>
+                </div>
+                <div>
+                  <dt>Godzina</dt>
+                  <dd>{previewedTraining.time}</dd>
+                </div>
+                <div>
+                  <dt>Czas</dt>
+                  <dd>{previewedTraining.durationMinutes} min</dd>
+                </div>
+                <div className={styles.trainingSidebar__previewDetailsFull}>
+                  <dt>Kalorie</dt>
+                  <dd className={styles.trainingSidebar__caloriesValue}>
+                    {previewCalories} / 1000 kcal
+                  </dd>
+                  <div
+                    className={styles.trainingSidebar__caloriesProgress}
+                    role="progressbar"
+                    aria-label="Kalorie względem normy"
+                    aria-valuemin={0}
+                    aria-valuemax={1000}
+                    aria-valuenow={previewCalories}
+                  >
+                    <div
+                      className={styles.trainingSidebar__caloriesProgressFill}
+                      style={{ width: `${(previewCalories / 1000) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <dt>Masa ciała</dt>
+                  <dd>{previewedTraining.bodyWeightKg} kg</dd>
+                </div>
+                <div>
+                  <dt>Wiek</dt>
+                  <dd>{previewedTraining.ageYears} lat</dd>
+                </div>
+                <div>
+                  <dt>Wstawki</dt>
+                  <dd>{formatReportedAttempts(previewedTraining)}</dd>
+                </div>
+                <div>
+                  <dt>Rodzaj</dt>
+                  <dd>{formatSurfaces(previewedTraining) || "Brak"}</dd>
+                </div>
+                <div className={styles.trainingSidebar__previewDetailsFull}>
+                  <dt>Wyceny</dt>
+                  <dd>{getTrainingGradesDescription(previewedTraining)}</dd>
+                </div>
+                {previewedTraining.protocol?.pullUp?.length ? (
+                  <div className={styles.trainingSidebar__previewDetailsFull}>
+                    <dt>Drążek</dt>
+                    <dd>{formatPullUpProtocol(previewedTraining)}</dd>
+                  </div>
+                ) : null}
+                {previewedTraining.protocol?.hangboard?.length ? (
+                  <div className={styles.trainingSidebar__previewDetailsFull}>
+                    <dt>Chwytotablica</dt>
+                    <dd>{formatHangboardProtocol(previewedTraining)}</dd>
+                  </div>
+                ) : null}
+                {previewedTraining.wellbeing ? (
+                  <div className={styles.trainingSidebar__previewDetailsFull}>
+                    <dt>Samopoczucie</dt>
+                    <dd>{previewedTraining.wellbeing}</dd>
+                  </div>
+                ) : null}
+                {previewedTraining.notes ? (
+                  <div className={styles.trainingSidebar__previewDetailsFull}>
+                    <dt>Notatki</dt>
+                    <dd>{previewedTraining.notes}</dd>
+                  </div>
+                ) : null}
+              </dl>
+              <section className={styles.trainingSidebar__previewCharts}>
+                <div>
+                  <p className={styles.trainingSidebar__eyebrow}>
+                    Wykres sesji
+                  </p>
+                  <h3 className={styles.trainingSidebar__previewChartsTitle}>
+                    Wyceny na sesję
+                  </h3>
+                </div>
+                <div className={styles.trainingSidebar__previewChart}>
+                  <h4>Wyceny na sesję</h4>
+                  <RopeTrainingGradesChart
+                    trainings={[previewedTraining]}
+                    chartRange={{
+                      start: previewedTraining.date,
+                      end: previewedTraining.date,
+                    }}
+                  />
+                </div>
+              </section>
+              <div className={styles.trainingSidebar__drawerActions}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onEditTraining(previewedTraining);
+                    setPreviewedTraining(null);
+                    setSelectedDayTab("form");
+                  }}
+                  className={styles.trainingSidebar__submitButton}
+                >
+                  Edytuj
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDeleteTraining(previewedTraining);
+                    setPreviewedTraining(null);
+                  }}
+                  className={styles.trainingSidebar__deleteButton}
+                >
+                  Usuń
+                </button>
+              </div>
+            </ScrollPane>
+          </section>
+        </div>
+      )}
     </aside>
   );
+}
+
+function getTrainingGradesDescription(training: TrainingRecord) {
+  const surfaceGrades = Object.entries(training.difficultyBySurface ?? {})
+    .filter(([, grade]) => Boolean(grade))
+    .map(
+      ([surface, grade]) =>
+        `${gradeSurfaceLabels[surface as TrainingSurface] ?? surface}: ${grade}`,
+    );
+
+  return surfaceGrades.join(" · ") || training.difficultyNotes || "Brak";
+}
+
+function formatReportedAttempts(training: TrainingRecord) {
+  const attemptsBySurface = Object.entries(training.difficultyBySurface ?? {})
+    .map(([surface, grades]) => ({
+      surface: surface as TrainingSurface,
+      count: splitDifficultyGrades(grades).length,
+    }))
+    .filter((entry) => entry.count > 0);
+
+  if (attemptsBySurface.length === 0) {
+    return String(splitDifficultyGrades(training.difficultyNotes).length);
+  }
+
+  const total = attemptsBySurface.reduce((sum, entry) => sum + entry.count, 0);
+  const breakdown = attemptsBySurface
+    .map(
+      (entry) =>
+        `${gradeSurfaceLabels[entry.surface] ?? entry.surface}: ${entry.count}`,
+    )
+    .join(", ");
+
+  return `${total} (${breakdown})`;
+}
+
+function formatPullUpProtocol(training: TrainingRecord) {
+  return (training.protocol?.pullUp ?? [])
+    .map(
+      (set, index) =>
+        `Seria ${index + 1}: ${set.sets} powt., ${set.loadDeloadKg} kg`,
+    )
+    .join(" · ");
+}
+
+function formatHangboardProtocol(training: TrainingRecord) {
+  return (training.protocol?.hangboard ?? [])
+    .map(
+      (set, index) =>
+        `Seria ${index + 1}: ${set.sets} powt., ${set.usesRpm ? "RPM" : "bez RPM"}, ${set.loadDeloadKg} kg, ${set.edgeDepthMm} mm`,
+    )
+    .join(" · ");
 }

@@ -1,46 +1,109 @@
 import { CSSProperties } from "react";
+import type { TrainingSurface } from "@/lib/climbs-db";
 import { getTimelinePlacement } from "./training-calendar.helpers";
 
 type TrainingTimelineBarProps = {
   time: string;
   durationMinutes: number;
   difficultyNotes: string;
+  difficultyBySurface?: Partial<Record<TrainingSurface, string>>;
+  surfaces?: TrainingSurface[];
 };
 
 export function TrainingTimelineBar(props: TrainingTimelineBarProps) {
-  const { time, durationMinutes, difficultyNotes } = props;
+  const {
+    time,
+    durationMinutes,
+    difficultyNotes,
+    difficultyBySurface,
+    surfaces,
+  } = props;
   const placement = getTimelinePlacement(time, durationMinutes);
-  const fillStyle = {
-    ...timelineFillStyle,
-    ...placement,
-    background: getTimelineFillBackground(difficultyNotes),
-  };
+  const gradeRows = getTimelineGradeRows(
+    difficultyNotes,
+    difficultyBySurface,
+    surfaces,
+  );
 
   return (
-    <div style={timelineTrackStyle}>
-      <div style={fillStyle} />
+    <div style={timelineRowsStyle}>
+      {gradeRows.map((row) => (
+        <div key={row.surface ?? "session"} style={timelineRowStyle}>
+          <span style={timelineLabelStyle}>
+            {row.surface ? timelineSurfaceLabels[row.surface] : "Czas"}
+          </span>
+          <div style={timelineTrackStyle}>
+            <div
+              style={{
+                ...timelineFillStyle,
+                ...placement,
+                background: getTimelineFillBackground(row.colors),
+              }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function getTimelineFillBackground(difficultyNotes: string) {
-  const gradeColors = difficultyNotes
-    .split(",")
-    .map((grade) => gradeColorByGrade[grade.trim()])
-    .filter((color): color is string => Boolean(color));
+function getTimelineGradeRows(
+  difficultyNotes: string,
+  difficultyBySurface?: Partial<Record<TrainingSurface, string>>,
+  surfaces: TrainingSurface[] = [],
+) {
+  const gradingSurfaces = ["moon", "lina", "kilter", "baldy"] as const;
+  const rows = gradingSurfaces.flatMap((surface) => {
+    const gradeValue =
+      surface === "lina"
+        ? (difficultyBySurface?.lina ?? difficultyNotes)
+        : (difficultyBySurface?.[surface] ?? "");
+    const colors = getGradeColors(surface, gradeValue);
 
-  if (gradeColors.length === 0) {
+    return colors.length > 0 || surfaces.includes(surface)
+      ? [{ surface, colors }]
+      : [];
+  });
+
+  return rows.length > 0 ? rows : [{ surface: null, colors: [] }];
+}
+
+function getTimelineFillBackground(colors: string[]) {
+  if (colors.length === 0) {
     return timelineFillStyle.background;
   }
 
-  const segmentSize = 100 / gradeColors.length;
-  const colorStops = gradeColors.flatMap((color, index) => {
+  const segmentSize = 100 / colors.length;
+  const colorStops = colors.flatMap((color, index) => {
     const start = index * segmentSize;
     const end = start + segmentSize;
     return [`${color} ${start}%`, `${color} ${end}%`];
   });
 
   return `linear-gradient(90deg, ${colorStops.join(", ")})`;
+}
+
+function getGradeColors(
+  surface: "moon" | "lina" | "kilter" | "baldy",
+  gradeValue: string,
+) {
+  return gradeValue
+    .split(",")
+    .map((grade) => grade.trim())
+    .map((grade) => {
+      if (surface === "lina") {
+        return gradeColorByGrade[grade] ?? null;
+      }
+
+      if (surface === "baldy") {
+        return boulderGradeColors[Number(grade) - 1] ?? null;
+      }
+
+      const gradeIndex = Number(/^V(\d+)$/.exec(grade)?.[1]);
+      const colors = surface === "moon" ? moonGradeColors : kilterGradeColors;
+      return colors[gradeIndex] ?? null;
+    })
+    .filter((color): color is string => Boolean(color));
 }
 
 const gradeColorByGrade: Record<string, string> = {
@@ -79,6 +142,25 @@ const timelineTrackStyle: CSSProperties = {
   overflow: "hidden",
 };
 
+const timelineRowsStyle: CSSProperties = {
+  display: "grid",
+  gap: 3,
+};
+
+const timelineRowStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
+  gap: 6,
+  alignItems: "center",
+};
+
+const timelineLabelStyle: CSSProperties = {
+  minWidth: 34,
+  color: "var(--muted)",
+  fontSize: "0.68rem",
+  lineHeight: 1,
+};
+
 const timelineFillStyle: CSSProperties = {
   position: "absolute",
   top: 0,
@@ -89,3 +171,62 @@ const timelineFillStyle: CSSProperties = {
     "linear-gradient(90deg, rgba(13, 85, 152, 0.95), rgba(21, 155, 151, 0.95))",
   minWidth: 8,
 };
+
+const timelineSurfaceLabels = {
+  lina: "Lina",
+  moon: "Moon",
+  kilter: "Kilter",
+  baldy: "Baldy",
+} as const;
+
+const moonGradeColors = [
+  "#b9c2cc",
+  "#b4b5c5",
+  "#bea3c8",
+  "#c98fca",
+  "#d27bcb",
+  "#d967ca",
+  "#e053c7",
+  "#e63fc3",
+  "#eb2abd",
+  "#ee19b6",
+  "#d75ca2",
+  "#b76589",
+  "#935d76",
+  "#735264",
+  "#5c4757",
+  "#4b404a",
+  "#403b42",
+  "#343a40",
+];
+const kilterGradeColors = [
+  "#b9c2cc",
+  "#c3c8bd",
+  "#ccd0ad",
+  "#d5d89d",
+  "#dde08d",
+  "#e5e77d",
+  "#ebed6d",
+  "#f0ef5d",
+  "#f3ec4f",
+  "#f5e643",
+  "#f6df37",
+  "#f7d72c",
+  "#f8ce22",
+  "#f9c518",
+  "#fac00f",
+  "#fbc00b",
+  "#fbc609",
+  "#fccc08",
+];
+const boulderGradeColors = [
+  "#b9c2cc",
+  "#7ccb9b",
+  "#48b8a0",
+  "#3b9edb",
+  "#f2c14e",
+  "#f39a3d",
+  "#e76f51",
+  "#c54560",
+  "#343a40",
+];

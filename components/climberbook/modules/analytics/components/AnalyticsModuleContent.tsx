@@ -11,6 +11,7 @@ import {
   twoColumnLayoutStyle,
 } from "@/components/climberbook/common/styles";
 import type { TrainingRecord } from "@/lib/climbs-db";
+import type { TrainingSurface } from "@/lib/climbs-db";
 
 type AnalyticsModuleContentProps = {
   moduleMeta: { eyebrow: string; title: string; description: string };
@@ -28,7 +29,11 @@ type AnalyticsModuleContentProps = {
     attempts: number;
   }>;
   highestGrade: string;
-  gradeDistribution: Array<{ grade: string; count: number }>;
+  gradeDistribution: Array<{
+    grade: string;
+    surface: TrainingSurface | "lina";
+    count: number;
+  }>;
 };
 
 export function AnalyticsModuleContent({

@@ -27,6 +27,7 @@ import {
 import type {
   AscentRecord,
   TrainingRecord,
+  TrainingSurface,
   WeightEntryRecord,
 } from "@/lib/climbs-db";
 
@@ -40,6 +41,26 @@ type UseClimberbookStatsOptions = {
   trainings: TrainingRecord[];
   weightEntries: WeightEntryRecord[];
 };
+
+function getTrainingGradeRank(grade: string) {
+  const boardGrade = /^V(\d+)$/.exec(grade);
+
+  return boardGrade ? 1000 + Number(boardGrade[1]) : getGradeRank(grade);
+}
+
+function isGradeCompatibleWithSurface(
+  surface: "moon" | "kilter" | "baldy",
+  grade: string,
+) {
+  if (surface === "baldy") {
+    const boulderGrade = Number(grade);
+    return (
+      Number.isInteger(boulderGrade) && boulderGrade >= 1 && boulderGrade <= 9
+    );
+  }
+
+  return /^V\d+$/.test(grade);
+}
 
 export function useClimberbookStats({
   ascents,
@@ -350,18 +371,67 @@ export function useClimberbookStats({
     }));
   }, [ascents]);
   const gradeDistribution = useMemo(() => {
-    const grades = new Map<string, number>();
+    const grades = new Map<
+      string,
+      { grade: string; surface: TrainingSurface | "lina"; count: number }
+    >();
 
     trainings.forEach((training) => {
-      training.difficultyNotes
+      const gradeEntries: Array<{
+        grade: string;
+        surface: TrainingSurface | "lina";
+      }> = [];
+      const ropeGrades = training.difficultyBySurface
+        ? (training.difficultyBySurface.lina ?? "")
+        : training.difficultyNotes;
+      const legacyBoardSurface =
+        training.difficultyBySurface || training.surfaces.includes("lina")
+          ? null
+          : training.surfaces.find(
+              (surface) =>
+                surface === "moon" ||
+                surface === "kilter" ||
+                surface === "baldy",
+            );
+
+      ropeGrades
         .split(",")
         .map((grade) => grade.trim())
         .filter(Boolean)
-        .forEach((grade) => grades.set(grade, (grades.get(grade) ?? 0) + 1));
+        .forEach((grade) => {
+          if (
+            legacyBoardSurface &&
+            !isGradeCompatibleWithSurface(legacyBoardSurface, grade)
+          ) {
+            return;
+          }
+
+          gradeEntries.push({ grade, surface: legacyBoardSurface ?? "lina" });
+        });
+
+      (["moon", "kilter", "baldy"] as const).forEach((surface) => {
+        (training.difficultyBySurface?.[surface] ?? "")
+          .split(",")
+          .map((grade) => grade.trim())
+          .filter(Boolean)
+          .forEach((grade) => gradeEntries.push({ grade, surface }));
+      });
+
+      gradeEntries.forEach(({ grade, surface }) => {
+        const key = `${surface}:${grade}`;
+        const current = grades.get(key);
+
+        grades.set(key, {
+          grade,
+          surface,
+          count: (current?.count ?? 0) + 1,
+        });
+      });
     });
 
-    return Array.from(grades, ([grade, count]) => ({ grade, count })).sort(
-      (left, right) => getGradeRank(right.grade) - getGradeRank(left.grade),
+    return Array.from(grades.values()).sort(
+      (left, right) =>
+        getTrainingGradeRank(right.grade) - getTrainingGradeRank(left.grade),
     );
   }, [trainings]);
   const highestGrade = gradeDistribution[0]?.grade ?? "-";

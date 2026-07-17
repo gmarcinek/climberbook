@@ -151,6 +151,8 @@ export function TrainingCalendarWidget({
                   time={training.time}
                   durationMinutes={training.durationMinutes}
                   difficultyNotes={training.difficultyNotes}
+                  difficultyBySurface={training.difficultyBySurface}
+                  surfaces={training.surfaces}
                 />
                 {training.difficultyNotes?.trim() && (
                   <div className={sidebarStyles.trainingSidebar__details}>
