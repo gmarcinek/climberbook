@@ -197,6 +197,48 @@ async function ensureTrainingSourceIds(records: TrainingRecord[]) {
   );
 }
 
+function buildTrainingWeightSnapshotKey(input: {
+  athleteId: string;
+  date: string;
+  time?: string;
+  weightKg: number;
+}) {
+  return [
+    input.athleteId,
+    input.date,
+    input.time ?? "09:00",
+    input.weightKg.toFixed(1),
+  ].join("::");
+}
+
+function removeTrainingDerivedWeightEntries(
+  trainings: TrainingRecord[],
+  weightEntries: WeightEntryRecord[],
+) {
+  const trainingWeightKeys = new Set(
+    trainings.map((training) =>
+      buildTrainingWeightSnapshotKey({
+        athleteId: training.athleteId,
+        date: training.date,
+        time: training.time,
+        weightKg: training.bodyWeightKg,
+      }),
+    ),
+  );
+
+  return weightEntries.filter(
+    (entry) =>
+      !trainingWeightKeys.has(
+        buildTrainingWeightSnapshotKey({
+          athleteId: entry.athleteId,
+          date: entry.date,
+          time: entry.time,
+          weightKg: entry.weightKg,
+        }),
+      ),
+  );
+}
+
 export type ClimberbookDatabaseBackup = {
   formatVersion: 2;
   exportedAt: string;
@@ -299,7 +341,7 @@ interface ClimberbookDb extends DBSchema {
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 11;
+const DB_VERSION = 12;
 const DEFAULT_ATHLETE: AthleteRecord = {
   id: "primary",
   name: "Ja",
@@ -574,6 +616,44 @@ function createDatabase() {
             athleteId: "primary",
           });
           await settingsStore.delete("primary");
+        }
+      }
+
+      if (
+        oldVersion < 12 &&
+        database.objectStoreNames.contains("trainings") &&
+        database.objectStoreNames.contains("weightEntries")
+      ) {
+        const trainingStore = transaction.objectStore("trainings");
+        const weightEntryStore = transaction.objectStore("weightEntries");
+        const trainings = await trainingStore.getAll();
+        const trainingWeightKeys = new Set(
+          trainings.map((training) =>
+            buildTrainingWeightSnapshotKey({
+              athleteId: training.athleteId,
+              date: training.date,
+              time: training.time,
+              weightKg: training.bodyWeightKg,
+            }),
+          ),
+        );
+        let cursor = await weightEntryStore.openCursor();
+
+        while (cursor) {
+          if (
+            trainingWeightKeys.has(
+              buildTrainingWeightSnapshotKey({
+                athleteId: cursor.value.athleteId,
+                date: cursor.value.date,
+                time: cursor.value.time,
+                weightKg: cursor.value.weightKg,
+              }),
+            )
+          ) {
+            await cursor.delete();
+          }
+
+          cursor = await cursor.continue();
         }
       }
 
@@ -1054,9 +1134,9 @@ export async function inspectDatabaseBackup(
       backup.profiles,
       "profiles",
     );
-    const weightEntries = asRecordArray<WeightEntryRecord>(
-      backup.weightEntries,
-      "weightEntries",
+    const weightEntries = removeTrainingDerivedWeightEntries(
+      trainings,
+      asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
     );
 
     return {
@@ -1093,9 +1173,9 @@ export async function inspectDatabaseBackup(
     "trainings",
   );
   const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
-  const weightEntries = asRecordArray<WeightEntryRecord>(
-    backup.weightEntries,
-    "weightEntries",
+  const weightEntries = removeTrainingDerivedWeightEntries(
+    trainings,
+    asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
   );
   normalizeImportedProfile(backup.profile);
   const importedAthleteSourceId =
@@ -1174,9 +1254,9 @@ export async function importDatabaseBackup(
       backup.profiles,
       "profiles",
     );
-    const weightEntries = asRecordArray<WeightEntryRecord>(
-      backup.weightEntries,
-      "weightEntries",
+    const weightEntries = removeTrainingDerivedWeightEntries(
+      trainings,
+      asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
     );
     await withDatabaseRetry(async (database) => {
       const transaction = database.transaction(
@@ -1246,9 +1326,9 @@ export async function importDatabaseBackup(
     "trainings",
   );
   const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
-  const weightEntries = asRecordArray<WeightEntryRecord>(
-    backup.weightEntries,
-    "weightEntries",
+  const weightEntries = removeTrainingDerivedWeightEntries(
+    trainings,
+    asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
   );
   const withoutGeneratedId = <T extends { id?: number }>(record: T) => {
     const { id: _id, ...rest } = record;

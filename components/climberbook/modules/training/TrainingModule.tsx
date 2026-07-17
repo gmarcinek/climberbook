@@ -23,6 +23,9 @@ export function TrainingModule() {
   return (
     <TrainingModuleContent
       isMobileTrainingLayout={viewport.isMobileTrainingLayout}
+      isMediumTrainingDrawerLayout={
+        viewport.width >= 931 && viewport.width < 1640
+      }
       showTrainingSidebarColumn={viewport.showTrainingSidebarColumn}
       latestWeightKg={
         stats.latestRecordedWeight?.weightKg ?? stats.defaultTrainingWeightKg

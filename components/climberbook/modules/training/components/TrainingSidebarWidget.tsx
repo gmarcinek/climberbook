@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent, ReactNode } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import {
   mobileDrawerBackdropStyle,
   mobileDrawerOverlayStyle,
@@ -34,6 +34,7 @@ type TrainingSidebarWidgetProps = {
 type TrainingSidebarDrawerProps = {
   children: ReactNode;
   onClose: () => void;
+  sheetStyle?: CSSProperties;
 };
 
 export function TrainingSidebarWidget(props: TrainingSidebarWidgetProps) {
@@ -43,6 +44,7 @@ export function TrainingSidebarWidget(props: TrainingSidebarWidgetProps) {
 export function TrainingSidebarDrawer({
   children,
   onClose,
+  sheetStyle,
 }: TrainingSidebarDrawerProps) {
   return (
     <div style={mobileDrawerOverlayStyle}>
@@ -52,7 +54,7 @@ export function TrainingSidebarDrawer({
         onClick={onClose}
         style={mobileDrawerBackdropStyle}
       />
-      <div style={mobileDrawerSheetStyle}>{children}</div>
+      <div style={{ ...mobileDrawerSheetStyle, ...sheetStyle }}>{children}</div>
     </div>
   );
 }

@@ -367,9 +367,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setWeightEntryDraft(
       createWeightEntryDraft(
         today,
-        getLatestWeightEntry(weightItems)?.weightKg ??
-          getLatestTrainingWeight(trainingItems) ??
-          profileRecord.weightKg,
+        getLatestWeightEntry(weightItems)?.weightKg ?? profileRecord.weightKg,
       ),
     );
     setStatus(trainingItems.length || ascentItems.length ? "" : "");
@@ -389,8 +387,8 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   }, [activeAthleteId]);
   const defaultWeight =
     getLatestWeightEntry(weightEntries)?.weightKg ??
-    getLatestTrainingWeight(trainings) ??
-    parseWeightInput(profileDraft.weightKg);
+    parseWeightInput(profileDraft.weightKg) ??
+    getLatestTrainingWeight(trainings);
   function resetTrainingEditor(date = selectedDate ?? today) {
     setEditingTrainingId(null);
     setTrainingDraftState(
@@ -421,6 +419,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function submitTraining(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const customSessionType = trainingDraft.customSessionType.trim();
+    const bodyWeightKg = parseWeightInput(trainingDraft.bodyWeightKg);
 
     if (
       !activeAthleteId ||
@@ -433,11 +432,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       );
       return;
     }
+    if (bodyWeightKg === null || bodyWeightKg <= 0) {
+      setStatus(
+        "Ustaw aktualną wagę w profilu lub w module wag przed zapisem treningu.",
+      );
+      return;
+    }
     const payload = {
       date: trainingDraft.date,
       time: trainingDraft.time,
       durationMinutes: Number(trainingDraft.durationMinutes),
-      bodyWeightKg: roundToSingleDecimal(Number(trainingDraft.bodyWeightKg)),
+      bodyWeightKg,
       ageYears: Number(trainingDraft.ageYears || 0),
       caloriesBurned:
         trainingDraft.caloriesBurned === ""
@@ -458,21 +463,6 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         throw new Error("Nie znaleziono treningu do edycji.");
       if (current) await updateTraining({ ...current, ...payload });
       else await addTraining({ ...payload, athleteId: activeAthleteId });
-      if (
-        payload.bodyWeightKg > 0 &&
-        !weightEntries.some(
-          (entry) =>
-            entry.date === payload.date &&
-            entry.time === payload.time &&
-            entry.weightKg === payload.bodyWeightKg,
-        )
-      )
-        await addWeightEntry({
-          athleteId: activeAthleteId,
-          date: payload.date,
-          time: payload.time,
-          weightKg: payload.bodyWeightKg,
-        });
       await refreshData();
       resetTrainingSelection();
     } catch (error) {

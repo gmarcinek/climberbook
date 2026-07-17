@@ -196,9 +196,6 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </h1>
               </div>
               <div className={styles.trainingSidebar__headerActions}>
-                <span className={styles.trainingSidebar__pill}>
-                  {selectedDayTrainings.length} treningi
-                </span>
                 <button
                   type="button"
                   onClick={onResetSelection}
@@ -238,7 +235,6 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                   </div>
                   <div className={styles.trainingSidebar__details}>
                     <span>Wyceny: {training.difficultyNotes || "Brak"}</span>
-                    <span>Rodzaj: {formatSurfaces(training) || "Brak"}</span>
                   </div>
                   <div className={styles.trainingSidebar__cardActions}>
                     <button
@@ -406,47 +402,16 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </label>
                 <label className={styles.trainingSidebar__field}>
                   Waga (kg)
-                  <NumericStepperControl
+                  <Input
                     value={trainingDraft.bodyWeightKg}
-                    onChange={(event) =>
-                      onTrainingDraftChange({
-                        ...trainingDraft,
-                        bodyWeightKg: normalizeDecimalInput(event.target.value),
-                      })
-                    }
-                    onDecrement={() =>
-                      onTrainingDraftChange({
-                        ...trainingDraft,
-                        bodyWeightKg: adjustWeightValue(
-                          trainingDraft.bodyWeightKg,
-                          -0.1,
-                        ),
-                      })
-                    }
-                    onIncrement={() =>
-                      onTrainingDraftChange({
-                        ...trainingDraft,
-                        bodyWeightKg: adjustWeightValue(
-                          trainingDraft.bodyWeightKg,
-                          0.1,
-                        ),
-                      })
-                    }
-                    inputProps={{
-                      onBlur: () =>
-                        onTrainingDraftChange({
-                          ...trainingDraft,
-                          bodyWeightKg: formatWeightToSingleDecimal(
-                            trainingDraft.bodyWeightKg,
-                          ),
-                        }),
-                      type: "number",
-                      min: "0",
-                      step: "0.1",
-                      required: true,
-                    }}
-                    className={styles.trainingSidebar__controlGroup}
+                    readOnly
+                    placeholder="Ustaw wagę w profilu lub w module wag"
+                    aria-label="Waga pobrana z profilu lub ostatniego wpisu wagi"
+                    className={styles.trainingSidebar__input}
                   />
+                  <p className={styles.trainingSidebar__helperText}>
+                    Trening zapisuje tylko kopię bieżącej wagi z systemu.
+                  </p>
                 </label>
                 <label className={styles.trainingSidebar__field}>
                   Kalorie
@@ -702,7 +667,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                   onClick={() => onSelectDate(today)}
                   className={styles.trainingSidebar__submitButton}
                 >
-                  + Nowy trening
+                  + Trening
                 </button>
               </div>
             </div>

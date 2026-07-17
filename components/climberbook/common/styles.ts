@@ -96,7 +96,7 @@ export const contentBodyStyle = {
 
 export const trainingModuleStyle = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) minmax(520px, 520px)",
+  gridTemplateColumns: "1fr 1fr",
   gridTemplateRows: "minmax(0, 1fr)",
   gap: 9,
   alignItems: "stretch",

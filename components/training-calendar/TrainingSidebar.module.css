@@ -29,8 +29,7 @@
 .trainingSidebar__panelHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 6px;
+  align-items: baseline;
 }
 
 .trainingSidebar__headerActions {
@@ -252,7 +251,7 @@
   width: min(100%, 160px);
   justify-self: start;
   display: block;
-  margin-top: 1rem;
+  margin-top: 0;
   padding: 7px 9px;
   background: linear-gradient(135deg, #0f6d82, #2595a1);
   color: white;
@@ -274,7 +273,7 @@
 
 .trainingSidebar__visibleItem {
   display: grid;
-  gap: 1rem;
+  gap: 4px;
   padding: 1rem;
   border: 1px solid rgba(28, 61, 89, 0.12);
   background: rgba(255, 255, 255, 0.78);

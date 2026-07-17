@@ -22,7 +22,7 @@ export function useViewport() {
     width,
     isMobileChartLayout: width > 0 && width < 600,
     isMobileHeader: width > 0 && width < 600,
-    isMobileTrainingLayout: width > 0 && width < 1180,
+    isMobileTrainingLayout: width > 0 && width < 931,
     showTrainingSidebarColumn: width >= 1640,
   };
 }

@@ -47,6 +47,8 @@ type TrainingCalendarProps = {
   anchorMonthStart: string;
   monthCount?: number;
   visibleColumns?: number;
+  useScrollPane?: boolean;
+  fillHeight?: boolean;
   trainingsByDate: Map<string, TrainingRecord[]>;
   selectedDate: string | null;
   today: string;
@@ -58,6 +60,8 @@ export function TrainingCalendar(props: TrainingCalendarProps) {
     anchorMonthStart,
     monthCount = 3,
     visibleColumns = monthCount,
+    useScrollPane = true,
+    fillHeight = true,
     trainingsByDate,
     selectedDate,
     today,
@@ -112,27 +116,40 @@ export function TrainingCalendar(props: TrainingCalendarProps) {
     "--calendar-gap": `${metrics.monthGap}px`,
     "--calendar-week-gap": `${metrics.weekGap}px`,
     "--calendar-month-min-width": `${metrics.monthMinWidth}px`,
+    minHeight: fillHeight ? "100%" : "auto",
   } as CSSProperties;
 
+  const calendarGrid = (
+    <div className={styles.calendarGrid} style={calendarStyle}>
+      {months.map((month) => (
+        <TrainingCalendarMonth
+          key={`${month.year}-${month.monthIndex}`}
+          month={month}
+          selectedDate={selectedDate}
+          today={today}
+          trainingMap={trainingsByDate}
+          onSelectDate={onSelectDate}
+        />
+      ))}
+    </div>
+  );
+
   return (
-    <div ref={containerRef} className={styles.calendarRoot}>
-      <ScrollPane
-        style={{ height: "100%", minHeight: 0 }}
-        viewportClassName={styles.calendarViewport}
-      >
-        <div className={styles.calendarGrid} style={calendarStyle}>
-          {months.map((month) => (
-            <TrainingCalendarMonth
-              key={`${month.year}-${month.monthIndex}`}
-              month={month}
-              selectedDate={selectedDate}
-              today={today}
-              trainingMap={trainingsByDate}
-              onSelectDate={onSelectDate}
-            />
-          ))}
-        </div>
-      </ScrollPane>
+    <div
+      ref={containerRef}
+      className={styles.calendarRoot}
+      style={fillHeight ? undefined : { height: "auto" }}
+    >
+      {useScrollPane ? (
+        <ScrollPane
+          style={{ height: "100%", minHeight: 0 }}
+          viewportClassName={styles.calendarViewport}
+        >
+          {calendarGrid}
+        </ScrollPane>
+      ) : (
+        calendarGrid
+      )}
     </div>
   );
 }

@@ -2,7 +2,10 @@
 
 import type { FormEvent } from "react";
 import type { WeightEntryDraft } from "@/components/climberbook/common/training";
-import { trainingModuleStyle } from "@/components/climberbook/common/styles";
+import {
+  mobileDrawerSheetStyle,
+  trainingModuleStyle,
+} from "@/components/climberbook/common/styles";
 import type { TrainingDraftValues } from "@/components/training-calendar/TrainingSidebar";
 import type {
   TrainingRecord,
@@ -18,6 +21,7 @@ import {
 
 type TrainingModuleContentProps = {
   isMobileTrainingLayout: boolean;
+  isMediumTrainingDrawerLayout: boolean;
   showTrainingSidebarColumn: boolean;
   latestWeightKg: number | null | undefined;
   latestWeightDate: string | null;
@@ -58,6 +62,7 @@ type TrainingModuleContentProps = {
 
 export function TrainingModuleContent({
   isMobileTrainingLayout,
+  isMediumTrainingDrawerLayout,
   showTrainingSidebarColumn,
   latestWeightKg,
   latestWeightDate,
@@ -95,6 +100,8 @@ export function TrainingModuleContent({
   onResetSelection,
   onCancelEdit,
 }: TrainingModuleContentProps) {
+  const showMediumInlineDrawer =
+    isMediumTrainingDrawerLayout && selectedDate !== null;
   const sidebar = (
     <TrainingSidebarWidget
       selectedDate={selectedDate}
@@ -115,6 +122,14 @@ export function TrainingModuleContent({
       onCancelEdit={onCancelEdit}
     />
   );
+  const drawerSheetStyle = {
+    justifySelf: "end" as const,
+    width: "min(66.666vw, 980px)",
+    maxWidth: "100%",
+    borderTop: 0,
+    borderLeft: "1px solid var(--border-strong)",
+    boxShadow: "-20px 0 40px rgba(35, 29, 25, 0.16)",
+  };
 
   return (
     <>
@@ -125,40 +140,59 @@ export function TrainingModuleContent({
             ? "minmax(0, 1fr)"
             : showTrainingSidebarColumn
               ? "515px minmax(0, 3fr) minmax(0, 3fr)"
-              : "515px minmax(0, 3fr)",
+              : "2fr 3fr",
           gridTemplateRows: isMobileTrainingLayout ? "none" : "minmax(0, 1fr)",
           height: isMobileTrainingLayout ? "auto" : "100%",
           alignItems: isMobileTrainingLayout ? "start" : "stretch",
         }}
       >
-        <TrainingAnalyticsWidget
-          isMobileLayout={isMobileTrainingLayout}
-          latestWeightKg={latestWeightKg}
-          latestWeightDate={latestWeightDate}
-          latestWeightChange={latestWeightChange}
-          averageWeight={averageWeight}
-          totalTrainingTime={totalTrainingTime}
-          totalCalories={totalCalories}
-          weightChartEntries={weightChartEntries}
-          trainings={trainings}
-          chartRange={chartRange}
-          chartRangeLabel={chartRangeLabel}
-          weightEntryDraft={weightEntryDraft}
-          onWeightEntryDraftChange={onWeightEntryDraftChange}
-          onWeightEntrySubmit={onWeightEntrySubmit}
-          recentWeightEntries={recentWeightEntries}
-        />
+        {showMediumInlineDrawer ? (
+          <div
+            style={{
+              ...mobileDrawerSheetStyle,
+              height: "100%",
+              borderTop: 0,
+              borderLeft: 0,
+              padding: 8,
+              boxShadow: "0 20px 40px rgba(35, 29, 25, 0.12)",
+            }}
+          >
+            {sidebar}
+          </div>
+        ) : (
+          <TrainingAnalyticsWidget
+            isMobileLayout={isMobileTrainingLayout}
+            latestWeightKg={latestWeightKg}
+            latestWeightDate={latestWeightDate}
+            latestWeightChange={latestWeightChange}
+            averageWeight={averageWeight}
+            totalTrainingTime={totalTrainingTime}
+            totalCalories={totalCalories}
+            weightChartEntries={weightChartEntries}
+            trainings={trainings}
+            chartRange={chartRange}
+            chartRangeLabel={chartRangeLabel}
+            weightEntryDraft={weightEntryDraft}
+            onWeightEntryDraftChange={onWeightEntryDraftChange}
+            onWeightEntrySubmit={onWeightEntrySubmit}
+            recentWeightEntries={recentWeightEntries}
+          />
+        )}
 
         <TrainingCalendarWidget
           isMobileLayout={isMobileTrainingLayout}
+          showVisibleTrainingList={!showTrainingSidebarColumn}
           currentCalendarMonthLabel={currentCalendarMonthLabel}
           onPreviousMonth={onPreviousMonth}
           onNextMonth={onNextMonth}
           trainingRangeStart={trainingRangeStart}
           trainingsByDate={trainingsByDate}
+          visibleRangeTrainings={visibleRangeTrainings}
           selectedDate={selectedDate}
           today={today}
           onSelectDate={onSelectDate}
+          onEditTraining={onEditTraining}
+          onDeleteTraining={onDeleteTraining}
         />
 
         {showTrainingSidebarColumn && (
@@ -168,11 +202,18 @@ export function TrainingModuleContent({
         )}
       </div>
 
-      {!showTrainingSidebarColumn && selectedDate && (
-        <TrainingSidebarDrawer onClose={onResetSelection}>
-          {sidebar}
-        </TrainingSidebarDrawer>
-      )}
+      {!showTrainingSidebarColumn &&
+        !showMediumInlineDrawer &&
+        selectedDate && (
+          <TrainingSidebarDrawer
+            onClose={onResetSelection}
+            sheetStyle={
+              isMediumTrainingDrawerLayout ? drawerSheetStyle : undefined
+            }
+          >
+            {sidebar}
+          </TrainingSidebarDrawer>
+        )}
     </>
   );
 }

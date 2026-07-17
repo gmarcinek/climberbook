@@ -60,3 +60,10 @@
     gap: 3px;
   }
 }
+
+@media (min-width: 1024px) and (max-width: 1125px) {
+  .heading,
+  .year {
+    font-size: 0.9rem;
+  }
+}
