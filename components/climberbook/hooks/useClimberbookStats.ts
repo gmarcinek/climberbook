@@ -406,14 +406,6 @@ export function useClimberbookStats({
     const previous = sortedWeightEntries[sortedWeightEntries.length - 2];
     return roundToSingleDecimal(current.weightKg - previous.weightKg);
   }, [sortedWeightEntries]);
-  const currentCalendarMonthLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat("pl-PL", {
-        month: "long",
-        year: "numeric",
-      }).format(toDate(trainingRangeStart)),
-    [trainingRangeStart],
-  );
   const weightChartEntries = useMemo(
     () =>
       sortedWeightEntries.filter(
@@ -431,7 +423,6 @@ export function useClimberbookStats({
     chartRange,
     chartRangeLabel,
     currentAge,
-    currentCalendarMonthLabel,
     defaultTrainingWeightKg,
     gradeDistribution,
     highestGrade,

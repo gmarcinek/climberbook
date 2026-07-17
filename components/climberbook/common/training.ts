@@ -114,6 +114,15 @@ export function estimateTrainingCalories(input: {
   return String(Math.round(estimatedMet * bodyWeightKg * durationHours));
 }
 
+export function getLegacyRopeAttempts(
+  difficultyBySurface: TrainingDraftValues["difficultyBySurface"],
+) {
+  return (difficultyBySurface.lina ?? "")
+    .split(",")
+    .map((grade) => grade.trim())
+    .filter(Boolean).length;
+}
+
 export function roundToSingleDecimal(value: number) {
   return Math.round(value * 10) / 10;
 }
@@ -292,7 +301,11 @@ export function normalizeTrainingDraft(
   birthDate = "",
 ): TrainingDraftValues {
   const ageYears = calculateAgeYears(birthDate, draft.date);
-  const estimatedCalories = estimateTrainingCalories({ ...draft, ageYears });
+  const estimatedCalories = estimateTrainingCalories({
+    ...draft,
+    ageYears,
+    attemptsCount: String(getLegacyRopeAttempts(draft.difficultyBySurface)),
+  });
 
   return {
     ...draft,

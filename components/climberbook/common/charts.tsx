@@ -192,7 +192,7 @@ export function TrainingAnalyticsPanel(props: {
       <section style={chartCardStyle}>
         <div style={panelHeadingStyle}>
           <div>
-            <span style={moduleEyebrowStyle}>Treningi z liną i MoonBoard</span>
+            <span style={moduleEyebrowStyle}>Treningi z liną</span>
             <h3 style={sectionTitleStyle}>Wyceny na sesję</h3>
           </div>
           <span style={softPillStyle}>Zakres +/- 2 stopnie</span>
@@ -370,11 +370,10 @@ export function RopeTrainingGradesChart({
   trainings: TrainingRecord[];
   chartRange: { start: string; end: string };
 }) {
-  const ropeAndMoonTrainings = trainings
+  const ropeTrainingsInRange = trainings
     .filter(
       (training) =>
-        (training.surfaces.includes("lina") ||
-          training.surfaces.includes("moon")) &&
+        training.surfaces.includes("lina") &&
         training.date >= chartRange.start &&
         training.date <= chartRange.end,
     )
@@ -383,7 +382,7 @@ export function RopeTrainingGradesChart({
         `${right.date}-${right.time}-${right.createdAt}`,
       ),
     );
-  const ropeTrainings = ropeAndMoonTrainings
+  const ropeTrainings = ropeTrainingsInRange
     .map((training) => ({
       ...training,
       grades: training.difficultyNotes
@@ -396,7 +395,7 @@ export function RopeTrainingGradesChart({
 
   if (ropeTrainings.length === 0) {
     return (
-      <EmptyState message="Brak treningów z Liną lub MoonBoard i wycen w wybranym okresie." />
+      <EmptyState message="Brak treningów z liną i wycen w wybranym okresie." />
     );
   }
 

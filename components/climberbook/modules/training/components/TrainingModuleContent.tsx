@@ -37,7 +37,6 @@ type TrainingModuleContentProps = {
   onWeightEntryDraftChange: (draft: WeightEntryDraft) => void;
   onWeightEntrySubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   recentWeightEntries: WeightEntryRecord[];
-  currentCalendarMonthLabel: string;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   trainingRangeStart: string;
@@ -78,7 +77,6 @@ export function TrainingModuleContent({
   onWeightEntryDraftChange,
   onWeightEntrySubmit,
   recentWeightEntries,
-  currentCalendarMonthLabel,
   onPreviousMonth,
   onNextMonth,
   trainingRangeStart,
@@ -182,7 +180,6 @@ export function TrainingModuleContent({
         <TrainingCalendarWidget
           isMobileLayout={isMobileTrainingLayout}
           showVisibleTrainingList={!showTrainingSidebarColumn}
-          currentCalendarMonthLabel={currentCalendarMonthLabel}
           onPreviousMonth={onPreviousMonth}
           onNextMonth={onNextMonth}
           trainingRangeStart={trainingRangeStart}

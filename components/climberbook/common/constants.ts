@@ -88,6 +88,7 @@ export const surfaceOptions: Array<{ value: TrainingSurface; label: string }> =
     { value: "lina", label: "Lina" },
     { value: "baldy", label: "Baldy" },
     { value: "moon", label: "Moon" },
+    { value: "drazek", label: "Drążek" },
     { value: "chwytotablica", label: "Chwytotablica" },
     { value: "campus", label: "Campus" },
     { value: "spraywall", label: "Spraywall" },

@@ -99,10 +99,7 @@ export function TrainingHistoryWidget({
                 </span>
               </div>
               <div style={infoGridStyle}>
-                <div>
-                  Wstawki: {training.attemptsCount} · Kalorie:{" "}
-                  {training.caloriesBurned}
-                </div>
+                <div>Kalorie: {training.caloriesBurned}</div>
                 <div>Powierzchnie: {surfaces || "Brak"}</div>
                 {training.customSessionType ? (
                   <div>Typ: {training.customSessionType}</div>

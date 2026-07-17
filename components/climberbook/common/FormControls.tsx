@@ -28,6 +28,7 @@ type NumericStepperControlProps = {
   incrementAriaLabel?: string;
   decrementTitle?: string;
   incrementTitle?: string;
+  inputSuffix?: ReactNode;
   trailingActions?: ReactNode;
   inputProps?: Omit<
     InputHTMLAttributes<HTMLInputElement>,
@@ -122,6 +123,7 @@ export function NumericStepperControl({
   incrementAriaLabel,
   decrementTitle,
   incrementTitle,
+  inputSuffix,
   trailingActions,
   inputProps,
   className,
@@ -137,7 +139,18 @@ export function NumericStepperControl({
       >
         {decrementLabel}
       </button>
-      <Input {...inputProps} value={value} onChange={onChange} grow />
+      <div className={styles.stepInputShell}>
+        <Input
+          {...inputProps}
+          value={value}
+          onChange={onChange}
+          grow
+          className={joinClassNames(inputSuffix && styles.controlWithSuffix)}
+        />
+        {inputSuffix && (
+          <span className={styles.stepInputSuffix}>{inputSuffix}</span>
+        )}
+      </div>
       <button
         type="button"
         aria-label={incrementAriaLabel}

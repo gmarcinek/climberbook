@@ -12,6 +12,7 @@ export type TrainingSurface =
   | "lina"
   | "baldy"
   | "moon"
+  | "drazek"
   | "spraywall"
   | "kilter"
   | "silownia"
@@ -43,6 +44,23 @@ export type WeightEntryRecord = {
   createdAt: string;
 };
 
+export type PullUpProtocolSet = {
+  sets: number;
+  loadDeloadKg: number;
+};
+
+export type HangboardProtocolSet = {
+  sets: number;
+  usesRpm: boolean;
+  loadDeloadKg: number;
+  edgeDepthMm: number;
+};
+
+export type TrainingProtocol = {
+  pullUp?: PullUpProtocolSet[];
+  hangboard?: HangboardProtocolSet[];
+};
+
 export type TrainingRecord = {
   id?: number;
   sourceId?: string;
@@ -55,6 +73,8 @@ export type TrainingRecord = {
   caloriesBurned: number;
   attemptsCount: number;
   difficultyNotes: string;
+  difficultyBySurface?: Partial<Record<TrainingSurface, string>>;
+  protocol?: TrainingProtocol;
   wellbeing: string;
   surfaces: TrainingSurface[];
   customSessionType?: string;

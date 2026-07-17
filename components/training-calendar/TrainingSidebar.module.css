@@ -52,6 +52,36 @@
   margin: 6px 0 0;
 }
 
+.trainingSidebar__dayTabs {
+  display: flex;
+  gap: 18px;
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.trainingSidebar__dayTab {
+  position: relative;
+  border: 0;
+  padding: 8px 0 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.trainingSidebar__dayTab--active {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.trainingSidebar__dayTab--active::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  content: "";
+}
+
 .trainingSidebar__pill {
   padding: 4px 6px;
   border-radius: 999px;
@@ -64,7 +94,11 @@
 
 .trainingSidebar__stack {
   display: grid;
-  gap: 1rem;
+  gap: 4px;
+}
+
+.trainingSidebar__formSectionStack {
+  gap: 16px;
 }
 
 .trainingSidebar__helperText {
@@ -140,15 +174,62 @@
 
 .trainingSidebar__form {
   display: grid;
-  gap: 2rem;
-  margin-top: 12px;
+  gap: 1rem;
+  margin-top: 8px;
 }
 
 .trainingSidebar__formGrid {
   display: grid;
-  gap: 1rem;
+  grid-gap: 1rem;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr);
-  margin-bottom: 1rem;
+  margin-bottom: 0;
+}
+
+.trainingSidebar__protocolStacks {
+  display: grid;
+  gap: 1rem;
+}
+
+.trainingSidebar__protocolStack {
+  display: grid;
+  gap: 8px;
+}
+
+.trainingSidebar__protocolSeries {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(28, 61, 89, 0.12);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.trainingSidebar__protocolAddButton {
+  height: 32px;
+  justify-self: start;
+  display: grid;
+  place-items: center;
+  padding: 0 18px 0 14px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.trainingSidebar__protocolRemoveButton {
+  grid-column: 1 / -1;
+  justify-self: end;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: #9e2e28;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
 }
 
 .trainingSidebar__field {
@@ -191,10 +272,10 @@
 }
 
 .trainingSidebar__gradeChip {
-  min-width: 54px;
-  min-height: 54px;
+  width: 48px;
+  height: 48px;
   border-radius: 4px;
-  padding: 8px 12px;
+  padding: 8px 8px;
   font-size: 1rem;
   font-weight: 700;
   background: var(--grade-color, rgba(255, 255, 255, 0.72));
@@ -202,10 +283,60 @@
   color: var(--grade-text, #172330);
 }
 
+.trainingSidebar__gradeChip--4 { --grade-color: #a9afb7; }
 .trainingSidebar__gradeChip--5 { --grade-color: #a8dd9a; }
 .trainingSidebar__gradeChip--6 { --grade-color: #e8d353; }
 .trainingSidebar__gradeChip--7 { --grade-color: #83cde7; }
 .trainingSidebar__gradeChip--8 { --grade-color: #ec8dc2; }
+.trainingSidebar__gradeChip--9 { --grade-color: #d94b4b; --grade-text: white; }
+
+.trainingSidebar__gradeChip--boulder-1 { --grade-color: #b9c2cc; }
+.trainingSidebar__gradeChip--boulder-2 { --grade-color: #7ccb9b; }
+.trainingSidebar__gradeChip--boulder-3 { --grade-color: #48b8a0; }
+.trainingSidebar__gradeChip--boulder-4 { --grade-color: #3b9edb; }
+.trainingSidebar__gradeChip--boulder-5 { --grade-color: #f2c14e; }
+.trainingSidebar__gradeChip--boulder-6 { --grade-color: #f39a3d; }
+.trainingSidebar__gradeChip--boulder-7 { --grade-color: #e76f51; }
+.trainingSidebar__gradeChip--boulder-8 { --grade-color: #c54560; --grade-text: white; }
+.trainingSidebar__gradeChip--boulder-9 { --grade-color: #343a40; --grade-text: white; }
+
+.trainingSidebar__gradeChip--moon-0 { --grade-color: #b9c2cc; }
+.trainingSidebar__gradeChip--moon-1 { --grade-color: #b4b5c5; }
+.trainingSidebar__gradeChip--moon-2 { --grade-color: #bea3c8; }
+.trainingSidebar__gradeChip--moon-3 { --grade-color: #c98fca; }
+.trainingSidebar__gradeChip--moon-4 { --grade-color: #d27bcb; }
+.trainingSidebar__gradeChip--moon-5 { --grade-color: #d967ca; }
+.trainingSidebar__gradeChip--moon-6 { --grade-color: #e053c7; }
+.trainingSidebar__gradeChip--moon-7 { --grade-color: #e63fc3; }
+.trainingSidebar__gradeChip--moon-8 { --grade-color: #eb2abd; }
+.trainingSidebar__gradeChip--moon-9 { --grade-color: #ee19b6; }
+.trainingSidebar__gradeChip--moon-10 { --grade-color: #d75ca2; }
+.trainingSidebar__gradeChip--moon-11 { --grade-color: #b76589; }
+.trainingSidebar__gradeChip--moon-12 { --grade-color: #935d76; }
+.trainingSidebar__gradeChip--moon-13 { --grade-color: #735264; --grade-text: white; }
+.trainingSidebar__gradeChip--moon-14 { --grade-color: #5c4757; --grade-text: white; }
+.trainingSidebar__gradeChip--moon-15 { --grade-color: #4b404a; --grade-text: white; }
+.trainingSidebar__gradeChip--moon-16 { --grade-color: #403b42; --grade-text: white; }
+.trainingSidebar__gradeChip--moon-17 { --grade-color: #343a40; --grade-text: white; }
+
+.trainingSidebar__gradeChip--kilter-0 { --grade-color: #b9c2cc; }
+.trainingSidebar__gradeChip--kilter-1 { --grade-color: #c3c8bd; }
+.trainingSidebar__gradeChip--kilter-2 { --grade-color: #ccd0ad; }
+.trainingSidebar__gradeChip--kilter-3 { --grade-color: #d5d89d; }
+.trainingSidebar__gradeChip--kilter-4 { --grade-color: #dde08d; }
+.trainingSidebar__gradeChip--kilter-5 { --grade-color: #e5e77d; }
+.trainingSidebar__gradeChip--kilter-6 { --grade-color: #ebed6d; }
+.trainingSidebar__gradeChip--kilter-7 { --grade-color: #f0ef5d; }
+.trainingSidebar__gradeChip--kilter-8 { --grade-color: #f3ec4f; }
+.trainingSidebar__gradeChip--kilter-9 { --grade-color: #f5e643; }
+.trainingSidebar__gradeChip--kilter-10 { --grade-color: #f6df37; }
+.trainingSidebar__gradeChip--kilter-11 { --grade-color: #f7d72c; }
+.trainingSidebar__gradeChip--kilter-12 { --grade-color: #f8ce22; }
+.trainingSidebar__gradeChip--kilter-13 { --grade-color: #f9c518; }
+.trainingSidebar__gradeChip--kilter-14 { --grade-color: #fac00f; }
+.trainingSidebar__gradeChip--kilter-15 { --grade-color: #fbc00b; }
+.trainingSidebar__gradeChip--kilter-16 { --grade-color: #fbc609; }
+.trainingSidebar__gradeChip--kilter-17 { --grade-color: #fccc08; }
 
 .trainingSidebar__gradeChip--a { --grade-color: #a8dd9a; }
 .trainingSidebar__gradeChip--a\+ { --grade-color: #aceb96; }
@@ -213,6 +344,20 @@
 .trainingSidebar__gradeChip--b\+ { --grade-color: #4ab34d; }
 .trainingSidebar__gradeChip--c { --grade-color: #288e38; --grade-text: white; }
 .trainingSidebar__gradeChip--c\+ { --grade-color: #176729; --grade-text: white; }
+
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--a { --grade-color: #d9dde1; }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--a\+ { --grade-color: #c5cbd1; }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--b { --grade-color: #a9afb7; }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--b\+ { --grade-color: #8e969f; }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--c { --grade-color: #707984; --grade-text: white; }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--c\+ { --grade-color: #565e68; --grade-text: white; }
+
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--a { --grade-color: #f49b9b; }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--a\+ { --grade-color: #ee7b7b; }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--b { --grade-color: #e85d5d; }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--b\+ { --grade-color: #d94b4b; --grade-text: white; }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--c { --grade-color: #b83232; --grade-text: white; }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--c\+ { --grade-color: #922525; --grade-text: white; }
 
 .trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a { --grade-color: #e8d353; }
 .trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a\+ { --grade-color: #ffe46f; }

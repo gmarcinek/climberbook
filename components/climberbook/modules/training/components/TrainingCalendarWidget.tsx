@@ -4,7 +4,6 @@ import { Panel } from "@/components/climberbook/common/Panel";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { Stack } from "@/components/climberbook/common/Stack";
 import {
-  calendarNavLabelStyle,
   calendarPanelStyle,
   navButtonStyle,
 } from "@/components/climberbook/common/styles";
@@ -17,7 +16,6 @@ import sidebarStyles from "@/components/training-calendar/TrainingSidebar.module
 type TrainingCalendarWidgetProps = {
   isMobileLayout: boolean;
   showVisibleTrainingList: boolean;
-  currentCalendarMonthLabel: string;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   trainingRangeStart: string;
@@ -33,7 +31,6 @@ type TrainingCalendarWidgetProps = {
 export function TrainingCalendarWidget({
   isMobileLayout,
   showVisibleTrainingList,
-  currentCalendarMonthLabel,
   onPreviousMonth,
   onNextMonth,
   trainingRangeStart,
@@ -86,9 +83,6 @@ export function TrainingCalendarWidget({
           >
             Wstecz
           </button>
-          <strong style={calendarNavLabelStyle}>
-            {currentCalendarMonthLabel}
-          </strong>
           <button type="button" onClick={onNextMonth} style={navButtonStyle}>
             Dalej
           </button>

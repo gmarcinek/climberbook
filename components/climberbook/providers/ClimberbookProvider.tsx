@@ -18,6 +18,7 @@ import {
   createWeightEntryDraft,
   estimateTrainingCalories,
   formatWeightInput,
+  getLegacyRopeAttempts,
   getLatestTrainingWeight,
   getLatestWeightEntry,
   normalizeTrainingDraft,
@@ -114,6 +115,18 @@ const emptyAscentDraft = (): AscentDraft => ({
   subjectiveGrade: "7a",
   notes: "",
 });
+const createPullUpProtocolSet = () => ({ sets: "1", loadDeloadKg: "0" });
+const createHangboardProtocolSet = () => ({
+  sets: "1",
+  usesRpm: "nie" as const,
+  loadDeloadKg: "0",
+  edgeDepthMm: "20",
+});
+function asProtocolSetList<T>(value: T[] | undefined) {
+  if (Array.isArray(value)) return value;
+
+  return value ? [value as unknown as T] : [];
+}
 const createTrainingDraft = (
   date: string,
   options: { birthDate?: string; defaultWeightKg?: number | null } = {},
@@ -127,8 +140,12 @@ const createTrainingDraft = (
       ageYears: "",
       caloriesBurned: "",
       caloriesMode: "auto",
-      attemptsCount: "5",
       difficultyNotes: "",
+      difficultyBySurface: {},
+      protocol: {
+        pullUp: [createPullUpProtocolSet()],
+        hangboard: [createHangboardProtocolSet()],
+      },
       wellbeing: "",
       surfaces: [],
       customSessionType: "",
@@ -149,8 +166,24 @@ const mapTrainingToDraft = (
       ageYears: "",
       caloriesBurned: String(training.caloriesBurned),
       caloriesMode: "manual",
-      attemptsCount: String(training.attemptsCount),
       difficultyNotes: training.difficultyNotes,
+      difficultyBySurface: training.difficultyBySurface ?? {},
+      protocol: {
+        pullUp: asProtocolSetList(training.protocol?.pullUp).map(
+          (protocolSet) => ({
+            sets: String(protocolSet.sets),
+            loadDeloadKg: String(protocolSet.loadDeloadKg),
+          }),
+        ),
+        hangboard: asProtocolSetList(training.protocol?.hangboard).map(
+          (protocolSet) => ({
+            sets: String(protocolSet.sets),
+            usesRpm: protocolSet.usesRpm ? "tak" : "nie",
+            loadDeloadKg: String(protocolSet.loadDeloadKg),
+            edgeDepthMm: String(protocolSet.edgeDepthMm),
+          }),
+        ),
+      },
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
       customSessionType: training.customSessionType ?? "",
@@ -446,10 +479,37 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       ageYears: Number(trainingDraft.ageYears || 0),
       caloriesBurned:
         trainingDraft.caloriesBurned === ""
-          ? Number(estimateTrainingCalories(trainingDraft) || 0)
+          ? Number(
+              estimateTrainingCalories({
+                ...trainingDraft,
+                attemptsCount: String(
+                  getLegacyRopeAttempts(trainingDraft.difficultyBySurface),
+                ),
+              }) || 0,
+            )
           : Number(trainingDraft.caloriesBurned),
-      attemptsCount: Number(trainingDraft.attemptsCount),
-      difficultyNotes: trainingDraft.difficultyNotes,
+      attemptsCount: getLegacyRopeAttempts(trainingDraft.difficultyBySurface),
+      difficultyNotes: Object.values(trainingDraft.difficultyBySurface)
+        .map((grades) => grades?.trim())
+        .filter(Boolean)
+        .join(", "),
+      difficultyBySurface: trainingDraft.difficultyBySurface,
+      protocol: {
+        ...(trainingDraft.surfaces.includes("drazek") && {
+          pullUp: trainingDraft.protocol.pullUp.map((protocolSet) => ({
+            sets: Number(protocolSet.sets || 0),
+            loadDeloadKg: Number(protocolSet.loadDeloadKg),
+          })),
+        }),
+        ...(trainingDraft.surfaces.includes("chwytotablica") && {
+          hangboard: trainingDraft.protocol.hangboard.map((protocolSet) => ({
+            sets: Number(protocolSet.sets || 0),
+            usesRpm: protocolSet.usesRpm === "tak",
+            loadDeloadKg: Number(protocolSet.loadDeloadKg),
+            edgeDepthMm: Number(protocolSet.edgeDepthMm || 0),
+          })),
+        }),
+      },
       wellbeing: trainingDraft.wellbeing,
       surfaces: trainingDraft.surfaces,
       customSessionType,
