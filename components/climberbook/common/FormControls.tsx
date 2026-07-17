@@ -145,7 +145,9 @@ export function NumericStepperControl({
           value={value}
           onChange={onChange}
           grow
-          className={joinClassNames(inputSuffix && styles.controlWithSuffix)}
+          className={joinClassNames(
+            Boolean(inputSuffix) && styles.controlWithSuffix,
+          )}
         />
         {inputSuffix && (
           <span className={styles.stepInputSuffix}>{inputSuffix}</span>
