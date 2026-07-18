@@ -1,6 +1,7 @@
 "use client";
 
 import { Panel } from "@/components/climberbook/common/Panel";
+import { Button } from "@/components/climberbook/common/Button";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { Stack } from "@/components/climberbook/common/Stack";
 import {
@@ -76,16 +77,22 @@ export function TrainingCalendarWidget({
           align="center"
           style={{ padding: "11px 0 0" }}
         >
-          <button
-            type="button"
+          <Button
+            size="small"
+            variant="secondary"
             onClick={onPreviousMonth}
             style={navButtonStyle}
           >
             Wstecz
-          </button>
-          <button type="button" onClick={onNextMonth} style={navButtonStyle}>
+          </Button>
+          <Button
+            size="small"
+            variant="secondary"
+            onClick={onNextMonth}
+            style={navButtonStyle}
+          >
             Dalej
-          </button>
+          </Button>
         </Stack>
 
         <div style={{ minHeight: 0, flex: "none" }}>
@@ -111,13 +118,13 @@ export function TrainingCalendarWidget({
                 </h2>
               </div>
               <div className={sidebarStyles.trainingSidebar__headerActions}>
-                <button
-                  type="button"
+                <Button
                   onClick={() => onSelectDate(today)}
+                  variant="tertiary"
                   className={sidebarStyles.trainingSidebar__submitButton}
                 >
                   + Trening
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -160,20 +167,22 @@ export function TrainingCalendarWidget({
                   </div>
                 )}
                 <div className={sidebarStyles.trainingSidebar__cardActions}>
-                  <button
-                    type="button"
+                  <Button
+                    size="small"
+                    variant="secondary"
                     onClick={() => onEditTraining(training)}
                     className={sidebarStyles.trainingSidebar__linkButton}
                   >
                     Edytuj
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="secondary"
                     onClick={() => onPreviewTraining(training)}
                     className={sidebarStyles.trainingSidebar__linkButton}
                   >
                     Podgląd
-                  </button>
+                  </Button>
                 </div>
               </article>
             ))}

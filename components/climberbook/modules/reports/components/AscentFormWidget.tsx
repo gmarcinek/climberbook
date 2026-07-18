@@ -8,16 +8,15 @@ import {
   formLayoutClassNames,
 } from "@/components/climberbook/common/FormLayout";
 import {
-  buttonStyle,
   fieldStyle,
   inputStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
-  secondaryButtonStyle,
   softTagStyle,
   textAreaStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 
 type AscentDraftValues = {
   date: string;
@@ -200,28 +199,24 @@ export function AscentFormWidget({
             : undefined
         }
       >
-        <button
+        <Button
           type="submit"
-          style={
-            isEditing
-              ? { ...buttonStyle, padding: "7px 1rem", width: "auto" }
-              : buttonStyle
-          }
+          variant="tertiary"
+          style={isEditing ? { padding: "7px 1rem", width: "auto" } : undefined}
         >
           {isEditing ? "Zapisz" : "Dodaj przejście"}
-        </button>
+        </Button>
         {isEditing ? (
-          <button
-            type="button"
+          <Button
+            variant="quadrary"
             style={{
-              ...secondaryButtonStyle,
               padding: "7px 1rem",
               width: "auto",
             }}
             onClick={onCancelEdit}
           >
             Anuluj
-          </button>
+          </Button>
         ) : null}
       </FormActions>
     </Form>

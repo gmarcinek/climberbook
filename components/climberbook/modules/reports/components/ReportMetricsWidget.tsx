@@ -2,17 +2,16 @@
 
 import { useEffect, useState, type ChangeEvent } from "react";
 import { MetricCard } from "@/components/climberbook/common/charts";
+import { Button } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { Stack } from "@/components/climberbook/common/Stack";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import type { AscentCsvImportPreview } from "@/components/climberbook/providers/ClimberbookProvider";
 import {
   deleteButtonStyle,
-  ghostButtonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  secondaryButtonStyle,
   sectionTitleStyle,
   statsGridStyle,
 } from "@/components/climberbook/common/styles";
@@ -113,8 +112,9 @@ export function ReportMetricsWidget({
                 style={{ display: "none" }}
               />
             </label>
-            <button
-              type="button"
+            <Button
+              size="small"
+              variant="secondary"
               disabled={imported8aNuAscentsCount === 0}
               onClick={() => setIsDelete8aNuModalOpen(true)}
               style={{
@@ -127,7 +127,7 @@ export function ReportMetricsWidget({
               }}
             >
               Usuń dane z 8a.nu ({imported8aNuAscentsCount})
-            </button>
+            </Button>
           </div>
         }
       />
@@ -277,24 +277,22 @@ export function ReportMetricsWidget({
             Import zapisze przejścia jako Skała z pochodzeniem 8a.nu.
           </p>
           <div style={{ display: "flex", gap: 8, marginTop: "1rem" }}>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={onCloseImportPreview}
-              style={ghostButtonStyle}
               disabled={isImporting}
             >
               Anuluj
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="quadrary"
               onClick={() =>
                 void onConfirmImport(includeOtherStyles, overwriteDuplicates)
               }
-              style={secondaryButtonStyle}
               disabled={isImporting}
             >
               {isImporting ? "Importowanie..." : "Importuj przejścia"}
-            </button>
+            </Button>
           </div>
         </Modal>
       ) : null}
@@ -317,20 +315,19 @@ export function ReportMetricsWidget({
             zmian.
           </p>
           <div style={{ display: "flex", gap: 8, marginTop: "1rem" }}>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => setIsDelete8aNuModalOpen(false)}
-              style={ghostButtonStyle}
             >
               Anuluj
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
               onClick={() => void handleDelete8aNuAscents()}
               style={deleteButtonStyle}
             >
               Usuń dane z 8a.nu
-            </button>
+            </Button>
           </div>
         </Modal>
       ) : null}

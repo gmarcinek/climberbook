@@ -1,14 +1,13 @@
 import {
   athleteSelectStyle,
   deleteButtonStyle,
-  ghostButtonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  secondaryButtonStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
 import type { TeamRosterSettingsWidgetProps } from "./SettingsWidgetTypes";
@@ -69,27 +68,28 @@ export function TeamRosterSettingsWidget({
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  style={secondaryButtonStyle}
+                <Button
+                  size="small"
+                  variant="quadrary"
                   onClick={() => void onAthleteExport(athlete)}
                 >
                   Eksport
-                </button>
-                <button
-                  type="button"
-                  style={ghostButtonStyle}
+                </Button>
+                <Button
+                  size="small"
+                  variant="secondary"
                   onClick={() => void onStartAthleteEdit(athlete)}
                 >
                   Edytuj
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="small"
+                  variant="secondary"
                   style={deleteButtonStyle}
                   onClick={() => void onDeleteAthlete(athlete)}
                 >
                   Usuń
-                </button>
+                </Button>
               </Stack>
             </Stack>
           ))}

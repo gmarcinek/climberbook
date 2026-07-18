@@ -15,10 +15,10 @@ import {
   TextArea,
 } from "@/components/climberbook/common/FormControls";
 import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
+import { Button } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts";
-import { secondaryButtonStyle } from "@/components/climberbook/common/styles";
 import {
   formatDateLabel,
   summarizeTrainingType,
@@ -433,8 +433,9 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                       </div>
                     ) : null}
                     <div className={styles.trainingSidebar__cardActions}>
-                      <button
-                        type="button"
+                      <Button
+                        size="small"
+                        variant="secondary"
                         onClick={() => {
                           onEditTraining(training);
                           setSelectedDayTab("form");
@@ -442,14 +443,15 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                         className={styles.trainingSidebar__linkButton}
                       >
                         Edytuj
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="secondary"
                         onClick={() => setPreviewedTraining(training)}
                         className={styles.trainingSidebar__linkButton}
                       >
                         Podgląd
-                      </button>
+                      </Button>
                     </div>
                   </article>
                 ))}
@@ -1826,28 +1828,28 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               </label>
 
               <div className={styles.trainingSidebar__formActions}>
-                <button
+                <Button
                   type="submit"
+                  variant="tertiary"
                   className={styles.trainingSidebar__submitButton}
                 >
                   {editingTrainingId ? "Zapisz zmiany" : "Zapisz trening"}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="secondary"
                   onClick={onResetSelection}
                   className={styles.trainingSidebar__ghostButton}
                 >
                   ANULUJ
-                </button>
+                </Button>
                 {editingTraining ? (
-                  <button
-                    type="button"
+                  <Button
+                    variant="quadrary"
                     onClick={() => onDeleteTraining(editingTraining)}
                     className={styles.trainingSidebar__secondaryButton}
-                    style={secondaryButtonStyle}
                   >
                     Usuń trening
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             </form>
@@ -1866,13 +1868,13 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 </h1>
               </div>
               <div className={styles.trainingSidebar__headerActions}>
-                <button
-                  type="button"
+                <Button
+                  variant="tertiary"
                   onClick={() => onSelectDate(today)}
                   className={styles.trainingSidebar__submitButton}
                 >
                   + Trening
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1913,20 +1915,22 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     </div>
                   ) : null}
                   <div className={styles.trainingSidebar__cardActions}>
-                    <button
-                      type="button"
+                    <Button
+                      size="small"
+                      variant="secondary"
                       onClick={() => onEditTraining(training)}
                       className={styles.trainingSidebar__linkButton}
                     >
                       Edytuj
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="secondary"
                       onClick={() => setPreviewedTraining(training)}
                       className={styles.trainingSidebar__linkButton}
                     >
                       Podgląd
-                    </button>
+                    </Button>
                   </div>
                 </article>
               ))}
@@ -2069,8 +2073,8 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               </div>
             </section>
             <div className={styles.trainingSidebar__drawerActions}>
-              <button
-                type="button"
+              <Button
+                variant="tertiary"
                 onClick={() => {
                   onEditTraining(previewedTraining);
                   closePreview();
@@ -2079,7 +2083,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 className={styles.trainingSidebar__submitButton}
               >
                 Edytuj
-              </button>
+              </Button>
             </div>
           </ScrollPane>
         </Modal>

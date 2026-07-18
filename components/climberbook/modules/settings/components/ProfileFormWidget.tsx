@@ -1,11 +1,11 @@
 import {
-  buttonStyle,
   fieldStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import {
   Input,
   NumericStepperControl,
@@ -136,9 +136,9 @@ export function ProfileFormWidget({
         </label>
       </FormGrid>
       <FormActions>
-        <button type="submit" style={buttonStyle}>
+        <Button type="submit" variant="tertiary">
           Zapisz settings
-        </button>
+        </Button>
       </FormActions>
     </Form>
   );

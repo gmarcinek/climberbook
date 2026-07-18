@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { Button } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { WeeklyAscentChartWidget } from "@/components/climberbook/common/WeeklyAscentChartWidget";
 import { AscentGradeDistributionWidget } from "./AscentGradeDistributionWidget";
@@ -14,7 +15,6 @@ import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import type { AscentRecord } from "@/lib/climbs-db";
 import type { AscentCsvImportPreview } from "@/components/climberbook/providers/ClimberbookProvider";
 import {
-  buttonStyle,
   moduleContentStyle,
   twoColumnLayoutStyle,
 } from "@/components/climberbook/common/styles";
@@ -157,17 +157,15 @@ export function ReportsAssembly({
         marginTop: 4,
       }}
     >
-      <button
-        type="button"
+      <Button
         onClick={() => setIsAscentDrawerOpen(true)}
         style={{
-          ...buttonStyle,
           background: "linear-gradient(135deg, #2f8f4e, #45b36b)",
           boxShadow: "0 18px 30px rgba(49, 143, 78, 0.28)",
         }}
       >
         + Dodaj przejście
-      </button>
+      </Button>
     </div>
   ) : null;
 

@@ -8,6 +8,7 @@ import {
   panelHeadingStyle,
   sectionTitleStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import { Modal } from "@/components/climberbook/common/Modal";
 import type { DatabaseDeleteModalWidgetProps } from "./SettingsWidgetTypes";
@@ -29,13 +30,9 @@ export function DatabaseDeleteModalWidget({
             Usunąć bazę danych?
           </h3>
         </div>
-        <button
-          type="button"
-          onClick={onCloseDatabaseDeleteModal}
-          style={ghostButtonStyle}
-        >
+        <Button variant="secondary" onClick={onCloseDatabaseDeleteModal}>
           Anuluj
-        </button>
+        </Button>
       </div>
       <p style={mutedParagraphStyle}>
         Wszystkie lokalne treningi, przejścia, ustawienia i pomiary wagi zostaną
@@ -60,8 +57,9 @@ export function DatabaseDeleteModalWidget({
           />
         </label>
         <FormActions>
-          <button
+          <Button
             type="submit"
+            variant="secondary"
             disabled={databaseDeleteConfirmation !== "usuń"}
             style={{
               ...deleteButtonStyle,
@@ -73,7 +71,7 @@ export function DatabaseDeleteModalWidget({
             }}
           >
             USUŃ BAZĘ DANYCH
-          </button>
+          </Button>
         </FormActions>
       </Form>
     </Modal>

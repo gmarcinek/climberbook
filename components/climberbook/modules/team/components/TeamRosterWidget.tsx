@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ghostButtonStyle,
   metricCardStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
@@ -10,6 +9,7 @@ import {
   softTagStyle,
   statsGridStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
 import type { AthleteRecord } from "@/lib/climbs-db";
@@ -72,13 +72,13 @@ export function TeamRosterWidget({
                   {summary.athlete.id === activeAthleteId ? (
                     <span style={softTagStyle}>Wybrany</span>
                   ) : (
-                    <button
-                      type="button"
-                      style={ghostButtonStyle}
+                    <Button
+                      size="small"
+                      variant="secondary"
                       onClick={() => onSelectAthlete(summary.athlete.id)}
                     >
                       Otwórz
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <span style={mutedParagraphStyle}>

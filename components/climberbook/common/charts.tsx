@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Modal } from "@/components/climberbook/common/Modal";
+import { Button } from "@/components/climberbook/common/Button";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts/SessionGradesChart";
@@ -15,12 +16,10 @@ import {
 import {
   analyticsPanelInnerStyle,
   analyticsStatsGridStyle,
-  buttonStyle,
   chartCardStyle,
   deleteButtonStyle,
   fieldStyle,
   formStyle,
-  ghostButtonStyle,
   inputStyle,
   listCardHeaderStyle,
   listCardStyle,
@@ -298,14 +297,14 @@ export function TrainingAnalyticsPanel(props: {
             </label>
 
             <FormActions>
-              <button type="submit" style={buttonStyle}>
+              <Button type="submit" variant="tertiary">
                 Zapisz pomiar
-              </button>
+              </Button>
             </FormActions>
             {editingWeightEntry?.id !== undefined ? (
               <div style={{ marginTop: "2rem" }}>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     setIsWeightEntryModalOpen(false);
                     setWeightEntryPendingDeletion(editingWeightEntry);
@@ -313,7 +312,7 @@ export function TrainingAnalyticsPanel(props: {
                   style={deleteButtonStyle}
                 >
                   Usuń pomiar
-                </button>
+                </Button>
               </div>
             ) : null}
           </form>
@@ -349,20 +348,20 @@ export function TrainingAnalyticsPanel(props: {
               width: "100%",
             }}
           >
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => setWeightEntryPendingDeletion(null)}
-              style={{ ...ghostButtonStyle, width: "auto" }}
+              style={{ width: "auto" }}
             >
               Anuluj
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
               onClick={() => void handleWeightEntryDeletion()}
               style={{ ...deleteButtonStyle, width: "auto" }}
             >
               Usuń pomiar
-            </button>
+            </Button>
           </FormActions>
         </Modal>
       )}
@@ -373,13 +372,13 @@ export function TrainingAnalyticsPanel(props: {
             <span style={moduleEyebrowStyle}>Szybki przegląd</span>
             <h3 style={sectionTitleStyle}>Ostatnie wpisy</h3>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="tertiary"
             onClick={() => setIsWeightEntryModalOpen(true)}
-            style={{ ...buttonStyle, justifySelf: "start" }}
+            style={{ justifySelf: "start" }}
           >
             Dodaj pomiar
-          </button>
+          </Button>
         </div>
 
         <ScrollPane viewportStyle={scrollListStyle}>

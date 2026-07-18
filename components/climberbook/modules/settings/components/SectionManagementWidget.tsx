@@ -1,5 +1,4 @@
 import {
-  buttonStyle,
   inputStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
@@ -7,6 +6,7 @@ import {
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Button, EmotButton } from "@/components/climberbook/common/Button";
 import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import type { SectionManagementWidgetProps } from "./SettingsWidgetTypes";
 import styles from "./SectionManagementWidget.module.css";
@@ -38,9 +38,9 @@ export function SectionManagementWidget({
         style={inputStyle}
       />
       <FormActions>
-        <button type="submit" style={buttonStyle}>
+        <Button type="submit" variant="tertiary">
           Dodaj sekcję
-        </button>
+        </Button>
       </FormActions>
 
       {sections.length === 0 ? (
@@ -50,14 +50,14 @@ export function SectionManagementWidget({
           {sections.map((section) => (
             <span key={section.id} className={styles.sectionChip}>
               {section.name}
-              <button
-                type="button"
+              <EmotButton
+                size="small"
                 className={styles.deleteButton}
                 onClick={() => void onDeleteSection(section)}
                 aria-label={`Usuń sekcję ${section.name}`}
               >
                 ×
-              </button>
+              </EmotButton>
             </span>
           ))}
         </div>

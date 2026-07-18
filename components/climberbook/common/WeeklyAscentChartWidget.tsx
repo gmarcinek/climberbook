@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { EmptyState } from "@/components/climberbook/common/charts";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { EmotButton } from "@/components/climberbook/common/Button";
 import {
   moduleEyebrowStyle,
   panelHeadingStyle,
@@ -388,8 +389,9 @@ export function WeeklyAscentChartWidget({
               marginLeft: "auto",
             }}
           >
-            <button
-              type="button"
+            <EmotButton
+              size="small"
+              variant="secondary"
               onClick={() =>
                 setActiveQuarterIndex((current) => Math.max(0, current - 1))
               }
@@ -406,12 +408,13 @@ export function WeeklyAscentChartWidget({
               }}
             >
               <span aria-hidden="true">&lt;</span>
-            </button>
+            </EmotButton>
             <span style={softTagStyle}>
               Q{activeQuarter.quarter} {activeQuarter.year}
             </span>
-            <button
-              type="button"
+            <EmotButton
+              size="small"
+              variant="secondary"
               onClick={() =>
                 setActiveQuarterIndex((current) =>
                   Math.min(quarters.length - 1, current + 1),
@@ -433,7 +436,7 @@ export function WeeklyAscentChartWidget({
               }}
             >
               <span aria-hidden="true">&gt;</span>
-            </button>
+            </EmotButton>
           </div>
         ) : (
           <span style={softTagStyle}>{chartRangeLabel}</span>

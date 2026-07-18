@@ -6,6 +6,7 @@ import {
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
 import type { DangerZoneWidgetProps } from "./SettingsWidgetTypes";
@@ -26,13 +27,13 @@ export function DangerZoneWidget({
         Zalecany wcześniejszy eksport całości.
       </p>
       <Stack direction="row" gap="sm" wrap>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           style={deleteButtonStyle}
           onClick={() => setIsDatabaseDeleteModalOpen(true)}
         >
           USUŃ BAZĘ DANYCH
-        </button>
+        </Button>
       </Stack>
     </Panel>
   );

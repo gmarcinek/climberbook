@@ -18,7 +18,7 @@ import {
   pageHeaderStyle,
   topBarStyle,
 } from "@/components/climberbook/common/styles";
-import { Button } from "@/components/climberbook/common/Button";
+import { Button, EmotButton } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
@@ -151,8 +151,8 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
               Climberbook
             </Link>
             {isMobileHeader ? (
-              <button
-                type="button"
+              <EmotButton
+                variant="secondary"
                 aria-label="Otwórz menu"
                 aria-expanded={isMobileMenuOpen}
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -165,10 +165,11 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                   fontSize: "3rem",
                   lineHeight: 1,
                   height: "3rem",
+                  width: "3rem",
                 }}
               >
                 ≡
-              </button>
+              </EmotButton>
             ) : null}
             <label
               style={{

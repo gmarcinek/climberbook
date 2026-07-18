@@ -1,13 +1,12 @@
 import {
   backupDropzoneStyle,
-  buttonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
-  secondaryButtonStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
 import styles from "./DatabaseBackupWidget.module.css";
@@ -34,13 +33,9 @@ export function DatabaseBackupWidget({
         backup całej bazy albo pojedynczego zawodnika.
       </p>
       <Stack direction="row" gap="sm" wrap>
-        <button
-          type="button"
-          style={secondaryButtonStyle}
-          onClick={onDatabaseExport}
-        >
+        <Button variant="quadrary" onClick={onDatabaseExport}>
           Eksport całości
-        </button>
+        </Button>
         <input
           ref={backupImportInputRef}
           type="file"
@@ -48,13 +43,12 @@ export function DatabaseBackupWidget({
           onChange={onDatabaseImport}
           style={{ display: "none" }}
         />
-        <button
-          type="button"
-          style={buttonStyle}
+        <Button
+          variant="tertiary"
           onClick={() => backupImportInputRef.current?.click()}
         >
           Import z pliku
-        </button>
+        </Button>
       </Stack>
       <div
         className={styles.dropzone}

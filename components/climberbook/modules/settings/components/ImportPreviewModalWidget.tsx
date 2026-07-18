@@ -1,13 +1,12 @@
 import {
   fieldStyle,
-  ghostButtonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
   sectionTitleStyle,
-  secondaryButtonStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { Stack } from "@/components/climberbook/common/Stack";
@@ -72,22 +71,20 @@ export function ImportPreviewModalWidget({
       </Stack>
       <p style={mutedParagraphStyle}>{preview.actionLabel}</p>
       <FormActions>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={onCloseImportPreview}
-          style={ghostButtonStyle}
           disabled={isImporting}
         >
           Anuluj
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="quadrary"
           onClick={() => void onConfirmImport()}
-          style={secondaryButtonStyle}
           disabled={isImporting}
         >
           {isImporting ? "Importowanie..." : "Importuj"}
-        </button>
+        </Button>
       </FormActions>
     </Modal>
   );

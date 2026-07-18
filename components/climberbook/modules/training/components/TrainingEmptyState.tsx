@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  buttonStyle,
-  ghostButtonStyle,
   moduleContainerStyle,
   moduleContentStyle,
   moduleEyebrowStyle,
@@ -12,6 +10,7 @@ import {
   settingsMainColumnStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
 import { MainHeader } from "@/components/climberbook/layout/MainHeader";
@@ -121,13 +120,12 @@ export function TrainingEmptyState({
                     onChange={onDatabaseImport}
                     style={{ display: "none" }}
                   />
-                  <button
-                    type="button"
-                    style={buttonStyle}
+                  <Button
+                    variant="tertiary"
                     onClick={() => backupImportInputRef.current?.click()}
                   >
                     Import bazy
-                  </button>
+                  </Button>
                 </Stack>
               </Stack>
 
@@ -158,10 +156,8 @@ export function TrainingEmptyState({
                   Wczyta gotowy przykładowy dump z dynamicznymi datami i wagą z
                   bieżącego miesiąca.
                 </p>
-                <button
-                  type="button"
+                <Button
                   style={{
-                    ...ghostButtonStyle,
                     border: 0,
                     padding: "7px 9px",
                     background: "linear-gradient(135deg, #2f8f57, #49b36f)",
@@ -171,7 +167,7 @@ export function TrainingEmptyState({
                   onClick={() => void onLoadSampleData()}
                 >
                   Załaduj przykładowe dane
-                </button>
+                </Button>
               </Stack>
             </Panel>
 

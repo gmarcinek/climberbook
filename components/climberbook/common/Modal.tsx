@@ -6,6 +6,7 @@ import {
   weightEntryModalOverlayStyle,
   weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
+import { EmotButton } from "@/components/climberbook/common/Button";
 import styles from "./Modal.module.css";
 
 let activeModalCount = 0;
@@ -72,15 +73,16 @@ export function Modal({
         style={{ ...weightEntryModalStyle, ...style }}
       >
         <div className={styles.header}>
-          <button
-            type="button"
+          <EmotButton
+            size="small"
+            variant="secondary"
             className={styles.closeButton}
             onClick={onClose}
             aria-label="Zamknij modal"
             title="Zamknij"
           >
             X
-          </button>
+          </EmotButton>
         </div>
         <div className={styles.content}>{children}</div>
       </section>

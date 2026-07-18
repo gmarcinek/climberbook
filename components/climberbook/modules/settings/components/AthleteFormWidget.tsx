@@ -1,12 +1,11 @@
 import {
-  buttonStyle,
   fieldStyle,
-  ghostButtonStyle,
   inputStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import {
   Form,
   FormActions,
@@ -185,17 +184,13 @@ export function AthleteFormWidget({
         </p>
       ) : null}
       <FormActions>
-        <button type="submit" style={buttonStyle}>
+        <Button type="submit" variant="tertiary">
           {athleteFormMode === "edit" ? "Zapisz zmiany" : "Dodaj zawodnika"}
-        </button>
+        </Button>
         {athleteFormMode === "edit" && (
-          <button
-            type="button"
-            style={ghostButtonStyle}
-            onClick={onResetAthleteForm}
-          >
+          <Button variant="secondary" onClick={onResetAthleteForm}>
             Anuluj
-          </button>
+          </Button>
         )}
       </FormActions>
     </Form>
