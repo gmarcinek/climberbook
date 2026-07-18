@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
   moduleConfig,
@@ -18,6 +18,7 @@ import {
   pageHeaderStyle,
   topBarStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
@@ -27,9 +28,22 @@ type MainHeaderProps = {
 };
 
 export function MainHeader({ activeModule }: MainHeaderProps) {
-  const { athletes, activeAthleteId, setActiveAthleteId } = useClimberbook();
-  const { isMobileHeader } = useViewport();
+  const {
+    athletes,
+    activeAthleteId,
+    exportDatabase,
+    importDatabase,
+    setActiveAthleteId,
+  } = useClimberbook();
+  const { isMobileHeader, width } = useViewport();
+  const isTwoRowHeader = !isMobileHeader && width > 0 && width < 900;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileImportInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleMobileImport(event: ChangeEvent<HTMLInputElement>) {
+    await importDatabase(event);
+    setIsMobileMenuOpen(false);
+  }
 
   const navLinks = moduleConfig.map((module, index) => {
     const link = (
@@ -87,36 +101,55 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
           top: isMobileHeader ? undefined : pageHeaderStyle.top,
           left: isMobileHeader ? undefined : pageHeaderStyle.left,
           right: isMobileHeader ? undefined : pageHeaderStyle.right,
-          height: isMobileHeader ? "auto" : 80,
-          overflow: isMobileHeader ? "visible" : pageHeaderStyle.overflow,
+          height: isMobileHeader || isTwoRowHeader ? "auto" : 80,
+          overflow:
+            isMobileHeader || isTwoRowHeader
+              ? "visible"
+              : pageHeaderStyle.overflow,
         }}
       >
         <div
           style={{
             ...topBarStyle,
-            height: isMobileHeader ? "auto" : 80,
-            gridTemplateColumns: isMobileHeader
-              ? "minmax(0, 1fr)"
-              : "auto minmax(0, 1fr) auto",
-            gridTemplateRows: isMobileHeader ? "auto" : "none",
-            gap: isMobileHeader ? 8 : 12,
-            overflow: isMobileHeader ? "visible" : topBarStyle.overflow,
-            padding: isMobileHeader ? "8px 12px" : topBarStyle.padding,
+            height: isMobileHeader || isTwoRowHeader ? "auto" : 80,
+            gridTemplateColumns:
+              isMobileHeader || isTwoRowHeader
+                ? "minmax(0, 1fr)"
+                : "auto minmax(0, 1fr) auto",
+            gridTemplateRows:
+              isMobileHeader || isTwoRowHeader ? "auto auto" : "none",
+            gap: isMobileHeader || isTwoRowHeader ? 8 : 12,
+            overflow:
+              isMobileHeader || isTwoRowHeader
+                ? "visible"
+                : topBarStyle.overflow,
+            padding: isMobileHeader || isTwoRowHeader ? "8px 12px" : "5px",
           }}
         >
           <div
             style={{
               ...headerLeftGroupStyle,
               gridRow: isMobileHeader ? 1 : "auto",
-              flexWrap: isMobileHeader ? "wrap" : undefined,
-              justifyContent: isMobileHeader ? "space-between" : undefined,
+              flexWrap: isMobileHeader || isTwoRowHeader ? "wrap" : undefined,
+              justifyContent:
+                isMobileHeader || isTwoRowHeader ? "space-between" : undefined,
               alignItems: isMobileHeader
                 ? "flex-start"
                 : headerLeftGroupStyle.alignItems,
-              width: isMobileHeader ? "100%" : undefined,
+              width: isMobileHeader || isTwoRowHeader ? "100%" : undefined,
             }}
           >
-            <strong style={brandStyle}>Climberbook</strong>
+            <Link
+              href="/"
+              style={{
+                ...brandStyle,
+                marginLeft: "12px",
+                color: "var(--text)",
+                textDecoration: "none",
+              }}
+            >
+              Climberbook
+            </Link>
             {isMobileHeader ? (
               <button
                 type="button"
@@ -173,10 +206,18 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
             <nav
               style={{
                 ...moduleNavStyle,
-                justifyContent: "flex-end",
+                gridRow: isTwoRowHeader ? 2 : "auto",
+                justifyContent: isTwoRowHeader ? "flex-start" : "flex-end",
               }}
             >
               {navLinks}
+              <Button
+                style={{ marginLeft: "2rem" }}
+                onClick={() => void exportDatabase()}
+                variant="quadrary"
+              >
+                Eksport
+              </Button>
             </nav>
           ) : null}
         </div>
@@ -201,6 +242,61 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
             >
               {navLinks}
             </nav>
+            <input
+              ref={mobileImportInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => void handleMobileImport(event)}
+              style={{ display: "none" }}
+            />
+            <section
+              aria-labelledby="mobile-backup-title"
+              style={{
+                display: "grid",
+                gap: 10,
+                paddingTop: 16,
+                borderTop: "1px solid var(--border-strong)",
+              }}
+            >
+              <div style={{ display: "grid", gap: 2 }}>
+                <span
+                  style={{
+                    color: "var(--accent)",
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Dane
+                </span>
+                <h3 id="mobile-backup-title" style={{ margin: 0 }}>
+                  Pełna kopia bazy
+                </h3>
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  color: "var(--muted)",
+                  fontSize: "0.95rem",
+                  lineHeight: 1.5,
+                }}
+              >
+                Eksport zapisuje wszystkich zawodników i ich dane. Import
+                rozpoznaje backup całej bazy albo pojedynczego zawodnika.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <Button
+                  onClick={() => void exportDatabase()}
+                  variant="quadrary"
+                >
+                  Eksport całości
+                </Button>
+                <Button onClick={() => mobileImportInputRef.current?.click()}>
+                  Import z pliku
+                </Button>
+              </div>
+            </section>
           </div>
         </Modal>
       ) : null}

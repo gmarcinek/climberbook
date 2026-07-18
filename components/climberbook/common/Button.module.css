@@ -1,0 +1,58 @@
+.button {
+  border: 0;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.2;
+}
+
+.size--medium {
+  padding: 0.5rem 1rem;
+}
+
+.size--small {
+  padding: 0.25rem 0.5rem;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.variant--primary {
+  background: #0f6d82;
+}
+
+.variant--secondary {
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+}
+
+.variant--tertiary {
+  background: #b84f27;
+}
+
+.variant--quadrary {
+  background: #303151;
+}
+
+.emotButton {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.25rem;
+}
+
+.emotButton.size--medium {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+.emotButton.size--small {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 1rem;
+}

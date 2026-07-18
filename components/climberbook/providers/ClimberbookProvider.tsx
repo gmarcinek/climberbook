@@ -874,9 +874,14 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     URL.revokeObjectURL(url);
   }
   async function exportDatabase() {
+    const exportTime = new Date()
+      .toTimeString()
+      .slice(0, 8)
+      .replaceAll(":", "-");
+
     await download(
       await exportFullDatabaseBackup(),
-      `climberbook-calosciowy-${today}.json`,
+      `climberbook-calosciowy-${today}-${exportTime}.json`,
     );
     showSuccessToast("Eksport bazy zakończony sukcesem.");
   }
