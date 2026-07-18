@@ -140,7 +140,7 @@ const gradeColorByGrade: Record<string, string> = {
   "7a": "#83cde7",
   "7a+": "#86d8f6",
   "7b": "#4abce7",
-  "7b+": "#218fcf",
+  "7b+": "#218fce",
   "7c": "#1765ac",
   "7c+": "#103d78",
   "8a": "#ec8dc2",
