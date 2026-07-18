@@ -1,0 +1,63 @@
+name: Build and deploy Node.js app to Azure Web App - climberbook
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: npm
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Prepare standalone artifact
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          if [ -d public ]; then cp -r public .next/standalone/public; fi
+
+      - name: Upload artifact for deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: .next/standalone
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F045372C347146459DE73694D4D6CEA4 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9E6E4952A0EC49A4A3E63100613BB0FC }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FE245DDB25684B03B4A7E2B05478AC2C }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: climberbook
+          slot-name: Production
+          package: .
