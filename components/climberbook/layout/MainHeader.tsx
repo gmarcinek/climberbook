@@ -12,15 +12,13 @@ import {
   athleteSelectorStyle,
   brandStyle,
   headerLeftGroupStyle,
-  mobileDrawerBackdropStyle,
-  mobileDrawerOverlayStyle,
-  mobileDrawerSheetStyle,
   moduleButtonStyle,
   moduleNavStyle,
   navSeparatorStyle,
   pageHeaderStyle,
   topBarStyle,
 } from "@/components/climberbook/common/styles";
+import { Modal } from "@/components/climberbook/common/Modal";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
 
@@ -131,9 +129,9 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                   background: "rgba(255, 255, 255, 0.72)",
                   color: "var(--text)",
                   cursor: "pointer",
-                  fontSize: "2rem",
-                  lineHeight: 0,
-                  height: 21,
+                  fontSize: "3rem",
+                  lineHeight: 1,
+                  height: "3rem",
                 }}
               >
                 ≡
@@ -185,54 +183,15 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
       </header>
 
       {isMobileHeader && isMobileMenuOpen ? (
-        <div style={{ ...mobileDrawerOverlayStyle, zIndex: 50 }}>
-          <button
-            type="button"
-            aria-label="Zamknij menu"
-            onClick={() => setIsMobileMenuOpen(false)}
-            style={mobileDrawerBackdropStyle}
-          />
-          <div
-            style={{
-              ...mobileDrawerSheetStyle,
-              gridTemplateRows: "auto minmax(0, 1fr)",
-              alignContent: "start",
-              height: "100%",
-              padding: 16,
-              borderTop: 0,
-              borderLeft: "1px solid var(--border-strong)",
-              marginLeft: "auto",
-              width: "min(100%, 320px)",
-              boxShadow: "-20px 0 40px rgba(35, 29, 25, 0.16)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                marginBottom: 12,
-              }}
-            >
-              <strong style={brandStyle}>Menu</strong>
-              <button
-                type="button"
-                aria-label="Zamknij menu"
-                onClick={() => setIsMobileMenuOpen(false)}
-                style={{
-                  border: "1px solid var(--border-strong)",
-                  padding: "8px 10px",
-                  background: "rgba(255, 255, 255, 0.72)",
-                  color: "var(--text)",
-                  cursor: "pointer",
-                  fontSize: "1rem",
-                  lineHeight: 1,
-                }}
-              >
-                Zamknij
-              </button>
-            </div>
+        <Modal
+          labelledBy="mobile-navigation-title"
+          onClose={() => setIsMobileMenuOpen(false)}
+          style={{ padding: 16 }}
+        >
+          <div style={{ display: "grid", gap: 12 }}>
+            <h2 id="mobile-navigation-title" style={brandStyle}>
+              Menu
+            </h2>
             <nav
               style={{
                 display: "grid",
@@ -243,7 +202,7 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
               {navLinks}
             </nav>
           </div>
-        </div>
+        </Modal>
       ) : null}
     </>
   );

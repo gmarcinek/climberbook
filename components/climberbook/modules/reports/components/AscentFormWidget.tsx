@@ -14,6 +14,7 @@ import {
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
+  secondaryButtonStyle,
   softTagStyle,
   textAreaStyle,
 } from "@/components/climberbook/common/styles";
@@ -57,7 +58,9 @@ export function AscentFormWidget({
         <div style={panelHeadingStyle}>
           <div>
             <span style={moduleEyebrowStyle}>Historia przejść</span>
-            <h2 style={sectionTitleStyle}>Panel i skała</h2>
+            <h2 id="ascent-form-title" style={sectionTitleStyle}>
+              Panel i skała
+            </h2>
           </div>
           <span style={softTagStyle}>
             {isEditing ? "Edycja wpisu" : "Dodawanie ręczne"}
@@ -185,13 +188,39 @@ export function AscentFormWidget({
           />
         </label>
       </FormGrid>
-      <FormActions>
-        <button type="submit" style={buttonStyle}>
-          {isEditing ? "Zapisz zmiany" : "Dodaj przejście"}
+      <FormActions
+        style={
+          isEditing
+            ? {
+                flexDirection: "row",
+                justifyContent: "space-between",
+                justifySelf: "stretch",
+                width: "100%",
+              }
+            : undefined
+        }
+      >
+        <button
+          type="submit"
+          style={
+            isEditing
+              ? { ...buttonStyle, padding: "7px 1rem", width: "auto" }
+              : buttonStyle
+          }
+        >
+          {isEditing ? "Zapisz" : "Dodaj przejście"}
         </button>
         {isEditing ? (
-          <button type="button" style={buttonStyle} onClick={onCancelEdit}>
-            Anuluj edycję
+          <button
+            type="button"
+            style={{
+              ...secondaryButtonStyle,
+              padding: "7px 1rem",
+              width: "auto",
+            }}
+            onClick={onCancelEdit}
+          >
+            Anuluj
           </button>
         ) : null}
       </FormActions>

@@ -15,8 +15,10 @@ import {
   TextArea,
 } from "@/components/climberbook/common/FormControls";
 import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
+import { Modal } from "@/components/climberbook/common/Modal";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts";
+import { secondaryButtonStyle } from "@/components/climberbook/common/styles";
 import {
   formatDateLabel,
   summarizeTrainingType,
@@ -256,6 +258,9 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
   const [isCustomSessionExpanded, setIsCustomSessionExpanded] = useState(false);
   const [previewedTraining, setPreviewedTraining] =
     useState<TrainingRecord | null>(null);
+  const editingTraining = selectedDayTrainings.find(
+    (training) => training.id === editingTrainingId,
+  );
   useEffect(() => {
     setSelectedDayTab("form");
   }, [selectedDate]);
@@ -264,22 +269,6 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
       setPreviewedTraining(requestedPreviewTraining);
     }
   }, [requestedPreviewTraining]);
-  useEffect(() => {
-    if (!previewedTraining) {
-      return;
-    }
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [previewedTraining]);
-
   function closePreview() {
     setPreviewedTraining(null);
     onRequestedPreviewClose();
@@ -359,18 +348,12 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
             <div className={styles.trainingSidebar__panelHeader}>
               <div>
                 <p className={styles.trainingSidebar__eyebrow}>Wybrany dzień</p>
-                <h1 className={styles.trainingSidebar__title}>
+                <h1
+                  id="training-form-modal-title"
+                  className={styles.trainingSidebar__title}
+                >
                   {formatDateLabel(selectedDate)}
                 </h1>
-              </div>
-              <div className={styles.trainingSidebar__headerActions}>
-                <button
-                  type="button"
-                  onClick={onResetSelection}
-                  className={styles.trainingSidebar__ghostButton}
-                >
-                  ANULUJ
-                </button>
               </div>
             </div>
 
@@ -1686,7 +1669,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
 
                   return (
                     <div key={surface} className={fullFieldClassName}>
-                      <label>
+                      <label className={protocolHeadingClassName}>
                         Wyceny - {gradeSurfaceLabels[surface]}
                         <InputActionControl
                           value={
@@ -1842,12 +1825,31 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                 />
               </label>
 
-              <button
-                type="submit"
-                className={styles.trainingSidebar__submitButton}
-              >
-                {editingTrainingId ? "Zapisz zmiany" : "Zapisz trening"}
-              </button>
+              <div className={styles.trainingSidebar__formActions}>
+                <button
+                  type="submit"
+                  className={styles.trainingSidebar__submitButton}
+                >
+                  {editingTrainingId ? "Zapisz zmiany" : "Zapisz trening"}
+                </button>
+                <button
+                  type="button"
+                  onClick={onResetSelection}
+                  className={styles.trainingSidebar__ghostButton}
+                >
+                  ANULUJ
+                </button>
+                {editingTraining ? (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteTraining(editingTraining)}
+                    className={styles.trainingSidebar__secondaryButton}
+                    style={secondaryButtonStyle}
+                  >
+                    Usuń trening
+                  </button>
+                ) : null}
+              </div>
             </form>
           </section>
         )}
@@ -1933,168 +1935,154 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
         )}
       </ScrollPane>
       {previewedTraining && (
-        <div
-          className={styles.trainingSidebar__drawerOverlay}
-          role="presentation"
-          onMouseDown={closePreview}
+        <Modal
+          labelledBy="training-preview-title"
+          onClose={closePreview}
+          overlayStyle={{
+            display: "flex",
+            justifyContent: "flex-end",
+            padding: 0,
+          }}
+          style={{
+            width: "min(100%, 520px)",
+            height: "100dvh",
+            maxHeight: "100dvh",
+            padding: 0,
+            overflow: "hidden",
+            background: "#fffdfa",
+            boxShadow: "-18px 0 40px rgba(21, 34, 45, 0.2)",
+          }}
         >
-          <section
-            className={styles.trainingSidebar__drawer}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="training-preview-title"
-            onMouseDown={(event) => event.stopPropagation()}
+          <ScrollPane
+            className={styles.trainingSidebar__drawerScroll}
+            viewportClassName={styles.trainingSidebar__drawerViewport}
+            contentClassName={styles.trainingSidebar__drawerContent}
+            thumbColor="rgba(13, 107, 124, 0.3)"
+            thumbHoverColor="rgba(13, 107, 124, 0.68)"
           >
-            <ScrollPane
-              className={styles.trainingSidebar__drawerScroll}
-              viewportClassName={styles.trainingSidebar__drawerViewport}
-              contentClassName={styles.trainingSidebar__drawerContent}
-              thumbColor="rgba(13, 107, 124, 0.3)"
-              thumbHoverColor="rgba(13, 107, 124, 0.68)"
-            >
-              <div className={styles.trainingSidebar__drawerHeader}>
-                <div>
-                  <p className={styles.trainingSidebar__eyebrow}>
-                    Podgląd treningu
-                  </p>
-                  <h2
-                    id="training-preview-title"
-                    className={styles.trainingSidebar__drawerTitle}
-                  >
-                    {summarizeTrainingType(previewedTraining)}
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={closePreview}
-                  className={styles.trainingSidebar__ghostButton}
+            <div className={styles.trainingSidebar__drawerHeader}>
+              <div>
+                <p className={styles.trainingSidebar__eyebrow}>
+                  Podgląd treningu
+                </p>
+                <h2
+                  id="training-preview-title"
+                  className={styles.trainingSidebar__drawerTitle}
                 >
-                  Zamknij
-                </button>
+                  {summarizeTrainingType(previewedTraining)}
+                </h2>
               </div>
-              <dl className={styles.trainingSidebar__previewDetails}>
-                <div>
-                  <dt>Data</dt>
-                  <dd>{formatDateLabel(previewedTraining.date)}</dd>
-                </div>
-                <div>
-                  <dt>Godzina</dt>
-                  <dd>{previewedTraining.time}</dd>
-                </div>
-                <div>
-                  <dt>Czas</dt>
-                  <dd>{previewedTraining.durationMinutes} min</dd>
-                </div>
-                <div className={styles.trainingSidebar__previewDetailsFull}>
-                  <dt>Kalorie</dt>
-                  <dd className={styles.trainingSidebar__caloriesValue}>
-                    {previewCalories} / 1000 kcal
-                  </dd>
+            </div>
+            <dl className={styles.trainingSidebar__previewDetails}>
+              <div>
+                <dt>Data</dt>
+                <dd>{formatDateLabel(previewedTraining.date)}</dd>
+              </div>
+              <div>
+                <dt>Godzina</dt>
+                <dd>{previewedTraining.time}</dd>
+              </div>
+              <div>
+                <dt>Czas</dt>
+                <dd>{previewedTraining.durationMinutes} min</dd>
+              </div>
+              <div className={styles.trainingSidebar__previewDetailsFull}>
+                <dt>Kalorie</dt>
+                <dd className={styles.trainingSidebar__caloriesValue}>
+                  {previewCalories} / 1000 kcal
+                </dd>
+                <div
+                  className={styles.trainingSidebar__caloriesProgress}
+                  role="progressbar"
+                  aria-label="Kalorie względem normy"
+                  aria-valuemin={0}
+                  aria-valuemax={1000}
+                  aria-valuenow={previewCalories}
+                >
                   <div
-                    className={styles.trainingSidebar__caloriesProgress}
-                    role="progressbar"
-                    aria-label="Kalorie względem normy"
-                    aria-valuemin={0}
-                    aria-valuemax={1000}
-                    aria-valuenow={previewCalories}
-                  >
-                    <div
-                      className={styles.trainingSidebar__caloriesProgressFill}
-                      style={{ width: `${(previewCalories / 1000) * 100}%` }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <dt>Masa ciała</dt>
-                  <dd>{previewedTraining.bodyWeightKg} kg</dd>
-                </div>
-                <div>
-                  <dt>Wiek</dt>
-                  <dd>{previewedTraining.ageYears} lat</dd>
-                </div>
-                <div>
-                  <dt>Wstawki</dt>
-                  <dd>{formatReportedAttempts(previewedTraining)}</dd>
-                </div>
-                <div>
-                  <dt>Rodzaj</dt>
-                  <dd>{formatSurfaces(previewedTraining) || "Brak"}</dd>
-                </div>
-                <div className={styles.trainingSidebar__previewDetailsFull}>
-                  <dt>Wyceny</dt>
-                  <dd>{getTrainingGradesDescription(previewedTraining)}</dd>
-                </div>
-                {previewedTraining.protocol?.pullUp?.length ? (
-                  <div className={styles.trainingSidebar__previewDetailsFull}>
-                    <dt>Drążek</dt>
-                    <dd>{formatPullUpProtocol(previewedTraining)}</dd>
-                  </div>
-                ) : null}
-                {previewedTraining.protocol?.hangboard?.length ? (
-                  <div className={styles.trainingSidebar__previewDetailsFull}>
-                    <dt>Chwytotablica</dt>
-                    <dd>{formatHangboardProtocol(previewedTraining)}</dd>
-                  </div>
-                ) : null}
-                {previewedTraining.wellbeing ? (
-                  <div className={styles.trainingSidebar__previewDetailsFull}>
-                    <dt>Samopoczucie</dt>
-                    <dd>{previewedTraining.wellbeing}</dd>
-                  </div>
-                ) : null}
-                {previewedTraining.notes ? (
-                  <div className={styles.trainingSidebar__previewDetailsFull}>
-                    <dt>Notatki</dt>
-                    <dd>{previewedTraining.notes}</dd>
-                  </div>
-                ) : null}
-              </dl>
-              <section className={styles.trainingSidebar__previewCharts}>
-                <div>
-                  <p className={styles.trainingSidebar__eyebrow}>
-                    Wykres sesji
-                  </p>
-                  <h3 className={styles.trainingSidebar__previewChartsTitle}>
-                    Wyceny na sesję
-                  </h3>
-                </div>
-                <div className={styles.trainingSidebar__previewChart}>
-                  <h4>Wyceny na sesję</h4>
-                  <RopeTrainingGradesChart
-                    trainings={[previewedTraining]}
-                    chartRange={{
-                      start: previewedTraining.date,
-                      end: previewedTraining.date,
-                    }}
+                    className={styles.trainingSidebar__caloriesProgressFill}
+                    style={{ width: `${(previewCalories / 1000) * 100}%` }}
                   />
                 </div>
-              </section>
-              <div className={styles.trainingSidebar__drawerActions}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onEditTraining(previewedTraining);
-                    closePreview();
-                    setSelectedDayTab("form");
-                  }}
-                  className={styles.trainingSidebar__submitButton}
-                >
-                  Edytuj
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDeleteTraining(previewedTraining);
-                    closePreview();
-                  }}
-                  className={styles.trainingSidebar__deleteButton}
-                >
-                  Usuń
-                </button>
               </div>
-            </ScrollPane>
-          </section>
-        </div>
+              <div>
+                <dt>Masa ciała</dt>
+                <dd>{previewedTraining.bodyWeightKg} kg</dd>
+              </div>
+              <div>
+                <dt>Wiek</dt>
+                <dd>{previewedTraining.ageYears} lat</dd>
+              </div>
+              <div>
+                <dt>Wstawki</dt>
+                <dd>{formatReportedAttempts(previewedTraining)}</dd>
+              </div>
+              <div>
+                <dt>Rodzaj</dt>
+                <dd>{formatSurfaces(previewedTraining) || "Brak"}</dd>
+              </div>
+              <div className={styles.trainingSidebar__previewDetailsFull}>
+                <dt>Wyceny</dt>
+                <dd>{getTrainingGradesDescription(previewedTraining)}</dd>
+              </div>
+              {previewedTraining.protocol?.pullUp?.length ? (
+                <div className={styles.trainingSidebar__previewDetailsFull}>
+                  <dt>Drążek</dt>
+                  <dd>{formatPullUpProtocol(previewedTraining)}</dd>
+                </div>
+              ) : null}
+              {previewedTraining.protocol?.hangboard?.length ? (
+                <div className={styles.trainingSidebar__previewDetailsFull}>
+                  <dt>Chwytotablica</dt>
+                  <dd>{formatHangboardProtocol(previewedTraining)}</dd>
+                </div>
+              ) : null}
+              {previewedTraining.wellbeing ? (
+                <div className={styles.trainingSidebar__previewDetailsFull}>
+                  <dt>Samopoczucie</dt>
+                  <dd>{previewedTraining.wellbeing}</dd>
+                </div>
+              ) : null}
+              {previewedTraining.notes ? (
+                <div className={styles.trainingSidebar__previewDetailsFull}>
+                  <dt>Notatki</dt>
+                  <dd>{previewedTraining.notes}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <section className={styles.trainingSidebar__previewCharts}>
+              <div>
+                <p className={styles.trainingSidebar__eyebrow}>Wykres sesji</p>
+                <h3 className={styles.trainingSidebar__previewChartsTitle}>
+                  Wyceny na sesję
+                </h3>
+              </div>
+              <div className={styles.trainingSidebar__previewChart}>
+                <h4>Wyceny na sesję</h4>
+                <RopeTrainingGradesChart
+                  trainings={[previewedTraining]}
+                  chartRange={{
+                    start: previewedTraining.date,
+                    end: previewedTraining.date,
+                  }}
+                />
+              </div>
+            </section>
+            <div className={styles.trainingSidebar__drawerActions}>
+              <button
+                type="button"
+                onClick={() => {
+                  onEditTraining(previewedTraining);
+                  closePreview();
+                  setSelectedDayTab("form");
+                }}
+                className={styles.trainingSidebar__submitButton}
+              >
+                Edytuj
+              </button>
+            </div>
+          </ScrollPane>
+        </Modal>
       )}
     </aside>
   );

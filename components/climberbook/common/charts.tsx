@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Modal } from "@/components/climberbook/common/Modal";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts/SessionGradesChart";
@@ -16,6 +17,7 @@ import {
   analyticsStatsGridStyle,
   buttonStyle,
   chartCardStyle,
+  deleteButtonStyle,
   fieldStyle,
   formStyle,
   ghostButtonStyle,
@@ -25,13 +27,12 @@ import {
   metricCardStyle,
   metricValueStyle,
   moduleEyebrowStyle,
+  mutedParagraphStyle,
   panelHeadingStyle,
   scrollListStyle,
   sectionTitleStyle,
   softPillStyle,
   softTagStyle,
-  weightEntryModalOverlayStyle,
-  weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
 import type { TrainingRecord, WeightEntryRecord } from "@/lib/climbs-db";
@@ -55,7 +56,11 @@ export function TrainingAnalyticsPanel(props: {
   chartRangeLabel: string;
   weightEntryDraft: WeightEntryDraft;
   onWeightEntryDraftChange: (draft: WeightEntryDraft) => void;
-  onWeightEntrySubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
+  onWeightEntrySubmit: (
+    event: FormEvent<HTMLFormElement>,
+    entryToUpdate?: WeightEntryRecord | null,
+  ) => Promise<boolean>;
+  onDeleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
   recentWeightEntries: WeightEntryRecord[];
 }) {
   const {
@@ -73,9 +78,14 @@ export function TrainingAnalyticsPanel(props: {
     weightEntryDraft,
     onWeightEntryDraftChange,
     onWeightEntrySubmit,
+    onDeleteWeightEntry,
     recentWeightEntries,
   } = props;
   const [isWeightEntryModalOpen, setIsWeightEntryModalOpen] = useState(false);
+  const [editingWeightEntry, setEditingWeightEntry] =
+    useState<WeightEntryRecord | null>(null);
+  const [weightEntryPendingDeletion, setWeightEntryPendingDeletion] =
+    useState<WeightEntryRecord | null>(null);
   const responsiveMetricCardStyle = isMobileLayout
     ? { ...metricCardStyle, padding: 0, background: "transparent" }
     : metricCardStyle;
@@ -86,11 +96,31 @@ export function TrainingAnalyticsPanel(props: {
   async function handleWeightEntryModalSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
-    const wasSaved = await onWeightEntrySubmit(event);
+    const wasSaved = await onWeightEntrySubmit(event, editingWeightEntry);
 
     if (wasSaved) {
       setIsWeightEntryModalOpen(false);
+      setEditingWeightEntry(null);
     }
+  }
+
+  function openWeightEntryEditor(entry: WeightEntryRecord) {
+    setEditingWeightEntry(entry);
+    onWeightEntryDraftChange({
+      date: entry.date,
+      time: entry.time,
+      weightKg: formatWeightInput(entry.weightKg),
+    });
+    setIsWeightEntryModalOpen(true);
+  }
+
+  async function handleWeightEntryDeletion() {
+    if (!weightEntryPendingDeletion) {
+      return;
+    }
+
+    await onDeleteWeightEntry(weightEntryPendingDeletion);
+    setWeightEntryPendingDeletion(null);
   }
 
   return (
@@ -186,13 +216,6 @@ export function TrainingAnalyticsPanel(props: {
             <h3 style={sectionTitleStyle}>Ostatnie pomiary</h3>
           </div>
           <span style={softPillStyle}>{weightChartEntries.length} pkt</span>
-          <button
-            type="button"
-            onClick={() => setIsWeightEntryModalOpen(true)}
-            style={{ ...buttonStyle, justifySelf: "start" }}
-          >
-            Dodaj pomiar
-          </button>
         </div>
         <WeightTrendChart
           entries={weightChartEntries}
@@ -201,99 +224,147 @@ export function TrainingAnalyticsPanel(props: {
       </section>
 
       {isWeightEntryModalOpen && (
-        <div
-          style={weightEntryModalOverlayStyle}
-          role="presentation"
-          onMouseDown={() => setIsWeightEntryModalOpen(false)}
+        <Modal
+          labelledBy="weight-entry-modal-title"
+          onClose={() => {
+            setIsWeightEntryModalOpen(false);
+            setEditingWeightEntry(null);
+          }}
         >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="weight-entry-modal-title"
-            style={weightEntryModalStyle}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div style={panelHeadingStyle}>
-              <div>
-                <span style={moduleEyebrowStyle}>Pomiar wagi</span>
-                <h3 id="weight-entry-modal-title" style={sectionTitleStyle}>
-                  Dodaj pomiar
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsWeightEntryModalOpen(false)}
-                style={ghostButtonStyle}
-              >
-                Zamknij
-              </button>
+          <div style={panelHeadingStyle}>
+            <div>
+              <span style={moduleEyebrowStyle}>Pomiar wagi</span>
+              <h3 id="weight-entry-modal-title" style={sectionTitleStyle}>
+                {editingWeightEntry ? "Edytuj pomiar" : "Dodaj pomiar"}
+              </h3>
             </div>
+          </div>
 
-            <form onSubmit={handleWeightEntryModalSubmit} style={formStyle}>
-              <label style={fieldStyle}>
-                Data pomiaru
-                <input
-                  value={weightEntryDraft.date}
-                  onChange={(event) =>
-                    onWeightEntryDraftChange({
-                      ...weightEntryDraft,
-                      date: event.target.value,
-                    })
-                  }
-                  type="date"
-                  required
-                  style={inputStyle}
-                />
-              </label>
-              <label style={fieldStyle}>
-                Godzina pomiaru
-                <input
-                  value={weightEntryDraft.time}
-                  onChange={(event) =>
-                    onWeightEntryDraftChange({
-                      ...weightEntryDraft,
-                      time: event.target.value,
-                    })
-                  }
-                  type="time"
-                  required
-                  style={inputStyle}
-                />
-              </label>
-              <label style={fieldStyle}>
-                Waga (kg)
-                <input
-                  value={weightEntryDraft.weightKg}
-                  onChange={(event) =>
-                    onWeightEntryDraftChange({
-                      ...weightEntryDraft,
-                      weightKg: event.target.value.replaceAll(",", "."),
-                    })
-                  }
-                  onBlur={() =>
-                    onWeightEntryDraftChange({
-                      ...weightEntryDraft,
-                      weightKg: formatWeightInput(
-                        parseWeightInput(weightEntryDraft.weightKg),
-                      ),
-                    })
-                  }
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  required
-                  style={inputStyle}
-                />
-              </label>
+          <form onSubmit={handleWeightEntryModalSubmit} style={formStyle}>
+            <label style={fieldStyle}>
+              Data pomiaru
+              <input
+                value={weightEntryDraft.date}
+                onChange={(event) =>
+                  onWeightEntryDraftChange({
+                    ...weightEntryDraft,
+                    date: event.target.value,
+                  })
+                }
+                type="date"
+                required
+                style={inputStyle}
+              />
+            </label>
+            <label style={fieldStyle}>
+              Godzina pomiaru
+              <input
+                value={weightEntryDraft.time}
+                onChange={(event) =>
+                  onWeightEntryDraftChange({
+                    ...weightEntryDraft,
+                    time: event.target.value,
+                  })
+                }
+                type="time"
+                required
+                style={inputStyle}
+              />
+            </label>
+            <label style={fieldStyle}>
+              Waga (kg)
+              <input
+                value={weightEntryDraft.weightKg}
+                onChange={(event) =>
+                  onWeightEntryDraftChange({
+                    ...weightEntryDraft,
+                    weightKg: event.target.value.replaceAll(",", "."),
+                  })
+                }
+                onBlur={() =>
+                  onWeightEntryDraftChange({
+                    ...weightEntryDraft,
+                    weightKg: formatWeightInput(
+                      parseWeightInput(weightEntryDraft.weightKg),
+                    ),
+                  })
+                }
+                type="number"
+                min="0"
+                step="0.1"
+                required
+                style={inputStyle}
+              />
+            </label>
 
-              <FormActions>
-                <button type="submit" style={buttonStyle}>
-                  Zapisz pomiar
+            <FormActions>
+              <button type="submit" style={buttonStyle}>
+                Zapisz pomiar
+              </button>
+            </FormActions>
+            {editingWeightEntry?.id !== undefined ? (
+              <div style={{ marginTop: "2rem" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsWeightEntryModalOpen(false);
+                    setWeightEntryPendingDeletion(editingWeightEntry);
+                  }}
+                  style={deleteButtonStyle}
+                >
+                  Usuń pomiar
                 </button>
-              </FormActions>
-            </form>
-          </section>
-        </div>
+              </div>
+            ) : null}
+          </form>
+        </Modal>
+      )}
+
+      {weightEntryPendingDeletion && (
+        <Modal
+          labelledBy="weight-entry-delete-modal-title"
+          onClose={() => setWeightEntryPendingDeletion(null)}
+        >
+          <div style={panelHeadingStyle}>
+            <div>
+              <span style={moduleEyebrowStyle}>Nieodwracalna akcja</span>
+              <h3
+                id="weight-entry-delete-modal-title"
+                style={sectionTitleStyle}
+              >
+                Usunąć pomiar wagi?
+              </h3>
+            </div>
+          </div>
+          <p style={mutedParagraphStyle}>
+            Pomiar {weightEntryPendingDeletion.weightKg.toFixed(1)} kg z dnia{" "}
+            {weightEntryPendingDeletion.date} o{" "}
+            {weightEntryPendingDeletion.time}
+            zostanie trwale usunięty.
+          </p>
+          <FormActions
+            style={{
+              alignItems: "center",
+              justifySelf: "stretch",
+              width: "100%",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setWeightEntryPendingDeletion(null)}
+              style={{ ...ghostButtonStyle, width: "auto" }}
+            >
+              Anuluj
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleWeightEntryDeletion()}
+              style={{ ...deleteButtonStyle, width: "auto" }}
+            >
+              Usuń pomiar
+            </button>
+          </FormActions>
+        </Modal>
       )}
 
       <section style={chartCardStyle}>
@@ -302,7 +373,13 @@ export function TrainingAnalyticsPanel(props: {
             <span style={moduleEyebrowStyle}>Szybki przegląd</span>
             <h3 style={sectionTitleStyle}>Ostatnie wpisy</h3>
           </div>
-          <span style={softPillStyle}>Max 28</span>
+          <button
+            type="button"
+            onClick={() => setIsWeightEntryModalOpen(true)}
+            style={{ ...buttonStyle, justifySelf: "start" }}
+          >
+            Dodaj pomiar
+          </button>
         </div>
 
         <ScrollPane viewportStyle={scrollListStyle}>
@@ -310,17 +387,27 @@ export function TrainingAnalyticsPanel(props: {
             <EmptyState message="Nie ma jeszcze osobnych pomiarów wagi." />
           )}
           {recentWeightEntries.slice(0, 28).map((entry) => (
-            <article
+            <button
+              type="button"
               key={`${entry.id ?? entry.createdAt}-${entry.date}`}
-              style={responsiveWeightEntryCardStyle}
+              onClick={() => openWeightEntryEditor(entry)}
+              style={{
+                ...responsiveWeightEntryCardStyle,
+                border: 0,
+                cursor: "pointer",
+                textAlign: "left",
+                width: "100%",
+              }}
             >
               <div style={listCardHeaderStyle}>
                 <strong>{entry.weightKg.toFixed(1)} kg</strong>
-                <span style={softPillStyle}>
-                  {entry.date} {entry.time}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={softPillStyle}>
+                    {entry.date} {entry.time}
+                  </span>
+                </div>
               </div>
-            </article>
+            </button>
           ))}
         </ScrollPane>
       </section>

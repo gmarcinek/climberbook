@@ -1,11 +1,8 @@
 "use client";
 
 import type { CSSProperties, FormEvent, ReactNode } from "react";
-import {
-  mobileDrawerBackdropStyle,
-  mobileDrawerOverlayStyle,
-  mobileDrawerSheetStyle,
-} from "@/components/climberbook/common/styles";
+import { mobileDrawerSheetStyle } from "@/components/climberbook/common/styles";
+import { Modal } from "@/components/climberbook/common/Modal";
 import {
   TrainingSidebar,
   type TrainingDraftValues,
@@ -49,14 +46,20 @@ export function TrainingSidebarDrawer({
   sheetStyle,
 }: TrainingSidebarDrawerProps) {
   return (
-    <div style={mobileDrawerOverlayStyle}>
-      <button
-        type="button"
-        aria-label="Zamknij drawer"
-        onClick={onClose}
-        style={mobileDrawerBackdropStyle}
-      />
-      <div style={{ ...mobileDrawerSheetStyle, ...sheetStyle }}>{children}</div>
-    </div>
+    <Modal
+      labelledBy="training-form-modal-title"
+      onClose={onClose}
+      style={{
+        ...mobileDrawerSheetStyle,
+        ...sheetStyle,
+        width: "100%",
+        maxWidth: "100%",
+        height: "100dvh",
+        maxHeight: "100dvh",
+        gap: 0,
+      }}
+    >
+      {children}
+    </Modal>
   );
 }

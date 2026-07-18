@@ -1070,6 +1070,13 @@ export async function addWeightEntry(
   });
 }
 
+export async function updateWeightEntry(entry: WeightEntryRecord) {
+  if (entry.id === undefined) return;
+
+  const database = await getDatabase();
+  await database.put("weightEntries", entry);
+}
+
 function asRecordArray<T>(value: unknown, label: string): T[] {
   if (!Array.isArray(value)) {
     throw new Error(`Nieprawidłowy backup: ${label} musi być listą.`);
@@ -1094,6 +1101,12 @@ function normalizeImportedProfile(value: unknown): UserProfileRecord {
     weightKg: profile.weightKg ?? null,
     updatedAt: profile.updatedAt ?? new Date().toISOString(),
   };
+}
+
+export async function deleteWeightEntry(id: number) {
+  const database = await getDatabase();
+
+  await database.delete("weightEntries", id);
 }
 
 export async function exportDatabaseBackup(

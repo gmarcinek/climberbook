@@ -101,7 +101,10 @@ export function TrainingHistoryWidget({
         border: 0,
         borderBottom: "1px solid rgb(215 212 212)",
       }
-    : listCardStyle;
+    : {
+        ...listCardStyle,
+        borderBottom: "1px solid rgb(215 212 212)",
+      };
 
   return (
     <Panel>

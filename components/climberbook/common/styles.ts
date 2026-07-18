@@ -176,6 +176,8 @@ export const weightEntryModalOverlayStyle = {
   display: "grid",
   placeItems: "center",
   padding: 16,
+  overflowY: "auto" as const,
+  overscrollBehavior: "contain" as const,
   background: "rgba(30, 25, 22, 0.34)",
 };
 
@@ -183,7 +185,10 @@ export const weightEntryModalStyle = {
   display: "grid",
   gap: 14,
   width: "min(100%, 420px)",
+  maxHeight: "calc(100dvh - 32px)",
   padding: 16,
+  overflowY: "auto" as const,
+  overscrollBehavior: "contain" as const,
   background: "rgba(255, 250, 243, 0.98)",
   border: "1px solid var(--border-strong)",
   boxShadow: "0 24px 70px rgba(72, 49, 33, 0.24)",

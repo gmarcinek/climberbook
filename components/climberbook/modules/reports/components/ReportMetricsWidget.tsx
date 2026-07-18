@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
-import { createPortal } from "react-dom";
 import { MetricCard } from "@/components/climberbook/common/charts";
+import { Modal } from "@/components/climberbook/common/Modal";
 import { Stack } from "@/components/climberbook/common/Stack";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import type { AscentCsvImportPreview } from "@/components/climberbook/providers/ClimberbookProvider";
@@ -15,8 +15,6 @@ import {
   secondaryButtonStyle,
   sectionTitleStyle,
   statsGridStyle,
-  weightEntryModalOverlayStyle,
-  weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
 type ReportMetricsWidgetProps = {
   ascentsCount: number;
@@ -133,239 +131,209 @@ export function ReportMetricsWidget({
           </div>
         }
       />
-      {importPreview && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              style={weightEntryModalOverlayStyle}
-              role="presentation"
-              onMouseDown={onCloseImportPreview}
-            >
-              <section
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="8a-import-preview-title"
-                style={{ ...weightEntryModalStyle, width: "min(100%, 520px)" }}
-                onMouseDown={(event) => event.stopPropagation()}
+      {importPreview ? (
+        <Modal
+          labelledBy="8a-import-preview-title"
+          onClose={onCloseImportPreview}
+          style={{ width: "min(100%, 520px)" }}
+        >
+          <div style={panelHeadingStyle}>
+            <div>
+              <span style={moduleEyebrowStyle}>Podgląd importu</span>
+              <h3 id="8a-import-preview-title" style={sectionTitleStyle}>
+                Dane z 8a.nu
+              </h3>
+            </div>
+            <span>
+              {importPreview.ascents.length +
+                (includeOtherStyles
+                  ? importPreview.optionalAscents.length
+                  : 0)}{" "}
+              przejść
+            </span>
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {[
+              { label: "PLIK", value: importPreview.fileName },
+              { label: "ŹRÓDŁO", value: importPreview.source },
+              { label: "TYP", value: "Skała" },
+              {
+                label: "ZAKRES DAT",
+                value: `${importPreview.firstDate} - ${importPreview.lastDate}`,
+              },
+              {
+                label: "POMINIĘTE WIERSZE",
+                value: String(visibleSkippedRows.length),
+              },
+              {
+                label: "ISTNIEJĄCE WPISY",
+                value: String(importPreview.duplicateCount),
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  padding: "0.7rem 0.8rem",
+                  border: "1px solid var(--border-strong)",
+                  background: "rgba(255,255,255,0.45)",
+                }}
               >
-                <div style={panelHeadingStyle}>
-                  <div>
-                    <span style={moduleEyebrowStyle}>Podgląd importu</span>
-                    <h3 id="8a-import-preview-title" style={sectionTitleStyle}>
-                      Dane z 8a.nu
-                    </h3>
-                  </div>
-                  <span>
-                    {importPreview.ascents.length +
-                      (includeOtherStyles
-                        ? importPreview.optionalAscents.length
-                        : 0)}{" "}
-                    przejść
-                  </span>
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {[
-                    { label: "PLIK", value: importPreview.fileName },
-                    { label: "ŹRÓDŁO", value: importPreview.source },
-                    { label: "TYP", value: "Skała" },
-                    {
-                      label: "ZAKRES DAT",
-                      value: `${importPreview.firstDate} - ${importPreview.lastDate}`,
-                    },
-                    {
-                      label: "POMINIĘTE WIERSZE",
-                      value: String(visibleSkippedRows.length),
-                    },
-                    {
-                      label: "ISTNIEJĄCE WPISY",
-                      value: String(importPreview.duplicateCount),
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        padding: "0.7rem 0.8rem",
-                        border: "1px solid var(--border-strong)",
-                        background: "rgba(255,255,255,0.45)",
-                      }}
-                    >
-                      <span
-                        style={{ color: "var(--muted)", fontSize: "0.82rem" }}
-                      >
-                        {item.label}
-                      </span>
-                      <strong
-                        style={{ overflowWrap: "anywhere", textAlign: "right" }}
-                      >
-                        {item.value}
-                      </strong>
-                    </div>
-                  ))}
-                </div>
-                {importPreview.optionalAscents.length > 0 ? (
-                  <label
+                <span style={{ color: "var(--muted)", fontSize: "0.82rem" }}>
+                  {item.label}
+                </span>
+                <strong
+                  style={{ overflowWrap: "anywhere", textAlign: "right" }}
+                >
+                  {item.value}
+                </strong>
+              </div>
+            ))}
+          </div>
+          {importPreview.optionalAscents.length > 0 ? (
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--text)",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={includeOtherStyles}
+                onChange={(event) =>
+                  setIncludeOtherStyles(event.target.checked)
+                }
+                style={{ accentColor: "var(--accent)" }}
+              />
+              Importuj też pozostałe style (
+              {importPreview.optionalAscents.length})
+            </label>
+          ) : null}
+          {importPreview.duplicateCount > 0 ? (
+            <label
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--text)",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={overwriteDuplicates}
+                onChange={(event) =>
+                  setOverwriteDuplicates(event.target.checked)
+                }
+                style={{ accentColor: "var(--accent)" }}
+              />
+              Nadpisz istniejące wpisy ({importPreview.duplicateCount})
+            </label>
+          ) : null}
+          {visibleSkippedRows.length > 0 ? (
+            <div style={{ display: "grid", gap: 6 }}>
+              <span style={{ color: "var(--muted)", fontSize: "0.82rem" }}>
+                Pominięte rekordy
+              </span>
+              <div
+                style={{
+                  display: "grid",
+                  gap: 6,
+                  maxHeight: 220,
+                  overflowY: "auto",
+                }}
+              >
+                {visibleSkippedRows.map((row) => (
+                  <div
+                    key={`${row.lineNumber}-${row.routeName}`}
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text)",
-                      cursor: "pointer",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      padding: "0.55rem 0.7rem",
+                      border: "1px solid var(--border-strong)",
+                      background: "rgba(255,255,255,0.45)",
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={includeOtherStyles}
-                      onChange={(event) =>
-                        setIncludeOtherStyles(event.target.checked)
-                      }
-                      style={{ accentColor: "var(--accent)" }}
-                    />
-                    Importuj też pozostałe style (
-                    {importPreview.optionalAscents.length})
-                  </label>
-                ) : null}
-                {importPreview.duplicateCount > 0 ? (
-                  <label
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={overwriteDuplicates}
-                      onChange={(event) =>
-                        setOverwriteDuplicates(event.target.checked)
-                      }
-                      style={{ accentColor: "var(--accent)" }}
-                    />
-                    Nadpisz istniejące wpisy ({importPreview.duplicateCount})
-                  </label>
-                ) : null}
-                {visibleSkippedRows.length > 0 ? (
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <span
-                      style={{ color: "var(--muted)", fontSize: "0.82rem" }}
-                    >
-                      Pominięte rekordy
+                    <span style={{ overflowWrap: "anywhere" }}>
+                      Wiersz {row.lineNumber}: {row.routeName}
                     </span>
-                    <div
-                      style={{
-                        display: "grid",
-                        gap: 6,
-                        maxHeight: 220,
-                        overflowY: "auto",
-                      }}
+                    <strong
+                      style={{ textAlign: "right", whiteSpace: "nowrap" }}
                     >
-                      {visibleSkippedRows.map((row) => (
-                        <div
-                          key={`${row.lineNumber}-${row.routeName}`}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: 12,
-                            padding: "0.55rem 0.7rem",
-                            border: "1px solid var(--border-strong)",
-                            background: "rgba(255,255,255,0.45)",
-                          }}
-                        >
-                          <span style={{ overflowWrap: "anywhere" }}>
-                            Wiersz {row.lineNumber}: {row.routeName}
-                          </span>
-                          <strong
-                            style={{ textAlign: "right", whiteSpace: "nowrap" }}
-                          >
-                            {row.style} · {row.reason}
-                          </strong>
-                        </div>
-                      ))}
-                    </div>
+                      {row.style} · {row.reason}
+                    </strong>
                   </div>
-                ) : null}
-                <p style={mutedParagraphStyle}>
-                  Import zapisze przejścia jako Skała z pochodzeniem 8a.nu.
-                </p>
-                <div style={{ display: "flex", gap: 8, marginTop: "1rem" }}>
-                  <button
-                    type="button"
-                    onClick={onCloseImportPreview}
-                    style={ghostButtonStyle}
-                    disabled={isImporting}
-                  >
-                    Anuluj
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void onConfirmImport(
-                        includeOtherStyles,
-                        overwriteDuplicates,
-                      )
-                    }
-                    style={secondaryButtonStyle}
-                    disabled={isImporting}
-                  >
-                    {isImporting ? "Importowanie..." : "Importuj przejścia"}
-                  </button>
-                </div>
-              </section>
-            </div>,
-            document.body,
-          )
-        : null}
-      {isDelete8aNuModalOpen && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              style={weightEntryModalOverlayStyle}
-              role="presentation"
-              onMouseDown={() => setIsDelete8aNuModalOpen(false)}
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <p style={mutedParagraphStyle}>
+            Import zapisze przejścia jako Skała z pochodzeniem 8a.nu.
+          </p>
+          <div style={{ display: "flex", gap: 8, marginTop: "1rem" }}>
+            <button
+              type="button"
+              onClick={onCloseImportPreview}
+              style={ghostButtonStyle}
+              disabled={isImporting}
             >
-              <section
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="8a-delete-modal-title"
-                style={weightEntryModalStyle}
-                onMouseDown={(event) => event.stopPropagation()}
-              >
-                <div style={panelHeadingStyle}>
-                  <div>
-                    <span style={moduleEyebrowStyle}>Nieodwracalna akcja</span>
-                    <h3 id="8a-delete-modal-title" style={sectionTitleStyle}>
-                      Usunąć dane z 8a.nu?
-                    </h3>
-                  </div>
-                </div>
-                <p style={mutedParagraphStyle}>
-                  Zostanie trwale usuniętych {imported8aNuAscentsCount} przejść
-                  oznaczonych jako import z 8a.nu. Ręcznie dodane wpisy
-                  pozostaną bez zmian.
-                </p>
-                <div style={{ display: "flex", gap: 8, marginTop: "1rem" }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsDelete8aNuModalOpen(false)}
-                    style={ghostButtonStyle}
-                  >
-                    Anuluj
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete8aNuAscents()}
-                    style={deleteButtonStyle}
-                  >
-                    Usuń dane z 8a.nu
-                  </button>
-                </div>
-              </section>
-            </div>,
-            document.body,
-          )
-        : null}
+              Anuluj
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void onConfirmImport(includeOtherStyles, overwriteDuplicates)
+              }
+              style={secondaryButtonStyle}
+              disabled={isImporting}
+            >
+              {isImporting ? "Importowanie..." : "Importuj przejścia"}
+            </button>
+          </div>
+        </Modal>
+      ) : null}
+      {isDelete8aNuModalOpen ? (
+        <Modal
+          labelledBy="8a-delete-modal-title"
+          onClose={() => setIsDelete8aNuModalOpen(false)}
+        >
+          <div style={panelHeadingStyle}>
+            <div>
+              <span style={moduleEyebrowStyle}>Nieodwracalna akcja</span>
+              <h3 id="8a-delete-modal-title" style={sectionTitleStyle}>
+                Usunąć dane z 8a.nu?
+              </h3>
+            </div>
+          </div>
+          <p style={mutedParagraphStyle}>
+            Zostanie trwale usuniętych {imported8aNuAscentsCount} przejść
+            oznaczonych jako import z 8a.nu. Ręcznie dodane wpisy pozostaną bez
+            zmian.
+          </p>
+          <div style={{ display: "flex", gap: 8, marginTop: "1rem" }}>
+            <button
+              type="button"
+              onClick={() => setIsDelete8aNuModalOpen(false)}
+              style={ghostButtonStyle}
+            >
+              Anuluj
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleDelete8aNuAscents()}
+              style={deleteButtonStyle}
+            >
+              Usuń dane z 8a.nu
+            </button>
+          </div>
+        </Modal>
+      ) : null}
     </Stack>
   );
 }

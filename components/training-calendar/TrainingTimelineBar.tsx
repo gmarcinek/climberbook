@@ -53,16 +53,34 @@ function getTimelineGradeRows(
   surfaces: TrainingSurface[] = [],
 ) {
   const gradingSurfaces = ["moon", "lina", "kilter", "baldy"] as const;
-  const rows = gradingSurfaces.flatMap((surface) => {
+  const visibleSurfaces = [
+    ...surfaces,
+    ...gradingSurfaces.filter((surface) =>
+      surface === "lina"
+        ? Boolean(difficultyBySurface?.lina ?? difficultyNotes)
+        : Boolean(difficultyBySurface?.[surface]),
+    ),
+  ].filter(
+    (surface, index, allSurfaces) => allSurfaces.indexOf(surface) === index,
+  );
+  const rows = visibleSurfaces.map((surface) => {
+    const isGradingSurface = gradingSurfaces.includes(
+      surface as (typeof gradingSurfaces)[number],
+    );
     const gradeValue =
       surface === "lina"
         ? (difficultyBySurface?.lina ?? difficultyNotes)
         : (difficultyBySurface?.[surface] ?? "");
-    const colors = getGradeColors(surface, gradeValue);
 
-    return colors.length > 0 || surfaces.includes(surface)
-      ? [{ surface, colors }]
-      : [];
+    return {
+      surface,
+      colors: isGradingSurface
+        ? getGradeColors(
+            surface as (typeof gradingSurfaces)[number],
+            gradeValue,
+          )
+        : [],
+    };
   });
 
   return rows.length > 0 ? rows : [{ surface: null, colors: [] }];
@@ -155,7 +173,10 @@ const timelineRowStyle: CSSProperties = {
 };
 
 const timelineLabelStyle: CSSProperties = {
-  minWidth: 34,
+  width: 80,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
   color: "var(--muted)",
   fontSize: "0.68rem",
   lineHeight: 1,
@@ -177,6 +198,15 @@ const timelineSurfaceLabels = {
   moon: "Moon",
   kilter: "Kilter",
   baldy: "Baldy",
+  drazek: "Drążek",
+  spraywall: "Spraywall",
+  silownia: "Siłownia",
+  chwytotablica: "Chwytotablica",
+  campus: "Campus",
+  bieznia: "Bieżnia",
+  rower: "Rower",
+  bieg: "Bieg",
+  treking: "Treking",
 } as const;
 
 const moonGradeColors = [

@@ -186,7 +186,7 @@ export function WeightTrendChart({
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
-            margin={{ top: 12, right: 8, bottom: 0, left: -20 }}
+            margin={{ top: 12, right: 0, bottom: 0, left: 0 }}
           >
             <defs>
               <linearGradient id="weightTrendFill" x1="0" y1="0" x2="0" y2="1">
@@ -205,7 +205,7 @@ export function WeightTrendChart({
               tickLine={false}
               tick={{ fill: "#64574d", fontSize: 11 }}
               minTickGap={28}
-              padding={{ left: 14, right: 14 }}
+              padding={{ left: 0, right: 0 }}
               tickFormatter={(date) =>
                 new Intl.DateTimeFormat("pl-PL", {
                   day: "numeric",
@@ -220,6 +220,7 @@ export function WeightTrendChart({
               tickFormatter={(value) => `${value}`}
               domain={[axisMinimum, axisMaximum]}
               ticks={fullKilogramTicks}
+              width={32}
             />
             <Tooltip
               cursor={{ stroke: "rgba(209, 109, 63, 0.32)", strokeWidth: 1 }}

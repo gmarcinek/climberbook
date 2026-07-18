@@ -35,7 +35,11 @@ type TrainingModuleContentProps = {
   chartRangeLabel: string;
   weightEntryDraft: WeightEntryDraft;
   onWeightEntryDraftChange: (draft: WeightEntryDraft) => void;
-  onWeightEntrySubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
+  onWeightEntrySubmit: (
+    event: FormEvent<HTMLFormElement>,
+    entryToUpdate?: WeightEntryRecord | null,
+  ) => Promise<boolean>;
+  onDeleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
   recentWeightEntries: WeightEntryRecord[];
   onPreviousMonth: () => void;
   onNextMonth: () => void;
@@ -76,6 +80,7 @@ export function TrainingModuleContent({
   weightEntryDraft,
   onWeightEntryDraftChange,
   onWeightEntrySubmit,
+  onDeleteWeightEntry,
   recentWeightEntries,
   onPreviousMonth,
   onNextMonth,
@@ -177,6 +182,7 @@ export function TrainingModuleContent({
             weightEntryDraft={weightEntryDraft}
             onWeightEntryDraftChange={onWeightEntryDraftChange}
             onWeightEntrySubmit={onWeightEntrySubmit}
+            onDeleteWeightEntry={onDeleteWeightEntry}
             recentWeightEntries={recentWeightEntries}
           />
         )}

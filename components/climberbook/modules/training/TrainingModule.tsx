@@ -42,6 +42,7 @@ export function TrainingModule() {
       weightEntryDraft={app.weightEntryDraft}
       onWeightEntryDraftChange={app.setWeightEntryDraft}
       onWeightEntrySubmit={app.submitWeightEntry}
+      onDeleteWeightEntry={app.deleteWeightEntry}
       recentWeightEntries={stats.recentWeightEntries}
       onPreviousMonth={app.previousTrainingMonth}
       onNextMonth={app.nextTrainingMonth}

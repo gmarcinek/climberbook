@@ -7,7 +7,6 @@ import {
   Brush,
   CartesianGrid,
   Legend,
-  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -124,15 +123,6 @@ export function WeeklyTrainingChartWidget({
                 name="Spray/obwody"
                 stackId="hours"
                 fill="#d16d3f"
-                isAnimationActive={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="totalHours"
-                name="Razem"
-                stroke="#1e1916"
-                strokeWidth={2}
-                dot={false}
                 isAnimationActive={false}
               />
               <Brush

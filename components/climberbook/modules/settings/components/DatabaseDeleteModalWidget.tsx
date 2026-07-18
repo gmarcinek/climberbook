@@ -7,10 +7,9 @@ import {
   mutedParagraphStyle,
   panelHeadingStyle,
   sectionTitleStyle,
-  weightEntryModalOverlayStyle,
-  weightEntryModalStyle,
 } from "@/components/climberbook/common/styles";
 import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
+import { Modal } from "@/components/climberbook/common/Modal";
 import type { DatabaseDeleteModalWidgetProps } from "./SettingsWidgetTypes";
 export function DatabaseDeleteModalWidget({
   databaseDeleteConfirmation,
@@ -19,73 +18,64 @@ export function DatabaseDeleteModalWidget({
   onCloseDatabaseDeleteModal,
 }: DatabaseDeleteModalWidgetProps) {
   return (
-    <div
-      style={weightEntryModalOverlayStyle}
-      role="presentation"
-      onMouseDown={onCloseDatabaseDeleteModal}
+    <Modal
+      labelledBy="database-delete-modal-title"
+      onClose={onCloseDatabaseDeleteModal}
     >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="database-delete-modal-title"
-        style={weightEntryModalStyle}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div style={panelHeadingStyle}>
-          <div>
-            <span style={moduleEyebrowStyle}>Nieodwracalna akcja</span>
-            <h3 id="database-delete-modal-title" style={sectionTitleStyle}>
-              Usunąć bazę danych?
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onCloseDatabaseDeleteModal}
-            style={ghostButtonStyle}
-          >
-            Anuluj
-          </button>
+      <div style={panelHeadingStyle}>
+        <div>
+          <span style={moduleEyebrowStyle}>Nieodwracalna akcja</span>
+          <h3 id="database-delete-modal-title" style={sectionTitleStyle}>
+            Usunąć bazę danych?
+          </h3>
         </div>
-        <p style={mutedParagraphStyle}>
-          Wszystkie lokalne treningi, przejścia, ustawienia i pomiary wagi
-          zostaną trwale usunięte. Wpisz „usuń”, aby potwierdzić.
-        </p>
-        <Form
-          as="div"
-          onSubmit={onDatabaseDelete}
-          panelPadding="none"
-          panelGap="none"
+        <button
+          type="button"
+          onClick={onCloseDatabaseDeleteModal}
+          style={ghostButtonStyle}
         >
-          <label style={fieldStyle}>
-            Potwierdzenie
-            <input
-              value={databaseDeleteConfirmation}
-              onChange={(event) =>
-                setDatabaseDeleteConfirmation(event.target.value)
-              }
-              placeholder="usuń"
-              autoComplete="off"
-              style={inputStyle}
-            />
-          </label>
-          <FormActions>
-            <button
-              type="submit"
-              disabled={databaseDeleteConfirmation !== "usuń"}
-              style={{
-                ...deleteButtonStyle,
-                opacity: databaseDeleteConfirmation === "usuń" ? 1 : 0.45,
-                cursor:
-                  databaseDeleteConfirmation === "usuń"
-                    ? "pointer"
-                    : "not-allowed",
-              }}
-            >
-              USUŃ BAZĘ DANYCH
-            </button>
-          </FormActions>
-        </Form>
-      </section>
-    </div>
+          Anuluj
+        </button>
+      </div>
+      <p style={mutedParagraphStyle}>
+        Wszystkie lokalne treningi, przejścia, ustawienia i pomiary wagi zostaną
+        trwale usunięte. Wpisz „usuń”, aby potwierdzić.
+      </p>
+      <Form
+        as="div"
+        onSubmit={onDatabaseDelete}
+        panelPadding="none"
+        panelGap="none"
+      >
+        <label style={fieldStyle}>
+          Potwierdzenie
+          <input
+            value={databaseDeleteConfirmation}
+            onChange={(event) =>
+              setDatabaseDeleteConfirmation(event.target.value)
+            }
+            placeholder="usuń"
+            autoComplete="off"
+            style={inputStyle}
+          />
+        </label>
+        <FormActions>
+          <button
+            type="submit"
+            disabled={databaseDeleteConfirmation !== "usuń"}
+            style={{
+              ...deleteButtonStyle,
+              opacity: databaseDeleteConfirmation === "usuń" ? 1 : 0.45,
+              cursor:
+                databaseDeleteConfirmation === "usuń"
+                  ? "pointer"
+                  : "not-allowed",
+            }}
+          >
+            USUŃ BAZĘ DANYCH
+          </button>
+        </FormActions>
+      </Form>
+    </Modal>
   );
 }

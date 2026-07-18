@@ -22,7 +22,11 @@ type TrainingAnalyticsWidgetProps = {
   chartRangeLabel: string;
   weightEntryDraft: WeightEntryDraft;
   onWeightEntryDraftChange: (draft: WeightEntryDraft) => void;
-  onWeightEntrySubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
+  onWeightEntrySubmit: (
+    event: FormEvent<HTMLFormElement>,
+    entryToUpdate?: WeightEntryRecord | null,
+  ) => Promise<boolean>;
+  onDeleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
   recentWeightEntries: WeightEntryRecord[];
 };
 

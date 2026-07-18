@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { Modal } from "@/components/climberbook/common/Modal";
 import { WeeklyAscentChartWidget } from "@/components/climberbook/common/WeeklyAscentChartWidget";
 import { AscentGradeDistributionWidget } from "./AscentGradeDistributionWidget";
 import { AscentFormWidget } from "./AscentFormWidget";
@@ -14,9 +15,6 @@ import type { AscentRecord } from "@/lib/climbs-db";
 import type { AscentCsvImportPreview } from "@/components/climberbook/providers/ClimberbookProvider";
 import {
   buttonStyle,
-  mobileDrawerBackdropStyle,
-  mobileDrawerOverlayStyle,
-  mobileDrawerSheetStyle,
   moduleContentStyle,
   twoColumnLayoutStyle,
 } from "@/components/climberbook/common/styles";
@@ -218,22 +216,13 @@ export function ReportsAssembly({
         onEdit={onAscentEdit}
       />
       {isMobile && isAscentDrawerOpen ? (
-        <div style={mobileDrawerOverlayStyle}>
-          <button
-            type="button"
-            aria-label="Zamknij formularz przejścia"
-            onClick={() => setIsAscentDrawerOpen(false)}
-            style={mobileDrawerBackdropStyle}
-          />
-          <div
-            style={{
-              ...mobileDrawerSheetStyle,
-              padding: 12,
-            }}
-          >
-            {ascentFormWidget}
-          </div>
-        </div>
+        <Modal
+          labelledBy="ascent-form-title"
+          onClose={() => setIsAscentDrawerOpen(false)}
+          style={{ gap: 8, padding: 8 }}
+        >
+          {ascentFormWidget}
+        </Modal>
       ) : null}
     </Stack>
   );

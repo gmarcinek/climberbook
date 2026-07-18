@@ -52,6 +52,7 @@ import {
   deleteClimberbookDatabase,
   deleteSection,
   deleteTraining,
+  deleteWeightEntry,
   exportDatabaseBackup,
   exportFullDatabaseBackup,
   getUserProfile,
@@ -68,6 +69,7 @@ import {
   updateAscent,
   updateAthlete,
   updateTraining,
+  updateWeightEntry,
   type AscentRecord,
   type AthleteRecord,
   type DatabaseImportPreview,
@@ -313,7 +315,11 @@ type ClimberbookContextValue = {
   submitTraining: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   editTraining: (training: TrainingRecord) => void;
   deleteTraining: (training: TrainingRecord) => Promise<void>;
-  submitWeightEntry: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
+  submitWeightEntry: (
+    event: FormEvent<HTMLFormElement>,
+    entryToUpdate?: WeightEntryRecord | null,
+  ) => Promise<boolean>;
+  deleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
   submitAscent: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   previewAscentsCsv: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   confirmAscentsCsvImport: (
@@ -633,7 +639,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     await refreshData();
     if (editingTrainingId === training.id) resetTrainingEditor();
   }
-  async function submitWeightEntry(event: FormEvent<HTMLFormElement>) {
+  async function submitWeightEntry(
+    event: FormEvent<HTMLFormElement>,
+    entryToUpdate?: WeightEntryRecord | null,
+  ) {
     event.preventDefault();
     const weightKg = parseWeightInput(weightEntryDraft.weightKg);
     if (
@@ -643,15 +652,30 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       weightKg <= 0
     )
       return false;
-    await addWeightEntry({
-      athleteId: activeAthleteId,
-      date: weightEntryDraft.date,
-      time: weightEntryDraft.time,
-      weightKg,
-    });
+    if (entryToUpdate?.id !== undefined) {
+      await updateWeightEntry({
+        ...entryToUpdate,
+        date: weightEntryDraft.date,
+        time: weightEntryDraft.time,
+        weightKg,
+      });
+    } else {
+      await addWeightEntry({
+        athleteId: activeAthleteId,
+        date: weightEntryDraft.date,
+        time: weightEntryDraft.time,
+        weightKg,
+      });
+    }
     await refreshData();
     setWeightEntryDraft(createWeightEntryDraft(today, weightKg));
     return true;
+  }
+  async function deleteWeightEntryAction(entry: WeightEntryRecord) {
+    if (entry.id === undefined) return;
+
+    await deleteWeightEntry(entry.id);
+    await refreshData();
   }
   async function submitAscent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1087,6 +1111,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     },
     deleteTraining: deleteTrainingAction,
     submitWeightEntry,
+    deleteWeightEntry: deleteWeightEntryAction,
     submitAscent,
     previewAscentsCsv,
     confirmAscentsCsvImport,
@@ -1199,6 +1224,7 @@ export function useTrainingModule() {
     editingAscentId,
     editTraining,
     deleteTraining,
+    deleteWeightEntry,
     nextTrainingMonth,
     previousTrainingMonth,
     profileDraft,
@@ -1224,6 +1250,7 @@ export function useTrainingModule() {
     editingTrainingId,
     editTraining,
     deleteTraining,
+    deleteWeightEntry,
     nextTrainingMonth,
     previousTrainingMonth,
     profileDraft,

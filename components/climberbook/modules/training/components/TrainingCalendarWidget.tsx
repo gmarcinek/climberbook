@@ -107,7 +107,7 @@ export function TrainingCalendarWidget({
             <div className={sidebarStyles.trainingSidebar__panelHeader}>
               <div>
                 <h2 className={sidebarStyles.trainingSidebar__title}>
-                  Lista treningów
+                  Treningi
                 </h2>
               </div>
               <div className={sidebarStyles.trainingSidebar__headerActions}>
