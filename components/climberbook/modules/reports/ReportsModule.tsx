@@ -29,10 +29,8 @@ export function ReportsModule() {
       rockAscents={stats.rockAscents}
       ascentChartRangeLabel={stats.ascentChartRangeLabel}
       ascentTimelineStats={stats.ascentTimelineStats}
-      ascentGradeFrequency={stats.ascentGradeFrequency}
       ascentDraft={app.ascentDraft}
       editingAscentId={app.editingAscentId}
-      ascentImportMessage={app.ascentImportMessage}
       ascentCsvImportPreview={app.ascentCsvImportPreview}
       isImportingAscentsCsv={app.isImportingAscentsCsv}
       imported8aNuAscentsCount={

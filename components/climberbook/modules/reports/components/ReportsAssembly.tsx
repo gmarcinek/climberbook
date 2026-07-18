@@ -42,6 +42,7 @@ type ReportsAssemblyProps = {
     date: string;
     routeName: string;
     source: "panel" | "skala";
+    ascentStyle?: string;
     notes: string;
     suggestedGrade: string;
     subjectiveGrade: string;
@@ -51,23 +52,18 @@ type ReportsAssemblyProps = {
     subjectiveColor: string;
     attemptCount: number;
   }>;
-  ascentGradeFrequency: Array<{
-    grade: string;
-    suggestedCount: number;
-    subjectiveCount: number;
-    totalCount: number;
-    normalizedCount: number;
-  }>;
   ascentDraft: AscentDraftValues;
   editingAscentId: number | null;
-  ascentImportMessage: string;
   ascentCsvImportPreview: AscentCsvImportPreview | null;
   isImportingAscentsCsv: boolean;
   imported8aNuAscentsCount: number;
   onAscentDraftChange: (draft: AscentDraftValues) => void;
   onAscentSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onAscentsCsvImport: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
-  onConfirmAscentsCsvImport: (includeOtherStyles: boolean) => Promise<void>;
+  onConfirmAscentsCsvImport: (
+    includeOtherStyles: boolean,
+    overwriteDuplicates: boolean,
+  ) => Promise<void>;
   onCloseAscentsCsvImportPreview: () => void;
   onDelete8aNuAscents: () => Promise<void>;
   onAscentEdit: (ascent: AscentRecord) => void;
@@ -83,10 +79,8 @@ export function ReportsAssembly({
   rockAscents,
   ascentChartRangeLabel,
   ascentTimelineStats,
-  ascentGradeFrequency,
   ascentDraft,
   editingAscentId,
-  ascentImportMessage,
   ascentCsvImportPreview,
   isImportingAscentsCsv,
   imported8aNuAscentsCount,
@@ -153,10 +147,7 @@ export function ReportsAssembly({
     />
   );
   const lowerWidgets = [
-    <AscentGradeDistributionWidget
-      key="grades"
-      gradeFrequency={ascentGradeFrequency}
-    />,
+    <AscentGradeDistributionWidget key="grades" ascents={ascents} />,
     ascentFormWidget,
   ];
   const orderedLowerWidgets = isMobile ? [lowerWidgets[0]] : lowerWidgets;
@@ -196,7 +187,6 @@ export function ReportsAssembly({
           ascentsCount={ascentsCount}
           panelAscents={panelAscents}
           rockAscents={rockAscents}
-          importMessage={ascentImportMessage}
           onCsvImport={onAscentsCsvImport}
           importPreview={ascentCsvImportPreview}
           isImporting={isImportingAscentsCsv}

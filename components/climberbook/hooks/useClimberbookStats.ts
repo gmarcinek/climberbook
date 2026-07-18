@@ -343,6 +343,7 @@ export function useClimberbookStats({
           date: ascent.date,
           routeName: ascent.routeName,
           source: ascent.source,
+          ascentStyle: ascent.style,
           notes: ascent.notes,
           suggestedGrade: suggested.label,
           subjectiveGrade: subjective.label,

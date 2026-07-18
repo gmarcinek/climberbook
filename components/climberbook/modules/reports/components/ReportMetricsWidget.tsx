@@ -22,12 +22,14 @@ type ReportMetricsWidgetProps = {
   ascentsCount: number;
   panelAscents: number;
   rockAscents: number;
-  importMessage: string;
   onCsvImport: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   importPreview: AscentCsvImportPreview | null;
   isImporting: boolean;
   imported8aNuAscentsCount: number;
-  onConfirmImport: (includeOtherStyles: boolean) => Promise<void>;
+  onConfirmImport: (
+    includeOtherStyles: boolean,
+    overwriteDuplicates: boolean,
+  ) => Promise<void>;
   onCloseImportPreview: () => void;
   onDelete8aNuAscents: () => Promise<void>;
 };
@@ -35,7 +37,6 @@ export function ReportMetricsWidget({
   ascentsCount,
   panelAscents,
   rockAscents,
-  importMessage,
   onCsvImport,
   importPreview,
   isImporting,
@@ -48,6 +49,7 @@ export function ReportMetricsWidget({
   const isTabletReportLayout = width > 0 && width < 1024;
   const [isDelete8aNuModalOpen, setIsDelete8aNuModalOpen] = useState(false);
   const [includeOtherStyles, setIncludeOtherStyles] = useState(false);
+  const [overwriteDuplicates, setOverwriteDuplicates] = useState(false);
   const visibleSkippedRows = importPreview
     ? importPreview.skippedAscentRows.filter(
         (row) => !includeOtherStyles || !row.canImportWhenSelected,
@@ -56,6 +58,7 @@ export function ReportMetricsWidget({
 
   useEffect(() => {
     setIncludeOtherStyles(false);
+    setOverwriteDuplicates(false);
   }, [importPreview]);
 
   async function handleDelete8aNuAscents() {
@@ -127,11 +130,6 @@ export function ReportMetricsWidget({
             >
               Usuń dane z 8a.nu ({imported8aNuAscentsCount})
             </button>
-            {importMessage ? (
-              <span style={{ color: "var(--muted)", fontSize: "0.78rem" }}>
-                {importMessage}
-              </span>
-            ) : null}
           </div>
         }
       />
@@ -176,6 +174,10 @@ export function ReportMetricsWidget({
                     {
                       label: "POMINIĘTE WIERSZE",
                       value: String(visibleSkippedRows.length),
+                    },
+                    {
+                      label: "ISTNIEJĄCE WPISY",
+                      value: String(importPreview.duplicateCount),
                     },
                   ].map((item) => (
                     <div
@@ -222,6 +224,27 @@ export function ReportMetricsWidget({
                     />
                     Importuj też pozostałe style (
                     {importPreview.optionalAscents.length})
+                  </label>
+                ) : null}
+                {importPreview.duplicateCount > 0 ? (
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: "var(--text)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={overwriteDuplicates}
+                      onChange={(event) =>
+                        setOverwriteDuplicates(event.target.checked)
+                      }
+                      style={{ accentColor: "var(--accent)" }}
+                    />
+                    Nadpisz istniejące wpisy ({importPreview.duplicateCount})
                   </label>
                 ) : null}
                 {visibleSkippedRows.length > 0 ? (
@@ -278,7 +301,12 @@ export function ReportMetricsWidget({
                   </button>
                   <button
                     type="button"
-                    onClick={() => void onConfirmImport(includeOtherStyles)}
+                    onClick={() =>
+                      void onConfirmImport(
+                        includeOtherStyles,
+                        overwriteDuplicates,
+                      )
+                    }
                     style={secondaryButtonStyle}
                     disabled={isImporting}
                   >

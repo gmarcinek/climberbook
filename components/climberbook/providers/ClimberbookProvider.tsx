@@ -100,6 +100,7 @@ export type AscentCsvImportPreview = {
   skippedGoProjects: number;
   skippedTopropes: number;
   skippedOtherStyles: number;
+  duplicateCount: number;
   firstDate: string;
   lastDate: string;
 };
@@ -134,6 +135,38 @@ const emptyAscentDraft = (): AscentDraft => ({
   style: "",
   notes: "",
 });
+function getAscentImportFingerprint(
+  ascent: Pick<
+    AscentRecord,
+    "date" | "source" | "routeName" | "suggestedGrade"
+  >,
+) {
+  return [
+    ascent.date,
+    ascent.source,
+    ascent.routeName.trim().toLocaleLowerCase("pl-PL"),
+    ascent.suggestedGrade.trim().toLocaleLowerCase("pl-PL"),
+  ].join("\u0001");
+}
+function countDuplicateAscents(
+  existingAscents: AscentRecord[],
+  incomingAscents: Array<Omit<AscentRecord, "id" | "createdAt" | "athleteId">>,
+) {
+  const knownFingerprints = new Set(
+    existingAscents.map(getAscentImportFingerprint),
+  );
+
+  return incomingAscents.reduce((duplicateCount, ascent) => {
+    const fingerprint = getAscentImportFingerprint(ascent);
+
+    if (knownFingerprints.has(fingerprint)) {
+      return duplicateCount + 1;
+    }
+
+    knownFingerprints.add(fingerprint);
+    return duplicateCount;
+  }, 0);
+}
 const createPullUpProtocolSet = () => ({
   sets: "1",
   repetitions: "1",
@@ -257,7 +290,6 @@ type ClimberbookContextValue = {
   editingAscentId: number | null;
   ascentDraft: AscentDraft;
   setAscentDraft: Dispatch<SetStateAction<AscentDraft>>;
-  ascentImportMessage: string;
   ascentCsvImportPreview: AscentCsvImportPreview | null;
   isImportingAscentsCsv: boolean;
   status: string;
@@ -284,7 +316,10 @@ type ClimberbookContextValue = {
   submitWeightEntry: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   submitAscent: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   previewAscentsCsv: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
-  confirmAscentsCsvImport: (includeOtherStyles: boolean) => Promise<void>;
+  confirmAscentsCsvImport: (
+    includeOtherStyles: boolean,
+    overwriteDuplicates: boolean,
+  ) => Promise<void>;
   closeAscentsCsvImportPreview: () => void;
   delete8aNuAscents: () => Promise<void>;
   editAscent: (ascent: AscentRecord) => void;
@@ -340,7 +375,6 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   );
   const [editingAscentId, setEditingAscentId] = useState<number | null>(null);
   const [ascentDraft, setAscentDraft] = useState<AscentDraft>(emptyAscentDraft);
-  const [ascentImportMessage, setAscentImportMessage] = useState("");
   const [ascentCsvImportPreview, setAscentCsvImportPreview] =
     useState<AscentCsvImportPreview | null>(null);
   const [isImportingAscentsCsv, setIsImportingAscentsCsv] = useState(false);
@@ -655,10 +689,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       const availableAscents = [...importedAscents, ...optionalAscents];
 
       if (!availableAscents.length) {
-        setAscentImportMessage("Nie znaleziono poprawnych przejść do importu.");
+        showSuccessToast("Nie znaleziono poprawnych przejść do importu.");
         return;
       }
 
+      const existingAscents = await listAscents(activeAthleteId);
       const dates = availableAscents.map((ascent) => ascent.date).sort();
       setAscentCsvImportPreview({
         fileName: file.name,
@@ -670,16 +705,23 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         skippedGoProjects,
         skippedTopropes,
         skippedOtherStyles,
+        duplicateCount: countDuplicateAscents(
+          existingAscents,
+          availableAscents,
+        ),
         firstDate: dates[0],
         lastDate: dates.at(-1) ?? dates[0],
       });
     } catch (error) {
-      setAscentImportMessage(
+      showSuccessToast(
         error instanceof Error ? error.message : "Import CSV nie powiódł się.",
       );
     }
   }
-  async function confirmAscentsCsvImport(includeOtherStyles: boolean) {
+  async function confirmAscentsCsvImport(
+    includeOtherStyles: boolean,
+    overwriteDuplicates: boolean,
+  ) {
     if (!activeAthleteId || !ascentCsvImportPreview) return;
 
     const ascentsToImport = [
@@ -688,19 +730,74 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     ];
     setIsImportingAscentsCsv(true);
     try {
+      const importedAscents = await listAscents(activeAthleteId);
+      const existingAscentsByFingerprint = new Map(
+        importedAscents.map((ascent) => [
+          getAscentImportFingerprint(ascent),
+          ascent,
+        ]),
+      );
+      const importedFingerprints = new Set<string>();
+      const uniqueAscents: typeof ascentsToImport = [];
+      const ascentsToOverwrite: Array<{
+        existing: AscentRecord;
+        incoming: (typeof ascentsToImport)[number];
+      }> = [];
+      let duplicateCount = 0;
+
+      ascentsToImport.forEach((ascent) => {
+        const fingerprint = getAscentImportFingerprint(ascent);
+        const existingAscent = existingAscentsByFingerprint.get(fingerprint);
+
+        if (existingAscent) {
+          duplicateCount += 1;
+
+          if (overwriteDuplicates && existingAscent.id !== undefined) {
+            ascentsToOverwrite.push({
+              existing: existingAscent,
+              incoming: ascent,
+            });
+          }
+
+          return;
+        }
+
+        if (importedFingerprints.has(fingerprint)) {
+          duplicateCount += 1;
+          return;
+        }
+
+        importedFingerprints.add(fingerprint);
+        uniqueAscents.push(ascent);
+      });
+
       await addAscents(
-        ascentsToImport.map((ascent) => ({
+        uniqueAscents.map((ascent) => ({
           ...ascent,
           athleteId: activeAthleteId,
         })),
       );
+      await Promise.all(
+        ascentsToOverwrite.map(({ existing, incoming }) =>
+          updateAscent({
+            ...incoming,
+            id: existing.id!,
+            athleteId: activeAthleteId,
+          }),
+        ),
+      );
       await refreshData();
-      setAscentImportMessage(
-        `Zaimportowano ${ascentsToImport.length} przejść z 8a.nu${ascentCsvImportPreview.skippedRows - (includeOtherStyles ? ascentCsvImportPreview.optionalAscents.length : 0) ? `, pominięto ${ascentCsvImportPreview.skippedRows - (includeOtherStyles ? ascentCsvImportPreview.optionalAscents.length : 0)}` : ""}.`,
+      const skippedCount =
+        ascentCsvImportPreview.skippedRows -
+        (includeOtherStyles
+          ? ascentCsvImportPreview.optionalAscents.length
+          : 0);
+      showSuccessToast(
+        `Zaimportowano ${uniqueAscents.length} przejść z 8a.nu${skippedCount ? `, pominięto ${skippedCount} rekordów` : ""}.`,
       );
       setAscentCsvImportPreview(null);
     } catch (error) {
-      setAscentImportMessage(
+      showSuccessToast(
         error instanceof Error ? error.message : "Import CSV nie powiódł się.",
       );
     } finally {
@@ -715,7 +812,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
 
     await deleteAscentsByImportSource(activeAthleteId, "8a.nu");
     await refreshData();
-    setAscentImportMessage("Usunięto przejścia zaimportowane z 8a.nu.");
+    showSuccessToast("Usunięto przejścia zaimportowane z 8a.nu.");
   }
   async function submitSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -952,7 +1049,6 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     editingAscentId,
     ascentDraft,
     setAscentDraft,
-    ascentImportMessage,
     ascentCsvImportPreview,
     isImportingAscentsCsv,
     status,
@@ -1153,7 +1249,6 @@ export function useReportsModule() {
   const {
     ascents,
     ascentDraft,
-    ascentImportMessage,
     ascentCsvImportPreview,
     isImportingAscentsCsv,
     cancelAscentEdit,
@@ -1175,7 +1270,6 @@ export function useReportsModule() {
   return {
     ascents,
     ascentDraft,
-    ascentImportMessage,
     ascentCsvImportPreview,
     isImportingAscentsCsv,
     cancelAscentEdit,

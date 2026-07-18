@@ -33,6 +33,7 @@ type WeeklyAscentChartWidgetProps = {
     date: string;
     routeName: string;
     source: "panel" | "skala";
+    ascentStyle?: string;
     notes: string;
     suggestedGrade: string;
     subjectiveGrade: string;
@@ -75,14 +76,23 @@ export function WeeklyAscentChartWidget({
   >(null);
   const [isPanelVisible, setIsPanelVisible] = useState(true);
   const [isRockVisible, setIsRockVisible] = useState(true);
+  const [areProjectsVisible, setAreProjectsVisible] = useState(false);
   const filteredAscentTimelineStats = useMemo(
     () =>
-      ascentTimelineStats.filter(
-        (entry) =>
-          (entry.source === "panel" && isPanelVisible) ||
-          (entry.source === "skala" && isRockVisible),
-      ),
-    [ascentTimelineStats, isPanelVisible, isRockVisible],
+      ascentTimelineStats.filter((entry) => {
+        const style = (entry.ascentStyle ?? "").trim().toUpperCase();
+        const isToprope = style === "TR" || style === "TOPROPE";
+        const isProject = style === "GO";
+
+        return (
+          !isToprope &&
+          ((isProject && areProjectsVisible) ||
+            (!isProject &&
+              ((entry.source === "panel" && isPanelVisible) ||
+                (entry.source === "skala" && isRockVisible))))
+        );
+      }),
+    [areProjectsVisible, ascentTimelineStats, isPanelVisible, isRockVisible],
   );
   const hasEntries = filteredAscentTimelineStats.length > 0;
   const chartData = useMemo(
@@ -138,7 +148,7 @@ export function WeeklyAscentChartWidget({
     0,
     visibleChartData.length - maxVisibleEntries,
   );
-  const brushKey = `${activeQuarter?.key ?? "all"}-${isPanelVisible}-${isRockVisible}-${visibleChartData.length}-${maxVisibleEntries}`;
+  const brushKey = `${activeQuarter?.key ?? "all"}-${isPanelVisible}-${isRockVisible}-${areProjectsVisible}-${visibleChartData.length}-${maxVisibleEntries}`;
   const brushRange = useRef<BrushRange>({
     key: null,
     startIndex: 0,
@@ -222,11 +232,14 @@ export function WeeklyAscentChartWidget({
     if (
       selectedEntry &&
       ((selectedEntry.source === "panel" && !isPanelVisible) ||
-        (selectedEntry.source === "skala" && !isRockVisible))
+        (selectedEntry.source === "skala" && !isRockVisible) ||
+        (selectedEntry.ascentStyle ?? "").trim().toUpperCase() === "TR" ||
+        ((selectedEntry.ascentStyle ?? "").trim().toUpperCase() === "GO" &&
+          !areProjectsVisible))
     ) {
       setSelectedEntry(null);
     }
-  }, [isPanelVisible, isRockVisible, selectedEntry]);
+  }, [areProjectsVisible, isPanelVisible, isRockVisible, selectedEntry]);
 
   function beginBrushInteraction() {
     const commitBrushRange = () => {
@@ -342,6 +355,26 @@ export function WeeklyAscentChartWidget({
                   style={{ accentColor: "#e19a24" }}
                 />
                 Skała
+              </label>
+              <label
+                style={{
+                  display: "inline-flex",
+                  gap: 5,
+                  alignItems: "center",
+                  color: "var(--muted)",
+                  fontSize: "0.82rem",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={areProjectsVisible}
+                  onChange={(event) =>
+                    setAreProjectsVisible(event.target.checked)
+                  }
+                  style={{ accentColor: "#8d5ca8" }}
+                />
+                Projekty
               </label>
             </div>
           </div>

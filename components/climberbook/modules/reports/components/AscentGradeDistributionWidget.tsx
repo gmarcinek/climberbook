@@ -1,32 +1,128 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/climberbook/common/charts";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { getGradeRank } from "@/components/climberbook/common/training";
 import {
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
 } from "@/components/climberbook/common/styles";
+import type { AscentRecord } from "@/lib/climbs-db";
 
 type AscentGradeDistributionWidgetProps = {
-  gradeFrequency: Array<{
-    grade: string;
-    suggestedCount: number;
-    subjectiveCount: number;
-    totalCount: number;
-    normalizedCount: number;
-  }>;
+  ascents: AscentRecord[];
 };
 
 export function AscentGradeDistributionWidget({
-  gradeFrequency,
+  ascents,
 }: AscentGradeDistributionWidgetProps) {
+  const [isPanelVisible, setIsPanelVisible] = useState(true);
+  const [isRockVisible, setIsRockVisible] = useState(true);
+  const [areProjectsVisible, setAreProjectsVisible] = useState(false);
+  const gradeFrequency = useMemo(() => {
+    const grades = new Map<string, number>();
+
+    ascents.forEach((ascent) => {
+      const style = (ascent.style ?? "").trim().toUpperCase();
+      const isToprope = style === "TR" || style === "TOPROPE";
+      const isProject = style === "GO";
+      const isVisibleSource =
+        (ascent.source === "panel" && isPanelVisible) ||
+        (ascent.source === "skala" && isRockVisible);
+
+      if (isToprope || (isProject ? !areProjectsVisible : !isVisibleSource)) {
+        return;
+      }
+
+      const grade = ascent.suggestedGrade.trim();
+
+      if (grade) {
+        grades.set(grade, (grades.get(grade) ?? 0) + 1);
+      }
+    });
+
+    const distribution = Array.from(grades, ([grade, totalCount]) => ({
+      grade,
+      totalCount,
+    })).sort(
+      (left, right) => getGradeRank(right.grade) - getGradeRank(left.grade),
+    );
+    const maxCount = distribution.reduce(
+      (highest, item) => Math.max(highest, item.totalCount),
+      0,
+    );
+
+    return distribution.map((item) => ({
+      ...item,
+      normalizedCount: maxCount > 0 ? item.totalCount / maxCount : 0,
+    }));
+  }, [areProjectsVisible, ascents, isPanelVisible, isRockVisible]);
+
   return (
     <Panel>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Wyceny</span>
-          <h2 style={sectionTitleStyle}>Rozkład od najwyższej do najniższej</h2>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <h2 style={sectionTitleStyle}>
+              Rozkład od najwyższej do najniższej
+            </h2>
+            <div
+              role="group"
+              aria-label="Filtr źródła wycen"
+              style={{ display: "flex", gap: 10, alignItems: "center" }}
+            >
+              {[
+                {
+                  label: "Panel",
+                  checked: isPanelVisible,
+                  onChange: setIsPanelVisible,
+                  color: "#168f91",
+                },
+                {
+                  label: "Skała",
+                  checked: isRockVisible,
+                  onChange: setIsRockVisible,
+                  color: "#e19a24",
+                },
+                {
+                  label: "Projekty",
+                  checked: areProjectsVisible,
+                  onChange: setAreProjectsVisible,
+                  color: "#8d5ca8",
+                },
+              ].map((filter) => (
+                <label
+                  key={filter.label}
+                  style={{
+                    display: "inline-flex",
+                    gap: 5,
+                    alignItems: "center",
+                    color: "var(--muted)",
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filter.checked}
+                    onChange={(event) => filter.onChange(event.target.checked)}
+                    style={{ accentColor: filter.color }}
+                  />
+                  {filter.label}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       {gradeFrequency.length === 0 ? (
