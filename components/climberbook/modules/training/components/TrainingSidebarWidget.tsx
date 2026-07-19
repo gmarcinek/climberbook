@@ -65,11 +65,15 @@ export function TrainingSidebarDrawer({
       style={{
         ...mobileDrawerSheetStyle,
         ...sheetStyle,
+        position: "fixed",
+        inset: 0,
         width: "100%",
         maxWidth: "100%",
         height: "100dvh",
         maxHeight: "100dvh",
+        padding: 0,
         gap: 0,
+        gridTemplateRows: "32px minmax(0, 1fr)",
       }}
     >
       {children}

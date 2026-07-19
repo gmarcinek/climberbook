@@ -353,8 +353,8 @@
 }
 
 .trainingSidebar__chipGrid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: 4px;
 }
 
@@ -375,7 +375,7 @@
 }
 
 .trainingSidebar__gradeChip {
-  width: 48px;
+  width: 100%;
   height: 48px;
   border-radius: 4px;
   padding: 8px 8px;
@@ -384,6 +384,33 @@
   background: var(--grade-color, rgba(255, 255, 255, 0.72));
   border-color: color-mix(in srgb, var(--grade-color, var(--border-strong)) 72%, #172330);
   color: var(--grade-text, #172330);
+}
+
+.trainingSidebar__selectedGrades {
+  display: flex;
+  min-height: 48px;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.trainingSidebar__selectedGradeChip {
+  display: inline-flex;
+  width: auto;
+  height: auto;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 6px;
+  font-size: 0.85rem;
+}
+
+.trainingSidebar__selectedGradesPlaceholder {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .trainingSidebar__gradeChip--4 { --grade-color: #a9afb7; }
