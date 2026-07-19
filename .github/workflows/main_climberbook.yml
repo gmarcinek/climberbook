@@ -60,6 +60,8 @@ jobs:
         run: |
           az webapp config set --resource-group rm_gmarcinek --name climberbook --startup-file "node server.js"
           az webapp start --resource-group rm_gmarcinek --name climberbook
+          az webapp show --resource-group rm_gmarcinek --name climberbook --query "{state:state, enabled:enabled, availabilityState:availabilityState, hostNamesDisabled:hostNamesDisabled, usageState:usageState, defaultHostName:defaultHostName}" --output json
+          az webapp config show --resource-group rm_gmarcinek --name climberbook --query "{linuxFxVersion:linuxFxVersion, appCommandLine:appCommandLine, alwaysOn:alwaysOn}" --output json
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
