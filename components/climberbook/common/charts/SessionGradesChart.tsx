@@ -4,10 +4,11 @@ import { useState } from "react";
 import {
   CartesianGrid,
   Cell,
+  ComposedChart,
+  Line,
   ReferenceArea,
   ResponsiveContainer,
   Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -25,9 +26,11 @@ import type { SpraywallIntensity, TrainingRecord } from "@/lib/climbs-db";
 export function RopeTrainingGradesChart({
   trainings,
   chartRange,
+  previewMode = false,
 }: {
   trainings: TrainingRecord[];
   chartRange: { start: string; end: string };
+  previewMode?: boolean;
 }) {
   const [activeGradeTab, setActiveGradeTab] = useState<GradeChartTab>("all");
   const trainingsInRange = trainings
@@ -40,26 +43,36 @@ export function RopeTrainingGradesChart({
         `${right.date}-${right.time}-${right.createdAt}`,
       ),
     );
+  const isPreviewChart = previewMode && trainingsInRange.length === 1;
   const ropeTrainings = trainingsInRange
-    .filter((training) => training.surfaces.includes("lina"))
     .map((training) => ({
       ...training,
-      grades: (training.difficultyBySurface?.lina ?? training.difficultyNotes)
-        .split(",")
-        .map((grade) => grade.trim())
-        .map((grade) => ({ grade, gradeIndex: getRopeGradeIndex(grade) }))
+      grades: getSurfaceGradeValues(training.difficultyBySurface?.lina)
+        .concat(
+          training.difficultyBySurface?.lina ||
+            !training.surfaces.includes("lina")
+            ? []
+            : getSurfaceGradeValues(training.difficultyNotes),
+        )
+        .map((grade) => ({
+          grade,
+          gradeIndex: getRopeGradeIndex(grade),
+          plotX: getPreviewPlotX("lina"),
+        }))
         .filter((grade) => grade.gradeIndex >= 0),
     }))
     .filter((training) => training.grades.length > 0);
   const boardTrainings = trainingsInRange.flatMap((training) =>
     (["moon", "kilter", "baldy"] as const).flatMap((surface) => {
-      if (!training.surfaces.includes(surface)) {
+      const surfaceGrades = getSurfaceGradeValues(
+        training.difficultyBySurface?.[surface],
+      );
+
+      if (surfaceGrades.length === 0) {
         return [];
       }
 
-      return (training.difficultyBySurface?.[surface] ?? "")
-        .split(",")
-        .map((grade) => grade.trim())
+      return surfaceGrades
         .map((grade) => ({
           surface,
           date: training.date,
@@ -67,6 +80,7 @@ export function RopeTrainingGradesChart({
           gradeIndex: getBoardGradeIndex(surface, grade),
           colorGradeIndex: getBoardColorGradeIndex(surface, grade),
           trainingTimestamp: toDate(training.date).getTime(),
+          plotX: getPreviewPlotX(surface),
           label: `${training.date} ${training.time}`,
         }))
         .filter((grade) => grade.gradeIndex >= 0 && grade.colorGradeIndex >= 0);
@@ -85,6 +99,7 @@ export function RopeTrainingGradesChart({
   const points = ropeTrainings.flatMap((training) =>
     training.grades.map((grade) => ({
       trainingTimestamp: toDate(training.date).getTime(),
+      plotX: grade.plotX,
       date: training.date,
       grade: grade.grade,
       gradeIndex: grade.gradeIndex,
@@ -106,11 +121,13 @@ export function RopeTrainingGradesChart({
         training,
       ): {
         trainingTimestamp: number;
+        plotX: number;
         date: string;
         time: string;
         intensity: SpraywallIntensity;
       } => ({
         trainingTimestamp: toDate(training.date).getTime(),
+        plotX: getPreviewPlotX("spraywall"),
         date: training.date,
         time: training.time,
         intensity: training.protocol?.spraywallIntensity ?? "medium",
@@ -161,7 +178,7 @@ export function RopeTrainingGradesChart({
   const chartEndTimestamp = toDate(chartRange.end).getTime();
   const chartTicks = getRollingChartTicks(chartRange.start, chartRange.end);
   const spraywallMarkerHalfWidth =
-    ((chartEndTimestamp - chartStartTimestamp) * 2.5) / 480;
+    isPreviewChart ? 0.08 : ((chartEndTimestamp - chartStartTimestamp) * 2.5) / 480;
   const spraywallHoverPoints = spraywallSessions.map((session) => {
     const config = spraywallIntensityConfig[session.intensity];
 
@@ -174,10 +191,12 @@ export function RopeTrainingGradesChart({
   const boardAxisAnchors = [
     {
       trainingTimestamp: chartStartTimestamp,
+      plotX: 0,
       gradeIndex: 1,
     },
     {
       trainingTimestamp: chartEndTimestamp,
+      plotX: 2,
       gradeIndex: 9,
     },
   ];
@@ -187,6 +206,21 @@ export function RopeTrainingGradesChart({
     visibleKilterPoints.length > 0 ||
     visibleBoulderPoints.length > 0 ||
     (showsSpraywall && spraywallSessions.length > 0);
+  const xAxisDataKey = isPreviewChart ? "plotX" : "trainingTimestamp";
+  const xAxisDomain = isPreviewChart ? [0, 2] : [chartStartTimestamp, chartEndTimestamp];
+  const xAxisTicks = isPreviewChart ? [1] : chartTicks;
+  const previewDate = trainingsInRange[0]?.date ?? chartRange.start;
+  const visiblePreviewRopeLines = isPreviewChart
+    ? visibleRopePoints.map((point, index) => ({
+        key: `${point.label}-${point.grade}-${index}`,
+        color: getRopeGradeColor(point.grade),
+        data: [
+          { plotX: 0, gradeIndex: minimumGradeIndex, date: point.date, surface: point.surface, grade: point.grade },
+          { plotX: 1, gradeIndex: point.gradeIndex, date: point.date, surface: point.surface, grade: point.grade },
+          { plotX: 2, gradeIndex: minimumGradeIndex, date: point.date, surface: point.surface, grade: point.grade },
+        ],
+      }))
+    : [];
 
   return (
     <>
@@ -222,7 +256,7 @@ export function RopeTrainingGradesChart({
       ) : (
         <div style={{ ...weightChartCanvasStyle, height: 270 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 12, right: 0, bottom: 4, left: -12 }}>
+            <ComposedChart margin={{ top: 12, right: 0, bottom: 4, left: -12 }}>
               <defs>
                 {Object.entries(spraywallIntensityConfig).map(
                   ([intensity, config]) => (
@@ -246,14 +280,19 @@ export function RopeTrainingGradesChart({
               />
               <XAxis
                 type="number"
-                dataKey="trainingTimestamp"
-                domain={[chartStartTimestamp, chartEndTimestamp]}
-                ticks={chartTicks}
+                dataKey={xAxisDataKey}
+                domain={xAxisDomain}
+                ticks={xAxisTicks}
                 tickFormatter={(value) =>
-                  new Intl.DateTimeFormat("pl-PL", {
-                    day: "numeric",
-                    month: "short",
-                  }).format(new Date(value))
+                  isPreviewChart
+                    ? new Intl.DateTimeFormat("pl-PL", {
+                        day: "numeric",
+                        month: "short",
+                      }).format(new Date(previewDate))
+                    : new Intl.DateTimeFormat("pl-PL", {
+                        day: "numeric",
+                        month: "short",
+                      }).format(new Date(value))
                 }
               />
               {showsRope && (
@@ -275,6 +314,21 @@ export function RopeTrainingGradesChart({
                   }}
                 />
               )}
+              {visiblePreviewRopeLines.map((line) => (
+                <Line
+                  key={line.key}
+                  data={line.data}
+                  type="natural"
+                  dataKey="gradeIndex"
+                  yAxisId="rope"
+                  stroke={line.color}
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
+                  connectNulls
+                />
+              ))}
               {showsBoards && (
                 <YAxis
                   yAxisId="board"
@@ -361,8 +415,16 @@ export function RopeTrainingGradesChart({
                     <ReferenceArea
                       key={`spraywall-${trainingTimestamp}-${intensity}`}
                       yAxisId="board"
-                      x1={trainingTimestamp - spraywallMarkerHalfWidth}
-                      x2={trainingTimestamp + spraywallMarkerHalfWidth}
+                      x1={
+                        isPreviewChart
+                          ? getPreviewPlotX("spraywall") - spraywallMarkerHalfWidth
+                          : trainingTimestamp - spraywallMarkerHalfWidth
+                      }
+                      x2={
+                        isPreviewChart
+                          ? getPreviewPlotX("spraywall") + spraywallMarkerHalfWidth
+                          : trainingTimestamp + spraywallMarkerHalfWidth
+                      }
                       y1={config.minimumGrade}
                       y2={config.maximumGrade}
                       fill={`url(#${config.gradientId})`}
@@ -424,7 +486,7 @@ export function RopeTrainingGradesChart({
                   ))}
                 </Scatter>
               )}
-            </ScatterChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       )}
@@ -454,6 +516,13 @@ export function RopeTrainingGradesChart({
       </div>
     </>
   );
+}
+
+function getSurfaceGradeValues(value?: string) {
+  return (value ?? "")
+    .split(",")
+    .map((grade) => grade.trim())
+    .filter(Boolean);
 }
 
 const sessionGradeLegendStyle = {
@@ -563,6 +632,7 @@ const spraywallIntensityConfig: Record<
 
 type SpraywallHoverPoint = {
   trainingTimestamp: number;
+  plotX: number;
   date: string;
   time: string;
   intensity: SpraywallIntensity;
@@ -818,4 +888,23 @@ function getBoardGradeColor(
         ? kilterGradeColors
         : boulderGradeColors;
   return colors[Math.round(gradeIndex)] ?? "#343a40";
+}
+
+function getPreviewPlotX(
+  surface: "lina" | "moon" | "kilter" | "baldy" | "spraywall",
+) {
+  switch (surface) {
+    case "lina":
+      return 1;
+    case "moon":
+      return 1.38;
+    case "kilter":
+      return 1.38;
+    case "baldy":
+      return 1.38;
+    case "spraywall":
+      return 1.56;
+    default:
+      return 1;
+  }
 }

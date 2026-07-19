@@ -1,5 +1,7 @@
 .dialog {
   position: relative;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
 }
 
 .header {
@@ -7,6 +9,7 @@
   justify-content: flex-end;
   align-items: center;
   min-height: 32px;
+  align-self: start;
 }
 
 .content {

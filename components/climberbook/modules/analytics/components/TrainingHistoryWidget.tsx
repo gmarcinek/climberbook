@@ -128,15 +128,13 @@ export function TrainingHistoryWidget({
             .map((grade) => grade.trim())
             .filter(Boolean);
           const boardGradeRanges = boardSurfaces.flatMap((surface) => {
-            if (!training.surfaces.includes(surface)) {
+            const surfaceGrades = training.difficultyBySurface?.[surface] ?? "";
+
+            if (!surfaceGrades.trim()) {
               return [];
             }
 
-            const range = getBoardGradeRange(
-              surface,
-              training.difficultyBySurface?.[surface] ??
-                training.difficultyNotes,
-            );
+            const range = getBoardGradeRange(surface, surfaceGrades);
 
             return range ? [{ surface, range }] : [];
           });

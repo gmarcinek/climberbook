@@ -514,16 +514,14 @@
   align-items: center;
 }
 
-.trainingSidebar__secondaryButton {
-  border: 0;
+.trainingSidebar__formPrimaryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.trainingSidebar__ghostButton {
-  border: 1px solid var(--accent);
-  padding: 5px 6px;
-  background: var(--accent);
-  color: white;
-  cursor: pointer;
+.trainingSidebar__formDeleteAction {
+  margin-left: auto;
 }
 
 .trainingSidebar__visibleList {
@@ -664,6 +662,30 @@
   line-height: 1.1;
 }
 
+.trainingSidebar__activityDetails {
+  display: grid;
+  gap: 6px;
+}
+
+.trainingSidebar__activityDetailText {
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.trainingSidebar__activityDetailPill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .trainingSidebar__previewDetailsFull {
   grid-column: 1 / -1;
 }
@@ -751,9 +773,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .trainingSidebar__secondaryButton {
-    width: 100%;
-    margin-top: 2rem;
+  .trainingSidebar__formPrimaryActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trainingSidebar__formDeleteAction {
+    margin-left: 0;
   }
 
   .trainingSidebar__drawer {

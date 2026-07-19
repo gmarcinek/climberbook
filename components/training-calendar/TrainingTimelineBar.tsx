@@ -57,7 +57,10 @@ function getTimelineGradeRows(
     ...surfaces,
     ...gradingSurfaces.filter((surface) =>
       surface === "lina"
-        ? Boolean(difficultyBySurface?.lina ?? difficultyNotes)
+        ? Boolean(
+            difficultyBySurface?.lina ||
+              (surfaces.includes("lina") && difficultyNotes),
+          )
         : Boolean(difficultyBySurface?.[surface]),
     ),
   ].filter(
@@ -69,7 +72,8 @@ function getTimelineGradeRows(
     );
     const gradeValue =
       surface === "lina"
-        ? (difficultyBySurface?.lina ?? difficultyNotes)
+        ? (difficultyBySurface?.lina ||
+          (surfaces.includes("lina") ? difficultyNotes : ""))
         : (difficultyBySurface?.[surface] ?? "");
 
     return {

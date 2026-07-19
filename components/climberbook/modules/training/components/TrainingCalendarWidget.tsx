@@ -70,119 +70,29 @@ export function TrainingCalendarWidget({
           padding: "0 11px 11px",
         }}
       >
-        <Stack
-          direction="row"
-          gap="sm"
-          justify="between"
-          align="center"
-          style={{ padding: "11px 0 0" }}
-        >
-          <Button
-            size="small"
-            variant="secondary"
-            onClick={onPreviousMonth}
-            style={navButtonStyle}
-          >
-            Wstecz
-          </Button>
-          <Button
-            size="small"
-            variant="secondary"
-            onClick={onNextMonth}
-            style={navButtonStyle}
-          >
-            Dalej
-          </Button>
+        <Stack direction="row" gap="sm" justify="between" align="center" style={{ padding: "11px 0 0" }}>
+          <Button size="small" variant="secondary" onClick={onPreviousMonth} style={navButtonStyle}>Wstecz</Button>
+          <Button size="small" variant="secondary" onClick={onNextMonth} style={navButtonStyle}>Dalej</Button>
         </Stack>
-
         <div style={{ minHeight: 0, flex: "none" }}>
-          <TrainingCalendar
-            anchorMonthStart={trainingRangeStart}
-            monthCount={1}
-            visibleColumns={1}
-            useScrollPane={!showVisibleTrainingList}
-            fillHeight={!showVisibleTrainingList}
-            trainingsByDate={trainingsByDate}
-            selectedDate={selectedDate}
-            today={today}
-            onSelectDate={onSelectDate}
-          />
+          <TrainingCalendar anchorMonthStart={trainingRangeStart} monthCount={1} visibleColumns={1} useScrollPane={!showVisibleTrainingList} fillHeight={!showVisibleTrainingList} trainingsByDate={trainingsByDate} selectedDate={selectedDate} today={today} onSelectDate={onSelectDate} />
         </div>
-
         {showVisibleTrainingList && (
           <div className={sidebarStyles.trainingSidebar__visibleList}>
             <div className={sidebarStyles.trainingSidebar__panelHeader}>
-              <div>
-                <h2 className={sidebarStyles.trainingSidebar__title}>
-                  Treningi
-                </h2>
-              </div>
-              <div className={sidebarStyles.trainingSidebar__headerActions}>
-                <Button
-                  onClick={() => onSelectDate(today)}
-                  variant="tertiary"
-                  className={sidebarStyles.trainingSidebar__submitButton}
-                >
-                  + Trening
-                </Button>
-              </div>
+              <div><h2 className={sidebarStyles.trainingSidebar__title}>Treningi</h2></div>
+              <div className={sidebarStyles.trainingSidebar__headerActions}><Button onClick={() => onSelectDate(today)} variant="tertiary" className={sidebarStyles.trainingSidebar__submitButton}>+ Trening</Button></div>
             </div>
-
-            {visibleRangeTrainings.length === 0 && (
-              <p className={sidebarStyles.trainingSidebar__helperText}>
-                W wybranym zakresie jeszcze nie ma treningów.
-              </p>
-            )}
+            {visibleRangeTrainings.length === 0 && <p className={sidebarStyles.trainingSidebar__helperText}>W wybranym zakresie jeszcze nie ma treningów.</p>}
             {visibleRangeTrainings.map((training) => (
-              <article
-                key={`${training.id ?? training.createdAt}-${training.time}`}
-                className={sidebarStyles.trainingSidebar__trainingCard}
-              >
-                <div
-                  className={
-                    sidebarStyles.trainingSidebar__trainingButtonHeader
-                  }
-                >
-                  <strong>{summarizeTrainingType(training)}</strong>
-                  <span className={sidebarStyles.trainingSidebar__pill}>
-                    {training.date}
-                  </span>
-                </div>
-                <div className={sidebarStyles.trainingSidebar__metaLine}>
-                  <span>
-                    {training.durationMinutes} min · {training.caloriesBurned}{" "}
-                    kcal
-                  </span>
-                </div>
-                <TrainingTimelineBar
-                  time={training.time}
-                  durationMinutes={training.durationMinutes}
-                  difficultyNotes={training.difficultyNotes}
-                  difficultyBySurface={training.difficultyBySurface}
-                  surfaces={training.surfaces}
-                />
-                {training.difficultyNotes?.trim() && (
-                  <div className={sidebarStyles.trainingSidebar__details}>
-                    <span>Wyceny: {training.difficultyNotes}</span>
-                  </div>
-                )}
+              <article key={`${training.id ?? training.createdAt}-${training.time}`} className={sidebarStyles.trainingSidebar__trainingCard}>
+                <div className={sidebarStyles.trainingSidebar__trainingButtonHeader}><strong>{summarizeTrainingType(training)}</strong><span className={sidebarStyles.trainingSidebar__pill}>{training.date}</span></div>
+                <div className={sidebarStyles.trainingSidebar__metaLine}><span>{training.durationMinutes} min · {training.caloriesBurned} kcal</span></div>
+                <TrainingTimelineBar time={training.time} durationMinutes={training.durationMinutes} difficultyNotes={training.difficultyNotes} difficultyBySurface={training.difficultyBySurface} surfaces={training.surfaces} />
+                {training.difficultyNotes?.trim() && <div className={sidebarStyles.trainingSidebar__details}><span>Wyceny: {training.difficultyNotes}</span></div>}
                 <div className={sidebarStyles.trainingSidebar__cardActions}>
-                  <Button
-                    size="small"
-                    variant="secondary"
-                    onClick={() => onEditTraining(training)}
-                    className={sidebarStyles.trainingSidebar__linkButton}
-                  >
-                    Edytuj
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="secondary"
-                    onClick={() => onPreviewTraining(training)}
-                    className={sidebarStyles.trainingSidebar__linkButton}
-                  >
-                    Podgląd
-                  </Button>
+                  <Button size="small" variant="secondary" onClick={() => onEditTraining(training)} className={sidebarStyles.trainingSidebar__linkButton}>Edytuj</Button>
+                  <Button size="small" variant="secondary" onClick={() => onPreviewTraining(training)} className={sidebarStyles.trainingSidebar__linkButton}>Podgląd</Button>
                 </div>
               </article>
             ))}

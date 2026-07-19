@@ -15,6 +15,7 @@ import type {
 import { TrainingAnalyticsWidget } from "./TrainingAnalyticsWidget";
 import { TrainingCalendarWidget } from "./TrainingCalendarWidget";
 import {
+  TrainingPreviewModalWidget,
   TrainingSidebarDrawer,
   TrainingSidebarWidget,
 } from "./TrainingSidebarWidget";
@@ -107,6 +108,14 @@ export function TrainingModuleContent({
     useState<TrainingRecord | null>(null);
   const showMediumInlineDrawer =
     isMediumTrainingDrawerLayout && selectedDate !== null;
+  const usesOverlaySidebar = !showTrainingSidebarColumn && !showMediumInlineDrawer;
+  const openTrainingPreview = (training: TrainingRecord) => {
+    setRequestedPreviewTraining(training);
+
+    if (usesOverlaySidebar) {
+      onResetSelection();
+    }
+  };
   const sidebar = (
     <TrainingSidebarWidget
       selectedDate={selectedDate}
@@ -121,10 +130,9 @@ export function TrainingModuleContent({
       onToggleSurface={onToggleSurface}
       onSubmit={onTrainingSubmit}
       onSelectDate={onSelectDate}
+      onPreviewTraining={openTrainingPreview}
       onEditTraining={onEditTraining}
       onDeleteTraining={onDeleteTraining}
-      requestedPreviewTraining={requestedPreviewTraining}
-      onRequestedPreviewClose={() => setRequestedPreviewTraining(null)}
       onResetSelection={onResetSelection}
       onCancelEdit={onCancelEdit}
     />
@@ -199,10 +207,7 @@ export function TrainingModuleContent({
           today={today}
           onSelectDate={onSelectDate}
           onEditTraining={onEditTraining}
-          onPreviewTraining={(training) => {
-            setRequestedPreviewTraining(training);
-            onSelectDate(training.date);
-          }}
+          onPreviewTraining={openTrainingPreview}
         />
 
         {showTrainingSidebarColumn && (
@@ -224,6 +229,18 @@ export function TrainingModuleContent({
             {sidebar}
           </TrainingSidebarDrawer>
         )}
+
+      {requestedPreviewTraining && (
+        <TrainingPreviewModalWidget
+          training={requestedPreviewTraining}
+          surfaceOptions={surfaceOptions}
+          onClose={() => setRequestedPreviewTraining(null)}
+          onEditTraining={(training) => {
+            setRequestedPreviewTraining(null);
+            onEditTraining(training);
+          }}
+        />
+      )}
     </>
   );
 }

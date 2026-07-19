@@ -4,6 +4,7 @@ import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { mobileDrawerSheetStyle } from "@/components/climberbook/common/styles";
 import { Modal } from "@/components/climberbook/common/Modal";
 import {
+  TrainingPreviewModal,
   TrainingSidebar,
   type TrainingDraftValues,
 } from "@/components/training-calendar/TrainingSidebar";
@@ -22,12 +23,18 @@ type TrainingSidebarWidgetProps = {
   onToggleSurface: (surface: TrainingSurface) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onSelectDate: (date: string) => void;
+  onPreviewTraining: (training: TrainingRecord) => void;
   onEditTraining: (training: TrainingRecord) => void;
   onDeleteTraining: (training: TrainingRecord) => void;
-  requestedPreviewTraining: TrainingRecord | null;
-  onRequestedPreviewClose: () => void;
   onResetSelection: () => void;
   onCancelEdit: () => void;
+};
+
+type TrainingPreviewModalWidgetProps = {
+  training: TrainingRecord;
+  surfaceOptions: Array<{ value: TrainingSurface; label: string }>;
+  onClose: () => void;
+  onEditTraining: (training: TrainingRecord) => void;
 };
 
 type TrainingSidebarDrawerProps = {
@@ -38,6 +45,12 @@ type TrainingSidebarDrawerProps = {
 
 export function TrainingSidebarWidget(props: TrainingSidebarWidgetProps) {
   return <TrainingSidebar {...props} />;
+}
+
+export function TrainingPreviewModalWidget(
+  props: TrainingPreviewModalWidgetProps,
+) {
+  return <TrainingPreviewModal {...props} />;
 }
 
 export function TrainingSidebarDrawer({
