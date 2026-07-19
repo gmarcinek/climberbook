@@ -29,6 +29,7 @@ jobs:
         run: |
           cp -r .next/static .next/standalone/.next/static
           if [ -d public ]; then cp -r public .next/standalone/public; fi
+          npm pkg set scripts.start="node server.js" --prefix .next/standalone
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
@@ -60,3 +61,6 @@ jobs:
           app-name: climberbook
           slot-name: Production
           package: .
+
+      - name: Configure Azure startup command
+        run: az webapp config set --resource-group rm_gmarcinek --name climberbook --startup-file "node server.js"
