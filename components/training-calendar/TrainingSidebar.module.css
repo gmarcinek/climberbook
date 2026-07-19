@@ -170,6 +170,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 0.75rem;
 }
 
 .trainingSidebar__metaGrid--summary {
@@ -450,7 +451,7 @@
 .trainingSidebar__gradeChip--moon-6 { --grade-color: #e053c7; }
 .trainingSidebar__gradeChip--moon-7 { --grade-color: #e63fc3; }
 .trainingSidebar__gradeChip--moon-8 { --grade-color: #eb2abd; }
-.trainingSidebar__gradeChip--moon-9 { --grade-color: #ee19b6; }
+.trainingSidebar__gradeChip--moon-9 { --grade-color: #dd1aa9; }
 .trainingSidebar__gradeChip--moon-10 { --grade-color: #d75ca2; }
 .trainingSidebar__gradeChip--moon-11 { --grade-color: #b76589; }
 .trainingSidebar__gradeChip--moon-12 { --grade-color: #935d76; }
@@ -556,6 +557,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 2rem;
 }
 
 .trainingSidebar__formDeleteAction {

@@ -42,7 +42,7 @@ function NumericField({ label, value, onChange, onDecrement, onIncrement, ariaLa
 
 export function TrainingProtocols({ draft, onDraftChange }: Props) {
   const update = (protocol: TrainingDraftValues["protocol"]) => onDraftChange({ ...draft, protocol });
-  const fullFieldClassName = [styles.trainingSidebar__field, formLayoutClassNames.fullSpan].join(" ");
+  const protocolHeadingClassName = [styles.trainingSidebar__protocolHeading, formLayoutClassNames.fullSpan].join(" ");
   const updatePullUp = (index: number, changes: Partial<TrainingDraftValues["protocol"]["pullUp"][number]>) =>
     update({ ...draft.protocol, pullUp: draft.protocol.pullUp.map((item, itemIndex) => itemIndex === index ? { ...item, ...changes } : item) });
   const updateHangboard = (index: number, changes: Partial<TrainingDraftValues["protocol"]["hangboard"][number]>) =>
@@ -54,11 +54,11 @@ export function TrainingProtocols({ draft, onDraftChange }: Props) {
     <div className={styles.trainingSidebar__protocolStacks}>
       {draft.surfaces.includes("drazek") && (
         <div className={styles.trainingSidebar__protocolStack}>
-          <strong className={fullFieldClassName}>Protokół - Drążek</strong>
+          <strong className={protocolHeadingClassName}>Protokół - Drążek</strong>
           {draft.protocol.pullUp.map((set, index) => {
             const series = String.fromCharCode(65 + index);
             return <div key={`pull-up-${index}`} className={styles.trainingSidebar__protocolSeries}>
-              <strong className={fullFieldClassName}>Seria {series}</strong>
+              <strong className={protocolHeadingClassName}>Seria {series}</strong>
               <NumericField label="Ilość takich serii" value={set.sets} onChange={(value) => updatePullUp(index, { sets: value })} onDecrement={() => updatePullUp(index, { sets: adjustSeriesValue(set.sets, -1) })} onIncrement={() => updatePullUp(index, { sets: adjustSeriesValue(set.sets, 1) })} ariaLabel={`serię ${series}`} min="1" className={styles.trainingSidebar__pullUpSets} />
               <NumericField label="Powtórzenia w serii" value={set.repetitions} onChange={(value) => updatePullUp(index, { repetitions: value })} onDecrement={() => updatePullUp(index, { repetitions: adjustSeriesValue(set.repetitions, -1) })} onIncrement={() => updatePullUp(index, { repetitions: adjustSeriesValue(set.repetitions, 1) })} ariaLabel={`powtórzenie w serii ${series} drążka`} min="1" className={styles.trainingSidebar__pullUpRepetitions} />
               <label className={`${styles.trainingSidebar__field} ${styles.trainingSidebar__pullUpOneRepMax}`}>Maks. 1 powtórzenie<Select value={set.isOneRepMax} onChange={(event) => updatePullUp(index, { isOneRepMax: event.target.value as "tak" | "nie" })} className={styles.trainingSidebar__input}><option value="nie">Nie</option><option value="tak">Tak</option></Select></label>
@@ -71,13 +71,13 @@ export function TrainingProtocols({ draft, onDraftChange }: Props) {
       )}
       {draft.surfaces.includes("chwytotablica") && (
         <div className={styles.trainingSidebar__protocolStack}>
-          <strong className={fullFieldClassName}>Protokół - Chwytotablica</strong>
+          <strong className={protocolHeadingClassName}>Protokół - Chwytotablica</strong>
           {draft.protocol.hangboard.map((set, index) => {
             const series = String.fromCharCode(65 + index);
             return <div key={`hangboard-${index}`} className={styles.trainingSidebar__protocolSeries}>
-              <strong className={fullFieldClassName}>Seria {series}</strong>
+              <strong className={protocolHeadingClassName}>Seria {series}</strong>
               <div className={styles.trainingSidebar__hangboardModeTabs} role="tablist" aria-label={`Tryb serii ${series} chwytotablicy`}>
-                {([ ["hangs", "Zwisy"], ["intervals", "Interwały"] ] as const).map(([mode, label]) => <button key={mode} type="button" role="tab" aria-selected={set.mode === mode} className={`${styles.trainingSidebar__hangboardModeTab} ${set.mode === mode ? styles["trainingSidebar__hangboardModeTab--active"] : ""}`} onClick={() => updateHangboard(index, { mode })}>{label}</button>)}
+                {([["hangs", "Zwisy"], ["intervals", "Interwały"]] as const).map(([mode, label]) => <button key={mode} type="button" role="tab" aria-selected={set.mode === mode} className={`${styles.trainingSidebar__hangboardModeTab} ${set.mode === mode ? styles["trainingSidebar__hangboardModeTab--active"] : ""}`} onClick={() => updateHangboard(index, { mode })}>{label}</button>)}
               </div>
               <NumericField label="Ilość serii" value={set.sets} onChange={(value) => updateHangboard(index, { sets: value })} onDecrement={() => updateHangboard(index, { sets: adjustSeriesValue(set.sets, -1) })} onIncrement={() => updateHangboard(index, { sets: adjustSeriesValue(set.sets, 1) })} ariaLabel={`serię ${series}`} min="1" />
               {set.mode === "hangs" && <label className={styles.trainingSidebar__field}>Maks. 1 powtórzenie<Select value={set.usesRpm} onChange={(event) => updateHangboard(index, { usesRpm: event.target.value as "tak" | "nie" })} className={styles.trainingSidebar__input}><option value="nie">Nie</option><option value="tak">Tak</option></Select></label>}
@@ -94,16 +94,16 @@ export function TrainingProtocols({ draft, onDraftChange }: Props) {
           <button type="button" aria-label="Dodaj serię chwytotablicy" title="Dodaj serię" onClick={() => update({ ...draft.protocol, hangboard: [...draft.protocol.hangboard, { sets: "1", mode: "hangs", usesRpm: "nie", hangSeconds: "7", restSeconds: "3", repetitions: "6", loadDeloadKg: "0", edgeDepthMm: "20" }] })} className={styles.trainingSidebar__protocolAddButton}>+ Seria</button>
         </div>
       )}
-      {draft.surfaces.includes("spraywall") && <SpraywallProtocol draft={draft} onDraftChange={onDraftChange} fullFieldClassName={fullFieldClassName} />}
+      {draft.surfaces.includes("spraywall") && <SpraywallProtocol draft={draft} onDraftChange={onDraftChange} protocolHeadingClassName={protocolHeadingClassName} />}
     </div>
   );
 }
 
-function SpraywallProtocol({ draft, onDraftChange, fullFieldClassName }: Props & { fullFieldClassName: string }) {
+function SpraywallProtocol({ draft, onDraftChange, protocolHeadingClassName }: Props & { protocolHeadingClassName: string }) {
   const options = [
     { value: "soft" as const, name: "Soft", grades: "V1-V3", description: "Regeneracja i spokojna technika." },
     { value: "medium" as const, name: "Medium", grades: "V3-V6", description: "Wytrzymałość i ciągła praca." },
     { value: "hard" as const, name: "Hard", grades: "V4-V7", description: "Siła i wymagające ruchy." },
   ];
-  return <div className={styles.trainingSidebar__protocolStack}><span className={fullFieldClassName}>Protokół - Spraywall</span><div className={styles.trainingSidebar__spraywallOptions} role="radiogroup" aria-label="Intensywność Spraywall">{options.map((option) => <button key={option.value} type="button" role="radio" aria-checked={draft.protocol.spraywallIntensity === option.value} className={`${styles.trainingSidebar__spraywallOption} ${draft.protocol.spraywallIntensity === option.value ? styles["trainingSidebar__spraywallOption--active"] : ""}`} onClick={() => onDraftChange({ ...draft, protocol: { ...draft.protocol, spraywallIntensity: option.value } })}><span>{option.name} · {option.grades}</span><small>{option.description}</small></button>)}</div></div>;
+  return <div className={styles.trainingSidebar__protocolStack}><span className={protocolHeadingClassName}>Protokół - Spraywall</span><div className={styles.trainingSidebar__spraywallOptions} role="radiogroup" aria-label="Intensywność Spraywall">{options.map((option) => <button key={option.value} type="button" role="radio" aria-checked={draft.protocol.spraywallIntensity === option.value} className={`${styles.trainingSidebar__spraywallOption} ${draft.protocol.spraywallIntensity === option.value ? styles["trainingSidebar__spraywallOption--active"] : ""}`} onClick={() => onDraftChange({ ...draft, protocol: { ...draft.protocol, spraywallIntensity: option.value } })}><span>{option.name} · {option.grades}</span><small>{option.description}</small></button>)}</div></div>;
 }
