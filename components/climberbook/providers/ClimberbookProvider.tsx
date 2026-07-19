@@ -289,7 +289,7 @@ type ClimberbookContextValue = {
   weightEntryDraft: WeightEntryDraft;
   setWeightEntryDraft: Dispatch<SetStateAction<WeightEntryDraft>>;
   trainingDraft: TrainingDraftValues;
-  editingTrainingId: number | null;
+  editingTrainingId: string | null;
   editingAscentId: number | null;
   ascentDraft: AscentDraft;
   setAscentDraft: Dispatch<SetStateAction<AscentDraft>>;
@@ -313,7 +313,7 @@ type ClimberbookContextValue = {
   nextTrainingMonth: () => void;
   setTrainingDraft: (draft: TrainingDraftValues) => void;
   toggleSurface: (surface: TrainingSurface) => void;
-  submitTraining: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  submitTraining: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   editTraining: (training: TrainingRecord) => void;
   deleteTraining: (training: TrainingRecord) => Promise<void>;
   submitWeightEntry: (
@@ -378,7 +378,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const [trainingDraft, setTrainingDraftState] = useState<TrainingDraftValues>(
     () => createTrainingDraft(today),
   );
-  const [editingTrainingId, setEditingTrainingId] = useState<number | null>(
+  const [editingTrainingId, setEditingTrainingId] = useState<string | null>(
     null,
   );
   const [editingAscentId, setEditingAscentId] = useState<number | null>(null);
@@ -552,13 +552,13 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           ? "Najpierw dodaj i wybierz zawodnika."
           : "Wybierz co najmniej jeden rodzaj sesji lub wpisz własny typ w polu Inne.",
       );
-      return;
+      return false;
     }
     if (bodyWeightKg === null || bodyWeightKg <= 0) {
       setStatus(
         "Ustaw aktualną wagę w profilu lub w module wag przed zapisem treningu.",
       );
-      return;
+      return false;
     }
     const payload = {
       date: trainingDraft.date,
@@ -623,17 +623,19 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       else await addTraining({ ...payload, athleteId: activeAthleteId });
       await refreshData();
       resetTrainingSelection();
+      return true;
     } catch (error) {
       setStatus(
         error instanceof Error
           ? error.message
           : "Zapis treningu nie powiódł się.",
       );
+      return false;
     }
   }
   async function deleteTrainingAction(training: TrainingRecord) {
     if (
-      training.id === undefined ||
+      !training.id ||
       !window.confirm("Usunąć ten trening? Tej operacji nie można cofnąć.")
     )
       return;
@@ -1112,7 +1114,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     submitTraining,
     editTraining: (training) => {
       setSelectedDate(training.date);
-      setEditingTrainingId(training.id ?? null);
+      setEditingTrainingId(training.id);
       setTrainingDraftState(
         mapTrainingToDraft(training, profileDraft.birthDate),
       );

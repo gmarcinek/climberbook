@@ -13,6 +13,22 @@ import styles from "@/components/training-calendar/TrainingSidebar.module.css";
 import type { SurfaceOption, TrainingDraftValues } from "./types";
 import { adjustCaloriesValue, getSurfaceOptionGroups, timeOptions } from "./training-session.utils";
 
+const surfaceEmojis: Record<TrainingSurface, string> = {
+  lina: "🧗",
+  baldy: "🪨",
+  moon: "🌙",
+  kilter: "💡",
+  spraywall: "🎨",
+  chwytotablica: "🖐️",
+  campus: "🪜",
+  drazek: "💪",
+  silownia: "🏋️",
+  bieznia: "🏃",
+  rower: "🚴",
+  bieg: "👟",
+  treking: "🥾",
+};
+
 type Props = {
   draft: TrainingDraftValues;
   surfaceOptions: SurfaceOption[];
@@ -43,8 +59,12 @@ export function TrainingSessionDetails({
             ? styles["trainingSidebar__chip--active"]
             : "",
         ].filter(Boolean).join(" ")}
+        aria-label={option.label}
       >
-        {option.label}
+        <span className={styles.trainingSidebar__sessionChipIcon} aria-hidden="true">
+          {surfaceEmojis[option.value]}
+        </span>
+        <span>{option.label}</span>
       </button>
     ));
 
@@ -68,7 +88,8 @@ export function TrainingSessionDetails({
                 : "",
             ].filter(Boolean).join(" ")}
           >
-            + Inne
+            <span className={styles.trainingSidebar__sessionChipIcon} aria-hidden="true">✨</span>
+            <span>Inne</span>
           </button>
         </div>
         {(isCustomSessionExpanded || draft.customSessionType) && (

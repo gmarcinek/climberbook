@@ -73,7 +73,7 @@ export type TrainingProtocol = {
 };
 
 export type TrainingRecord = {
-  id?: number;
+  id: string;
   sourceId?: string;
   athleteId: string;
   date: string;
@@ -149,9 +149,9 @@ function getStableSourceId<T extends { id?: string; sourceId?: string | null }>(
   return sourceId || record?.id || null;
 }
 
-function isUuid(value: string | null | undefined) {
+function isUuid(value: string | null | undefined): value is string {
   return Boolean(
-    value?.match(
+    typeof value === "string" && value.match(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     ),
   );
@@ -177,12 +177,17 @@ function ensureSectionSourceId(record: SectionRecord) {
   return record.sourceId === sourceId ? record : { ...record, sourceId };
 }
 
-function ensureTrainingSourceId(record: TrainingRecord) {
-  const sourceId = isUuid(record.sourceId)
-    ? record.sourceId
-    : crypto.randomUUID();
+function ensureTrainingId(record: TrainingRecord) {
+  const id = isUuid(record.id)
+    ? record.id
+    : isUuid(record.sourceId)
+      ? record.sourceId
+      : crypto.randomUUID();
+  const sourceId = isUuid(record.sourceId) ? record.sourceId : id;
 
-  return record.sourceId === sourceId ? record : { ...record, sourceId };
+  return record.id === id && record.sourceId === sourceId
+    ? record
+    : { ...record, id, sourceId };
 }
 
 async function ensureAthleteSourceIds(records: AthleteRecord[]) {
@@ -215,13 +220,14 @@ async function ensureSectionSourceIds(records: SectionRecord[]) {
   );
 }
 
-async function ensureTrainingSourceIds(records: TrainingRecord[]) {
+async function ensureTrainingIds(records: TrainingRecord[]) {
   const database = await getDatabase();
   return Promise.all(
     records.map(async (record) => {
-      const normalized = ensureTrainingSourceId(record);
+      const normalized = ensureTrainingId(record);
 
       if (normalized !== record) {
+        await database.delete("trainings", record.id);
         await database.put("trainings", normalized);
       }
 
@@ -323,7 +329,7 @@ interface ClimberbookDb extends DBSchema {
     };
   };
   trainings: {
-    key: number;
+    key: string;
     value: TrainingRecord;
     indexes: {
       "by-created-at": string;
@@ -374,7 +380,7 @@ interface ClimberbookDb extends DBSchema {
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 12;
+const DB_VERSION = 15;
 const DEFAULT_ATHLETE: AthleteRecord = {
   id: "primary",
   name: "Ja",
@@ -440,13 +446,29 @@ function createDatabase() {
 
       if (!database.objectStoreNames.contains("trainings")) {
         const store = database.createObjectStore("trainings", {
-          autoIncrement: true,
           keyPath: "id",
         });
 
         store.createIndex("by-created-at", "createdAt");
         store.createIndex("by-date", "date");
         store.createIndex("by-athlete", "athleteId");
+      }
+
+      if (oldVersion < 15 && database.objectStoreNames.contains("trainings")) {
+        const trainingStore = transaction.objectStore("trainings");
+        const legacyTrainings = (await trainingStore.getAll()) as Array<
+          TrainingRecord & { id?: string | number }
+        >;
+
+        for (const training of legacyTrainings) {
+          const normalized = ensureTrainingId(training as TrainingRecord);
+
+          if (normalized.id !== training.id) {
+            await trainingStore.delete(training.id as string);
+          }
+
+          await trainingStore.put(normalized);
+        }
       }
 
       if (oldVersion < 4 && database.objectStoreNames.contains("trainings")) {
@@ -758,13 +780,13 @@ export async function listTrainings(athleteId: string) {
     "by-athlete",
     athleteId,
   );
-  return ensureTrainingSourceIds(records);
+  return ensureTrainingIds(records);
 }
 
 export async function listAllTrainings() {
   const database = await getDatabase();
   const records = await database.getAllFromIndex("trainings", "by-created-at");
-  return ensureTrainingSourceIds(records);
+  return ensureTrainingIds(records);
 }
 
 export async function addTraining(
@@ -774,6 +796,7 @@ export async function addTraining(
 
   await database.add("trainings", {
     ...input,
+    id: crypto.randomUUID(),
     sourceId: input.sourceId ?? crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   });
@@ -782,7 +805,7 @@ export async function addTraining(
 export async function updateTraining(input: TrainingRecord) {
   const database = await getDatabase();
 
-  if (input.id === undefined) {
+  if (!isUuid(input.id)) {
     throw new Error("Training id is required for update.");
   }
 
@@ -792,7 +815,7 @@ export async function updateTraining(input: TrainingRecord) {
   });
 }
 
-export async function deleteTraining(id: number) {
+export async function deleteTraining(id: string) {
   const database = await getDatabase();
   await database.delete("trainings", id);
 }
@@ -1171,7 +1194,7 @@ export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabas
     athletes: await ensureAthleteSourceIds(athletes),
     sections: await ensureSectionSourceIds(sections),
     climbs,
-    trainings: await ensureTrainingSourceIds(trainings),
+    trainings: await ensureTrainingIds(trainings),
     ascents,
     profiles,
     weightEntries,
@@ -1215,7 +1238,7 @@ export async function inspectDatabaseBackup(
     const trainings = asRecordArray<TrainingRecord>(
       backup.trainings,
       "trainings",
-    );
+    ).map(ensureTrainingId);
     const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
     const profiles = asRecordArray<UserProfileRecord>(
       backup.profiles,
@@ -1258,7 +1281,7 @@ export async function inspectDatabaseBackup(
   const trainings = asRecordArray<TrainingRecord>(
     backup.trainings,
     "trainings",
-  );
+  ).map(ensureTrainingId);
   const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
   const weightEntries = removeTrainingDerivedWeightEntries(
     trainings,
@@ -1417,7 +1440,7 @@ export async function importDatabaseBackup(
     trainings,
     asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
   );
-  const withoutGeneratedId = <T extends { id?: number }>(record: T) => {
+  const withoutGeneratedId = <T extends { id?: string | number }>(record: T) => {
     const { id: _id, ...rest } = record;
     return rest;
   };
@@ -1501,8 +1524,7 @@ export async function importDatabaseBackup(
       ),
       ...trainings.map((record) =>
         transaction.objectStore("trainings").put({
-          ...withoutGeneratedId(record),
-          sourceId: record.sourceId ?? crypto.randomUUID(),
+          ...ensureTrainingId(record),
           athleteId: targetAthleteId,
         }),
       ),

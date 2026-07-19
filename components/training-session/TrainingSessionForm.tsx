@@ -13,7 +13,7 @@ import type { SurfaceOption, TrainingDraftValues } from "./types";
 type Props = {
   draft: TrainingDraftValues;
   editingTraining: TrainingRecord | undefined;
-  editingTrainingId: number | null;
+  editingTrainingId: string | null;
   validationMessage?: string;
   surfaceOptions: SurfaceOption[];
   onDraftChange: (draft: TrainingDraftValues) => void;

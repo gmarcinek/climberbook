@@ -371,7 +371,18 @@
 }
 
 .trainingSidebar__sessionChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
   border-radius: 4px;
+}
+
+.trainingSidebar__sessionChipIcon {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .trainingSidebar__gradeChip {

@@ -17,7 +17,7 @@ type TrainingSidebarWidgetProps = {
   today: string;
   trainingDraft: TrainingDraftValues;
   validationMessage?: string;
-  editingTrainingId: number | null;
+  editingTrainingId: string | null;
   surfaceOptions: Array<{ value: TrainingSurface; label: string }>;
   onTrainingDraftChange: (draft: TrainingDraftValues) => void;
   onToggleSurface: (surface: TrainingSurface) => void;

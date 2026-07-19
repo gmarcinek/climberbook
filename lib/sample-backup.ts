@@ -311,11 +311,11 @@ export function createSampleBackupData(): ClimberbookFullDatabaseBackup {
     },
   ];
 
-  const trainings = trainingSeeds.map((seed, index) => {
+  const trainings = trainingSeeds.map((seed) => {
     const dateObject = buildDateFromOffset(seed.dayOffset);
 
     return {
-      id: index + 1,
+      id: seed.sourceId,
       sourceId: seed.sourceId,
       athleteId: seed.athleteId,
       date: formatDateIso(dateObject),

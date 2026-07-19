@@ -21,7 +21,7 @@ type TrainingSidebarProps = {
   today: string;
   trainingDraft: TrainingDraftValues;
   validationMessage?: string;
-  editingTrainingId: number | null;
+  editingTrainingId: string | null;
   surfaceOptions: SurfaceOption[];
   onTrainingDraftChange: (draft: TrainingDraftValues) => void;
   onToggleSurface: (surface: TrainingSurface) => void;

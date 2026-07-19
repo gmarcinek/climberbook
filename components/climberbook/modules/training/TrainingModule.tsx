@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { surfaceOptions } from "@/components/climberbook/common/constants";
 import { useTrainingModule } from "@/components/climberbook/providers/ClimberbookProvider";
 import { useClimberbookStats } from "@/components/climberbook/hooks/useClimberbookStats";
@@ -9,6 +10,9 @@ import { TrainingModuleContent } from "./components/TrainingModuleContent";
 export function TrainingModule() {
   const app = useTrainingModule();
   const viewport = useViewport();
+  const router = useRouter();
+  const usesDedicatedTrainingEditor =
+    viewport.width > 0 && viewport.width < 1024;
   const stats = useClimberbookStats({
     ascents: app.ascents,
     isMobileChartLayout: viewport.isMobileChartLayout,
@@ -50,7 +54,14 @@ export function TrainingModule() {
       trainingsByDate={stats.trainingsByDate}
       selectedDate={app.selectedDate}
       today={app.today}
-      onSelectDate={app.selectTrainingDate}
+      onSelectDate={(date) => {
+        if (usesDedicatedTrainingEditor) {
+          router.push(`/trening/dodaj?data=${encodeURIComponent(date)}`);
+          return;
+        }
+
+        app.selectTrainingDate(date);
+      }}
       selectedDayTrainings={stats.selectedDayTrainings}
       visibleRangeTrainings={stats.visibleRangeTrainings}
       trainingDraft={app.trainingDraft}
@@ -60,7 +71,14 @@ export function TrainingModule() {
       onTrainingDraftChange={app.setTrainingDraft}
       onToggleSurface={app.toggleSurface}
       onTrainingSubmit={app.submitTraining}
-      onEditTraining={app.editTraining}
+      onEditTraining={(training) => {
+        if (usesDedicatedTrainingEditor && training.id !== undefined) {
+          router.push(`/trening/edytuj/${training.id}`);
+          return;
+        }
+
+        app.editTraining(training);
+      }}
       onDeleteTraining={app.deleteTraining}
       onResetSelection={app.resetTrainingSelection}
       onCancelEdit={app.resetTrainingSelection}
