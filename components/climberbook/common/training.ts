@@ -274,7 +274,25 @@ export function getRollingChartTicks(start: string, end: string) {
 }
 
 export function getGradeRank(grade: string) {
-  const match = /^(\d+)([abc])?(\+)?$/.exec(grade);
+  const [firstGrade, secondGrade] = grade.trim().split("/");
+  const firstRank = getSimpleGradeRank(firstGrade ?? "");
+
+  if (!secondGrade) {
+    return firstRank;
+  }
+
+  const inheritedBase = /^(\d+)/.exec(firstGrade ?? "")?.[1] ?? "";
+  const secondRank = getSimpleGradeRank(
+    /^\d/.test(secondGrade) ? secondGrade : `${inheritedBase}${secondGrade}`,
+  );
+
+  return firstRank >= 0 && secondRank >= 0
+    ? (firstRank + secondRank) / 2
+    : -1;
+}
+
+function getSimpleGradeRank(grade: string) {
+  const match = /^(\d+)([abc])?(\+)?$/.exec(grade.trim());
   if (!match) {
     return -1;
   }

@@ -22,41 +22,45 @@ export function AscentGradeDistributionWidget({
   const [isRockVisible, setIsRockVisible] = useState(true);
   const [areProjectsVisible, setAreProjectsVisible] = useState(false);
   const gradeFrequency = useMemo(() => {
-    const grades = new Map<string, number>();
+    const ascentsByGrade = new Map<string, number>();
 
     ascents.forEach((ascent) => {
       const style = (ascent.style ?? "").trim().toUpperCase();
-      const isToprope = style === "TR" || style === "TOPROPE";
       const isProject = style === "GO";
       const isVisibleSource =
         (ascent.source === "panel" && isPanelVisible) ||
         (ascent.source === "skala" && isRockVisible);
 
-      if (isToprope || (isProject ? !areProjectsVisible : !isVisibleSource)) {
+      const grade = ascent.suggestedGrade.trim();
+
+      if (!grade) {
         return;
       }
 
-      const grade = ascent.suggestedGrade.trim();
-
-      if (grade) {
-        grades.set(grade, (grades.get(grade) ?? 0) + 1);
+      if (isProject ? !areProjectsVisible : !isVisibleSource) {
+        return;
       }
+
+      ascentsByGrade.set(grade, (ascentsByGrade.get(grade) ?? 0) + 1);
     });
 
-    const distribution = Array.from(grades, ([grade, totalCount]) => ({
+    const grades = new Set(ascentsByGrade.keys());
+
+    const distribution = Array.from(grades, (grade) => ({
       grade,
-      totalCount,
+      ascentCount: ascentsByGrade.get(grade) ?? 0,
     })).sort(
       (left, right) => getGradeRank(right.grade) - getGradeRank(left.grade),
     );
     const maxCount = distribution.reduce(
-      (highest, item) => Math.max(highest, item.totalCount),
+      (highest, item) => Math.max(highest, item.ascentCount),
       0,
     );
 
     return distribution.map((item) => ({
       ...item,
-      normalizedCount: maxCount > 0 ? item.totalCount / maxCount : 0,
+      totalCount: item.ascentCount,
+      normalizedAscentCount: maxCount > 0 ? item.ascentCount / maxCount : 0,
     }));
   }, [areProjectsVisible, ascents, isPanelVisible, isRockVisible]);
 
@@ -160,7 +164,7 @@ export function AscentGradeDistributionWidget({
               >
                 <div
                   style={{
-                    width: `${Math.max(item.normalizedCount * 100, 3)}%`,
+                    width: `${Math.max(item.normalizedAscentCount * 100, 3)}%`,
                     height: "100%",
                     borderRadius: 999,
                     background:
