@@ -50,7 +50,7 @@ export function GradeDistributionWidget({
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Wyceny</span>
-          <h2 style={sectionTitleStyle}>Rozkład i maksimum</h2>
+          <h2 style={sectionTitleStyle}>Wyceny wstawek treningowych</h2>
         </div>
       </div>
       <div

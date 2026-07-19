@@ -2,12 +2,9 @@
 
 import { EmptyState } from "@/components/climberbook/common/charts";
 import { surfaceOptions } from "@/components/climberbook/common/constants";
+import { GradeChip } from "@/components/climberbook/common/GradeChip";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
-import {
-  getRopeGradeColor,
-  getRopeGradeIndex,
-} from "@/components/climberbook/common/training";
 import {
   infoGridStyle,
   listCardHeaderStyle,
@@ -52,28 +49,10 @@ function getBoardGradeRange(
   const minimum = Math.min(...values);
   const maximum = Math.max(...values);
 
-  return minimum === maximum ? `V${minimum}` : `V${minimum}-V${maximum}`;
-}
-
-function getGradeChipStyle(grade: string) {
-  if (getRopeGradeIndex(grade) < 0) {
-    return {
-      ...softPillStyle,
-      color: "var(--text)",
-    };
-  }
-
-  const background = getRopeGradeColor(grade);
-  const red = Number.parseInt(background.slice(1, 3), 16);
-  const green = Number.parseInt(background.slice(3, 5), 16);
-  const blue = Number.parseInt(background.slice(5, 7), 16);
-  const luminance = (red * 299 + green * 587 + blue * 114) / 1000;
-
   return {
-    ...softPillStyle,
-    background,
-    border: "1px solid rgba(24, 33, 43, 0.08)",
-    color: luminance < 148 ? "#ffffff" : "#18212b",
+    minimum,
+    maximum,
+    label: minimum === maximum ? `V${minimum}` : `V${minimum}-V${maximum}`,
   };
 }
 
@@ -103,6 +82,8 @@ export function TrainingHistoryWidget({
       }
     : {
         ...listCardStyle,
+        padding: "8px 0 16px",
+        background: "transparent",
         borderBottom: "1px solid rgb(215 212 212)",
       };
 
@@ -178,18 +159,21 @@ export function TrainingHistoryWidget({
                   >
                     <span>Wyceny:</span>
                     {ropeGrades.map((grade, index) => (
-                      <span
+                      <GradeChip
                         key={`${training.id ?? training.createdAt}-${grade}-${index}`}
-                        style={getGradeChipStyle(grade)}
-                      >
-                        {grade}
-                      </span>
+                        grade={grade}
+                      />
                     ))}
                   </div>
                 ) : null}
                 {boardGradeRanges.map(({ surface, range }) => (
                   <div key={surface}>
-                    {surfaceLabelByValue.get(surface)}: {range}
+                    {surfaceLabelByValue.get(surface)}:{" "}
+                    <GradeChip
+                      surface={surface}
+                      grade={`V${range.minimum}`}
+                      endGrade={`V${range.maximum}`}
+                    />
                   </div>
                 ))}
                 {training.notes?.trim() ? (
