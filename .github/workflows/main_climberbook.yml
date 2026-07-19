@@ -62,6 +62,12 @@ jobs:
           az webapp start --resource-group rm_gmarcinek --name climberbook
           az webapp show --resource-group rm_gmarcinek --name climberbook --query "{state:state, enabled:enabled, availabilityState:availabilityState, hostNamesDisabled:hostNamesDisabled, usageState:usageState, defaultHostName:defaultHostName}" --output json
           az webapp config show --resource-group rm_gmarcinek --name climberbook --query "{linuxFxVersion:linuxFxVersion, appCommandLine:appCommandLine, alwaysOn:alwaysOn}" --output json
+          state=$(az webapp show --resource-group rm_gmarcinek --name climberbook --query state --output tsv)
+          usage_state=$(az webapp show --resource-group rm_gmarcinek --name climberbook --query usageState --output tsv)
+          if [ "$state" = "QuotaExceeded" ] || [ "$usage_state" = "Exceeded" ]; then
+            echo "App Service quota exceeded; OneDeploy will be rejected with Site Disabled (403). Wait for quota reset or move the app to a paid App Service plan."
+            exit 1
+          fi
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
