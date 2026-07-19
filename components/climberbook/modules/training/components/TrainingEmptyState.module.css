@@ -20,7 +20,7 @@
   order: 1;
 }
 
-.generatorPanel {
+.introSecondary.generatorPanel {
   margin: 0.5rem;
   padding: 1rem;
 }
@@ -67,7 +67,7 @@
     order: 2;
   }
 
-  .generatorPanel {
+  .introSecondary.generatorPanel {
     margin: 0;
     padding: 1rem;
   }
