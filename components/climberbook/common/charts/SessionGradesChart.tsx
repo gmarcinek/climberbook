@@ -7,12 +7,14 @@ import {
   ComposedChart,
   Line,
   ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Scatter,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { useSelectedDates } from "@/contexts/SelectedDatesContext";
 import { toDate } from "@/components/training-calendar/training-calendar.helpers";
 import {
   getRollingChartTicks,
@@ -32,6 +34,7 @@ export function RopeTrainingGradesChart({
   chartRange: { start: string; end: string };
   previewMode?: boolean;
 }) {
+  const { selectedDate } = useSelectedDates();
   const [activeGradeTab, setActiveGradeTab] = useState<GradeChartTab>("all");
   const trainingsInRange = trainings
     .filter(
@@ -209,6 +212,13 @@ export function RopeTrainingGradesChart({
   const xAxisDataKey = isPreviewChart ? "plotX" : "trainingTimestamp";
   const xAxisDomain = isPreviewChart ? [0, 2] : [chartStartTimestamp, chartEndTimestamp];
   const xAxisTicks = isPreviewChart ? [1] : chartTicks;
+  const selectedTrainingTimestamp =
+    !isPreviewChart &&
+    selectedDate &&
+    selectedDate >= chartRange.start &&
+    selectedDate <= chartRange.end
+      ? toDate(selectedDate).getTime()
+      : null;
   const previewDate = trainingsInRange[0]?.date ?? chartRange.start;
   const visiblePreviewRopeLines = isPreviewChart
     ? visibleRopePoints.map((point, index) => ({
@@ -295,6 +305,14 @@ export function RopeTrainingGradesChart({
                       }).format(new Date(value))
                 }
               />
+                {selectedTrainingTimestamp !== null && (
+                  <ReferenceLine
+                    x={selectedTrainingTimestamp}
+                    stroke="#176f86"
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                  />
+                )}
               {showsRope && (
                 <YAxis
                   yAxisId="rope"

@@ -4,11 +4,13 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { useSelectedDates } from "@/contexts/SelectedDatesContext";
 import {
   formatDateIso,
   toDate,
@@ -23,6 +25,7 @@ export function TrainingCaloriesChart({
   trainings: TrainingRecord[];
   chartRange: { start: string; end: string };
 }) {
+  const { selectedDate } = useSelectedDates();
   const monthlyTrainings = trainings.filter(
     (training) =>
       training.date >= chartRange.start && training.date <= chartRange.end,
@@ -47,6 +50,12 @@ export function TrainingCaloriesChart({
     dailyCalories.push({ date, calories: caloriesByDate.get(date) ?? 0 });
     cursor.setDate(cursor.getDate() + 1);
   }
+  const selectedChartDate =
+    selectedDate &&
+    selectedDate >= chartRange.start &&
+    selectedDate <= chartRange.end
+      ? formatDateIso(selectedDate)
+      : null;
 
   return (
     <div style={weightChartCanvasStyle}>
@@ -73,6 +82,14 @@ export function TrainingCaloriesChart({
             tickFormatter={(value) => `${value}`}
             label={{ value: "kcal", angle: -90, position: "insideLeft" }}
           />
+          {selectedChartDate && (
+            <ReferenceLine
+              x={selectedChartDate}
+              stroke="#176f86"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+            />
+          )}
           <Tooltip
             formatter={(value) => [`${value} kcal`, "Kalorie"]}
             labelFormatter={(date) =>

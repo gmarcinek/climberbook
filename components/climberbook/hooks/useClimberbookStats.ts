@@ -347,6 +347,7 @@ export function useClimberbookStats({
           notes: ascent.notes,
           suggestedGrade: suggested.label,
           subjectiveGrade: subjective.label,
+          hasSubjectiveGrade: ascent.subjectiveGrade.trim().length > 0,
           suggestedGradeIndex: suggested.gradeIndex,
           subjectiveGradeIndex: subjective.gradeIndex,
           suggestedColor: suggested.color,

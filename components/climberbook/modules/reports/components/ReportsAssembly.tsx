@@ -44,6 +44,7 @@ type ReportsAssemblyProps = {
     notes: string;
     suggestedGrade: string;
     subjectiveGrade: string;
+    hasSubjectiveGrade: boolean;
     suggestedGradeIndex: number;
     subjectiveGradeIndex: number;
     suggestedColor: string;

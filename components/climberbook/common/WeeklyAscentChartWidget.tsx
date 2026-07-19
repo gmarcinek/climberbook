@@ -38,6 +38,7 @@ type WeeklyAscentChartWidgetProps = {
     notes: string;
     suggestedGrade: string;
     subjectiveGrade: string;
+    hasSubjectiveGrade: boolean;
     suggestedGradeIndex: number;
     subjectiveGradeIndex: number;
     suggestedColor: string;
@@ -104,7 +105,9 @@ export function WeeklyAscentChartWidget({
         suggestedValue:
           entry.suggestedGradeIndex >= 0 ? entry.suggestedGradeIndex + 1 : 0,
         subjectiveValue:
-          entry.subjectiveGradeIndex >= 0
+          entry.hasSubjectiveGrade &&
+          entry.subjectiveGradeIndex >= 0 &&
+          entry.subjectiveGradeIndex !== entry.suggestedGradeIndex
             ? entry.subjectiveGradeIndex + 1
             : null,
       })),

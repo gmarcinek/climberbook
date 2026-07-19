@@ -1,5 +1,5 @@
 import {
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -79,7 +79,7 @@ export function TrainingCalendar(props: TrainingCalendarProps) {
     [containerWidth],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const node = containerRef.current;
 
     if (!node) {

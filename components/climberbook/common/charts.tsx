@@ -34,6 +34,7 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
+import { useSelectedDates } from "@/contexts/SelectedDatesContext";
 import type { TrainingRecord, WeightEntryRecord } from "@/lib/climbs-db";
 
 export {
@@ -80,6 +81,7 @@ export function TrainingAnalyticsPanel(props: {
     onDeleteWeightEntry,
     recentWeightEntries,
   } = props;
+  const { selectedDate } = useSelectedDates();
   const [isWeightEntryModalOpen, setIsWeightEntryModalOpen] = useState(false);
   const [editingWeightEntry, setEditingWeightEntry] =
     useState<WeightEntryRecord | null>(null);
@@ -400,6 +402,14 @@ export function TrainingAnalyticsPanel(props: {
               style={{
                 ...responsiveWeightEntryCardStyle,
                 border: 0,
+                background:
+                  entry.date === selectedDate
+                    ? "rgba(23, 111, 134, 0.14)"
+                    : responsiveWeightEntryCardStyle.background,
+                boxShadow:
+                  entry.date === selectedDate
+                    ? "inset 3px 0 0 #176f86"
+                    : undefined,
                 cursor: "pointer",
                 textAlign: "left",
                 width: "100%",

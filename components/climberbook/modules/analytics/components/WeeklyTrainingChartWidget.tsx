@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
   Brush,
   CartesianGrid,
   Legend,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,12 +15,14 @@ import {
 } from "recharts";
 import { EmptyState } from "@/components/climberbook/common/charts";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { getWeekStartIso } from "@/components/climberbook/common/training";
 import {
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
+import { useSelectedDates } from "@/contexts/SelectedDatesContext";
 
 type WeeklyTrainingChartWidgetProps = {
   isMobileLayout: boolean;
@@ -39,17 +42,19 @@ export function WeeklyTrainingChartWidget({
   chartRangeLabel,
   weeklyTrainingStats,
 }: WeeklyTrainingChartWidgetProps) {
-  const [selectedRange, setSelectedRange] = useState({
-    startIndex: 0,
-    endIndex: 0,
-  });
-
-  useEffect(() => {
-    setSelectedRange({
-      startIndex: Math.max(0, weeklyTrainingStats.length - 12),
-      endIndex: Math.max(0, weeklyTrainingStats.length - 1),
-    });
-  }, [weeklyTrainingStats.length]);
+  const defaultSelectedRange = getDefaultSelectedRange(
+    weeklyTrainingStats.length,
+  );
+  const { selectedDate } = useSelectedDates();
+  const [selectedRange, setSelectedRange] = useState<{
+    startIndex: number;
+    endIndex: number;
+  } | null>(null);
+  const visibleRange = selectedRange ?? defaultSelectedRange;
+  const selectedWeek = selectedDate ? getWeekStartIso(selectedDate) : null;
+  const hasSelectedWeek =
+    selectedWeek !== null &&
+    weeklyTrainingStats.some((week) => week.week === selectedWeek);
 
   return (
     <Panel>
@@ -88,6 +93,14 @@ export function WeeklyTrainingChartWidget({
                 tick={isMobileLayout ? { fontSize: "0.7rem" } : undefined}
                 tickFormatter={(value) => `${value} h`}
               />
+              {hasSelectedWeek && (
+                <ReferenceLine
+                  x={selectedWeek!}
+                  stroke="#176f86"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                />
+              )}
               <Tooltip
                 formatter={(value, name) => [
                   `${Number(value).toLocaleString("pl-PL", {
@@ -131,8 +144,8 @@ export function WeeklyTrainingChartWidget({
                 stroke="rgba(22, 143, 145, 0.72)"
                 fill="rgba(22, 143, 145, 0.08)"
                 travellerWidth={10}
-                startIndex={selectedRange.startIndex}
-                endIndex={selectedRange.endIndex}
+                startIndex={visibleRange.startIndex}
+                endIndex={visibleRange.endIndex}
                 tickFormatter={(value) => String(value).slice(5)}
                 onChange={(range) => {
                   if (
@@ -152,4 +165,11 @@ export function WeeklyTrainingChartWidget({
       )}
     </Panel>
   );
+}
+
+function getDefaultSelectedRange(length: number) {
+  return {
+    startIndex: Math.max(0, length - 12),
+    endIndex: Math.max(0, length - 1),
+  };
 }
