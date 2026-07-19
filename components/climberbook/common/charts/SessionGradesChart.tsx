@@ -99,7 +99,7 @@ export function RopeTrainingGradesChart({
   const maximumGradeIndex = ropeGradeIndexes.length
     ? Math.min(ROPE_GRADE_SCALE.length - 1, Math.max(...ropeGradeIndexes) + 2)
     : ROPE_GRADE_SCALE.length - 1;
-  const points = ropeTrainings.flatMap((training) =>
+  const rawRopePoints = ropeTrainings.flatMap((training) =>
     training.grades.map((grade) => ({
       trainingTimestamp: toDate(training.date).getTime(),
       plotX: grade.plotX,
@@ -110,12 +110,15 @@ export function RopeTrainingGradesChart({
       label: `${training.date} ${training.time}`,
     })),
   );
-  const moonPoints = boardTrainings.filter((point) => point.surface === "moon");
-  const kilterPoints = boardTrainings.filter(
-    (point) => point.surface === "kilter",
+  const points = addOccurrenceCounts(rawRopePoints);
+  const moonPoints = addOccurrenceCounts(
+    boardTrainings.filter((point) => point.surface === "moon"),
   );
-  const boulderPoints = boardTrainings.filter(
-    (point) => point.surface === "baldy",
+  const kilterPoints = addOccurrenceCounts(
+    boardTrainings.filter((point) => point.surface === "kilter"),
+  );
+  const boulderPoints = addOccurrenceCounts(
+    boardTrainings.filter((point) => point.surface === "baldy"),
   );
   const spraywallSessions = trainingsInRange
     .filter((training) => training.surfaces.includes("spraywall"))
@@ -409,7 +412,12 @@ export function RopeTrainingGradesChart({
                 }}
               />
               {showsRope && (
-                <Scatter data={visibleRopePoints} name="Lina" yAxisId="rope">
+                <Scatter
+                  data={visibleRopePoints}
+                  name="Lina"
+                  yAxisId="rope"
+                  shape={RopeAttemptMarker}
+                >
                   {visibleRopePoints.map((point, index) => (
                     <Cell
                       key={`${point.label}-${point.grade}-${index}`}
@@ -479,7 +487,7 @@ export function RopeTrainingGradesChart({
                   data={visibleKilterPoints}
                   name="Kilter"
                   yAxisId="board"
-                  shape={TriangleMarker}
+                  shape={InvertedTriangleMarker}
                 >
                   {visibleKilterPoints.map((point, index) => (
                     <Cell
@@ -680,6 +688,22 @@ type SessionGradePoint = {
   surface: keyof typeof sessionSurfaceLabels;
 };
 
+function addOccurrenceCounts<T extends { date: string; grade: string }>(
+  points: T[],
+) {
+  const occurrences = points.reduce((counts, point) => {
+    const key = `${point.date}-${point.grade}`;
+
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+
+  return points.map((point) => ({
+    ...point,
+    occurrenceCount: occurrences.get(`${point.date}-${point.grade}`) ?? 1,
+  }));
+}
+
 function groupSessionGradesByDate(points: SessionGradePoint[]) {
   const gradesByDate = new Map<
     string,
@@ -828,16 +852,35 @@ type ChartMarkerProps = {
   cx?: number;
   cy?: number;
   fill?: string;
+  payload?: { occurrenceCount?: number };
 };
+
+function getMarkerScale(occurrenceCount = 1) {
+  return Math.sqrt(Math.min(occurrenceCount, 5));
+}
+
+function RopeAttemptMarker({
+  cx = 0,
+  cy = 0,
+  fill = "#343a40",
+  payload,
+}: ChartMarkerProps) {
+  const radius = 4.5 * getMarkerScale(payload?.occurrenceCount);
+
+  return <circle cx={cx} cy={cy} r={radius} fill={fill} />;
+}
 
 function TriangleMarker({
   cx = 0,
   cy = 0,
   fill = "#343a40",
+  payload,
 }: ChartMarkerProps) {
+  const scale = getMarkerScale(payload?.occurrenceCount);
+
   return (
     <path
-      d={`M ${cx} ${cy - 6} L ${cx + 6} ${cy + 5} L ${cx - 6} ${cy + 5} Z`}
+      d={`M ${cx} ${cy - 6 * scale} L ${cx + 6 * scale} ${cy + 5 * scale} L ${cx - 6 * scale} ${cy + 5 * scale} Z`}
       fill={fill}
       stroke="white"
       strokeWidth={1}
@@ -845,10 +888,35 @@ function TriangleMarker({
   );
 }
 
-function PlusMarker({ cx = 0, cy = 0, fill = "#343a40" }: ChartMarkerProps) {
+function InvertedTriangleMarker({
+  cx = 0,
+  cy = 0,
+  fill = "#343a40",
+  payload,
+}: ChartMarkerProps) {
+  const scale = getMarkerScale(payload?.occurrenceCount);
+
   return (
     <path
-      d={`M ${cx - 5} ${cy} H ${cx + 5} M ${cx} ${cy - 5} V ${cy + 5}`}
+      d={`M ${cx} ${cy + 6 * scale} L ${cx + 6 * scale} ${cy - 5 * scale} L ${cx - 6 * scale} ${cy - 5 * scale} Z`}
+      fill={fill}
+      stroke="white"
+      strokeWidth={1}
+    />
+  );
+}
+
+function PlusMarker({
+  cx = 0,
+  cy = 0,
+  fill = "#343a40",
+  payload,
+}: ChartMarkerProps) {
+  const radius = 5 * getMarkerScale(payload?.occurrenceCount);
+
+  return (
+    <path
+      d={`M ${cx - radius} ${cy} H ${cx + radius} M ${cx} ${cy - radius} V ${cx} ${cy + radius}`}
       fill="none"
       stroke={fill}
       strokeLinecap="round"
