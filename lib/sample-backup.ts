@@ -12,6 +12,7 @@ type TrainingSeed = {
   caloriesBurned: number;
   attemptsCount: number;
   difficultyNotes: string;
+  difficultyBySurface?: ClimberbookFullDatabaseBackup["trainings"][number]["difficultyBySurface"];
   wellbeing: string;
   surfaces: ClimberbookFullDatabaseBackup["trainings"][number]["surfaces"];
   customSessionType?: string;
@@ -77,7 +78,8 @@ const trainingSeeds: TrainingSeed[] = [
     ageYears: 42,
     caloriesBurned: 600,
     attemptsCount: 6,
-    difficultyNotes: "7a, 7a, 7a, 7a, 6b+, 6b",
+    difficultyNotes: "",
+    difficultyBySurface: { moon: "V5, V5, V5, V5, V4, V3" },
     wellbeing: "",
     surfaces: ["moon", "spraywall"],
     notes: "",
@@ -324,6 +326,7 @@ export function createSampleBackupData(): ClimberbookFullDatabaseBackup {
       caloriesBurned: seed.caloriesBurned,
       attemptsCount: seed.attemptsCount,
       difficultyNotes: seed.difficultyNotes,
+      difficultyBySurface: seed.difficultyBySurface,
       wellbeing: seed.wellbeing,
       surfaces: seed.surfaces,
       customSessionType: seed.customSessionType ?? "",
