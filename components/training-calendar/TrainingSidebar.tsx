@@ -1909,9 +1909,9 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
                     difficultyBySurface={training.difficultyBySurface}
                     surfaces={training.surfaces}
                   />
-                  {training.difficultyNotes?.trim() ? (
+                  {hasTrainingGradeContent(training) ? (
                     <div className={styles.trainingSidebar__details}>
-                      <span>Wyceny: {training.difficultyNotes}</span>
+                      {renderTrainingGradeSummary(training)}
                     </div>
                   ) : null}
                   <div className={styles.trainingSidebar__cardActions}>
@@ -2027,7 +2027,7 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               </div>
               <div className={styles.trainingSidebar__previewDetailsFull}>
                 <dt>Wyceny</dt>
-                <dd>{getTrainingGradesDescription(previewedTraining)}</dd>
+                <dd>{renderTrainingGradeSummary(previewedTraining)}</dd>
               </div>
               {previewedTraining.protocol?.pullUp?.length ? (
                 <div className={styles.trainingSidebar__previewDetailsFull}>
@@ -2055,14 +2055,13 @@ export function TrainingSidebar(props: TrainingSidebarProps) {
               ) : null}
             </dl>
             <section className={styles.trainingSidebar__previewCharts}>
-              <div>
+              <div className={styles.trainingSidebar__previewChartsHeader}>
                 <p className={styles.trainingSidebar__eyebrow}>Wykres sesji</p>
                 <h3 className={styles.trainingSidebar__previewChartsTitle}>
                   Wyceny na sesję
                 </h3>
               </div>
               <div className={styles.trainingSidebar__previewChart}>
-                <h4>Wyceny na sesję</h4>
                 <RopeTrainingGradesChart
                   trainings={[previewedTraining]}
                   chartRange={{
@@ -2101,6 +2100,104 @@ function getTrainingGradesDescription(training: TrainingRecord) {
     );
 
   return surfaceGrades.join(" · ") || training.difficultyNotes || "Brak";
+}
+
+function hasTrainingGradeContent(training: TrainingRecord) {
+  return getTrainingGradeGroups(training).length > 0;
+}
+
+function renderTrainingGradeSummary(training: TrainingRecord) {
+  const gradeGroups = getTrainingGradeGroups(training);
+
+  if (gradeGroups.length === 0) {
+    return "Brak";
+  }
+
+  return (
+    <div className={styles.trainingSidebar__gradeSummary}>
+      {gradeGroups.map(({ surface, grades }) => (
+        <div
+          key={surface}
+          className={styles.trainingSidebar__gradeSummaryGroup}
+        >
+          <span className={styles.trainingSidebar__gradeSummaryLabel}>
+            {gradeSurfaceLabels[surface] ?? surface}
+          </span>
+          <div className={styles.trainingSidebar__gradeSummaryChips}>
+            {grades.map((grade, index) => (
+              <span
+                key={`${surface}-${grade}-${index}`}
+                className={[
+                  styles.trainingSidebar__gradeChip,
+                  styles.trainingSidebar__gradeSummaryChip,
+                  getGradeChipClassName(surface, grade),
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {grade}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function getTrainingGradeGroups(training: TrainingRecord) {
+  const groups = (Object.entries(training.difficultyBySurface ?? {}) as Array<
+    [TrainingSurface, string]
+  >)
+    .filter(([surface, value]) => Boolean(gradeSurfaceLabels[surface] && value))
+    .map(([surface, value]) => ({
+      surface,
+      grades: splitDifficultyGrades(value),
+    }))
+    .filter((group) => group.grades.length > 0);
+
+  if (groups.length > 0) {
+    return groups;
+  }
+
+  const ropeGrades = splitDifficultyGrades(training.difficultyNotes);
+
+  return ropeGrades.length > 0
+    ? [{ surface: "lina" as const, grades: ropeGrades }]
+    : [];
+}
+
+function getGradeChipClassName(surface: TrainingSurface, grade: string) {
+  if (surface === "lina") {
+    const match = /^(4|5|6|7|8|9)(a\+|a|b\+|b|c\+|c)$/.exec(grade);
+
+    if (!match) {
+      return "";
+    }
+
+    const [, base, modifier] = match;
+
+    return [
+      styles[`trainingSidebar__gradeChip--${base}`],
+      styles[`trainingSidebar__gradeChip--${modifier}`],
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  if (surface === "baldy") {
+    return styles[`trainingSidebar__gradeChip--boulder-${grade}`] ?? "";
+  }
+
+  if (surface === "moon" || surface === "kilter") {
+    const gradeIndex = /^V(\d+)$/.exec(grade)?.[1];
+
+    return gradeIndex
+      ? styles[`trainingSidebar__gradeChip--${surface}-${gradeIndex}`] ?? ""
+      : "";
+  }
+
+  return "";
 }
 
 function formatReportedAttempts(training: TrainingRecord) {

@@ -13,6 +13,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   createUserProfileDraft,
   createWeightEntryDraft,
@@ -354,6 +355,7 @@ type ClimberbookContextValue = {
 const ClimberbookContext = createContext<ClimberbookContextValue | null>(null);
 
 function ClimberbookDataProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const today = formatDateIso(new Date());
   const [athletes, setAthletes] = useState<AthleteRecord[]>([]);
   const [activeAthleteId, setActiveAthleteId] = useState<string | null>(() =>
@@ -938,6 +940,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       pendingImportFileRef.current = null;
       setImportPreview(null);
       setIsImportPreviewOpen(false);
+      router.push("/trening");
     } finally {
       setIsImportingBackup(false);
     }

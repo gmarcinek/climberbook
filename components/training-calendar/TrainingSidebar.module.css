@@ -633,6 +633,37 @@
   overflow-wrap: anywhere;
 }
 
+.trainingSidebar__gradeSummary {
+  display: grid;
+  gap: 6px;
+}
+
+.trainingSidebar__gradeSummaryGroup {
+  display: grid;
+  gap: 4px;
+}
+
+.trainingSidebar__gradeSummaryLabel {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.2;
+}
+
+.trainingSidebar__gradeSummaryChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trainingSidebar__gradeSummaryChip {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  line-height: 1.1;
+}
+
 .trainingSidebar__previewDetailsFull {
   grid-column: 1 / -1;
 }
@@ -663,19 +694,20 @@
   border-top: 1px solid rgba(28, 61, 89, 0.12);
 }
 
+.trainingSidebar__previewChartsHeader {
+  display: grid;
+  gap: 6px;
+  margin-top: 1rem;
+}
+
 .trainingSidebar__previewChartsTitle {
-  margin: 6px 0 0;
+  margin: 0;
   font-size: 1.05rem;
 }
 
 .trainingSidebar__previewChart {
   display: grid;
   gap: 8px;
-}
-
-.trainingSidebar__previewChart h4 {
-  margin: 0;
-  font-size: 0.9rem;
 }
 
 .trainingSidebar__drawerActions {

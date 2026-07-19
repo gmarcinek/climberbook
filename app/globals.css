@@ -138,6 +138,14 @@ button:focus-visible {
     0 0 0 4px rgba(209, 109, 63, 0.14);
 }
 
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 a {
   color: inherit;
 }

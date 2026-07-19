@@ -296,25 +296,32 @@ export function TrainingAnalyticsPanel(props: {
               />
             </label>
 
-            <FormActions>
-              <Button type="submit" variant="tertiary">
+            <FormActions
+              style={{
+                flexDirection: "row",
+                flexWrap: "nowrap",
+                alignItems: "center",
+                justifyContent: "space-between",
+                justifySelf: "stretch",
+                width: "100%",
+              }}
+            >
+              <Button type="submit" variant="tertiary" style={{ width: "auto" }}>
                 Zapisz pomiar
               </Button>
-            </FormActions>
-            {editingWeightEntry?.id !== undefined ? (
-              <div style={{ marginTop: "2rem" }}>
+              {editingWeightEntry?.id !== undefined ? (
                 <Button
                   variant="secondary"
                   onClick={() => {
                     setIsWeightEntryModalOpen(false);
                     setWeightEntryPendingDeletion(editingWeightEntry);
                   }}
-                  style={deleteButtonStyle}
+                  style={{ ...deleteButtonStyle, width: "auto" }}
                 >
                   Usuń pomiar
                 </Button>
-              </div>
-            ) : null}
+              ) : null}
+            </FormActions>
           </form>
         </Modal>
       )}

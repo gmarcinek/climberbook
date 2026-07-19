@@ -4,7 +4,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react";
-import { EmotButton } from "@/components/climberbook/common/Button";
+import { Button } from "@/components/climberbook/common/Button";
 import styles from "./FormControls.module.css";
 
 type BaseControlProps = {
@@ -131,15 +131,16 @@ export function NumericStepperControl({
 }: NumericStepperControlProps) {
   return (
     <div className={joinClassNames(styles.controlGroup, className)}>
-      <EmotButton
+      <Button
         size="small"
+        variant="secondary"
         aria-label={decrementAriaLabel}
         title={decrementTitle}
         onClick={onDecrement}
         className={styles.stepButton}
       >
         {decrementLabel}
-      </EmotButton>
+      </Button>
       <div className={styles.stepInputShell}>
         <Input
           {...inputProps}
@@ -154,15 +155,16 @@ export function NumericStepperControl({
           <span className={styles.stepInputSuffix}>{inputSuffix}</span>
         )}
       </div>
-      <EmotButton
+      <Button
         size="small"
+        variant="secondary"
         aria-label={incrementAriaLabel}
         title={incrementTitle}
         onClick={onIncrement}
         className={styles.stepButton}
       >
         {incrementLabel}
-      </EmotButton>
+      </Button>
       {trailingActions}
     </div>
   );

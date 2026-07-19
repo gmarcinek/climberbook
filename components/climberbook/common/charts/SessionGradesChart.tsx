@@ -261,6 +261,7 @@ export function RopeTrainingGradesChart({
                   yAxisId="rope"
                   type="number"
                   dataKey="gradeIndex"
+                  width={48}
                   domain={[minimumGradeIndex, maximumGradeIndex]}
                   ticks={Array.from(
                     { length: maximumGradeIndex - minimumGradeIndex + 1 },
