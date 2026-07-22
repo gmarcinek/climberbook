@@ -1,4 +1,5 @@
 import { deleteDB, openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { databaseModifiers } from "@/lib/db-modifiers";
 
 export type ClimbRecord = {
   id?: number;
@@ -79,7 +80,7 @@ export type TrainingRecord = {
   date: string;
   time: string;
   durationMinutes: number;
-  bodyWeightKg: number;
+  bodyWeightKg?: number;
   ageYears: number;
   caloriesBurned: number;
   attemptsCount: number;
@@ -257,38 +258,55 @@ function buildTrainingWeightSnapshotKey(input: {
   ].join("::");
 }
 
-function removeTrainingDerivedWeightEntries(
+function moveImportedTrainingWeightToWeightEntries(
   trainings: TrainingRecord[],
   weightEntries: WeightEntryRecord[],
 ) {
-  const trainingWeightKeys = new Set(
-    trainings.map((training) =>
+  const migratedWeightEntries = [...weightEntries];
+  const existingWeightKeys = new Set(
+    migratedWeightEntries.map((entry) =>
       buildTrainingWeightSnapshotKey({
-        athleteId: training.athleteId,
-        date: training.date,
-        time: training.time,
-        weightKg: training.bodyWeightKg,
+        athleteId: entry.athleteId,
+        date: entry.date,
+        time: entry.time,
+        weightKg: entry.weightKg,
       }),
     ),
   );
 
-  return weightEntries.filter(
-    (entry) =>
-      !trainingWeightKeys.has(
-        buildTrainingWeightSnapshotKey({
-          athleteId: entry.athleteId,
-          date: entry.date,
-          time: entry.time,
-          weightKg: entry.weightKg,
-        }),
-      ),
-  );
+  for (const training of trainings) {
+    if (typeof training.bodyWeightKg !== "number") continue;
+
+    const weightKey = buildTrainingWeightSnapshotKey({
+      athleteId: training.athleteId,
+      date: training.date,
+      time: training.time,
+      weightKg: training.bodyWeightKg,
+    });
+
+    if (!existingWeightKeys.has(weightKey)) {
+      migratedWeightEntries.push({
+        athleteId: training.athleteId,
+        date: training.date,
+        time: training.time || "09:00",
+        weightKg: training.bodyWeightKg,
+        createdAt: training.createdAt,
+      });
+      existingWeightKeys.add(weightKey);
+    }
+
+    delete training.bodyWeightKg;
+  }
+
+  return migratedWeightEntries;
 }
 
 export type ClimberbookDatabaseBackup = {
   formatVersion: 2;
   exportedAt: string;
   trainingDataDisclaimer: string;
+  dataInterpretation: ClimberbookDataInterpretation;
+  llmTrainingSessions: LlmTrainingSession[];
   athlete: AthleteRecord;
   climbs: ClimbRecord[];
   trainings: TrainingRecord[];
@@ -301,6 +319,8 @@ export type ClimberbookFullDatabaseBackup = {
   formatVersion: 3;
   exportedAt: string;
   trainingDataDisclaimer: string;
+  dataInterpretation: ClimberbookDataInterpretation;
+  llmTrainingSessions: LlmTrainingSession[];
   athletes: AthleteRecord[];
   sections: SectionRecord[];
   facilities: FacilityRecord[];
@@ -309,6 +329,74 @@ export type ClimberbookFullDatabaseBackup = {
   ascents: AscentRecord[];
   profiles: UserProfileRecord[];
   weightEntries: WeightEntryRecord[];
+};
+
+export type ClimberbookDataInterpretation = {
+  purpose: string;
+  primaryDataset: "llmTrainingSessions";
+  datasets: {
+    llmTrainingSessions: string;
+    trainings: string;
+    ascents: string;
+    climbs: string;
+    athletes: string;
+    profiles: string;
+    weightEntries: string;
+    sections: string;
+    facilities: string;
+  };
+  trainingFields: {
+    durationMinutes: string;
+    surfaces: string;
+    difficultyBySurface: string;
+    protocol: string;
+    facilityName: string;
+    caloriesBurned: string;
+    wellbeing: string;
+    notes: string;
+    attemptsCount: string;
+  };
+  ascentFields: {
+    date: string;
+    routeName: string;
+    suggestedGrade: string;
+    subjectiveGrade: string;
+    style: string;
+  };
+  relationships: {
+    athleteId: string;
+    facilityName: string;
+    sectionId: string;
+  };
+  interpretationRules: string[];
+  unsupportedInferences: string[];
+};
+
+type GradeScale = "french" | "boulder_gym_numeric" | "v_scale";
+
+type LlmSurfaceExposure = {
+  gradeScale: GradeScale;
+  maxExposureGrade: string;
+  exposureRange: {
+    min: string;
+    max: string;
+  };
+};
+
+export type LlmTrainingSession = {
+  sourceTrainingId: string;
+  athleteId: string;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  surfaces: TrainingSurface[];
+  difficultyBySurface: Partial<Record<TrainingSurface, LlmSurfaceExposure>>;
+  protocol?: TrainingProtocol;
+  facilityName?: string;
+  caloriesBurned: number;
+  wellbeing: string;
+  notes: string;
+  customSessionType?: string;
 };
 
 export type DatabaseImportPreview = {
@@ -329,7 +417,7 @@ export type DatabaseImportPreview = {
   };
 };
 
-interface ClimberbookDb extends DBSchema {
+export interface ClimberbookDb extends DBSchema {
   climbs: {
     key: number;
     value: ClimbRecord;
@@ -397,9 +485,167 @@ interface ClimberbookDb extends DBSchema {
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 18;
+const DB_VERSION = 19;
 const TRAINING_DATA_DISCLAIMER =
-  "INSTRUKCJA INTERPRETACJI DLA AGENTA LLM: Głównym celem aplikacji i głównym zbiorem eksportu są `trainings`: sesje opisujące ekspozycję treningową. Analizę zaczynaj od tych danych. `ascents` to niezależny, opcjonalny dodatek zawierający raportowane przejścia; jego brak nie oznacza braku treningu, ekspozycji ani postępu. `trainings` nie zawiera pojedynczych prób ani potwierdzonych przejść. `difficultyBySurface` opisuje najwyższą lub deklarowaną ekspozycję na trudność dla danej aktywności podczas sesji; traktuj ją jako wskaźnik obciążenia i poziomu trudności, nigdy jako liczbę zrobionych dróg, baldów, poprowadzeń lub prób. Nie sumuj wycen z `difficultyBySurface` ani nie wyprowadzaj z nich liczby przejść. Czas (`durationMinutes`), aktywności (`surfaces`), protokoły (`protocol`), notatki i opcjonalny `facilityName` opisują całą sesję. `ascents` zawiera wyłącznie przejścia zgłoszone przez użytkownika; nie jest zbiorem prób i nie wolno interpretować jego rekordów jako prób. Nie wyprowadzaj liczby prób z żadnej części eksportu: `attemptsCount` jest historycznym polem, obecnie zapisywanym jako 0, i nie jest wiarygodną miarą prób wspinaczkowych. `climbs` jest katalogiem obiektów wspinaczkowych, nie historią ich przejść. Analizując wyniki, wyraźnie oddzielaj ekspozycję treningową od raportowanych przejść i nie formułuj twierdzeń o liczbie prób bez osobnego, wiarygodnego źródła danych.";
+  "INSTRUKCJA INTERPRETACJI DLA AGENTA LLM: Głównym celem aplikacji są dane o ekspozycji treningowej. Do analizy używaj `llmTrainingSessions`, a dokładną legendę odczytaj z `dataInterpretation`. Ten zbiór przedstawia ekspozycję przez skalę oraz minimum i maksimum, bez surowych list wycen. `trainings` zawiera surowe rekordy techniczne dla importu backupu; nie analizuj jego tekstowego `difficultyBySurface`, jeśli dostępne jest `llmTrainingSessions`. `ascents` to niezależny, opcjonalny dodatek zawierający wyłącznie raportowane przejścia, nie próby. Brak `ascents` nie oznacza braku treningu, ekspozycji ani postępu. Nie wyprowadzaj liczby prób z żadnej części eksportu: `attemptsCount` jest historycznym polem, obecnie zapisywanym jako 0. `climbs` jest katalogiem obiektów wspinaczkowych, nie historią ich przejść.";
+const DATA_INTERPRETATION: ClimberbookDataInterpretation = {
+  purpose:
+    "Głównym celem aplikacji jest zbieranie danych o ekspozycji treningowej. Analizy LLM opieraj przede wszystkim na zbiorze llmTrainingSessions.",
+  primaryDataset: "llmTrainingSessions",
+  datasets: {
+    llmTrainingSessions:
+      "Warstwa przeznaczona do analizy LLM. Zawiera sesje z jednoznaczną ekspozycją per powierzchnia: skalą, minimum i maksimum. Nie zawiera surowych list wycen.",
+    trainings:
+      "Surowe rekordy aplikacji zachowane na potrzeby importu i odtworzenia backupu. Pole difficultyBySurface może zawierać listy tekstowe; dla analizy LLM używaj zamiast niego llmTrainingSessions.",
+    ascents:
+      "Opcjonalne, samodzielnie raportowane przejścia. Brak rekordów nie oznacza braku treningu, ekspozycji ani postępu.",
+    climbs:
+      "Katalog obiektów wspinaczkowych. Nie jest historią przejść ani listą prób.",
+    athletes: "Tożsamości zawodników, łączone z danymi przez athleteId.",
+    profiles: "Profil i dane antropometryczne zawodnika.",
+    weightEntries: "Niezależne pomiary masy ciała w czasie.",
+    sections: "Opcjonalne grupy lub sekcje zawodników.",
+    facilities: "Słownik obiektów lub miejsc treningu.",
+  },
+  trainingFields: {
+    durationMinutes: "Czas całej sesji w minutach, nie czas pojedynczej aktywności.",
+    surfaces:
+      "Aktywności obecne w sesji, np. lina, baldy, Moon, Kilter, chwytotablica.",
+    difficultyBySurface:
+      "Tekstowa deklaracja ekspozycji na trudność dla aktywności w ramach sesji. Może zawierać listę wycen; elementy listy nie są osobnymi drogami, baldami, próbami ani przejściami.",
+    protocol:
+      "Szczegóły protokołu treningowego, np. serie, obciążenie, zwisy i przerwy.",
+    facilityName:
+      "Opcjonalna nazwa obiektu zapisana przy sesji jako historyczna etykieta.",
+    caloriesBurned: "Szacowane, a nie zmierzone spalanie energii.",
+    wellbeing: "Subiektywna ocena samopoczucia.",
+    notes: "Wolny opis użytkownika; nie zakładaj ujednoliconej struktury.",
+    attemptsCount:
+      "Pole historyczne, obecnie zapisywane jako 0. Nie jest miarą liczby prób i nie nadaje się do analizy prób.",
+  },
+  ascentFields: {
+    date: "Data raportowanego przejścia.",
+    routeName: "Nazwa zgłoszonego przejścia.",
+    suggestedGrade: "Wycena proponowana lub źródłowa dla raportowanego przejścia.",
+    subjectiveGrade: "Subiektywna wycena użytkownika dla raportowanego przejścia.",
+    style: "Opcjonalny styl raportowanego przejścia.",
+  },
+  relationships: {
+    athleteId: "Łączy rekordy zawodnika między zbiorami danych.",
+    facilityName:
+      "Łączy trening z nazwą miejsca tylko opisowo; nie jest stabilnym identyfikatorem relacyjnym do facilities.",
+    sectionId: "Opcjonalnie łączy zawodnika z rekordem sections.",
+  },
+  interpretationRules: [
+    "W pierwszej kolejności analizuj częstotliwość, czas, aktywności, protokoły i deklarowaną ekspozycję w llmTrainingSessions.",
+    "W llmTrainingSessions traktuj difficultyBySurface jako jakościowy wskaźnik poziomu i obciążenia ekspozycją w sesji.",
+    "Traktuj ascents jako opcjonalny kontekst raportowanych przejść, oddzielny od danych treningowych.",
+    "Wyraźnie rozdzielaj w analizie ekspozycję treningową od raportowanych przejść.",
+  ],
+  unsupportedInferences: [
+    "Nie analizuj surowych list difficultyBySurface w trainings, gdy dostępne jest llmTrainingSessions.",
+    "Nie licz dróg, baldów, poprowadzeń ani prób na podstawie difficultyBySurface.",
+    "Nie wyprowadzaj liczby prób z attemptsCount, trainings, ascents ani climbs.",
+    "Nie uznawaj braku ascents za brak treningu, ekspozycji lub rozwoju sportowego.",
+    "Nie traktuj caloriesBurned jako precyzyjnego pomiaru fizjologicznego.",
+  ],
+};
+
+const FRENCH_GRADES = ["4", "5", "6", "7", "8", "9"].flatMap((base) =>
+  ["a", "a+", "b", "b+", "c", "c+"].map((modifier) => `${base}${modifier}`),
+);
+
+function getGradeScale(surface: TrainingSurface): GradeScale | null {
+  if (surface === "lina") return "french";
+  if (surface === "baldy") return "boulder_gym_numeric";
+  if (surface === "moon" || surface === "kilter") return "v_scale";
+  return null;
+}
+
+function getGradeRank(grade: string, gradeScale: GradeScale): number | null {
+  if (gradeScale === "french") {
+    const rank = FRENCH_GRADES.indexOf(grade);
+    return rank === -1 ? null : rank;
+  }
+
+  if (gradeScale === "boulder_gym_numeric") {
+    return /^\d+$/.test(grade) ? Number(grade) : null;
+  }
+
+  const match = /^V(\d+)$/.exec(grade);
+  return match ? Number(match[1]) : null;
+}
+
+function getLlmSurfaceExposure(
+  surface: TrainingSurface,
+  rawGrades: string,
+): LlmSurfaceExposure | null {
+  const gradeScale = getGradeScale(surface);
+  if (!gradeScale) return null;
+
+  const grades = rawGrades
+    .split(",")
+    .map((grade) => grade.trim())
+    .map((grade) => ({ grade, rank: getGradeRank(grade, gradeScale) }))
+    .filter(
+      (entry): entry is { grade: string; rank: number } => entry.rank !== null,
+    )
+    .sort((left, right) => left.rank - right.rank);
+
+  if (!grades.length) return null;
+
+  return {
+    gradeScale,
+    maxExposureGrade: grades.at(-1)!.grade,
+    exposureRange: {
+      min: grades[0].grade,
+      max: grades.at(-1)!.grade,
+    },
+  };
+}
+
+function toLlmTrainingSession(training: TrainingRecord): LlmTrainingSession {
+  const difficultyBySurface = Object.fromEntries(
+    Object.entries(training.difficultyBySurface ?? {}).flatMap(
+      ([surface, rawGrades]) => {
+        const exposure = getLlmSurfaceExposure(
+          surface as TrainingSurface,
+          rawGrades,
+        );
+        return exposure ? [[surface, exposure]] : [];
+      },
+    ),
+  ) as LlmTrainingSession["difficultyBySurface"];
+
+  return {
+    sourceTrainingId: training.id,
+    athleteId: training.athleteId,
+    date: training.date,
+    time: training.time,
+    durationMinutes: training.durationMinutes,
+    surfaces: training.surfaces,
+    difficultyBySurface,
+    protocol: training.protocol,
+    facilityName: training.facilityName,
+    caloriesBurned: training.caloriesBurned,
+    wellbeing: training.wellbeing,
+    notes: training.notes,
+    customSessionType: training.customSessionType,
+  };
+}
+
+export function createTrainingExportMetadata(trainings: TrainingRecord[]) {
+  return {
+    trainingDataDisclaimer: TRAINING_DATA_DISCLAIMER,
+    dataInterpretation: DATA_INTERPRETATION,
+    llmTrainingSessions: trainings.map(toLlmTrainingSession),
+  };
+}
+
+function withoutTrainingBodyWeight(training: TrainingRecord): TrainingRecord {
+  const { bodyWeightKg: _bodyWeightKg, ...withoutBodyWeight } = training;
+  return withoutBodyWeight;
+}
 const DEFAULT_ATHLETE: AthleteRecord = {
   id: "primary",
   name: "Ja",
@@ -534,6 +780,14 @@ function createDatabase() {
 
           cursor = await cursor.continue();
         }
+      }
+
+      if (
+        oldVersion < 19 &&
+        database.objectStoreNames.contains("trainings") &&
+        database.objectStoreNames.contains("weightEntries")
+      ) {
+        await databaseModifiers[19](transaction);
       }
 
       if (oldVersion < 4 && database.objectStoreNames.contains("trainings")) {
@@ -748,13 +1002,17 @@ function createDatabase() {
         const weightEntryStore = transaction.objectStore("weightEntries");
         const trainings = await trainingStore.getAll();
         const trainingWeightKeys = new Set(
-          trainings.map((training) =>
-            buildTrainingWeightSnapshotKey({
-              athleteId: training.athleteId,
-              date: training.date,
-              time: training.time,
-              weightKg: training.bodyWeightKg,
-            }),
+          trainings.flatMap((training) =>
+            typeof training.bodyWeightKg === "number"
+              ? [
+                  buildTrainingWeightSnapshotKey({
+                    athleteId: training.athleteId,
+                    date: training.date,
+                    time: training.time,
+                    weightKg: training.bodyWeightKg,
+                  }),
+                ]
+              : [],
           ),
         );
         let cursor = await weightEntryStore.openCursor();
@@ -1245,10 +1503,10 @@ export async function exportDatabaseBackup(
   return {
     formatVersion: 2,
     exportedAt: new Date().toISOString(),
-    trainingDataDisclaimer: TRAINING_DATA_DISCLAIMER,
+    ...createTrainingExportMetadata(trainings),
     athlete,
     climbs: climbs.filter((climb) => climb.athleteId === athleteId),
-    trainings,
+    trainings: trainings.map(withoutTrainingBodyWeight),
     ascents,
     profile,
     weightEntries,
@@ -1281,12 +1539,14 @@ export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabas
   return {
     formatVersion: 3,
     exportedAt: new Date().toISOString(),
-    trainingDataDisclaimer: TRAINING_DATA_DISCLAIMER,
+    ...createTrainingExportMetadata(trainings),
     athletes: await ensureAthleteSourceIds(athletes),
     sections: await ensureSectionSourceIds(sections),
     facilities,
     climbs,
-    trainings: await ensureTrainingIds(trainings),
+    trainings: (await ensureTrainingIds(trainings)).map(
+      withoutTrainingBodyWeight,
+    ),
     ascents,
     profiles,
     weightEntries,
@@ -1340,7 +1600,7 @@ export async function inspectDatabaseBackup(
       backup.profiles,
       "profiles",
     );
-    const weightEntries = removeTrainingDerivedWeightEntries(
+    const weightEntries = moveImportedTrainingWeightToWeightEntries(
       trainings,
       asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
     );
@@ -1379,7 +1639,7 @@ export async function inspectDatabaseBackup(
     "trainings",
   ).map(ensureTrainingId);
   const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
-  const weightEntries = removeTrainingDerivedWeightEntries(
+  const weightEntries = moveImportedTrainingWeightToWeightEntries(
     trainings,
     asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
   );
@@ -1464,7 +1724,7 @@ export async function importDatabaseBackup(
       backup.profiles,
       "profiles",
     );
-    const weightEntries = removeTrainingDerivedWeightEntries(
+    const weightEntries = moveImportedTrainingWeightToWeightEntries(
       trainings,
       asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
     );
@@ -1541,7 +1801,7 @@ export async function importDatabaseBackup(
     "trainings",
   );
   const ascents = asRecordArray<AscentRecord>(backup.ascents, "ascents");
-  const weightEntries = removeTrainingDerivedWeightEntries(
+  const weightEntries = moveImportedTrainingWeightToWeightEntries(
     trainings,
     asRecordArray<WeightEntryRecord>(backup.weightEntries, "weightEntries"),
   );

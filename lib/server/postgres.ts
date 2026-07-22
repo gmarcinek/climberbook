@@ -1,5 +1,10 @@
 import { DefaultAzureCredential } from "@azure/identity";
-import { Pool, type PoolConfig, type QueryResultRow } from "pg";
+import {
+  Pool,
+  type PoolClient,
+  type PoolConfig,
+  type QueryResultRow,
+} from "pg";
 
 const ENTRA_SCOPE = "https://ossrdbms-aad.database.windows.net/.default";
 
@@ -81,4 +86,22 @@ export async function queryPostgres<T extends QueryResultRow>(
   values: unknown[] = [],
 ) {
   return getPostgresPool().query<T>(text, values);
+}
+
+export async function withPostgresTransaction<T>(
+  action: (client: PoolClient) => Promise<T>,
+) {
+  const client = await getPostgresPool().connect();
+
+  try {
+    await client.query("begin");
+    const result = await action(client);
+    await client.query("commit");
+    return result;
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

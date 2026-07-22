@@ -31,7 +31,7 @@ export function AnalyticsMetricsWidget({
       <MetricCard
         label="Średnia waga"
         value={`${averageWeight} kg`}
-        detail="Na podstawie wpisów treningowych"
+        detail="Na podstawie wpisów wagi"
       />
     </Stack>
   );

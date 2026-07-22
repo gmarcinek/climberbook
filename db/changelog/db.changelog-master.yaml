@@ -1,5 +1,11 @@
 databaseChangeLog:
   - include:
       file: changelog/changes/001-initial-schema.sql
-    - include:
+  - include:
       file: changelog/changes/002-reset-training-attempt-count.sql
+  - include:
+      file: changelog/changes/003-move-training-weight-to-weight-entries.sql
+  - include:
+      file: changelog/changes/004-add-facilities-and-climbs.sql
+  - include:
+      file: changelog/changes/005-add-experimental-users.sql

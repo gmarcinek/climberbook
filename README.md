@@ -1,6 +1,6 @@
 # Climberbook
 
-Aplikacja Next.js do prowadzenia dziennika wspinaczkowego. Docelowym źródłem danych jest PostgreSQL przez backend API; obecny IndexedDB zostaje jako warstwa historyczna/przejściowa do czasu migracji danych i przepięcia UI.
+Aplikacja Next.js do prowadzenia dziennika wspinaczkowego. Aktualnym źródłem danych aplikacji jest IndexedDB. PostgreSQL i API są eksperymentalną ścieżką testową, która nie jest jeszcze podłączona do UI.
 
 ## Start
 
@@ -33,11 +33,24 @@ docker compose up db -d
 
 Przy przeniesieniu na Azure ustaw odpowiedniki z `.env.example`: `POSTGRES_HOST` na `<server-name>.postgres.database.azure.com`, port `5432`, `POSTGRES_SSLMODE=require`, nazwę bazy, login administratora i hasło spełniające politykę Azure. Aplikacja sama składa połączenie z tych zmiennych, więc `DATABASE_URL` nie jest wymagany.
 
-Backend działa na razie w tym samym kontenerze co aplikacja Next.js, przez API routes:
+Eksperymentalny backend działa w tym samym kontenerze co aplikacja Next.js, przez API routes. Jest domyślnie wyłączony i nie może być używany jako źródło danych UI.
 
+W izolowanym środowisku testowym ustaw w `.env`:
+
+```env
+ENABLE_POSTGRES_EXPERIMENTAL_API=true
+```
+
+Bez tej flagi endpointy PostgreSQL zwracają `404`. Dostępne wyłącznie w testach endpointy to:
+
+- `GET /api/v1/users`, `POST /api/v1/users`
 - `GET /api/db/health` sprawdza połączenie z PostgreSQL
 - `GET /api/v1/athletes`, `POST /api/v1/athletes`
 - `GET /api/v1/trainings`, `POST /api/v1/trainings`
+- `GET /api/v1/snapshot`
+- `POST /api/v1/backups/import`
+
+Po utworzeniu użytkownika przez `POST /api/v1/users`, każdy endpoint danych wymaga nagłówka `X-Climberbook-User-Id` z jego UUID. Ten nagłówek jest wyłącznie mechanizmem izolacji danych w testach. Nie zastępuje uwierzytelniania, sesji ani kontroli dostępu wymaganych w produkcji.
 
 Dostęp do bazy obsługuje dwa tryby:
 
@@ -62,7 +75,8 @@ Changelogi są w `db/changelog`. Nowe zmiany dopisuj jako kolejne pliki w `db/ch
 
 ## Dane i migracja
 
-- PostgreSQL jest docelowym źródłem prawdy dla backendu, API i przyszłego MCP
-- obecny IndexedDB przez `idb` zostaje tylko jako legacy store do historii, eksportu/importu i ewentualnego wsparcia offline
-- migracja z IndexedDB do PostgreSQL będzie osobnym etapem po ustabilizowaniu backendu
+- IndexedDB przez `idb` jest obecnym źródłem prawdy dla UI i działa niezależnie od PostgreSQL.
+- PostgreSQL służy wyłącznie do eksperymentalnych testów backendu za flagą `ENABLE_POSTGRES_EXPERIMENTAL_API=true`.
+- Eksperymentalne tabele zawierają `app_users` oraz właściciela zawodników, sekcji i obiektów. Treningi, profile, wagi, przejścia i katalog wspinaczek są filtrowane przez właściciela zawodnika.
+- Nie importuj produkcyjnych danych ani nie przełączaj `ClimberbookProvider` na PostgreSQL przed dodaniem brakujących encji użytkownika, pełnych ścieżek zapisu oraz testów integracyjnych.
 - plik `WSPINY PANEL.xlsx` jest w repo i może być kolejnym krokiem do importu historycznych danych

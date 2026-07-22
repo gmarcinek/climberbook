@@ -102,10 +102,10 @@ export function useClimberbookStats({
     (sum, item) => sum + item.caloriesBurned,
     0,
   );
-  const averageWeight = trainings.length
+  const averageWeight = weightEntries.length
     ? (
-        trainings.reduce((sum, item) => sum + item.bodyWeightKg, 0) /
-        trainings.length
+        weightEntries.reduce((sum, item) => sum + item.weightKg, 0) /
+        weightEntries.length
       ).toFixed(1)
     : "-";
   const chartRange = useMemo(

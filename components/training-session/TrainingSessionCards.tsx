@@ -17,7 +17,7 @@ type CardProps = { training: TrainingRecord; showDate?: boolean; onEditTraining:
 export function TrainingSessionCard({ training, showDate, onEditTraining, onPreviewTraining }: CardProps) {
   return <article className={styles.trainingSidebar__trainingCard}>
     <div className={styles.trainingSidebar__trainingButtonHeader}><strong>{summarizeTrainingType(training)}</strong>{showDate && <span className={styles.trainingSidebar__pill}>{training.date}</span>}</div>
-    <div className={styles.trainingSidebar__metaLine}><span>{training.time} · {formatDurationMinutes(training.durationMinutes)} · {training.bodyWeightKg} kg · Kalorie: {training.caloriesBurned}</span></div>
+    <div className={styles.trainingSidebar__metaLine}><span>{training.time} · {formatDurationMinutes(training.durationMinutes)} · Kalorie: {training.caloriesBurned}</span></div>
     <TrainingTimelineBar time={training.time} durationMinutes={training.durationMinutes} difficultyNotes={training.difficultyNotes} difficultyBySurface={training.difficultyBySurface} surfaces={training.surfaces} />
     {hasTrainingGradeContent(training) && <div className={styles.trainingSidebar__details}><TrainingGradeSummary training={training} /></div>}
     <div className={styles.trainingSidebar__cardActions}>

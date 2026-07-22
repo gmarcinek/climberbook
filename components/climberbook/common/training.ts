@@ -230,6 +230,32 @@ export function getLatestWeightEntry(entries: WeightEntryRecord[]) {
   }, null);
 }
 
+export function getNearestWeightEntry(
+  entries: WeightEntryRecord[],
+  targetDate: string,
+) {
+  const targetTime = Date.parse(`${targetDate}T12:00:00`);
+  if (Number.isNaN(targetTime)) return getLatestWeightEntry(entries);
+
+  return entries.reduce<WeightEntryRecord | null>((nearest, entry) => {
+    if (!nearest) return entry;
+
+    const entryDistance = Math.abs(
+      Date.parse(`${entry.date}T12:00:00`) - targetTime,
+    );
+    const nearestDistance = Math.abs(
+      Date.parse(`${nearest.date}T12:00:00`) - targetTime,
+    );
+
+    if (entryDistance < nearestDistance) return entry;
+    if (entryDistance > nearestDistance) return nearest;
+
+    return `${entry.date}-${entry.time}` > `${nearest.date}-${nearest.time}`
+      ? entry
+      : nearest;
+  }, null);
+}
+
 export function getWeekStartIso(value: string) {
   const date = toDate(value);
   const weekday = date.getDay();
@@ -316,16 +342,19 @@ export function getSortedWeightEntries(entries: WeightEntryRecord[]) {
 export function normalizeTrainingDraft(
   draft: TrainingDraftValues,
   birthDate = "",
+  bodyWeightKg = draft.bodyWeightKg,
 ): TrainingDraftValues {
   const ageYears = calculateAgeYears(birthDate, draft.date);
   const estimatedCalories = estimateTrainingCalories({
     ...draft,
+    bodyWeightKg,
     ageYears,
     attemptsCount: "0",
   });
 
   return {
     ...draft,
+    bodyWeightKg,
     ageYears,
     caloriesBurned:
       draft.caloriesMode === "manual"

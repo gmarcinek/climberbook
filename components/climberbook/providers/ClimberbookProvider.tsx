@@ -21,6 +21,7 @@ import {
   formatWeightInput,
   getLatestTrainingWeight,
   getLatestWeightEntry,
+  getNearestWeightEntry,
   normalizeTrainingDraft,
   parseHeightInput,
   parseWeightInput,
@@ -120,7 +121,7 @@ export type AthleteFormDraft = {
   heightCm: string;
   weightKg: string;
 };
-export type SettingsTab = "profil" | "zespol" | "zaawansowane";
+export type SettingsTab = "profil" | "zespol" | "obiekty" | "zaawansowane";
 
 const emptyAthleteForm = (): AthleteFormDraft => ({
   firstName: "",
@@ -231,7 +232,7 @@ const mapTrainingToDraft = (
       date: training.date,
       time: training.time,
       durationMinutes: String(training.durationMinutes),
-      bodyWeightKg: String(training.bodyWeightKg),
+      bodyWeightKg: "",
       ageYears: "",
       caloriesBurned: String(training.caloriesBurned),
       caloriesMode: "manual",
@@ -509,9 +510,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setStatus(trainingItems.length || ascentItems.length ? "" : "");
   }
   useEffect(() => {
-    void refreshData().catch(() =>
-      setStatus("Nie udało się otworzyć IndexedDB w tej przeglądarce."),
-    );
+    void refreshData().catch((error) => {
+      console.error("Nie udało się odświeżyć danych Climberbook.", error);
+      setStatus("Nie udało się otworzyć IndexedDB w tej przeglądarce.");
+    });
   }, [activeAthleteId]);
   useEffect(() => {
     if (activeAthleteId)
@@ -521,22 +523,29 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       );
     else window.localStorage.removeItem("climberbook:activeAthleteId");
   }, [activeAthleteId]);
-  const defaultWeight =
-    getLatestWeightEntry(weightEntries)?.weightKg ??
-    parseWeightInput(profileDraft.weightKg) ??
-    getLatestTrainingWeight(trainings);
+  function getTrainingWeight(date: string) {
+    return (
+      getNearestWeightEntry(weightEntries, date)?.weightKg ??
+      parseWeightInput(profileDraft.weightKg) ??
+      getLatestTrainingWeight(trainings)
+    );
+  }
   function resetTrainingEditor(date = selectedDate ?? today) {
     setEditingTrainingId(null);
     setTrainingDraftState(
       createTrainingDraft(date, {
         birthDate: profileDraft.birthDate,
-        defaultWeightKg: defaultWeight,
+        defaultWeightKg: getTrainingWeight(date),
       }),
     );
   }
   function setTrainingDraft(draft: TrainingDraftValues) {
     setTrainingDraftState(
-      normalizeTrainingDraft(draft, profileDraft.birthDate),
+      normalizeTrainingDraft(
+        draft,
+        profileDraft.birthDate,
+        formatWeightInput(getTrainingWeight(draft.date)),
+      ),
     );
   }
   function selectTrainingDate(date: string) {
@@ -555,7 +564,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function submitTraining(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const customSessionType = trainingDraft.customSessionType.trim();
-    const bodyWeightKg = parseWeightInput(trainingDraft.bodyWeightKg);
+    const bodyWeightKg = getTrainingWeight(trainingDraft.date);
 
     if (
       !activeAthleteId ||
@@ -578,13 +587,13 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       date: trainingDraft.date,
       time: trainingDraft.time,
       durationMinutes: Number(trainingDraft.durationMinutes),
-      bodyWeightKg,
       ageYears: Number(trainingDraft.ageYears || 0),
       caloriesBurned:
         trainingDraft.caloriesBurned === ""
           ? Number(
               estimateTrainingCalories({
                 ...trainingDraft,
+                bodyWeightKg: String(bodyWeightKg),
                 attemptsCount: "0",
               }) || 0,
             )

@@ -1,6 +1,9 @@
 import { roundToSingleDecimal } from "@/components/climberbook/common/training";
 import { formatDateIso } from "@/components/training-calendar/training-calendar.helpers";
-import type { ClimberbookFullDatabaseBackup } from "@/lib/climbs-db";
+import {
+  createTrainingExportMetadata,
+  type ClimberbookFullDatabaseBackup,
+} from "@/lib/climbs-db";
 
 type TrainingSeed = {
   athleteId: string;
@@ -353,6 +356,7 @@ export function createSampleBackupData(): ClimberbookFullDatabaseBackup {
   return {
     formatVersion: 3,
     exportedAt,
+    ...createTrainingExportMetadata(trainings),
     athletes,
     sections: [
       {
@@ -362,6 +366,7 @@ export function createSampleBackupData(): ClimberbookFullDatabaseBackup {
         createdAt: sectionCreatedAt,
       },
     ],
+    facilities: [],
     climbs: [],
     trainings,
     ascents: [],

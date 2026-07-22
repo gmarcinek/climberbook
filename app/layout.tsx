@@ -5,7 +5,7 @@ import { ClimberbookProvider } from "@/components/climberbook/providers/Climberb
 
 export const metadata: Metadata = {
   title: "Climberbook",
-  description: "Climberbook training journal with PostgreSQL-backed API",
+  description: "Climberbook training journal",
 };
 
 export default function RootLayout({
