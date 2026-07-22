@@ -56,10 +56,15 @@ export function SettingsModule() {
       athletes={app.athletes}
       activeAthleteId={app.activeAthleteId}
       sections={app.sections}
+      facilities={app.facilities}
       newSectionName={app.newSectionName}
       setNewSectionName={app.setNewSectionName}
+      newFacilityName={app.newFacilityName}
+      setNewFacilityName={app.setNewFacilityName}
       onAddSection={app.addSection}
       onDeleteSection={app.deleteSection}
+      onAddFacility={app.addFacility}
+      onDeleteFacility={app.deleteFacility}
       onAssignAthleteSection={app.assignAthleteSection}
       onAthleteExport={app.exportAthlete}
       onStartAthleteEdit={app.startAthleteEdit}

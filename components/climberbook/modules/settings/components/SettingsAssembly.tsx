@@ -16,6 +16,7 @@ import {
 import type { UserProfileDraft } from "@/components/climberbook/common/training";
 import type {
   AthleteRecord,
+  FacilityRecord,
   SectionRecord,
   WeightEntryRecord,
 } from "@/lib/climbs-db";
@@ -25,6 +26,7 @@ import { DatabaseBackupWidget } from "./DatabaseBackupWidget";
 import { DatabaseDeleteModalWidget } from "./DatabaseDeleteModalWidget";
 import { ImportPreviewModalWidget } from "./ImportPreviewModalWidget";
 import { ProfileFormWidget } from "./ProfileFormWidget";
+import { FacilityManagementWidget } from "./FacilityManagementWidget";
 import { ProfileMetricsWidget } from "./ProfileMetricsWidget";
 import { SectionManagementWidget } from "./SectionManagementWidget";
 import { SettingsHeaderWidget } from "./SettingsHeaderWidget";
@@ -59,10 +61,15 @@ type SettingsAssemblyProps = {
   athletes: AthleteRecord[];
   activeAthleteId: string | null;
   sections: SectionRecord[];
+  facilities: FacilityRecord[];
   newSectionName: string;
   setNewSectionName: Dispatch<SetStateAction<string>>;
+  newFacilityName: string;
+  setNewFacilityName: Dispatch<SetStateAction<string>>;
   onAddSection: (event: FormEvent<HTMLFormElement>) => void;
   onDeleteSection: (section: SectionRecord) => Promise<void>;
+  onAddFacility: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  onDeleteFacility: (facility: FacilityRecord) => Promise<void>;
   onAssignAthleteSection: (
     athlete: AthleteRecord,
     sectionId: string,
@@ -106,10 +113,15 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
     athletes,
     activeAthleteId,
     sections,
+    facilities,
     newSectionName,
     setNewSectionName,
+    newFacilityName,
+    setNewFacilityName,
     onAddSection,
     onDeleteSection,
+    onAddFacility,
+    onDeleteFacility,
     onAssignAthleteSection,
     onAthleteExport,
     onStartAthleteEdit,
@@ -175,6 +187,17 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               onAthleteExport={onAthleteExport}
               onStartAthleteEdit={onStartAthleteEdit}
               onDeleteAthlete={onDeleteAthlete}
+            />
+          </div>
+        )}
+        {settingsTab === "obiekty" && (
+          <div style={settingsMainColumnStyle}>
+            <FacilityManagementWidget
+              facilities={facilities}
+              newFacilityName={newFacilityName}
+              setNewFacilityName={setNewFacilityName}
+              onAddFacility={onAddFacility}
+              onDeleteFacility={onDeleteFacility}
             />
           </div>
         )}

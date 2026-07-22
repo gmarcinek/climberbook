@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/climberbook/common/Button";
 import { TextArea } from "@/components/climberbook/common/FormControls";
 import type { TrainingRecord, TrainingSurface } from "@/lib/climbs-db";
+import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
 import { TrainingGradeFields } from "./TrainingGradeFields";
 import { TrainingProtocols } from "./TrainingProtocols";
@@ -24,10 +25,11 @@ type Props = {
 };
 
 export function TrainingSessionForm({ draft, editingTraining, editingTrainingId, validationMessage, surfaceOptions, onDraftChange, onToggleSurface, onSubmit, onResetSelection, onDeleteTraining }: Props) {
+  const { facilities } = useClimberbook();
   const combinedNotes = [draft.wellbeing, draft.notes].filter(Boolean).join("\n\n");
   return <form onSubmit={onSubmit} className={styles.trainingSidebar__form}>
     {validationMessage && <p className={styles.trainingSidebar__validationMessage}>{validationMessage}</p>}
-    <TrainingSessionDetails draft={draft} surfaceOptions={surfaceOptions} onDraftChange={onDraftChange} onToggleSurface={onToggleSurface} />
+    <TrainingSessionDetails draft={draft} surfaceOptions={surfaceOptions} facilities={facilities} onDraftChange={onDraftChange} onToggleSurface={onToggleSurface} />
     <TrainingProtocols draft={draft} onDraftChange={onDraftChange} />
     <TrainingGradeFields draft={draft} onDraftChange={onDraftChange} />
     <label className={styles.trainingSidebar__field}>

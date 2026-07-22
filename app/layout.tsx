@@ -5,7 +5,7 @@ import { ClimberbookProvider } from "@/components/climberbook/providers/Climberb
 
 export const metadata: Metadata = {
   title: "Climberbook",
-  description: "Next.js starter with IndexedDB in the browser",
+  description: "Climberbook training journal with PostgreSQL-backed API",
 };
 
 export default function RootLayout({

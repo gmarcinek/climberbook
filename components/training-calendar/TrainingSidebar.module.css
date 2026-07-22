@@ -363,6 +363,14 @@
   gap: 6px;
 }
 
+.trainingSidebar__boulderGradeChipGrid {
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+}
+
+.trainingSidebar__boardGradeChipGrid {
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+}
+
 .trainingSidebar__chip {
   border: 1px solid var(--border-strong);
   border-radius: 999px;

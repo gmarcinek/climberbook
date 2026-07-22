@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
+import { formatDurationMinutes } from "@/components/climberbook/common/training";
 import type { AthleteRecord } from "@/lib/climbs-db";
 type TeamSummary = {
   athlete: AthleteRecord;
@@ -82,7 +83,7 @@ export function TeamRosterWidget({
                   )}
                 </div>
                 <span style={mutedParagraphStyle}>
-                  {summary.trainingCount} sesji | {summary.volume} min
+                  {summary.trainingCount} sesji | {formatDurationMinutes(summary.volume)}
                 </span>
                 <strong>
                   Waga:{" "}

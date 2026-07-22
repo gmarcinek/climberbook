@@ -37,6 +37,7 @@ export type TrainingDraftValues = {
   };
   wellbeing: string;
   surfaces: TrainingSurface[];
+  facilityName: string;
   customSessionType: string;
   notes: string;
 };

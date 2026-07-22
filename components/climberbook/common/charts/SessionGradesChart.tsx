@@ -900,7 +900,7 @@ function InvertedTriangleMarker({
     <path
       d={`M ${cx} ${cy + 6 * scale} L ${cx + 6 * scale} ${cy - 5 * scale} L ${cx - 6 * scale} ${cy - 5 * scale} Z`}
       fill={fill}
-      stroke="white"
+      stroke="#888"
       strokeWidth={1}
     />
   );
@@ -916,7 +916,7 @@ function PlusMarker({
 
   return (
     <path
-      d={`M ${cx - radius} ${cy} H ${cx + radius} M ${cx} ${cy - radius} V ${cx} ${cy + radius}`}
+      d={`M ${cx - radius} ${cy} H ${cx + radius} M ${cx} ${cy - radius} V ${cy + radius}`}
       fill="none"
       stroke={fill}
       strokeLinecap="round"

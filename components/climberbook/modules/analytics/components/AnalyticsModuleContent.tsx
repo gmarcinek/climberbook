@@ -21,7 +21,6 @@ type AnalyticsModuleContentProps = {
   averageWeight: string;
   totalCalories: number;
   totalTrainingTime: number;
-  totalAttempts: number;
   chartRangeLabel: string;
   weeklyTrainingStats: Array<{
     week: string;
@@ -46,7 +45,6 @@ export function AnalyticsModuleContent({
   averageWeight,
   totalCalories,
   totalTrainingTime,
-  totalAttempts,
   chartRangeLabel,
   weeklyTrainingStats,
   gradeDistribution,
@@ -63,7 +61,6 @@ export function AnalyticsModuleContent({
         trainingsCount={trainingsCount}
         totalTrainingTime={totalTrainingTime}
         averageWeight={averageWeight}
-        totalAttempts={totalAttempts}
       />
 
       <WeeklyTrainingChartWidget

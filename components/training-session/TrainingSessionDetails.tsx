@@ -8,7 +8,8 @@ import {
   NumericStepperControl,
   Select,
 } from "@/components/climberbook/common/FormControls";
-import type { TrainingSurface } from "@/lib/climbs-db";
+import { formatDurationMinutes } from "@/components/climberbook/common/training";
+import type { FacilityRecord, TrainingSurface } from "@/lib/climbs-db";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
 import type { SurfaceOption, TrainingDraftValues } from "./types";
 import { adjustCaloriesValue, getSurfaceOptionGroups, timeOptions } from "./training-session.utils";
@@ -32,6 +33,7 @@ const surfaceEmojis: Record<TrainingSurface, string> = {
 type Props = {
   draft: TrainingDraftValues;
   surfaceOptions: SurfaceOption[];
+  facilities: FacilityRecord[];
   onDraftChange: (draft: TrainingDraftValues) => void;
   onToggleSurface: (surface: TrainingSurface) => void;
 };
@@ -39,6 +41,7 @@ type Props = {
 export function TrainingSessionDetails({
   draft,
   surfaceOptions,
+  facilities,
   onDraftChange,
   onToggleSurface,
 }: Props) {
@@ -70,6 +73,13 @@ export function TrainingSessionDetails({
 
   return (
     <div className={`${styles.trainingSidebar__stack} ${styles.trainingSidebar__formSectionStack}`}>
+      <label className={styles.trainingSidebar__field}>
+        Obiekt
+        <Select value={draft.facilityName} onChange={(event) => update({ facilityName: event.target.value })} className={styles.trainingSidebar__input}>
+          <option value="">Bez obiektu</option>
+          {facilities.map((facility) => <option key={facility.id} value={facility.name}>{facility.name}</option>)}
+        </Select>
+      </label>
       <div className={styles.trainingSidebar__stack}>
         <strong className={styles.trainingSidebar__protocolHeading}>Rodzaj sesji</strong>
         <div className={styles.trainingSidebar__chipGrid}>{renderSurfaceOptions(groups.primary)}</div>
@@ -111,8 +121,8 @@ export function TrainingSessionDetails({
           </Select>
         </label>
         <label className={styles.trainingSidebar__field}>
-          Czas (min)
-          <NumericRangeControl value={draft.durationMinutes} onChange={(event) => update({ durationMinutes: event.target.value })} min="15" max="300" step="15" ariaLabel="Długość treningu w minutach" valueLabel={`${draft.durationMinutes} min`} className={styles.trainingSidebar__durationControl} />
+          Czas
+          <NumericRangeControl value={draft.durationMinutes} onChange={(event) => update({ durationMinutes: event.target.value })} min="15" max="300" step="15" ariaLabel="Długość treningu" valueLabel={formatDurationMinutes(draft.durationMinutes)} className={styles.trainingSidebar__durationControl} />
         </label>
         <label className={styles.trainingSidebar__field}>
           Kalorie

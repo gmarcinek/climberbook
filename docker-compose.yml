@@ -1,0 +1,56 @@
+services:
+  app:
+    build:
+      context: .
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-climberbook}
+      POSTGRES_USER: ${POSTGRES_USER:-climberbook_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-CbLocal2026!}
+      POSTGRES_AUTH_MODE: ${POSTGRES_AUTH_MODE:-password}
+      POSTGRES_SSLMODE: ${POSTGRES_SSLMODE:-disable}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-climberbook}
+      POSTGRES_USER: ${POSTGRES_USER:-climberbook_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-CbLocal2026!}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  liquibase:
+    image: liquibase/liquibase:4.29
+    profiles:
+      - migration
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db/changelog:/liquibase/changelog:ro
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-climberbook}
+      LIQUIBASE_COMMAND_USERNAME: ${POSTGRES_USER:-climberbook_admin}
+      LIQUIBASE_COMMAND_PASSWORD: ${POSTGRES_PASSWORD:-CbLocal2026!}
+      LIQUIBASE_COMMAND_CHANGELOG_FILE: changelog/db.changelog-master.yaml
+    command: update
+
+volumes:
+  postgres-data:

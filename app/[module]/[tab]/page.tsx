@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ModuleLayout } from "@/components/climberbook/layout/ModuleLayout";
 import { SettingsModule } from "@/components/climberbook/modules/settings/SettingsModule";
 
-const settingsTabs = new Set(["profil", "zespol", "zaawansowane"]);
+const settingsTabs = new Set(["profil", "zespol", "obiekty", "zaawansowane"]);
 
 export default async function SettingsTabPage({
   params,

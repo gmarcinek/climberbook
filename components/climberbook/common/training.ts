@@ -114,13 +114,12 @@ export function estimateTrainingCalories(input: {
   return String(Math.round(estimatedMet * bodyWeightKg * durationHours));
 }
 
-export function getLegacyRopeAttempts(
-  difficultyBySurface: TrainingDraftValues["difficultyBySurface"],
-) {
-  return (difficultyBySurface.lina ?? "")
-    .split(",")
-    .map((grade) => grade.trim())
-    .filter(Boolean).length;
+export function formatDurationMinutes(value: number | string) {
+  const durationMinutes = Math.max(0, Math.floor(Number(value) || 0));
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} h`;
 }
 
 export function roundToSingleDecimal(value: number) {
@@ -322,7 +321,7 @@ export function normalizeTrainingDraft(
   const estimatedCalories = estimateTrainingCalories({
     ...draft,
     ageYears,
-    attemptsCount: String(getLegacyRopeAttempts(draft.difficultyBySurface)),
+    attemptsCount: "0",
   });
 
   return {

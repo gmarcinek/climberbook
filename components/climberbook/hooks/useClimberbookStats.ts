@@ -108,10 +108,6 @@ export function useClimberbookStats({
         trainings.length
       ).toFixed(1)
     : "-";
-  const totalAttempts = trainings.reduce(
-    (sum, item) => sum + item.attemptsCount,
-    0,
-  );
   const chartRange = useMemo(
     () =>
       getRollingChartRange(
@@ -537,7 +533,6 @@ export function useClimberbookStats({
     rockAscents,
     selectedDayTrainings,
     sortedWeightEntries,
-    totalAttempts,
     totalCalories,
     totalTrainingTime,
     trainingsByDate,

@@ -2,6 +2,7 @@ import { Button } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts";
+import { formatDurationMinutes } from "@/components/climberbook/common/training";
 import { formatDateLabel, summarizeTrainingType } from "@/components/training-calendar/training-calendar.helpers";
 import type { TrainingRecord } from "@/lib/climbs-db";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
@@ -18,7 +19,7 @@ export function TrainingPreviewModal({ training, surfaceOptions, onClose, onEdit
     <ScrollPane className={styles.trainingSidebar__drawerScroll} viewportClassName={styles.trainingSidebar__drawerViewport} contentClassName={styles.trainingSidebar__drawerContent} thumbColor="rgba(13, 107, 124, 0.3)" thumbHoverColor="rgba(13, 107, 124, 0.68)">
       <div className={styles.trainingSidebar__drawerHeader}><div><p className={styles.trainingSidebar__eyebrow}>Podgląd treningu</p><h2 id="training-preview-title" className={styles.trainingSidebar__drawerTitle}>{summarizeTrainingType(training)}</h2></div></div>
       <dl className={styles.trainingSidebar__previewDetails}>
-        <PreviewDetail label="Data">{formatDateLabel(training.date)}</PreviewDetail><PreviewDetail label="Godzina">{training.time}</PreviewDetail><PreviewDetail label="Czas">{training.durationMinutes} min</PreviewDetail>
+        <PreviewDetail label="Data">{formatDateLabel(training.date)}</PreviewDetail><PreviewDetail label="Godzina">{training.time}</PreviewDetail><PreviewDetail label="Czas">{formatDurationMinutes(training.durationMinutes)}</PreviewDetail>
         <div className={styles.trainingSidebar__previewDetailsFull}><dt>Kalorie</dt><dd className={styles.trainingSidebar__caloriesValue}>{calories} / 1000 kcal</dd><div className={styles.trainingSidebar__caloriesProgress} role="progressbar" aria-label="Kalorie względem normy" aria-valuemin={0} aria-valuemax={1000} aria-valuenow={calories}><div className={styles.trainingSidebar__caloriesProgressFill} style={{ width: `${calories / 10}%` }} /></div></div>
         <PreviewDetail label="Masa ciała">{training.bodyWeightKg} kg</PreviewDetail><PreviewDetail label="Wiek">{training.ageYears} lat</PreviewDetail><PreviewDetail label="Wstawki">{formatReportedAttempts(training)}</PreviewDetail><PreviewDetail label="Rodzaj">{formatSurfaces(training, surfaceOptions) || "Brak"}</PreviewDetail>
         <div className={styles.trainingSidebar__previewDetailsFull}><dt>Aktywności</dt><dd><TrainingGradeSummary training={training} /></dd></div>

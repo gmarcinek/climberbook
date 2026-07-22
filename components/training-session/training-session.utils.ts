@@ -20,7 +20,7 @@ export const boulderGymGrades = Array.from({ length: 9 }, (_value, index) =>
   String(index + 1),
 );
 export const boardGrades = Array.from(
-  { length: 10 },
+  { length: 9 },
   (_value, index) => `V${index + 1}`,
 );
 

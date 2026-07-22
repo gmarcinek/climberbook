@@ -88,6 +88,7 @@ export type TrainingRecord = {
   protocol?: TrainingProtocol;
   wellbeing: string;
   surfaces: TrainingSurface[];
+  facilityName?: string;
   customSessionType?: string;
   notes: string;
   createdAt: string;
@@ -121,6 +122,12 @@ export type AthleteRecord = {
 export type SectionRecord = {
   id: string;
   sourceId?: string;
+  name: string;
+  createdAt: string;
+};
+
+export type FacilityRecord = {
+  id: string;
   name: string;
   createdAt: string;
 };
@@ -281,6 +288,7 @@ function removeTrainingDerivedWeightEntries(
 export type ClimberbookDatabaseBackup = {
   formatVersion: 2;
   exportedAt: string;
+  trainingDataDisclaimer: string;
   athlete: AthleteRecord;
   climbs: ClimbRecord[];
   trainings: TrainingRecord[];
@@ -292,8 +300,10 @@ export type ClimberbookDatabaseBackup = {
 export type ClimberbookFullDatabaseBackup = {
   formatVersion: 3;
   exportedAt: string;
+  trainingDataDisclaimer: string;
   athletes: AthleteRecord[];
   sections: SectionRecord[];
+  facilities: FacilityRecord[];
   climbs: ClimbRecord[];
   trainings: TrainingRecord[];
   ascents: AscentRecord[];
@@ -377,10 +387,19 @@ interface ClimberbookDb extends DBSchema {
       "by-created-at": string;
     };
   };
+  facilities: {
+    key: string;
+    value: FacilityRecord;
+    indexes: {
+      "by-created-at": string;
+    };
+  };
 }
 
 const DB_NAME = "climberbook";
-const DB_VERSION = 15;
+const DB_VERSION = 18;
+const TRAINING_DATA_DISCLAIMER =
+  "INSTRUKCJA INTERPRETACJI DLA AGENTA LLM: Głównym celem aplikacji i głównym zbiorem eksportu są `trainings`: sesje opisujące ekspozycję treningową. Analizę zaczynaj od tych danych. `ascents` to niezależny, opcjonalny dodatek zawierający raportowane przejścia; jego brak nie oznacza braku treningu, ekspozycji ani postępu. `trainings` nie zawiera pojedynczych prób ani potwierdzonych przejść. `difficultyBySurface` opisuje najwyższą lub deklarowaną ekspozycję na trudność dla danej aktywności podczas sesji; traktuj ją jako wskaźnik obciążenia i poziomu trudności, nigdy jako liczbę zrobionych dróg, baldów, poprowadzeń lub prób. Nie sumuj wycen z `difficultyBySurface` ani nie wyprowadzaj z nich liczby przejść. Czas (`durationMinutes`), aktywności (`surfaces`), protokoły (`protocol`), notatki i opcjonalny `facilityName` opisują całą sesję. `ascents` zawiera wyłącznie przejścia zgłoszone przez użytkownika; nie jest zbiorem prób i nie wolno interpretować jego rekordów jako prób. Nie wyprowadzaj liczby prób z żadnej części eksportu: `attemptsCount` jest historycznym polem, obecnie zapisywanym jako 0, i nie jest wiarygodną miarą prób wspinaczkowych. `climbs` jest katalogiem obiektów wspinaczkowych, nie historią ich przejść. Analizując wyniki, wyraźnie oddzielaj ekspozycję treningową od raportowanych przejść i nie formułuj twierdzeń o liczbie prób bez osobnego, wiarygodnego źródła danych.";
 const DEFAULT_ATHLETE: AthleteRecord = {
   id: "primary",
   name: "Ja",
@@ -444,6 +463,11 @@ function createDatabase() {
         store.createIndex("by-created-at", "createdAt");
       }
 
+      if (!database.objectStoreNames.contains("facilities")) {
+        const store = database.createObjectStore("facilities", { keyPath: "id" });
+        store.createIndex("by-created-at", "createdAt");
+      }
+
       if (!database.objectStoreNames.contains("trainings")) {
         const store = database.createObjectStore("trainings", {
           keyPath: "id",
@@ -468,6 +492,47 @@ function createDatabase() {
           }
 
           await trainingStore.put(normalized);
+        }
+      }
+
+      if (oldVersion < 16 && database.objectStoreNames.contains("trainings")) {
+        const trainingStore = transaction.objectStore("trainings");
+        let cursor = await trainingStore.openCursor();
+
+        while (cursor) {
+          const training = cursor.value as TrainingRecord;
+          const hangboard = training.protocol?.hangboard;
+
+          if (hangboard?.some((set) => set.mode !== "intervals" && ("hangSeconds" in set || "restSeconds" in set))) {
+            await cursor.update({
+              ...training,
+              protocol: {
+                ...training.protocol,
+                hangboard: hangboard.map(({ hangSeconds, restSeconds, ...set }) =>
+                  set.mode === "intervals"
+                    ? { ...set, hangSeconds, restSeconds }
+                    : set,
+                ),
+              },
+            });
+          }
+
+          cursor = await cursor.continue();
+        }
+      }
+
+      if (oldVersion < 17 && database.objectStoreNames.contains("trainings")) {
+        const trainingStore = transaction.objectStore("trainings");
+        let cursor = await trainingStore.openCursor();
+
+        while (cursor) {
+          const training = cursor.value as TrainingRecord;
+
+          if (training.attemptsCount !== 0) {
+            await cursor.update({ ...training, attemptsCount: 0 });
+          }
+
+          cursor = await cursor.continue();
         }
       }
 
@@ -989,6 +1054,28 @@ export async function listSections() {
   return ensureSectionSourceIds(records);
 }
 
+export async function listFacilities() {
+  const database = await getDatabase();
+  return database.getAllFromIndex("facilities", "by-created-at");
+}
+
+export async function addFacility(name: string) {
+  const database = await getDatabase();
+  const facility: FacilityRecord = {
+    id: crypto.randomUUID(),
+    name: name.trim() || "Obiekt",
+    createdAt: new Date().toISOString(),
+  };
+
+  await database.add("facilities", facility);
+  return facility;
+}
+
+export async function deleteFacility(id: string) {
+  const database = await getDatabase();
+  await database.delete("facilities", id);
+}
+
 export async function addSection(name: string) {
   const database = await getDatabase();
   const sectionId = crypto.randomUUID();
@@ -1158,6 +1245,7 @@ export async function exportDatabaseBackup(
   return {
     formatVersion: 2,
     exportedAt: new Date().toISOString(),
+    trainingDataDisclaimer: TRAINING_DATA_DISCLAIMER,
     athlete,
     climbs: climbs.filter((climb) => climb.athleteId === athleteId),
     trainings,
@@ -1171,6 +1259,7 @@ export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabas
   const [
     athletes,
     sections,
+    facilities,
     climbs,
     trainings,
     ascents,
@@ -1179,6 +1268,7 @@ export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabas
   ] = await Promise.all([
     listAthletes(),
     listSections(),
+    listFacilities(),
     listClimbs(),
     listAllTrainings(),
     getDatabase().then((database) =>
@@ -1191,8 +1281,10 @@ export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabas
   return {
     formatVersion: 3,
     exportedAt: new Date().toISOString(),
+    trainingDataDisclaimer: TRAINING_DATA_DISCLAIMER,
     athletes: await ensureAthleteSourceIds(athletes),
     sections: await ensureSectionSourceIds(sections),
+    facilities,
     climbs,
     trainings: await ensureTrainingIds(trainings),
     ascents,
@@ -1213,6 +1305,7 @@ export async function inspectDatabaseBackup(
     athlete?: AthleteRecord;
     athletes?: AthleteRecord[];
     sections?: SectionRecord[];
+    facilities?: FacilityRecord[];
     climbs?: ClimbRecord[];
     trainings?: TrainingRecord[];
     ascents?: AscentRecord[];
@@ -1233,6 +1326,9 @@ export async function inspectDatabaseBackup(
     const athletes = asRecordArray<AthleteRecord>(backup.athletes, "athletes");
     const sections = backup.sections
       ? asRecordArray<SectionRecord>(backup.sections, "sections")
+      : [];
+    const facilities = backup.facilities
+      ? asRecordArray<FacilityRecord>(backup.facilities, "facilities")
       : [];
     const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
     const trainings = asRecordArray<TrainingRecord>(
@@ -1333,6 +1429,7 @@ export async function importDatabaseBackup(
     athlete?: AthleteRecord;
     athletes?: AthleteRecord[];
     sections?: SectionRecord[];
+    facilities?: FacilityRecord[];
     climbs?: ClimbRecord[];
     trainings?: TrainingRecord[];
     ascents?: AscentRecord[];
@@ -1353,6 +1450,9 @@ export async function importDatabaseBackup(
     const athletes = asRecordArray<AthleteRecord>(backup.athletes, "athletes");
     const sections = backup.sections
       ? asRecordArray<SectionRecord>(backup.sections, "sections")
+      : [];
+    const facilities = backup.facilities
+      ? asRecordArray<FacilityRecord>(backup.facilities, "facilities")
       : [];
     const climbs = asRecordArray<ClimbRecord>(backup.climbs, "climbs");
     const trainings = asRecordArray<TrainingRecord>(
@@ -1378,6 +1478,7 @@ export async function importDatabaseBackup(
           "weightEntries",
           "athletes",
           "sections",
+          "facilities",
         ] as const,
         "readwrite",
       );
@@ -1389,11 +1490,15 @@ export async function importDatabaseBackup(
         transaction.objectStore("weightEntries").clear(),
         transaction.objectStore("athletes").clear(),
         transaction.objectStore("sections").clear(),
+        transaction.objectStore("facilities").clear(),
         ...athletes.map((record) =>
           transaction.objectStore("athletes").put(record),
         ),
         ...sections.map((record) =>
           transaction.objectStore("sections").put(record),
+        ),
+        ...facilities.map((record) =>
+          transaction.objectStore("facilities").put(record),
         ),
         ...climbs.map((record) =>
           transaction.objectStore("climbs").put(record),

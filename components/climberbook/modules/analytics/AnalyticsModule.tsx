@@ -29,7 +29,6 @@ export function AnalyticsModule() {
       averageWeight={stats.averageWeight}
       totalCalories={stats.totalCalories}
       totalTrainingTime={stats.totalTrainingTime}
-      totalAttempts={stats.totalAttempts}
       chartRangeLabel={stats.chartRangeLabel}
       weeklyTrainingStats={stats.weeklyTrainingStats}
       gradeDistribution={stats.gradeDistribution}

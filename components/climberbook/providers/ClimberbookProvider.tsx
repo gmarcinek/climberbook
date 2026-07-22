@@ -19,7 +19,6 @@ import {
   createWeightEntryDraft,
   estimateTrainingCalories,
   formatWeightInput,
-  getLegacyRopeAttempts,
   getLatestTrainingWeight,
   getLatestWeightEntry,
   normalizeTrainingDraft,
@@ -44,6 +43,7 @@ import {
   addAscent,
   addAscents,
   addAthlete,
+  addFacility,
   addSection,
   addTraining,
   addWeightEntry,
@@ -51,6 +51,7 @@ import {
   deleteAthlete,
   deleteAscentsByImportSource,
   deleteClimberbookDatabase,
+  deleteFacility,
   deleteSection,
   deleteTraining,
   deleteWeightEntry,
@@ -63,6 +64,7 @@ import {
   listAllWeightEntries,
   listAscents,
   listAthletes,
+  listFacilities,
   listSections,
   listTrainings,
   listWeightEntries,
@@ -74,6 +76,7 @@ import {
   type AscentRecord,
   type AthleteRecord,
   type DatabaseImportPreview,
+  type FacilityRecord,
   type SectionRecord,
   type TrainingRecord,
   type TrainingSurface,
@@ -213,6 +216,7 @@ const createTrainingDraft = (
       },
       wellbeing: "",
       surfaces: [],
+      facilityName: "",
       customSessionType: "",
       notes: "",
     },
@@ -258,6 +262,7 @@ const mapTrainingToDraft = (
       },
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
+      facilityName: training.facilityName ?? "",
       customSessionType: training.customSessionType ?? "",
       notes: training.notes,
     },
@@ -270,6 +275,7 @@ type ClimberbookContextValue = {
   activeAthleteId: string | null;
   setActiveAthleteId: Dispatch<SetStateAction<string | null>>;
   sections: SectionRecord[];
+  facilities: FacilityRecord[];
   trainings: TrainingRecord[];
   teamTrainings: TrainingRecord[];
   ascents: AscentRecord[];
@@ -284,6 +290,8 @@ type ClimberbookContextValue = {
   setAthleteForm: Dispatch<SetStateAction<AthleteFormDraft>>;
   newSectionName: string;
   setNewSectionName: Dispatch<SetStateAction<string>>;
+  newFacilityName: string;
+  setNewFacilityName: Dispatch<SetStateAction<string>>;
   profileDraft: UserProfileDraft;
   setProfileDraft: Dispatch<SetStateAction<UserProfileDraft>>;
   weightEntryDraft: WeightEntryDraft;
@@ -340,6 +348,8 @@ type ClimberbookContextValue = {
   closeImportPreview: () => void;
   addSection: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   deleteSection: (section: SectionRecord) => Promise<void>;
+  addFacility: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  deleteFacility: (facility: FacilityRecord) => Promise<void>;
   assignAthleteSection: (
     athlete: AthleteRecord,
     sectionId: string,
@@ -364,6 +374,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       : window.localStorage.getItem("climberbook:activeAthleteId"),
   );
   const [sections, setSections] = useState<SectionRecord[]>([]);
+  const [facilities, setFacilities] = useState<FacilityRecord[]>([]);
   const [trainings, setTrainings] = useState<TrainingRecord[]>([]);
   const [teamTrainings, setTeamTrainings] = useState<TrainingRecord[]>([]);
   const [ascents, setAscents] = useState<AscentRecord[]>([]);
@@ -398,6 +409,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const [athleteForm, setAthleteForm] =
     useState<AthleteFormDraft>(emptyAthleteForm);
   const [newSectionName, setNewSectionName] = useState("");
+  const [newFacilityName, setNewFacilityName] = useState("");
   const [status, setStatus] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [importPreview, setImportPreview] =
@@ -433,12 +445,13 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   );
 
   async function refreshData() {
-    const [athleteItems, allTrainingItems, allWeightItems, sectionItems] =
+    const [athleteItems, allTrainingItems, allWeightItems, sectionItems, facilityItems] =
       await Promise.all([
         listAthletes(),
         listAllTrainings(),
         listAllWeightEntries(),
         listSections(),
+        listFacilities(),
       ]);
     setIsDatabaseEmpty(
       athleteItems.length === 0 &&
@@ -453,6 +466,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       : (athleteItems[0]?.id ?? null);
     setAthletes(athleteItems);
     setSections(sectionItems);
+    setFacilities(facilityItems);
     setTeamTrainings(allTrainingItems);
     setTeamWeightEntries(allWeightItems);
     if (!athleteId) {
@@ -571,13 +585,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           ? Number(
               estimateTrainingCalories({
                 ...trainingDraft,
-                attemptsCount: String(
-                  getLegacyRopeAttempts(trainingDraft.difficultyBySurface),
-                ),
+                attemptsCount: "0",
               }) || 0,
             )
           : Number(trainingDraft.caloriesBurned),
-      attemptsCount: getLegacyRopeAttempts(trainingDraft.difficultyBySurface),
+      attemptsCount: 0,
       difficultyNotes: Object.values(trainingDraft.difficultyBySurface)
         .map((grades) => grades?.trim())
         .filter(Boolean)
@@ -597,9 +609,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
             sets: Number(protocolSet.sets || 0),
             mode: protocolSet.mode,
             usesRpm: protocolSet.usesRpm === "tak",
-            hangSeconds: Number(protocolSet.hangSeconds || 0),
-            restSeconds: Number(protocolSet.restSeconds || 0),
-            repetitions: Number(protocolSet.repetitions || 0),
+            ...(protocolSet.mode === "intervals" && {
+              hangSeconds: Number(protocolSet.hangSeconds || 0),
+              restSeconds: Number(protocolSet.restSeconds || 0),
+              repetitions: Number(protocolSet.repetitions || 0),
+            }),
             loadDeloadKg: Number(protocolSet.loadDeloadKg),
             edgeDepthMm: Number(protocolSet.edgeDepthMm || 0),
           })),
@@ -610,6 +624,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       },
       wellbeing: trainingDraft.wellbeing,
       surfaces: trainingDraft.surfaces,
+      facilityName: trainingDraft.facilityName.trim() || undefined,
       customSessionType,
       notes: trainingDraft.notes,
     };
@@ -970,6 +985,20 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       await refreshData();
     }
   }
+  async function addFacilityAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (newFacilityName.trim()) {
+      await addFacility(newFacilityName.trim());
+      setNewFacilityName("");
+      await refreshData();
+    }
+  }
+  async function deleteFacilityAction(facility: FacilityRecord) {
+    if (window.confirm(`Usunąć obiekt ${facility.name}?`)) {
+      await deleteFacility(facility.id);
+      await refreshData();
+    }
+  }
   async function assignAthleteSection(
     athlete: AthleteRecord,
     sectionId: string,
@@ -1060,6 +1089,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     activeAthleteId,
     setActiveAthleteId,
     sections,
+    facilities,
     trainings,
     teamTrainings,
     ascents,
@@ -1074,6 +1104,8 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setAthleteForm,
     newSectionName,
     setNewSectionName,
+    newFacilityName,
+    setNewFacilityName,
     profileDraft,
     setProfileDraft,
     weightEntryDraft,
@@ -1152,6 +1184,8 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     closeImportPreview,
     addSection: addSectionAction,
     deleteSection: deleteSectionAction,
+    addFacility: addFacilityAction,
+    deleteFacility: deleteFacilityAction,
     assignAthleteSection,
     exportAthlete,
     startAthleteEdit,
@@ -1367,6 +1401,7 @@ export function useTeamModule() {
 export function useSettingsModule() {
   const {
     activeAthleteId,
+    addFacility,
     addSection,
     ascents,
     athleteForm,
@@ -1377,6 +1412,7 @@ export function useSettingsModule() {
     databaseDeleteConfirmation,
     deleteAthlete,
     deleteDatabase,
+    deleteFacility,
     deleteSection,
     dropBackup,
     exportAthlete,
@@ -1390,6 +1426,8 @@ export function useSettingsModule() {
     isImportPreviewOpen,
     isImportingBackup,
     isDatabaseDeleteModalOpen,
+    facilities,
+    newFacilityName,
     newSectionName,
     profileDraft,
     resetAthleteForm,
@@ -1400,6 +1438,7 @@ export function useSettingsModule() {
     setIsBackupDropActive,
     setIsDatabaseDeleteModalOpen,
     setNewSectionName,
+    setNewFacilityName,
     setProfileDraft,
     setSettingsTab,
     startAthleteEdit,
@@ -1416,6 +1455,7 @@ export function useSettingsModule() {
   } = useClimberbook();
   return {
     activeAthleteId,
+    addFacility,
     addSection,
     ascents,
     athleteForm,
@@ -1426,6 +1466,7 @@ export function useSettingsModule() {
     databaseDeleteConfirmation,
     deleteAthlete,
     deleteDatabase,
+    deleteFacility,
     deleteSection,
     dropBackup,
     exportAthlete,
@@ -1439,6 +1480,8 @@ export function useSettingsModule() {
     isImportingBackup,
     isBackupDropActive,
     isDatabaseDeleteModalOpen,
+    facilities,
+    newFacilityName,
     newSectionName,
     profileDraft,
     resetAthleteForm,
@@ -1449,6 +1492,7 @@ export function useSettingsModule() {
     setIsBackupDropActive,
     setIsDatabaseDeleteModalOpen,
     setNewSectionName,
+    setNewFacilityName,
     setProfileDraft,
     setSettingsTab,
     startAthleteEdit,

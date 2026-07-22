@@ -9,6 +9,7 @@ import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts/
 import { TrainingCaloriesChart } from "@/components/climberbook/common/charts/TrainingCaloriesChart";
 import { WeightTrendChart } from "@/components/climberbook/common/charts/WeightTrendChart";
 import {
+  formatDurationMinutes,
   formatWeightInput,
   parseWeightInput,
   type WeightEntryDraft,
@@ -174,7 +175,7 @@ export function TrainingAnalyticsPanel(props: {
           <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>
             Objętość
           </span>
-          <strong style={metricValueStyle}>{totalTrainingTime} min</strong>
+          <strong style={metricValueStyle}>{formatDurationMinutes(totalTrainingTime)}</strong>
           <span style={{ color: "var(--muted)", fontSize: "0.88rem" }}>
             Kalorie: {totalCalories}
           </span>

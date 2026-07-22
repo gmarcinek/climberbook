@@ -6,17 +6,23 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate": "docker compose --profile migration run --rm liquibase",
+    "db:rollback:last": "docker compose --profile migration run --rm liquibase rollbackCount 1",
+    "db:status": "docker compose --profile migration run --rm liquibase status --verbose"
   },
   "dependencies": {
+    "@azure/identity": "^4.13.1",
     "idb": "^8.0.0",
     "next": "^15.0.0",
+    "pg": "^8.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.9.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "eslint": "^9.17.0",

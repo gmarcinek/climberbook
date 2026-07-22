@@ -4,6 +4,7 @@ import { Panel } from "@/components/climberbook/common/Panel";
 import { Button } from "@/components/climberbook/common/Button";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { Stack } from "@/components/climberbook/common/Stack";
+import { formatDurationMinutes } from "@/components/climberbook/common/training";
 import {
   calendarPanelStyle,
   navButtonStyle,
@@ -87,7 +88,7 @@ export function TrainingCalendarWidget({
             {visibleRangeTrainings.map((training) => (
               <article key={`${training.id ?? training.createdAt}-${training.time}`} className={sidebarStyles.trainingSidebar__trainingCard}>
                 <div className={sidebarStyles.trainingSidebar__trainingButtonHeader}><strong>{summarizeTrainingType(training)}</strong><span className={sidebarStyles.trainingSidebar__pill}>{training.date}</span></div>
-                <div className={sidebarStyles.trainingSidebar__metaLine}><span>{training.durationMinutes} min · {training.caloriesBurned} kcal</span></div>
+                <div className={sidebarStyles.trainingSidebar__metaLine}><span>{formatDurationMinutes(training.durationMinutes)} · {training.caloriesBurned} kcal</span></div>
                 <TrainingTimelineBar time={training.time} durationMinutes={training.durationMinutes} difficultyNotes={training.difficultyNotes} difficultyBySurface={training.difficultyBySurface} surfaces={training.surfaces} />
                 {training.difficultyNotes?.trim() && <div className={sidebarStyles.trainingSidebar__details}><span>Wyceny: {training.difficultyNotes}</span></div>}
                 <div className={sidebarStyles.trainingSidebar__cardActions}>

@@ -5,6 +5,7 @@ import { surfaceOptions } from "@/components/climberbook/common/constants";
 import { GradeChip } from "@/components/climberbook/common/GradeChip";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
+import { formatDurationMinutes } from "@/components/climberbook/common/training";
 import {
   infoGridStyle,
   listCardHeaderStyle,
@@ -136,7 +137,7 @@ export function TrainingHistoryWidget({
                   {training.date} · {training.time}
                 </strong>
                 <span style={softPillStyle}>
-                  {training.durationMinutes} min
+                  {formatDurationMinutes(training.durationMinutes)}
                 </span>
               </div>
               <div style={infoGridStyle}>

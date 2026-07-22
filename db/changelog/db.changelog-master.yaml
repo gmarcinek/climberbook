@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: changelog/changes/001-initial-schema.sql
+    - include:
+      file: changelog/changes/002-reset-training-attempt-count.sql

@@ -6,7 +6,7 @@ Climberbook ma obsługiwać zapis treningow przez rozmowę z GPT na telefonie. G
 
 ## Stan obecny
 
-- Aplikacja Next.js przechowuje dane lokalnie w IndexedDB.
+- Aplikacja Next.js przechowuje jeszcze dane lokalnie w IndexedDB, ale to warstwa historyczna/przejściowa.
 - Dane nie są współdzielone pomiędzy przeglądarką, telefonem i GPT.
 - Nie ma publicznego API, kont użytkowników ani zdalnej autoryzacji.
 
