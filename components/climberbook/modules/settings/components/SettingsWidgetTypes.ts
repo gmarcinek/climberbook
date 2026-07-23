@@ -31,6 +31,7 @@ export type ModuleMeta = {
 };
 export type SettingsHeaderWidgetProps = {
   meta: ModuleMeta;
+  accountEmail: string | null;
 };
 export type SettingsTabsWidgetProps = {
   settingsTab: SettingsTab;

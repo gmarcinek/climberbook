@@ -13,7 +13,8 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
   createUserProfileDraft,
   createWeightEntryDraft,
@@ -51,7 +52,6 @@ import {
   assignAthleteToSection,
   deleteAthlete,
   deleteAscentsByImportSource,
-  deleteClimberbookDatabase,
   deleteFacility,
   deleteSection,
   deleteTraining,
@@ -77,6 +77,7 @@ import {
   type AscentRecord,
   type AthleteRecord,
   type DatabaseImportPreview,
+  type ClimberbookFullDatabaseBackup,
   type FacilityRecord,
   type SectionRecord,
   type TrainingRecord,
@@ -87,6 +88,29 @@ import {
 import { parse8aNuCsv } from "@/lib/8a-nu-csv";
 import type { CsvSkippedAscentRow } from "@/lib/8a-nu-csv";
 import { createSampleBackupData } from "@/lib/sample-backup";
+import {
+  assignExperimentalAthleteToSection,
+  createExperimentalAscent,
+  createExperimentalAthlete,
+  createExperimentalFacility,
+  createExperimentalSection,
+  createExperimentalTraining,
+  createExperimentalWeightEntry,
+  deleteExperimentalAccount,
+  deleteExperimentalAthlete,
+  deleteExperimentalFacility,
+  deleteExperimentalSection,
+  deleteExperimentalTraining,
+  deleteExperimentalWeightEntry,
+  getExperimentalPostgresSnapshot,
+  importExperimentalPostgresBackup,
+  isExperimentalPostgresUiEnabled,
+  saveExperimentalProfile,
+  updateExperimentalAscent,
+  updateExperimentalAthlete,
+  updateExperimentalTraining,
+  updateExperimentalWeightEntryRecord,
+} from "@/lib/experimental-postgres-ui";
 
 export type AscentDraft = {
   date: string;
@@ -367,6 +391,7 @@ const ClimberbookContext = createContext<ClimberbookContextValue | null>(null);
 
 function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const today = formatDateIso(new Date());
   const [athletes, setAthletes] = useState<AthleteRecord[]>([]);
   const [activeAthleteId, setActiveAthleteId] = useState<string | null>(() =>
@@ -446,6 +471,70 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   );
 
   async function refreshData() {
+    if (isExperimentalPostgresUiEnabled()) {
+      const snapshot = await getExperimentalPostgresSnapshot();
+      const athleteId = snapshot.athletes.some(
+        (athlete) => athlete.id === activeAthleteId,
+      )
+        ? activeAthleteId
+        : (snapshot.athletes[0]?.id ?? null);
+
+      setIsDatabaseEmpty(snapshot.athletes.length === 0);
+      setAthletes(snapshot.athletes);
+      setSections(snapshot.sections);
+      setFacilities(snapshot.facilities);
+      setTeamTrainings(snapshot.trainings);
+      setTeamWeightEntries(snapshot.weightEntries);
+
+      if (!athleteId) {
+        setTrainings([]);
+        setAscents([]);
+        setEditingAscentId(null);
+        setProfileDraft(createUserProfileDraft());
+        setWeightEntries([]);
+        return;
+      }
+      if (athleteId !== activeAthleteId) {
+        setActiveAthleteId(athleteId);
+        return;
+      }
+
+      const trainingItems = snapshot.trainings.filter(
+        (training) => training.athleteId === athleteId,
+      );
+      const ascentItems = snapshot.ascents.filter(
+        (ascent) => ascent.athleteId === athleteId,
+      );
+      const weightItems = snapshot.weightEntries.filter(
+        (entry) => entry.athleteId === athleteId,
+      );
+      const profileRecord = snapshot.profiles.find(
+        (profile) => profile.athleteId === athleteId,
+      );
+
+      setTrainings(trainingItems);
+      setAscents(
+        ascentItems
+          .slice()
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      );
+      setProfileDraft(createUserProfileDraft(profileRecord));
+      setWeightEntries(
+        weightItems
+          .slice()
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      );
+      setWeightEntryDraft(
+        createWeightEntryDraft(
+          today,
+          getLatestWeightEntry(weightItems)?.weightKg ??
+            profileRecord?.weightKg ??
+            null,
+        ),
+      );
+      return;
+    }
+
     const [athleteItems, allTrainingItems, allWeightItems, sectionItems, facilityItems] =
       await Promise.all([
         listAthletes(),
@@ -510,11 +599,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setStatus(trainingItems.length || ascentItems.length ? "" : "");
   }
   useEffect(() => {
+    if (isExperimentalPostgresUiEnabled() && pathname === "/login") return;
+
     void refreshData().catch((error) => {
       console.error("Nie udało się odświeżyć danych Climberbook.", error);
-      setStatus("Nie udało się otworzyć IndexedDB w tej przeglądarce.");
+      setStatus(
+        isExperimentalPostgresUiEnabled()
+          ? "Nie udało się odświeżyć danych konta."
+          : "Nie udało się otworzyć IndexedDB w tej przeglądarce.",
+      );
     });
-  }, [activeAthleteId]);
+  }, [activeAthleteId, pathname]);
   useEffect(() => {
     if (activeAthleteId)
       window.localStorage.setItem(
@@ -577,12 +672,6 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       );
       return false;
     }
-    if (bodyWeightKg === null || bodyWeightKg <= 0) {
-      setStatus(
-        "Ustaw aktualną wagę w profilu lub w module wag przed zapisem treningu.",
-      );
-      return false;
-    }
     const payload = {
       date: trainingDraft.date,
       time: trainingDraft.time,
@@ -593,7 +682,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           ? Number(
               estimateTrainingCalories({
                 ...trainingDraft,
-                bodyWeightKg: String(bodyWeightKg),
+                bodyWeightKg: bodyWeightKg?.toString() ?? "",
                 attemptsCount: "0",
               }) || 0,
             )
@@ -643,8 +732,15 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       );
       if (editingTrainingId !== null && !current)
         throw new Error("Nie znaleziono treningu do edycji.");
-      if (current) await updateTraining({ ...current, ...payload });
-      else await addTraining({ ...payload, athleteId: activeAthleteId });
+      if (current) {
+        if (isExperimentalPostgresUiEnabled())
+          await updateExperimentalTraining({ ...current, ...payload });
+        else await updateTraining({ ...current, ...payload });
+      } else if (isExperimentalPostgresUiEnabled()) {
+        await createExperimentalTraining({ ...payload, athleteId: activeAthleteId });
+      } else {
+        await addTraining({ ...payload, athleteId: activeAthleteId });
+      }
       await refreshData();
       resetTrainingSelection();
       return true;
@@ -663,7 +759,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       !window.confirm("Usunąć ten trening? Tej operacji nie można cofnąć.")
     )
       return;
-    await deleteTraining(training.id);
+    if (isExperimentalPostgresUiEnabled())
+      await deleteExperimentalTraining(training.id);
+    else await deleteTraining(training.id);
     await refreshData();
     if (editingTrainingId === training.id) resetTrainingEditor();
   }
@@ -681,19 +779,26 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     )
       return false;
     if (entryToUpdate?.id !== undefined) {
-      await updateWeightEntry({
+      const input: WeightEntryRecord = {
         ...entryToUpdate,
+        id: entryToUpdate.id,
         date: weightEntryDraft.date,
         time: weightEntryDraft.time,
         weightKg,
-      });
+      };
+      if (isExperimentalPostgresUiEnabled())
+        await updateExperimentalWeightEntryRecord(input);
+      else await updateWeightEntry(input);
     } else {
-      await addWeightEntry({
+      const input = {
         athleteId: activeAthleteId,
         date: weightEntryDraft.date,
         time: weightEntryDraft.time,
         weightKg,
-      });
+      };
+      if (isExperimentalPostgresUiEnabled())
+        await createExperimentalWeightEntry(input);
+      else await addWeightEntry(input);
     }
     await refreshData();
     setWeightEntryDraft(createWeightEntryDraft(today, weightKg));
@@ -702,26 +807,37 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function deleteWeightEntryAction(entry: WeightEntryRecord) {
     if (entry.id === undefined) return;
 
-    await deleteWeightEntry(entry.id);
+    if (isExperimentalPostgresUiEnabled())
+      await deleteExperimentalWeightEntry(entry.id);
+    else await deleteWeightEntry(entry.id);
     await refreshData();
   }
   async function submitAscent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!activeAthleteId) return;
     if (editingAscentId !== null) {
-      await updateAscent({
+      const input = {
         id: editingAscentId,
         athleteId: activeAthleteId,
         ...ascentDraft,
-      });
+      };
+      if (isExperimentalPostgresUiEnabled()) await updateExperimentalAscent(input);
+      else await updateAscent(input);
     } else {
-      await addAscent({ ...ascentDraft, athleteId: activeAthleteId });
+      const input = { ...ascentDraft, athleteId: activeAthleteId };
+      if (isExperimentalPostgresUiEnabled()) await createExperimentalAscent(input);
+      else await addAscent(input);
     }
     await refreshData();
     setEditingAscentId(null);
     setAscentDraft(emptyAscentDraft());
   }
   async function previewAscentsCsv(event: ChangeEvent<HTMLInputElement>) {
+    if (isExperimentalPostgresUiEnabled()) {
+      setStatus("Import CSV nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
+      event.target.value = "";
+      return;
+    }
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -774,6 +890,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     includeOtherStyles: boolean,
     overwriteDuplicates: boolean,
   ) {
+    if (isExperimentalPostgresUiEnabled()) {
+      setStatus("Import CSV nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
+      return;
+    }
     if (!activeAthleteId || !ascentCsvImportPreview) return;
 
     const ascentsToImport = [
@@ -862,6 +982,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function delete8aNuAscents() {
     if (!activeAthleteId) return;
 
+    if (isExperimentalPostgresUiEnabled()) {
+      setStatus("Usuwanie importu 8a.nu nie jest jeszcze dostępne w eksperymentalnym trybie PostgreSQL.");
+      return;
+    }
     await deleteAscentsByImportSource(activeAthleteId, "8a.nu");
     await refreshData();
     showSuccessToast("Usunięto przejścia zaimportowane z 8a.nu.");
@@ -870,25 +994,32 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     event.preventDefault();
     if (!activeAthleteId) return;
     const weightKg = parseWeightInput(profileDraft.weightKg);
-    await saveUserProfile({
+    const profileInput = {
       key: `athlete:${activeAthleteId}`,
       athleteId: activeAthleteId,
       birthDate: profileDraft.birthDate,
       sex: profileDraft.sex,
       heightCm: parseHeightInput(profileDraft.heightCm),
       weightKg,
-    });
+    };
+    if (isExperimentalPostgresUiEnabled())
+      await saveExperimentalProfile(profileInput);
+    else await saveUserProfile(profileInput);
     if (
       weightKg &&
       (!getLatestWeightEntry(weightEntries) ||
         getLatestWeightEntry(weightEntries)?.weightKg !== weightKg)
-    )
-      await addWeightEntry({
+    ) {
+      const weightEntryInput = {
         athleteId: activeAthleteId,
         date: today,
         time: "09:00",
         weightKg,
-      });
+      };
+      if (isExperimentalPostgresUiEnabled())
+        await createExperimentalWeightEntry(weightEntryInput);
+      else await addWeightEntry(weightEntryInput);
+    }
     await refreshData();
   }
   async function download(backup: unknown, filename: string) {
@@ -902,6 +1033,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     URL.revokeObjectURL(url);
   }
   async function exportDatabase() {
+    if (isExperimentalPostgresUiEnabled()) {
+      setStatus("Eksport backupu nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
+      return;
+    }
     const exportTime = new Date()
       .toTimeString()
       .slice(0, 8)
@@ -914,6 +1049,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     showSuccessToast("Eksport bazy zakończony sukcesem.");
   }
   async function exportAthlete(athlete: AthleteRecord) {
+    if (isExperimentalPostgresUiEnabled()) {
+      setStatus("Eksport backupu nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
+      return;
+    }
     await download(
       await exportDatabaseBackup(athlete.id),
       `climberbook-${athlete.name || "zawodnik"}-${today}.json`,
@@ -921,6 +1060,23 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     showSuccessToast(`Eksport zawodnika ${athlete.name} zakończony sukcesem.`);
   }
   async function importFile(file: File) {
+    if (isExperimentalPostgresUiEnabled()) {
+      const backup: unknown = JSON.parse(await file.text());
+      if (
+        !backup ||
+        typeof backup !== "object" ||
+        (backup as { formatVersion?: unknown }).formatVersion !== 3
+      ) {
+        setStatus("Import do PostgreSQL wymaga pełnego backupu bazy w formacie 3.");
+        return;
+      }
+      await importExperimentalPostgresBackup(
+        backup as ClimberbookFullDatabaseBackup,
+      );
+      await refreshData();
+      showSuccessToast("Import backupu do PostgreSQL zakończony sukcesem.");
+      return;
+    }
     const athlete = await importDatabaseBackup(JSON.parse(await file.text()));
     setActiveAthleteId(athlete?.id ?? null);
     await refreshData();
@@ -979,7 +1135,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function addSectionAction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (newSectionName.trim()) {
-      await addSection(newSectionName.trim());
+      if (isExperimentalPostgresUiEnabled())
+        await createExperimentalSection(newSectionName.trim());
+      else await addSection(newSectionName.trim());
       setNewSectionName("");
       await refreshData();
     }
@@ -990,21 +1148,27 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         `Usunąć sekcję ${section.name}? Zawodnicy pozostaną, ale bez przypisania.`,
       )
     ) {
-      await deleteSection(section.id);
+      if (isExperimentalPostgresUiEnabled())
+        await deleteExperimentalSection(section.id);
+      else await deleteSection(section.id);
       await refreshData();
     }
   }
   async function addFacilityAction(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (newFacilityName.trim()) {
-      await addFacility(newFacilityName.trim());
+      if (isExperimentalPostgresUiEnabled())
+        await createExperimentalFacility(newFacilityName.trim());
+      else await addFacility(newFacilityName.trim());
       setNewFacilityName("");
       await refreshData();
     }
   }
   async function deleteFacilityAction(facility: FacilityRecord) {
     if (window.confirm(`Usunąć obiekt ${facility.name}?`)) {
-      await deleteFacility(facility.id);
+      if (isExperimentalPostgresUiEnabled())
+        await deleteExperimentalFacility(facility.id);
+      else await deleteFacility(facility.id);
       await refreshData();
     }
   }
@@ -1012,11 +1176,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     athlete: AthleteRecord,
     sectionId: string,
   ) {
-    await assignAthleteToSection(athlete.id, sectionId || null);
+    if (isExperimentalPostgresUiEnabled())
+      await assignExperimentalAthleteToSection(athlete.id, sectionId || null);
+    else await assignAthleteToSection(athlete.id, sectionId || null);
     await refreshData();
   }
   async function startAthleteEdit(athlete: AthleteRecord) {
-    const profile = await getUserProfile(athlete.id);
+    const profile = isExperimentalPostgresUiEnabled()
+      ? (await getExperimentalPostgresSnapshot()).profiles.find(
+          (candidate) => candidate.athleteId === athlete.id,
+        )
+      : await getUserProfile(athlete.id);
     setSettingsTab("zespol");
     setAthleteFormMode("edit");
     setAthleteFormId(athlete.id);
@@ -1055,20 +1225,30 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       weightKg: parseWeightInput(athleteForm.weightKg),
     };
     if (athleteFormMode === "edit" && athleteFormId) {
-      await updateAthlete(athleteFormId, identity);
-      await saveUserProfile({
+      if (isExperimentalPostgresUiEnabled())
+        await updateExperimentalAthlete(athleteFormId, identity);
+      else await updateAthlete(athleteFormId, identity);
+      const profileInput = {
         key: `athlete:${athleteFormId}`,
         athleteId: athleteFormId,
         ...profile,
-      });
+      };
+      if (isExperimentalPostgresUiEnabled())
+        await saveExperimentalProfile(profileInput);
+      else await saveUserProfile(profileInput);
       await refreshData();
     } else {
-      const athlete = await addAthlete(identity);
-      await saveUserProfile({
+      const athlete = isExperimentalPostgresUiEnabled()
+        ? await createExperimentalAthlete(identity)
+        : await addAthlete(identity);
+      const profileInput = {
         key: `athlete:${athlete.id}`,
         athleteId: athlete.id,
         ...profile,
-      });
+      };
+      if (isExperimentalPostgresUiEnabled())
+        await saveExperimentalProfile(profileInput);
+      else await saveUserProfile(profileInput);
       setActiveAthleteId(athlete.id);
     }
     resetAthleteForm();
@@ -1080,16 +1260,28 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         `Usunąć zawodnika ${athlete.name} wraz z jego danymi? Tej operacji nie można cofnąć.`,
       )
     ) {
-      await deleteAthlete(athlete.id);
+      if (isExperimentalPostgresUiEnabled())
+        await deleteExperimentalAthlete(athlete.id);
+      else await deleteAthlete(athlete.id);
       if (activeAthleteId === athlete.id) setActiveAthleteId(null);
       else await refreshData();
     }
   }
   async function deleteDatabase(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (databaseDeleteConfirmation === "usuń") {
-      await deleteClimberbookDatabase();
-      window.location.reload();
+    if (databaseDeleteConfirmation !== "usuń konto") return;
+    if (!isExperimentalPostgresUiEnabled()) {
+      setStatus("Usuwanie konta wymaga włączonego trybu PostgreSQL.");
+      return;
+    }
+
+    try {
+      await deleteExperimentalAccount();
+      await signOut({ callbackUrl: "/login" });
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : "Nie udało się usunąć konta.",
+      );
     }
   }
   const value: ClimberbookContextValue = {

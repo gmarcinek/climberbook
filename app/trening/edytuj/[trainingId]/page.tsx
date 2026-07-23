@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/climberbook/layout/DashboardLayout";
 import { TrainingEditorPage } from "@/components/climberbook/modules/training/TrainingEditorPage";
+import { requireAuthenticatedUser } from "@/lib/server/require-auth";
 
 export default async function EditTrainingPage({
   params,
 }: {
   params: Promise<{ trainingId: string }>;
 }) {
+  await requireAuthenticatedUser();
   const { trainingId } = await params;
 
   if (

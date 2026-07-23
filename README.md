@@ -45,12 +45,27 @@ Bez tej flagi endpointy PostgreSQL zwracają `404`. Dostępne wyłącznie w test
 
 - `GET /api/v1/users`, `POST /api/v1/users`
 - `GET /api/db/health` sprawdza połączenie z PostgreSQL
-- `GET /api/v1/athletes`, `POST /api/v1/athletes`
-- `GET /api/v1/trainings`, `POST /api/v1/trainings`
+- `GET/POST/PATCH/DELETE /api/v1/athletes`
+- `GET/POST/PATCH/DELETE /api/v1/trainings`
+- `GET/PUT /api/v1/profiles`
+- `GET/POST/PATCH/DELETE /api/v1/weight-entries`
+- `GET/POST/PATCH/DELETE /api/v1/ascents`
+- `GET/POST/PATCH/DELETE /api/v1/sections`
+- `GET/POST/PATCH/DELETE /api/v1/facilities`
+- `GET/POST/PATCH/DELETE /api/v1/climbs`
 - `GET /api/v1/snapshot`
 - `POST /api/v1/backups/import`
 
 Po utworzeniu użytkownika przez `POST /api/v1/users`, każdy endpoint danych wymaga nagłówka `X-Climberbook-User-Id` z jego UUID. Ten nagłówek jest wyłącznie mechanizmem izolacji danych w testach. Nie zastępuje uwierzytelniania, sesji ani kontroli dostępu wymaganych w produkcji.
+
+Po ręcznym uruchomieniu testowego środowiska z flagą i zastosowaniu changelogów można sprawdzić pełny przepływ API:
+
+```powershell
+$env:EXPERIMENTAL_API_BASE_URL = "http://localhost:3000"
+npm run test:postgres:experimental
+```
+
+Test tworzy własne dane testowe, sprawdza pełny snapshot oraz izolację między dwoma użytkownikami, a na końcu usuwa rekordy domenowe. Utworzone konta `app_users` pozostają w testowej bazie.
 
 Dostęp do bazy obsługuje dwa tryby:
 

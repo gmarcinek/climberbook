@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "npm run db:migrate",
     "dev": "next dev",
     "build": "next build",
+    "prestart": "npm run db:migrate",
     "start": "next start",
     "lint": "next lint",
-    "db:migrate": "docker compose --profile migration run --rm liquibase",
+    "test:postgres:experimental": "node --test tests/experimental-postgres-api.test.mjs",
+    "db:migrate": "docker compose run --rm liquibase",
     "db:rollback:last": "docker compose --profile migration run --rm liquibase rollbackCount 1",
     "db:status": "docker compose --profile migration run --rm liquibase status --verbose"
   },
@@ -15,6 +18,7 @@
     "@azure/identity": "^4.13.1",
     "idb": "^8.0.0",
     "next": "^15.0.0",
+    "next-auth": "^4.24.15",
     "pg": "^8.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

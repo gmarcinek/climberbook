@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { getSession } from "next-auth/react";
 import { settingsTabs } from "@/components/climberbook/common/constants";
 import { moduleConfig } from "@/components/climberbook/common/modules";
 import { useClimberbookStats } from "@/components/climberbook/hooks/useClimberbookStats";
@@ -12,6 +13,7 @@ export function SettingsModule() {
   const app = useSettingsModule();
   const pathname = usePathname();
   const { width } = useViewport();
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const pathnameSegments = pathname.split("/").filter(Boolean);
   const tabFromRoute =
     settingsTabs.find((tab) => tab.key === pathnameSegments[1])?.key ??
@@ -22,6 +24,12 @@ export function SettingsModule() {
       app.setSettingsTab(tabFromRoute);
     }
   }, [app, tabFromRoute]);
+
+  useEffect(() => {
+    void getSession().then((session) =>
+      setAccountEmail(session?.user?.email ?? null),
+    );
+  }, []);
 
   const stats = useClimberbookStats({
     ascents: app.ascents,
@@ -36,6 +44,7 @@ export function SettingsModule() {
   return (
     <SettingsAssembly
       meta={moduleConfig[4]}
+      accountEmail={accountEmail}
       currentAge={stats.currentAge}
       profileDraft={app.profileDraft}
       setProfileDraft={app.setProfileDraft}

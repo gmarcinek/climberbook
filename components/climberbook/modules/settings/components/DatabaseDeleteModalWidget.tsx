@@ -27,7 +27,7 @@ export function DatabaseDeleteModalWidget({
         <div>
           <span style={moduleEyebrowStyle}>Nieodwracalna akcja</span>
           <h3 id="database-delete-modal-title" style={sectionTitleStyle}>
-            Usunąć bazę danych?
+            Usunąć konto?
           </h3>
         </div>
         <Button variant="secondary" onClick={onCloseDatabaseDeleteModal}>
@@ -35,8 +35,8 @@ export function DatabaseDeleteModalWidget({
         </Button>
       </div>
       <p style={mutedParagraphStyle}>
-        Wszystkie lokalne treningi, przejścia, ustawienia i pomiary wagi zostaną
-        trwale usunięte. Wpisz „usuń”, aby potwierdzić.
+        Konto oraz wszystkie powiązane treningi, przejścia, ustawienia i pomiary
+        wagi zostaną trwale usunięte. Wpisz „usuń konto”, aby potwierdzić.
       </p>
       <Form
         as="div"
@@ -51,7 +51,7 @@ export function DatabaseDeleteModalWidget({
             onChange={(event) =>
               setDatabaseDeleteConfirmation(event.target.value)
             }
-            placeholder="usuń"
+            placeholder="usuń konto"
             autoComplete="off"
             style={inputStyle}
           />
@@ -60,17 +60,17 @@ export function DatabaseDeleteModalWidget({
           <Button
             type="submit"
             variant="secondary"
-            disabled={databaseDeleteConfirmation !== "usuń"}
+            disabled={databaseDeleteConfirmation !== "usuń konto"}
             style={{
               ...deleteButtonStyle,
-              opacity: databaseDeleteConfirmation === "usuń" ? 1 : 0.45,
+              opacity: databaseDeleteConfirmation === "usuń konto" ? 1 : 0.45,
               cursor:
-                databaseDeleteConfirmation === "usuń"
+                databaseDeleteConfirmation === "usuń konto"
                   ? "pointer"
                   : "not-allowed",
             }}
           >
-            USUŃ BAZĘ DANYCH
+            USUŃ KONTO
           </Button>
         </FormActions>
       </Form>

@@ -41,6 +41,7 @@ import type { DatabaseImportPreview } from "@/lib/climbs-db";
 export type { AthleteFormDraft } from "./SettingsWidgetTypes";
 type SettingsAssemblyProps = {
   meta: ModuleMeta;
+  accountEmail: string | null;
   currentAge: string;
   profileDraft: UserProfileDraft;
   setProfileDraft: Dispatch<SetStateAction<UserProfileDraft>>;
@@ -93,6 +94,7 @@ type SettingsAssemblyProps = {
 export function SettingsAssembly(props: SettingsAssemblyProps) {
   const {
     meta,
+    accountEmail,
     currentAge,
     profileDraft,
     setProfileDraft,
@@ -142,7 +144,7 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
   return (
     <>
       <div style={{ ...moduleContainerStyle, ...moduleContentStyle }}>
-        <SettingsHeaderWidget meta={meta} />
+        <SettingsHeaderWidget meta={meta} accountEmail={accountEmail} />
         <SettingsTabsWidget settingsTab={settingsTab} />
         {settingsTab === "profil" && (
           <div style={settingsMainColumnStyle}>

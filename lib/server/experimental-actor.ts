@@ -1,4 +1,9 @@
 import { requireExperimentalUser } from "@/lib/server/climberbook-repository";
+import { getServerSession } from "next-auth";
+import {
+  authOptions,
+  isSocialLoginConfigured,
+} from "@/lib/server/auth-options";
 
 const EXPERIMENTAL_USER_HEADER = "X-Climberbook-User-Id";
 
@@ -11,6 +16,22 @@ function isUuid(value: string): boolean {
 export async function getExperimentalActorId(
   request: Request,
 ): Promise<string | Response> {
+  if (isSocialLoginConfigured()) {
+    const session = await getServerSession(authOptions);
+    const sessionUserId = session?.user?.id;
+
+    if (sessionUserId) {
+      try {
+        await requireExperimentalUser(sessionUserId);
+        return sessionUserId;
+      } catch {
+        return Response.json({ error: "Sesja użytkownika jest nieprawidłowa." }, { status: 401 });
+      }
+    }
+
+    return Response.json({ error: "Wymagane jest zalogowanie." }, { status: 401 });
+  }
+
   const userId = request.headers.get(EXPERIMENTAL_USER_HEADER)?.trim();
 
   if (!userId || !isUuid(userId)) {

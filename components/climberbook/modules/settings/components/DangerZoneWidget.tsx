@@ -23,8 +23,8 @@ export function DangerZoneWidget({
         <span style={softTagStyle}>Nieodwracalne</span>
       </div>
       <p style={mutedParagraphStyle}>
-        Usunięcie bazy danych trwale kasuje wszystkich zawodników i ich dane.
-        Zalecany wcześniejszy eksport całości.
+        Usunięcie konta trwale kasuje Twoich zawodników i wszystkie powiązane
+        dane. Zalecany wcześniejszy eksport całości.
       </p>
       <Stack direction="row" gap="sm" wrap>
         <Button
@@ -32,7 +32,7 @@ export function DangerZoneWidget({
           style={deleteButtonStyle}
           onClick={() => setIsDatabaseDeleteModalOpen(true)}
         >
-          USUŃ BAZĘ DANYCH
+          USUŃ KONTO
         </Button>
       </Stack>
     </Panel>

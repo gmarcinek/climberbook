@@ -9,3 +9,9 @@ databaseChangeLog:
       file: changelog/changes/004-add-facilities-and-climbs.sql
   - include:
       file: changelog/changes/005-add-experimental-users.sql
+  - include:
+      file: changelog/changes/006-add-social-auth-identities.sql
+  - include:
+      file: changelog/changes/007-add-user-onboarding.sql
+  - include:
+      file: changelog/changes/008-require-user-email.sql

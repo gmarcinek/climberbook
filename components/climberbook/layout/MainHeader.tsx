@@ -2,6 +2,7 @@
 
 import { Fragment, useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import {
   moduleConfig,
   type ModuleKey,
@@ -214,10 +215,10 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
               {navLinks}
               <Button
                 style={{ marginLeft: "2rem" }}
-                onClick={() => void exportDatabase()}
+                onClick={() => void signOut({ callbackUrl: "/login" })}
                 variant="quadrary"
               >
-                Eksport
+                Logout
               </Button>
             </nav>
           ) : null}

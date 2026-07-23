@@ -2,11 +2,16 @@ services:
   app:
     build:
       context: .
+      args:
+        NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_UI: ${NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_UI:-false}
+        NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_USER_ID: ${NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_USER_ID:-}
     environment:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
       ENABLE_POSTGRES_EXPERIMENTAL_API: ${ENABLE_POSTGRES_EXPERIMENTAL_API:-false}
+      NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_UI: ${NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_UI:-false}
+      NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_USER_ID: ${NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_USER_ID:-}
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_DB: ${POSTGRES_DB:-climberbook}
@@ -19,6 +24,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      liquibase:
+        condition: service_completed_successfully
 
   db:
     image: postgres:18-alpine
@@ -39,15 +46,13 @@ services:
 
   liquibase:
     image: liquibase/liquibase:4.29
-    profiles:
-      - migration
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./db/changelog:/liquibase/changelog:ro
     environment:
-      LIQUIBASE_COMMAND_URL: jdbc:postgresql://${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-climberbook}
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://${POSTGRES_DOCKER_HOST:-db}:${POSTGRES_DOCKER_PORT:-5432}/${POSTGRES_DB:-climberbook}
       LIQUIBASE_COMMAND_USERNAME: ${POSTGRES_USER:-climberbook_admin}
       LIQUIBASE_COMMAND_PASSWORD: ${POSTGRES_PASSWORD:-CbLocal2026!}
       LIQUIBASE_COMMAND_CHANGELOG_FILE: changelog/db.changelog-master.yaml
