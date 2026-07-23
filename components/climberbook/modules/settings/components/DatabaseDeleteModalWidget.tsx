@@ -36,7 +36,7 @@ export function DatabaseDeleteModalWidget({
       </div>
       <p style={mutedParagraphStyle}>
         Konto oraz wszystkie powiązane treningi, przejścia, ustawienia i pomiary
-        wagi zostaną trwale usunięte. Wpisz „usuń konto”, aby potwierdzić.
+        wagi zostaną trwale usunięte. Wpisz „delete”, aby potwierdzić.
       </p>
       <Form
         as="div"
@@ -51,7 +51,7 @@ export function DatabaseDeleteModalWidget({
             onChange={(event) =>
               setDatabaseDeleteConfirmation(event.target.value)
             }
-            placeholder="usuń konto"
+            placeholder="delete"
             autoComplete="off"
             style={inputStyle}
           />
@@ -60,12 +60,12 @@ export function DatabaseDeleteModalWidget({
           <Button
             type="submit"
             variant="secondary"
-            disabled={databaseDeleteConfirmation !== "usuń konto"}
+            disabled={databaseDeleteConfirmation !== "delete"}
             style={{
               ...deleteButtonStyle,
-              opacity: databaseDeleteConfirmation === "usuń konto" ? 1 : 0.45,
+              opacity: databaseDeleteConfirmation === "delete" ? 1 : 0.45,
               cursor:
-                databaseDeleteConfirmation === "usuń konto"
+                databaseDeleteConfirmation === "delete"
                   ? "pointer"
                   : "not-allowed",
             }}

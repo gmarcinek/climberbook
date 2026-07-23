@@ -356,6 +356,8 @@ export function createSampleBackupData(): ClimberbookFullDatabaseBackup {
   return {
     formatVersion: 3,
     exportedAt,
+    ownerAthleteId: "primary",
+    ownerEmail: "sample@climberbook.test",
     ...createTrainingExportMetadata(trainings),
     athletes,
     sections: [

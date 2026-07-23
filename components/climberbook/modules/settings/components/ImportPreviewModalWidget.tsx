@@ -15,6 +15,7 @@ import type { ImportPreviewModalWidgetProps } from "./SettingsWidgetTypes";
 const countLabelMap = {
   athletes: "Zawodnicy",
   sections: "Sekcje",
+  facilities: "Obiekty",
   climbs: "Wspiny",
   trainings: "Treningi",
   ascents: "Przejścia",

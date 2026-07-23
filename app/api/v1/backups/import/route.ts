@@ -1,5 +1,8 @@
 import type { ClimberbookFullDatabaseBackup } from "@/lib/climbs-db";
-import { importFullBackupToPostgres } from "@/lib/server/climberbook-repository";
+import {
+  BackupOwnerEmailMismatchError,
+  importFullBackupToPostgres,
+} from "@/lib/server/climberbook-repository";
 import {
   isPostgresExperimentalApiEnabled,
   postgresExperimentalApiDisabledResponse,
@@ -56,9 +59,15 @@ export async function POST(request: Request) {
       backup,
       idempotencyKey,
       actorId,
+      request.headers.get("X-Climberbook-Confirm-Different-Owner-Email") ===
+        "true",
     );
     return Response.json(result, { status: 201 });
   } catch (error) {
+    if (error instanceof BackupOwnerEmailMismatchError) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
+
     return Response.json(
       {
         error:

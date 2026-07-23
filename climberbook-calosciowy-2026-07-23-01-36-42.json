@@ -1,0 +1,2231 @@
+{
+  "formatVersion": 3,
+  "exportedAt": "2026-07-22T23:36:42.102Z",
+  "trainingDataDisclaimer": "INSTRUKCJA INTERPRETACJI DLA AGENTA LLM: Głównym celem aplikacji są dane o ekspozycji treningowej. Do analizy używaj `llmTrainingSessions`, a dokładną legendę odczytaj z `dataInterpretation`. Ten zbiór przedstawia ekspozycję przez skalę oraz minimum i maksimum, bez surowych list wycen. `trainings` zawiera surowe rekordy techniczne dla importu backupu; nie analizuj jego tekstowego `difficultyBySurface`, jeśli dostępne jest `llmTrainingSessions`. `ascents` to niezależny, opcjonalny dodatek zawierający wyłącznie raportowane przejścia, nie próby. Brak `ascents` nie oznacza braku treningu, ekspozycji ani postępu. Nie wyprowadzaj liczby prób z żadnej części eksportu: `attemptsCount` jest historycznym polem, obecnie zapisywanym jako 0. `climbs` jest katalogiem obiektów wspinaczkowych, nie historią ich przejść.",
+  "dataInterpretation": {
+    "purpose": "Głównym celem aplikacji jest zbieranie danych o ekspozycji treningowej. Analizy LLM opieraj przede wszystkim na zbiorze llmTrainingSessions.",
+    "primaryDataset": "llmTrainingSessions",
+    "datasets": {
+      "llmTrainingSessions": "Warstwa przeznaczona do analizy LLM. Zawiera sesje z jednoznaczną ekspozycją per powierzchnia: skalą, minimum i maksimum. Nie zawiera surowych list wycen.",
+      "trainings": "Surowe rekordy aplikacji zachowane na potrzeby importu i odtworzenia backupu. Pole difficultyBySurface może zawierać listy tekstowe; dla analizy LLM używaj zamiast niego llmTrainingSessions.",
+      "ascents": "Opcjonalne, samodzielnie raportowane przejścia. Brak rekordów nie oznacza braku treningu, ekspozycji ani postępu.",
+      "climbs": "Katalog obiektów wspinaczkowych. Nie jest historią przejść ani listą prób.",
+      "athletes": "Tożsamości zawodników, łączone z danymi przez athleteId.",
+      "profiles": "Profil i dane antropometryczne zawodnika.",
+      "weightEntries": "Niezależne pomiary masy ciała w czasie.",
+      "sections": "Opcjonalne grupy lub sekcje zawodników.",
+      "facilities": "Słownik obiektów lub miejsc treningu."
+    },
+    "trainingFields": {
+      "durationMinutes": "Czas całej sesji w minutach, nie czas pojedynczej aktywności.",
+      "surfaces": "Aktywności obecne w sesji, np. lina, baldy, Moon, Kilter, chwytotablica.",
+      "difficultyBySurface": "Tekstowa deklaracja ekspozycji na trudność dla aktywności w ramach sesji. Może zawierać listę wycen; elementy listy nie są osobnymi drogami, baldami, próbami ani przejściami.",
+      "protocol": "Szczegóły protokołu treningowego, np. serie, obciążenie, zwisy i przerwy.",
+      "facilityName": "Opcjonalna nazwa obiektu zapisana przy sesji jako historyczna etykieta.",
+      "caloriesBurned": "Szacowane, a nie zmierzone spalanie energii.",
+      "wellbeing": "Subiektywna ocena samopoczucia.",
+      "notes": "Wolny opis użytkownika; nie zakładaj ujednoliconej struktury.",
+      "attemptsCount": "Pole historyczne, obecnie zapisywane jako 0. Nie jest miarą liczby prób i nie nadaje się do analizy prób."
+    },
+    "ascentFields": {
+      "date": "Data raportowanego przejścia.",
+      "routeName": "Nazwa zgłoszonego przejścia.",
+      "suggestedGrade": "Wycena proponowana lub źródłowa dla raportowanego przejścia.",
+      "subjectiveGrade": "Subiektywna wycena użytkownika dla raportowanego przejścia.",
+      "style": "Opcjonalny styl raportowanego przejścia."
+    },
+    "relationships": {
+      "athleteId": "Łączy rekordy zawodnika między zbiorami danych.",
+      "facilityName": "Łączy trening z nazwą miejsca tylko opisowo; nie jest stabilnym identyfikatorem relacyjnym do facilities.",
+      "sectionId": "Opcjonalnie łączy zawodnika z rekordem sections."
+    },
+    "interpretationRules": [
+      "W pierwszej kolejności analizuj częstotliwość, czas, aktywności, protokoły i deklarowaną ekspozycję w llmTrainingSessions.",
+      "W llmTrainingSessions traktuj difficultyBySurface jako jakościowy wskaźnik poziomu i obciążenia ekspozycją w sesji.",
+      "Traktuj ascents jako opcjonalny kontekst raportowanych przejść, oddzielny od danych treningowych.",
+      "Wyraźnie rozdzielaj w analizie ekspozycję treningową od raportowanych przejść."
+    ],
+    "unsupportedInferences": [
+      "Nie analizuj surowych list difficultyBySurface w trainings, gdy dostępne jest llmTrainingSessions.",
+      "Nie licz dróg, baldów, poprowadzeń ani prób na podstawie difficultyBySurface.",
+      "Nie wyprowadzaj liczby prób z attemptsCount, trainings, ascents ani climbs.",
+      "Nie uznawaj braku ascents za brak treningu, ekspozycji lub rozwoju sportowego.",
+      "Nie traktuj caloriesBurned jako precyzyjnego pomiaru fizjologicznego."
+    ]
+  },
+  "llmTrainingSessions": [
+    {
+      "sourceTrainingId": "6e089427-1e3e-4e08-84fd-edc598586761",
+      "athleteId": "primary",
+      "date": "2026-07-09",
+      "time": "18:00",
+      "durationMinutes": 100,
+      "surfaces": [
+        "moon",
+        "spraywall"
+      ],
+      "difficultyBySurface": {
+        "moon": {
+          "gradeScale": "v_scale",
+          "maxExposureGrade": "V6",
+          "exposureRange": {
+            "min": "V5",
+            "max": "V6"
+          }
+        }
+      },
+      "protocol": {
+        "spraywallIntensity": "medium"
+      },
+      "caloriesBurned": 600,
+      "wellbeing": "",
+      "notes": "",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "f896ea8a-9b7e-4c8a-a7e9-740a82e5807a",
+      "athleteId": "primary",
+      "date": "2026-07-15",
+      "time": "19:00",
+      "durationMinutes": 160,
+      "surfaces": [
+        "lina",
+        "chwytotablica"
+      ],
+      "difficultyBySurface": {
+        "lina": {
+          "gradeScale": "french",
+          "maxExposureGrade": "7c",
+          "exposureRange": {
+            "min": "6b",
+            "max": "7c"
+          }
+        }
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 4,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 6,
+            "edgeDepthMm": 20
+          }
+        ]
+      },
+      "caloriesBurned": 969,
+      "wellbeing": "",
+      "notes": "duszno było i 27stopni",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "5c24060d-2120-4534-bfba-e0d9c7f2d7a4",
+      "athleteId": "primary",
+      "date": "2026-07-13",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "surfaces": [
+        "lina"
+      ],
+      "difficultyBySurface": {
+        "lina": {
+          "gradeScale": "french",
+          "maxExposureGrade": "7c+",
+          "exposureRange": {
+            "min": "6a",
+            "max": "7c+"
+          }
+        }
+      },
+      "protocol": {},
+      "caloriesBurned": 809,
+      "wellbeing": "sauna",
+      "notes": "było jak na saunie, wszystko szło źle i gorzej",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "094a3258-a7e1-48d2-ab49-56356837b056",
+      "athleteId": "primary",
+      "date": "2026-07-14",
+      "time": "17:45",
+      "durationMinutes": 60,
+      "surfaces": [
+        "spraywall"
+      ],
+      "difficultyBySurface": {},
+      "protocol": {
+        "spraywallIntensity": "soft"
+      },
+      "caloriesBurned": 350,
+      "wellbeing": "",
+      "notes": "kapilara na obwodach rozgrzewka na siłowni + lekkie obwody po klamach 1x 15min, 1x 10min l",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "e6fa8984-a59a-4e42-aad4-7e48bc808724",
+      "athleteId": "primary",
+      "date": "2026-07-11",
+      "time": "19:00",
+      "durationMinutes": 113,
+      "surfaces": [
+        "spraywall",
+        "campus"
+      ],
+      "difficultyBySurface": {},
+      "protocol": {
+        "spraywallIntensity": "medium"
+      },
+      "caloriesBurned": 569,
+      "wellbeing": "",
+      "notes": "",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "0b59a4d9-9a0d-4307-9f4e-62eb94fb8f57",
+      "athleteId": "primary",
+      "date": "2026-07-08",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "surfaces": [
+        "lina"
+      ],
+      "difficultyBySurface": {
+        "lina": {
+          "gradeScale": "french",
+          "maxExposureGrade": "7c",
+          "exposureRange": {
+            "min": "6a+",
+            "max": "7c"
+          }
+        }
+      },
+      "protocol": {},
+      "caloriesBurned": 809,
+      "wellbeing": "",
+      "notes": "",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "d26517b4-6eb5-48c0-9506-ed4910a287e4",
+      "athleteId": "primary",
+      "date": "2026-07-06",
+      "time": "19:00",
+      "durationMinutes": 113,
+      "surfaces": [
+        "lina"
+      ],
+      "difficultyBySurface": {
+        "lina": {
+          "gradeScale": "french",
+          "maxExposureGrade": "7c",
+          "exposureRange": {
+            "min": "6a+",
+            "max": "7c"
+          }
+        }
+      },
+      "protocol": {},
+      "caloriesBurned": 710,
+      "wellbeing": "",
+      "notes": "",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "d5a3cff5-dd77-44a5-8ee8-17654058038e",
+      "athleteId": "primary",
+      "date": "2026-07-18",
+      "time": "19:00",
+      "durationMinutes": 210,
+      "surfaces": [
+        "lina",
+        "chwytotablica"
+      ],
+      "difficultyBySurface": {
+        "lina": {
+          "gradeScale": "french",
+          "maxExposureGrade": "7c",
+          "exposureRange": {
+            "min": "6b+",
+            "max": "7c"
+          }
+        }
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 4,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 10,
+            "edgeDepthMm": 20
+          },
+          {
+            "sets": 1,
+            "mode": "hangs",
+            "usesRpm": true,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 0,
+            "edgeDepthMm": 10
+          }
+        ]
+      },
+      "caloriesBurned": 996,
+      "wellbeing": "",
+      "notes": "za ciepło",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "ac95ebc4-45ed-4e40-9e30-3deca5b4a6e7",
+      "athleteId": "primary",
+      "date": "2026-07-20",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "surfaces": [
+        "lina",
+        "chwytotablica"
+      ],
+      "difficultyBySurface": {
+        "lina": {
+          "gradeScale": "french",
+          "maxExposureGrade": "7c+",
+          "exposureRange": {
+            "min": "6b",
+            "max": "7c+"
+          }
+        }
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 2,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 10,
+            "edgeDepthMm": 18
+          },
+          {
+            "sets": 2,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 12,
+            "edgeDepthMm": 18
+          },
+          {
+            "sets": 1,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 0,
+            "edgeDepthMm": 10
+          }
+        ]
+      },
+      "caloriesBurned": 799,
+      "wellbeing": "",
+      "notes": "",
+      "customSessionType": ""
+    },
+    {
+      "sourceTrainingId": "16830967-4013-49d9-afbd-0e9db7bbb31d",
+      "athleteId": "primary",
+      "date": "2026-07-22",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "surfaces": [
+        "baldy",
+        "kilter",
+        "chwytotablica"
+      ],
+      "difficultyBySurface": {
+        "baldy": {
+          "gradeScale": "boulder_gym_numeric",
+          "maxExposureGrade": "6",
+          "exposureRange": {
+            "min": "2",
+            "max": "6"
+          }
+        },
+        "kilter": {
+          "gradeScale": "v_scale",
+          "maxExposureGrade": "V6",
+          "exposureRange": {
+            "min": "V2",
+            "max": "V6"
+          }
+        }
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 4,
+            "mode": "hangs",
+            "usesRpm": false,
+            "loadDeloadKg": 0,
+            "edgeDepthMm": 20
+          }
+        ]
+      },
+      "facilityName": "West Bouldering",
+      "caloriesBurned": 800,
+      "wellbeing": "",
+      "notes": "",
+      "customSessionType": ""
+    }
+  ],
+  "athletes": [
+    {
+      "id": "primary",
+      "name": "Grzegorz Marcinek",
+      "createdAt": "2026-07-15T23:42:31.725Z",
+      "sectionId": "807988f5-64be-4330-9b96-554a6c817290",
+      "sourceId": "7bada72a-7117-49d8-86c6-e85c97a9aa4b"
+    }
+  ],
+  "sections": [
+    {
+      "id": "807988f5-64be-4330-9b96-554a6c817290",
+      "name": "Sekcja Pn-Śr 19:00",
+      "createdAt": "2026-07-16T00:31:19.771Z",
+      "sourceId": "807988f5-64be-4330-9b96-554a6c817290"
+    },
+    {
+      "id": "1cb7bb9f-f4ea-44cc-bbae-d7ec56a0d076",
+      "name": "Sekcja Wt-Czw 18:00",
+      "createdAt": "2026-07-16T00:31:42.311Z",
+      "sourceId": "1cb7bb9f-f4ea-44cc-bbae-d7ec56a0d076"
+    }
+  ],
+  "facilities": [
+    {
+      "id": "5d6c1ed5-52fd-4bc3-8e76-746cb99966f6",
+      "name": "Arena Wspinaczkowa Makak",
+      "createdAt": "2026-07-22T22:49:28.189Z"
+    },
+    {
+      "id": "e7886ad0-175f-43e5-98cc-05276aa7fa75",
+      "name": "West Bouldering",
+      "createdAt": "2026-07-22T22:49:37.661Z"
+    },
+    {
+      "id": "c573b6f0-39d2-471e-b893-bbc3f4f73fc3",
+      "name": "Crux",
+      "createdAt": "2026-07-22T22:49:43.934Z"
+    },
+    {
+      "id": "f638f83f-0248-4905-8197-501acdb3648c",
+      "name": "Volt",
+      "createdAt": "2026-07-22T22:49:46.174Z"
+    },
+    {
+      "id": "9c538552-c0c0-4cc2-b54e-e4864085e42e",
+      "name": "Mural Krakowska",
+      "createdAt": "2026-07-22T22:49:50.981Z"
+    }
+  ],
+  "climbs": [],
+  "trainings": [
+    {
+      "date": "2026-07-09",
+      "time": "18:00",
+      "durationMinutes": 100,
+      "ageYears": 42,
+      "caloriesBurned": 600,
+      "attemptsCount": 0,
+      "difficultyNotes": "V6, V6, V6, V6, V5, V5",
+      "wellbeing": "",
+      "surfaces": [
+        "moon",
+        "spraywall"
+      ],
+      "notes": "",
+      "createdAt": "2026-07-09T19:09:03.757Z",
+      "id": "6e089427-1e3e-4e08-84fd-edc598586761",
+      "athleteId": "primary",
+      "sourceId": "6e089427-1e3e-4e08-84fd-edc598586761",
+      "difficultyBySurface": {
+        "moon": "V6, V6, V6, V6, V5, V5"
+      },
+      "protocol": {
+        "spraywallIntensity": "medium"
+      },
+      "customSessionType": ""
+    },
+    {
+      "date": "2026-07-15",
+      "time": "19:00",
+      "durationMinutes": 160,
+      "ageYears": 42,
+      "caloriesBurned": 969,
+      "attemptsCount": 0,
+      "difficultyNotes": "6b, 6b+, 7c, 7b",
+      "wellbeing": "",
+      "surfaces": [
+        "lina",
+        "chwytotablica"
+      ],
+      "notes": "duszno było i 27stopni",
+      "createdAt": "2026-07-15T20:26:35.179Z",
+      "id": "f896ea8a-9b7e-4c8a-a7e9-740a82e5807a",
+      "athleteId": "primary",
+      "sourceId": "f896ea8a-9b7e-4c8a-a7e9-740a82e5807a",
+      "difficultyBySurface": {
+        "lina": "6b, 6b+, 7c, 7b"
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 4,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 6,
+            "edgeDepthMm": 20
+          }
+        ]
+      },
+      "customSessionType": ""
+    },
+    {
+      "date": "2026-07-13",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "ageYears": 42,
+      "caloriesBurned": 809,
+      "attemptsCount": 0,
+      "difficultyNotes": "6a, 6c, 7a, 7c, 7c+",
+      "wellbeing": "sauna",
+      "surfaces": [
+        "lina"
+      ],
+      "notes": "było jak na saunie, wszystko szło źle i gorzej",
+      "createdAt": "2026-07-15T20:27:46.723Z",
+      "id": "5c24060d-2120-4534-bfba-e0d9c7f2d7a4",
+      "athleteId": "primary",
+      "sourceId": "5c24060d-2120-4534-bfba-e0d9c7f2d7a4",
+      "difficultyBySurface": {
+        "lina": "6a, 6c, 7a, 7c, 7c+"
+      },
+      "protocol": {},
+      "customSessionType": ""
+    },
+    {
+      "date": "2026-07-14",
+      "time": "17:45",
+      "durationMinutes": 60,
+      "ageYears": 42,
+      "caloriesBurned": 350,
+      "attemptsCount": 0,
+      "difficultyNotes": "",
+      "wellbeing": "",
+      "surfaces": [
+        "spraywall"
+      ],
+      "notes": "kapilara na obwodach rozgrzewka na siłowni + lekkie obwody po klamach 1x 15min, 1x 10min l",
+      "createdAt": "2026-07-15T20:29:03.631Z",
+      "id": "094a3258-a7e1-48d2-ab49-56356837b056",
+      "athleteId": "primary",
+      "sourceId": "094a3258-a7e1-48d2-ab49-56356837b056",
+      "difficultyBySurface": {},
+      "protocol": {
+        "spraywallIntensity": "soft"
+      },
+      "customSessionType": ""
+    },
+    {
+      "date": "2026-07-11",
+      "time": "19:00",
+      "durationMinutes": 113,
+      "ageYears": 42,
+      "caloriesBurned": 569,
+      "attemptsCount": 0,
+      "difficultyNotes": "",
+      "wellbeing": "",
+      "surfaces": [
+        "spraywall",
+        "campus"
+      ],
+      "notes": "",
+      "createdAt": "2026-07-15T20:30:43.167Z",
+      "id": "e6fa8984-a59a-4e42-aad4-7e48bc808724",
+      "athleteId": "primary",
+      "sourceId": "e6fa8984-a59a-4e42-aad4-7e48bc808724",
+      "difficultyBySurface": {},
+      "protocol": {
+        "spraywallIntensity": "medium"
+      },
+      "customSessionType": ""
+    },
+    {
+      "date": "2026-07-08",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "ageYears": 42,
+      "caloriesBurned": 809,
+      "attemptsCount": 0,
+      "difficultyNotes": "6a+, 6c, 6b+, 7c, 7a+",
+      "wellbeing": "",
+      "surfaces": [
+        "lina"
+      ],
+      "notes": "",
+      "createdAt": "2026-07-15T20:32:43.884Z",
+      "id": "0b59a4d9-9a0d-4307-9f4e-62eb94fb8f57",
+      "athleteId": "primary",
+      "sourceId": "0b59a4d9-9a0d-4307-9f4e-62eb94fb8f57",
+      "difficultyBySurface": {
+        "lina": "6a+, 6c, 6b+, 7c, 7a+"
+      },
+      "protocol": {},
+      "customSessionType": ""
+    },
+    {
+      "date": "2026-07-06",
+      "time": "19:00",
+      "durationMinutes": 113,
+      "ageYears": 42,
+      "caloriesBurned": 710,
+      "attemptsCount": 0,
+      "difficultyNotes": "7a, 7c, 7b, 6a+, 6b",
+      "wellbeing": "",
+      "surfaces": [
+        "lina"
+      ],
+      "notes": "",
+      "createdAt": "2026-07-15T20:33:05.428Z",
+      "id": "d26517b4-6eb5-48c0-9506-ed4910a287e4",
+      "athleteId": "primary",
+      "sourceId": "d26517b4-6eb5-48c0-9506-ed4910a287e4",
+      "difficultyBySurface": {
+        "lina": "7a, 7c, 7b, 6a+, 6b"
+      },
+      "protocol": {},
+      "customSessionType": ""
+    },
+    {
+      "date": "2026-07-18",
+      "time": "19:00",
+      "durationMinutes": 210,
+      "ageYears": 42,
+      "caloriesBurned": 996,
+      "attemptsCount": 0,
+      "difficultyNotes": "6c, 6b+, 7b, 7c, 7b",
+      "difficultyBySurface": {
+        "lina": "6c, 6b+, 7b, 7c, 7b"
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 4,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 10,
+            "edgeDepthMm": 20
+          },
+          {
+            "sets": 1,
+            "mode": "hangs",
+            "usesRpm": true,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 0,
+            "edgeDepthMm": 10
+          }
+        ]
+      },
+      "wellbeing": "",
+      "surfaces": [
+        "lina",
+        "chwytotablica"
+      ],
+      "customSessionType": "",
+      "notes": "za ciepło",
+      "athleteId": "primary",
+      "sourceId": "d5a3cff5-dd77-44a5-8ee8-17654058038e",
+      "createdAt": "2026-07-19T12:49:00.921Z",
+      "id": "d5a3cff5-dd77-44a5-8ee8-17654058038e"
+    },
+    {
+      "date": "2026-07-20",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "ageYears": 42,
+      "caloriesBurned": 799,
+      "attemptsCount": 0,
+      "difficultyNotes": "6b, 6b+, 6b+, 7c, 7c+",
+      "difficultyBySurface": {
+        "lina": "6b, 6b+, 6b+, 7c, 7c+"
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 2,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 10,
+            "edgeDepthMm": 18
+          },
+          {
+            "sets": 2,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 12,
+            "edgeDepthMm": 18
+          },
+          {
+            "sets": 1,
+            "mode": "hangs",
+            "usesRpm": false,
+            "hangSeconds": 7,
+            "restSeconds": 3,
+            "repetitions": 6,
+            "loadDeloadKg": 0,
+            "edgeDepthMm": 10
+          }
+        ]
+      },
+      "wellbeing": "",
+      "surfaces": [
+        "lina",
+        "chwytotablica"
+      ],
+      "customSessionType": "",
+      "notes": "",
+      "athleteId": "primary",
+      "id": "ac95ebc4-45ed-4e40-9e30-3deca5b4a6e7",
+      "sourceId": "790e021d-d0e0-4815-ab7d-55e265ce0a53",
+      "createdAt": "2026-07-21T08:42:39.325Z"
+    },
+    {
+      "date": "2026-07-22",
+      "time": "19:00",
+      "durationMinutes": 120,
+      "ageYears": 42,
+      "caloriesBurned": 800,
+      "attemptsCount": 0,
+      "difficultyNotes": "2, 3, 4, 5, 5, 6, 6, 6, 6, 5, 6, 6, 6, 6, 5, V2, V2, V2, V3, V3, V4, V4, V4, V4, V4, V4, V5, V5, V5, V5, V5, V5, V6",
+      "difficultyBySurface": {
+        "baldy": "2, 3, 4, 5, 5, 6, 6, 6, 6, 5, 6, 6, 6, 6, 5",
+        "kilter": "V2, V2, V2, V3, V3, V4, V4, V4, V4, V4, V4, V5, V5, V5, V5, V5, V5, V6"
+      },
+      "protocol": {
+        "hangboard": [
+          {
+            "sets": 4,
+            "mode": "hangs",
+            "usesRpm": false,
+            "loadDeloadKg": 0,
+            "edgeDepthMm": 20
+          }
+        ]
+      },
+      "wellbeing": "",
+      "surfaces": [
+        "baldy",
+        "kilter",
+        "chwytotablica"
+      ],
+      "customSessionType": "",
+      "notes": "",
+      "athleteId": "primary",
+      "id": "16830967-4013-49d9-afbd-0e9db7bbb31d",
+      "sourceId": "c3a0e9a4-3589-4e03-a06e-149aa164ec50",
+      "createdAt": "2026-07-22T19:50:24.717Z",
+      "facilityName": "West Bouldering"
+    }
+  ],
+  "ascents": [
+    {
+      "date": "2022-03-30",
+      "source": "panel",
+      "routeName": "Soft Orange - sraczkowata",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6c+",
+      "notes": "krawądki i paczki w lekkim przewisie, kilka restów, było ciężko ale onsight",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 1
+    },
+    {
+      "date": "2022-04-01",
+      "source": "panel",
+      "routeName": "Czerwona na połogu - comps not bombs",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "z baldem dynamicznym (jebnięcie do otworu) a na koniec słabe ścisko kiełbaski , czasem jakieś odstawki nóg na kant speedwalla",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 2
+    },
+    {
+      "date": "2022-04-06",
+      "source": "panel",
+      "routeName": "Comps NOT bombs nr 16 - biała",
+      "suggestedGrade": "6c+/7a",
+      "subjectiveGrade": "7a",
+      "notes": "krawądki piaskowcowe, crux pod koniec z dynamicznym wyjsciem do chwytu, podhaczka palców o paczkę",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 3
+    },
+    {
+      "date": "2022-04-20",
+      "source": "panel",
+      "routeName": "Comps NOT bombs nr 18 - czarna",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "kneebar nohands rest z kneepadem, końcówka ciągowa po parówkowych słabych sciskach, całość dość ostrożna",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 4
+    },
+    {
+      "date": "2022-05-16",
+      "source": "panel",
+      "routeName": "Comps NOT bombs nr 16 - niebieska",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "dość techniczne piękne wspinanie po różnych rodzajach chwytów, kilka cruxów a na koniec techniczno siłowo wytrzymałościowy",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 5
+    },
+    {
+      "date": "2022-05-22",
+      "source": "panel",
+      "routeName": "Zajęczki - różowa",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "typowe wspinanie w ciągu, w sumie jeden słaby rest w połowie, oblaki  i wulkaniki",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 6
+    },
+    {
+      "date": "2022-06-13",
+      "source": "panel",
+      "routeName": "Bez nazwy na połogu - czarna",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "czujna skradajkowata, siłowo techniczny crux za połową  z wyjściem na prawej nodze z leworęcznym wyporem, sięgając w górę prawą ręką do gówniaka, potem do topu ciąg po zrzucających ściskach i krawądkach. Bez przedostatniej wpinki",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 7
+    },
+    {
+      "date": "2022-11-01",
+      "source": "panel",
+      "routeName": "Róż na prawym sportowym",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "jeden dobry rest pod koniec po kruksie",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 8
+    },
+    {
+      "date": "2022-12-19",
+      "source": "panel",
+      "routeName": "Czarna sportowa - urwana kartka",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "Raczej z tych łatwiejszych. crux na końcu, strzał do topowej klamy był trudny, wyczerpujące ciągowe wspinanie. RP poprowadzone z zapasem",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 9
+    },
+    {
+      "date": "2022-12-21",
+      "source": "panel",
+      "routeName": "Blue Pill - magenta",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c",
+      "notes": "dość ostrożny początek, potem ze 3 resty i ciekawe ruchy po krzyżu, Solidne 6C ale bez plusa",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 10
+    },
+    {
+      "date": "2022-12-26",
+      "source": "panel",
+      "routeName": "Wspinacz - zielona",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a+",
+      "notes": "srogi wycisk po niby dobrych chwytach, dalekie ruchy i bathang za połową, bardzo ciągowe, bardzo wyczerpujące. Ostatnie 8 przechwytów na granicy odpadania",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 11
+    },
+    {
+      "date": "2022-12-31",
+      "source": "panel",
+      "routeName": "Żółta po oblakach",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "oblaki przeplatane z krawądkami oraz jedna sekcja dobrych klam, znalazłem ze  2 dobre resty i jeden taki sobie. Pod koniec ten rest był na podchwycie w przewieszeniu więc powoli restowałem. Przed topem flagowy ruch z przytrzymaniem i przesunięciem masy w lewo. Ostatnie 3 chwyty razem z topem to krawądki, top nieco tylko lepszy, więc wpina z przybloku",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 12
+    },
+    {
+      "date": "2023-01-11",
+      "source": "panel",
+      "routeName": "Dowiedli - czarna",
+      "suggestedGrade": "7a+/b",
+      "subjectiveGrade": "7a+/b",
+      "notes": "Wytrzymałościowe, długie wspinanie. Znalazłem chyba 4-5 średnich restów. W tym pierwszy bathang na płaskim kloco oblaku. Drugi to podhaczka na paczce jako zrzucenie lewej ręki przed długim ruchem do kolejnej paczki. Zamiana podhaczki na zahaczenie pięty w poziomym zwisie odstwaka na sztywną nogę w panel. Potem karkołomny techniczny rest na palcach prawej nogi, zapierając się o panel lewą nogą i częściowo sciskając paczkę udem, w balansie ciała na odciągu w prawo a lewa noga odstaje w dół wzdłuż przewieszenia sciany, trudna wpinka z tej pozycji",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 13
+    },
+    {
+      "date": "2023-01-12",
+      "source": "panel",
+      "routeName": "White",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6c/c+",
+      "notes": "w sumie to nie wiem czy ta wycena nie jest na wyrost. Byłem umęczony wiec nie mam oceny obiektywnej. Pierwsza wstawka była niedogrzana i słaba - odpusciłm, a 2ga była na wyczerpaniu, dzień po życiówce. Ledwo to urobiłem, ale na 100% nie ma 7a. Uważam że uczciwie będzie jej dać 6c/c+ za ciąg po bardzo małych krawądeczkach na końcu",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 14
+    },
+    {
+      "date": "2023-02-06",
+      "source": "panel",
+      "routeName": "Black",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "Raczej z tych łatwiejszych. Prawie było Flashem, ale odpusciłem a nie było trzeba. Następna próba dzień później ale bez sukcesu. Czyszczenie i dopiero pusciło w 4tej próbie. Droga po sciskach i kilku odciągach z w sumie restem w połowie. Dwie kiełbaski pod koniec na sciskanie słabe dość ale jak szybko uciełem w prawo do kolejnego odciągu to już było super. Droga w kilku miejscach bardzo czujna i zrzucająca",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 15
+    },
+    {
+      "date": "2023-03-05",
+      "source": "panel",
+      "routeName": "Anezka 159 - czerwona",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "Gatunek po odblako odciągach, raczej łatwa. Chyba nie miała cruxa, lub był on nieznacznie trudniejszy od reszty drogi. 2 lub 3 dalsze ruchy i to wszystko. Resty w skrętce ze 3 znalazłem i jeden pod topem wiszący",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 16
+    },
+    {
+      "date": "2023-03-12",
+      "source": "panel",
+      "routeName": "Black Amadeus",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6c+",
+      "notes": "Poszło OSem, Na bank nie ma 7a, ale moze mieć 6c+. KIlka razy trzeba było walnąć dajno do mniejszych chwytów, ale nie takie znowu mocne. Nie było przestrzałów, czytelne i logiczne. Początek czujny, potem chwytki i klamy. Jeden solidniejszy rest. UPDATE. Powtórka bez bloków",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 17
+    },
+    {
+      "date": "2023-03-12",
+      "source": "panel",
+      "routeName": "Black - Jedna nr 130 - czarne klamy",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6c+",
+      "notes": "Pykło na rozgrzewkę. Coś za łatwo na 7a. Łatwiejsza niż czarna w tej samej lini nakręcona poprzednio, która była 7a soft. Tutaj dam 6c+. Jedno leciutko psychiczne dajno, i jedna sekwencja do pomylenia ale raczej to za mało na 7a nadal. W większosci czytelne i logiczne, bez przestrzałów. Raczej po klamach i z kilkoma restami",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 18
+    },
+    {
+      "date": "2023-04-19",
+      "source": "panel",
+      "routeName": "Połoga czarna prawa",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "plackościski od startu potem sekwencyjnie po małych krawądach, crux w ostatnim ruchu do topu. Po drodze ze 2 resty solidne",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 19
+    },
+    {
+      "date": "2023-04-23",
+      "source": "panel",
+      "routeName": "Noga Czarna Prawa",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c",
+      "notes": "dość równa , z cruxem na pionowej listwie na ścisk, trudna wpina w sumie ale nic nadzwyczaj trudnego, imo 6c",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 20
+    },
+    {
+      "date": "2023-04-23",
+      "source": "panel",
+      "routeName": "Noga Czarna Prawa",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "cała równa po małych chwytach sciskach lub krawądach, brak wyraźnego cruxa",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 21
+    },
+    {
+      "date": "2023-04-23",
+      "source": "panel",
+      "routeName": "Noga Róż",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c",
+      "notes": "crux jako czujne wyjscie do słabych podchwytów oraz nieco trudnosi pod okapem (dokładka do słabej krawądy)",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 22
+    },
+    {
+      "date": "2023-05-03",
+      "source": "panel",
+      "routeName": "Blue Tmavomodry'swiet - Niebieskie odciągi",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6c+",
+      "notes": "Większośćdrogi to max 6b+, ostatnie 3 wpinki 6c+",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 23
+    },
+    {
+      "date": "2023-05-05",
+      "source": "panel",
+      "routeName": "Yellow Kurz - żółte placki",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "Równa ciągle po 1cm plackach w stylu piaskowcowym. Miała kilka restów średnich. Dobra treningowa. Jeśli był crux to taki że były ze 3 nieco tylko mniejsze chwyty, które dało się pokonać po prostu rozpędem i dobrą taktyką jeb jeb jeb i po cruksie",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 24
+    },
+    {
+      "date": "2023-05-05",
+      "source": "panel",
+      "routeName": "Black Cat White Cat",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "czujny start przez pierwsze 4 wpinki, krawądkowe placki w całości. Crux w wejściu do zaciecia polegający na niewygodnie wysokim zacięciowym stopniu w czasie kucania na prawej nodze na słabym stopniu. Może dało sie to zrobić sprytniej. Potem kilka ruchów z pleców i solidny nohand. Po rescie już ternem za 6c w zacięciu do topu z jednym ewentualnym restem",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 25
+    },
+    {
+      "date": "2023-05-07",
+      "source": "panel",
+      "routeName": "KANT(A) - czerwone",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7a+",
+      "notes": "Fajne wychodzenie na stopnie wysoko zadzierając nogi, raczej techniczne i raczej może być zasięgowe. Crux ewidentnie jest parametyczny i polega na balansie na wyglądającej na wyślizganą paczce. Szybko poszło, i nie czuję żeby to było warte 7b, szczególnie że już w 2giej próbie a na onsajcie też ładnie szło. Możliwe że troche fartem bo otarłem sie o lot. Wszystkie wpinki raczej łatwe poza przedostatnią",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 26
+    },
+    {
+      "date": "2023-05-10",
+      "source": "panel",
+      "routeName": "Puss in Boots - Green",
+      "suggestedGrade": "7a+/b",
+      "subjectiveGrade": "7a+/b",
+      "notes": "czujne oblaki i krawądziaste płytkie sciski na start, przestrzał do lepszej krawądy złożonej z 2 na znak V, 3 słabnące dziurki aż do cruxa na słabej krawądzie przewaleniu się przez paczkę i wypionizowanie. Jeden niezły rest, a do końca dobre krawądy z jednym siłowym krzyżem przed topem",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 27
+    },
+    {
+      "date": "2023-07-03",
+      "source": "panel",
+      "routeName": "Różowa",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "Najpierw łatwe odciągi do połowy. Od połowy 3 ciągi z dalekimi ruchami. Kluczowy ruch to jebnięcie z dokładki w poprzek prawą ręką w lewo do klamki, a potem to jeszcze trzeba dotrwać do końca. Zrobiłem na limesie",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 28
+    },
+    {
+      "date": "2023-08-17",
+      "source": "panel",
+      "routeName": "Czarna po listewkach",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "równa, pod koniec może troche dopierdziela, są nawet jakieś resty, łatwiejsza od białej w tej samej wycenie 2023",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 29
+    },
+    {
+      "date": "2023-08-20",
+      "source": "panel",
+      "routeName": "Biała na Nodze",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "treudne chwyty na starcie łątwiejsze w środku a potem pizda po chujowych oblakach, jeszcze jeden oblak i dałbym 7a",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 30
+    },
+    {
+      "date": "2023-08-27",
+      "source": "panel",
+      "routeName": "Różowe tufo cyce",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "wybiera po dużych chwytach z kilkoma pozycjami raczej 6b+ przez pierwsze 75%, pod koniec zmiana chwytów na gorsze dziórki które trzeba zrobić na wyczerpaniu sił",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 31
+    },
+    {
+      "date": "2023-08-28",
+      "source": "panel",
+      "routeName": "Czarne muszle",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "czujny początek po słabych chwytach potem partie słabszych chwytów oddzielane lepszą klamą. Pod koniec same klamy już prawie tylko ale ledwo sie je trzyma już",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 32
+    },
+    {
+      "date": "2023-08-29",
+      "source": "panel",
+      "routeName": "Różowe na nodze front",
+      "suggestedGrade": "6c",
+      "subjectiveGrade": "6c",
+      "notes": "typowe różowe piaskowcowe, końcówka po włosach cioci, chwyty robią się chujowe. Ruch do wyporu prawej reki i stopniem z lewej, końcówka czujna",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 33
+    },
+    {
+      "date": "2023-09-18",
+      "source": "panel",
+      "routeName": "Red",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "od połowy po krawądkach, caraz dłuższe ruchy",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 34
+    },
+    {
+      "date": "2023-09-22",
+      "source": "panel",
+      "routeName": "Biała zaułkowa",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "wszytkie rodzaje chwytów i ciekawe ustawienia i ciekawe ruchy",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 35
+    },
+    {
+      "date": "2023-09-22",
+      "source": "panel",
+      "routeName": "Czerwone na speedwallu",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "oblaki dziórki i dalekie ruchy",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 36
+    },
+    {
+      "date": "2023-10-06",
+      "source": "panel",
+      "routeName": "Zielona zaułkowa",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "SOFT, klinowanie pięści, piętaszki i dziwności trochę",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 37
+    },
+    {
+      "date": "2023-10-06",
+      "source": "panel",
+      "routeName": "Żółta w dachu",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6b+",
+      "notes": "szemrane w ciul",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 38
+    },
+    {
+      "date": "2023-10-06",
+      "source": "panel",
+      "routeName": "Różowy zaułek",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "Trochę patenciarska i jeden stopień na drodze jest czerwony zamiast różowy. Pominąłem 4 wpiny do topu !!!!!!",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 39
+    },
+    {
+      "date": "2023-10-11",
+      "source": "panel",
+      "routeName": "Czerwona Speedwall",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "do połowy dość łatwa, ale trzeba zakonserwować prąd na koncówkę, bo ma jeden lub dwa ruchy nieintuicyjne z dokłądką na dość płytkim chwycie",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 40
+    },
+    {
+      "date": "2023-10-11",
+      "source": "panel",
+      "routeName": "Fiolet na połogu",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "moje ulubione chwyty, oblako-ściski, możliwe że dla wysokich będzie łatwiejsze, niższe osoby będą musiały dynamicznie robić kilka przechwytów. Dwa 4kowe baldy w połowie i ze 3 sensowne resty. Końcówka po dość średnich sciskach, ale top dobrze trzyma już, więc bezpiecznie",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 41
+    },
+    {
+      "date": "2023-10-13",
+      "source": "panel",
+      "routeName": "Pomarańczka",
+      "suggestedGrade": "6c",
+      "subjectiveGrade": "6b+/c",
+      "notes": "troche takie pitu pitu do 3/4 a potem nagle jeb po mordzie ale 6c to tak na wyrost",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 42
+    },
+    {
+      "date": "2023-10-13",
+      "source": "panel",
+      "routeName": "Żółte piaskowce",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "żółte piaskowcowe odpryski, placki, zaoblenia, ciągowe dosyć ale z jednym takim sobie restem",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 43
+    },
+    {
+      "date": "2023-10-16",
+      "source": "panel",
+      "routeName": "Czarne 7B",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "cały czas wspinanie, jeden solidny rest na samym dole, kilka naprawdę słabych po drodze gdzie starczyło tylko na zrzucenie ręki jeden raz, droga ma z 5 cruxów. Pierwszy siłowy przewinięcie za kant do balansu na oblak, 2gi wyjscie do okapu, 3ci to pasaż 4 słabych pizdryków, 4ty to zaraz za pizdrykami 2 naprawdę gówniane oblaki na scisk, za oblakami chujowy rst na płytkiej płaskiej krawądzie, 5ty crux to wyjscie  z restu do kolejnej krawądy, 6ty crux to przejscie kolejnego pasaży 2 oblaków działających na odciąg ale tak sobie, 7ma trudność to już wytrzymać ciag do topu po lepszych krawądach",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 44
+    },
+    {
+      "date": "2023-12-01",
+      "source": "panel",
+      "routeName": "Zółta zułek kant",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "najpierw kilka klamek, ładna horyzontalna piętka wisząc na lewej nodze, a potem przewinięcie na pion, rest i pompa do końca już",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 45
+    },
+    {
+      "date": "2023-12-18",
+      "source": "panel",
+      "routeName": "Czarna sportowy Mario",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "kneebar i rest przed topem albo lecisz",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 46
+    },
+    {
+      "date": "2023-12-20",
+      "source": "panel",
+      "routeName": "Fiolet sportowy Mario",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "końcówka po mniejszych",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 47
+    },
+    {
+      "date": "2023-12-25",
+      "source": "panel",
+      "routeName": "Czarna sportowy Mario",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a+",
+      "notes": "cholernie pompująca, długa i w sumie po dobrych chwytach bez wyraznego cruxa, ale pompa i wydyma",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 48
+    },
+    {
+      "date": "2024-02-16",
+      "source": "panel",
+      "routeName": "Czerwona Speedwall",
+      "suggestedGrade": "6c+/7a",
+      "subjectiveGrade": "6c+",
+      "notes": "po kancie, podhaczka, kilka głębokich krzyży",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 49
+    },
+    {
+      "date": "2024-02-17",
+      "source": "panel",
+      "routeName": "Różowy Speed Slalom",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "łatwo łatwo, potem zygzakowaty bald za 4+, slalom po szerokich kompresjach rest i kolejny bald za 4",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 50
+    },
+    {
+      "date": "2024-02-19",
+      "source": "panel",
+      "routeName": "Fiolet Oblak Piętami",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a",
+      "notes": "dość czujny początek, wiele wchodzenia na stopo balans, sekwencja pięta za piętą, dwa wyjscia w podchwyt na oblajach i trickowy nieco top żeby sie nie spieszyć tylko zamienić nogi i podejsc wyżej na prawej",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 51
+    },
+    {
+      "date": "2024-02-28",
+      "source": "panel",
+      "routeName": "Róż połóg M",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "krawądy w większości i dobre, kilka ciekawych wyjść na balans nogami wysoko podnoszonymi, genitalia w scianę, końcówka na małej krawądzie na której zabolał mnie staw w palcu serdecznym lewej ręki, ale wytrzymałem do końca",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 52
+    },
+    {
+      "date": "2024-03-15",
+      "source": "panel",
+      "routeName": "Zielone dziórki spidłol",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 53
+    },
+    {
+      "date": "2024-03-22",
+      "source": "panel",
+      "routeName": "Czarne krawądki zaułek",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7a+/b",
+      "notes": "jednak 7a+ ale takie z tych sytych. Bo jest rest całkiem nawet dobry. Nie taki do zera ale można przed koncowym cruxem trochę sapnąć. Nie ma tam ruszku za 7b ale jest powiedzmy trochę ciągu. No i jednak aż 6 wstawek",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 54
+    },
+    {
+      "date": "2024-04-29",
+      "source": "panel",
+      "routeName": "Tufa na antresoli",
+      "suggestedGrade": "6c",
+      "subjectiveGrade": "6c",
+      "notes": "tufa tufa tufa",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 55
+    },
+    {
+      "date": "2024-04-29",
+      "source": "panel",
+      "routeName": "Pomarańczka antresolowa",
+      "suggestedGrade": "6c",
+      "subjectiveGrade": "6c",
+      "notes": "po",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 56
+    },
+    {
+      "date": "2024-05-03",
+      "source": "panel",
+      "routeName": "Zielona zaułkowa",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 57
+    },
+    {
+      "date": "2024-07-08",
+      "source": "panel",
+      "routeName": "Żółte piaskowce",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7a+",
+      "notes": "nie ma bata że ma wiecej niz 7a+, cały czas w miarę dobre chwyty, w trudnościach trzeba na żabę obie nogi wysoko i sięgnięcie prawą ręką wysoko do krawądy",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 58
+    },
+    {
+      "date": "2024-07-15",
+      "source": "panel",
+      "routeName": "Pomarańczowa noga NW",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "w trudnościach kilka przestrzałów na odcięciu ale niektórzy twierdzą że bardziej 6c... ja myślę że minimum 6c+",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 59
+    },
+    {
+      "date": "2024-07-16",
+      "source": "panel",
+      "routeName": "Niebieskie oblaki Mnicha",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "oblaki i oblaki z jedną paczką pod topem. tudność polega na jebnięciu do słabszego oblaka ze średniej pozycji ale też nie jakoś bardzo złej i lekki ciąg do końca z restem na paczce",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 60
+    },
+    {
+      "date": "2024-07-22",
+      "source": "panel",
+      "routeName": "Niebieska noga SW",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "troche oblaków na początek a potem wygibasy na krawądkach obłych, podchaczka palców z wyporem",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 61
+    },
+    {
+      "date": "2024-07-23",
+      "source": "panel",
+      "routeName": "Czarne tufy speedwalla",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "popierdolone, bardzo trudne dla mnie pozycje i ruchy bez stopni",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 62
+    },
+    {
+      "date": "2024-08-14",
+      "source": "panel",
+      "routeName": "Czerwona Olimpijska zaułek",
+      "suggestedGrade": "7a+/b",
+      "subjectiveGrade": "7a+",
+      "notes": "bardzo ładne i efekciarskie, podwójny kneebar w dachu z wiszeniem rękami w dół, jeszcze kilka średnich restów oddzielonych siłowymi ciągami po 5-8 przechwytów, pod topem podpierdolka ze schowanym pod paczką stopniem, a było by w RP3",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 63
+    },
+    {
+      "date": "2024-08-30",
+      "source": "panel",
+      "routeName": "Zielona Sportowe wulkany",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 64
+    },
+    {
+      "date": "2024-09-08",
+      "source": "panel",
+      "routeName": "Biała Sportowy",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 65
+    },
+    {
+      "date": "2024-10-04",
+      "source": "panel",
+      "routeName": "Peta Żółta",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "crux na starcie sekwencyjny, potem kilka mniej złych chwytów i kolejne kilka słabszych, ciag w środku ale pod topem robi sie bardzo łatwo",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 66
+    },
+    {
+      "date": "2024-11-16",
+      "source": "panel",
+      "routeName": "Peta Biała",
+      "suggestedGrade": "7a+/b",
+      "subjectiveGrade": "7a+/b",
+      "notes": "bardzo syta droga, po małych i kblakach, techniczna i ciągowa",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 67
+    },
+    {
+      "date": "2024-11-17",
+      "source": "panel",
+      "routeName": "Peta Biała",
+      "suggestedGrade": "7a+/b",
+      "subjectiveGrade": "7a+/b",
+      "notes": "powtórka",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 68
+    },
+    {
+      "date": "2025-01-03",
+      "source": "panel",
+      "routeName": "Niebieskie ścisko krawądki",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "6c+",
+      "notes": "jak to wyceniali na swieżo to było 6c/+ ale jak chwyty zaszły to 7a+",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 69
+    },
+    {
+      "date": "2025-01-04",
+      "source": "panel",
+      "routeName": "Mario Noga Orange",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a",
+      "notes": "crux w przewieszeniu po krawądkach z piętą",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 70
+    },
+    {
+      "date": "2025-01-06",
+      "source": "panel",
+      "routeName": "Mario Noga Orange - repeta",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a",
+      "notes": "crux w przewieszeniu po krawądkach z piętą",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 71
+    },
+    {
+      "date": "2025-01-06",
+      "source": "panel",
+      "routeName": "Żółta Mario Speedwall",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "kilka cruxów",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 72
+    },
+    {
+      "date": "2025-01-11",
+      "source": "panel",
+      "routeName": "Żółta Mario Speedwall",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "powtórka",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 73
+    },
+    {
+      "date": "2025-01-11",
+      "source": "panel",
+      "routeName": "Mario Noga Orange - repeta",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "6c+",
+      "notes": "powtórka, Nawet sie nie zmęczyłem",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 74
+    },
+    {
+      "date": "2025-01-17",
+      "source": "panel",
+      "routeName": "Żółta na Mnichu z Baldem na koncu",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "ledwo ale SOFT",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 75
+    },
+    {
+      "date": "2025-01-25",
+      "source": "panel",
+      "routeName": "NIebieskie krawądki speedwall",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "HARD, ledwo",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 76
+    },
+    {
+      "date": "2025-02-01",
+      "source": "panel",
+      "routeName": "Żółte baldy w zaułku",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "7a",
+      "notes": "pierwsza połowa to walka o życie a crux jest tak przepatenciarski że ostatecznie zrobiłem go czystą siłą bez wpinki, więc dobrze że nie przyglebiłem. Tak bardzo nie lubie ze potrzebowałem solidnej dawki wkurwienia żeby to przejść na zasadzie miejmy to już z głowy",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 77
+    },
+    {
+      "date": "2025-02-01",
+      "source": "panel",
+      "routeName": "Różowa na nodze",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "6c+",
+      "notes": "jest troche ciągu ale w trudnych chwilach pojawiają się klameczki na pół dłoni, a skok do topu w sumie jest jak dalsze sięgnięcie",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 78
+    },
+    {
+      "date": "2025-02-01",
+      "source": "panel",
+      "routeName": "Fioletowa 7b+",
+      "suggestedGrade": "7b+",
+      "subjectiveGrade": "7a+",
+      "notes": "HARD, ledwo",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 79
+    },
+    {
+      "date": "2025-02-12",
+      "source": "panel",
+      "routeName": "Żółte tufy na kancie po przewiesze",
+      "suggestedGrade": "7b+",
+      "subjectiveGrade": "7b+",
+      "notes": "HARD, ale z zapasem, bardzo mądrze poprowadziłem, żółte tufy ba kancie zaułka",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 80
+    },
+    {
+      "date": "2025-04-18",
+      "source": "panel",
+      "routeName": "Czerwone z lewej Mnicha z klinami",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "lotne, klinowanie nie podeszło ale kilka ciekawych pozycji i dulferek plecami o sciane antresoli i paczke",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 81
+    },
+    {
+      "date": "2025-04-18",
+      "source": "panel",
+      "routeName": "Sportowe róże",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "nareszcie, zmieniłem sekwencje przy scisko placuszkach",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 82
+    },
+    {
+      "date": "2025-05-10",
+      "source": "panel",
+      "routeName": "żółte",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 83
+    },
+    {
+      "date": "2025-06-09",
+      "source": "panel",
+      "routeName": "Dach Pomarańcz",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c/c+",
+      "notes": "Fajne, pierwsza droga w dachu OS powyzej 6c",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 84
+    },
+    {
+      "date": "2025-06-16",
+      "source": "panel",
+      "routeName": "Dach Niebieska",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 85
+    },
+    {
+      "date": "2025-06-20",
+      "source": "panel",
+      "routeName": "żółta speedwall",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 86
+    },
+    {
+      "date": "2025-07-02",
+      "source": "panel",
+      "routeName": "Beztrosko - żółta",
+      "suggestedGrade": "7c",
+      "subjectiveGrade": "7c",
+      "notes": "pierwsze 7c, i wiem ze to nie szemranka. Pierwsze wstawki nie rokowały. Każda kolejna udowadniała ze crux jest potężny a końcówka może jeszcze być loterią",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 87
+    },
+    {
+      "date": "2025-07-03",
+      "source": "panel",
+      "routeName": "czerwone w zacieciu speedwalla i mnicha",
+      "suggestedGrade": "7b+",
+      "subjectiveGrade": "7b+",
+      "notes": "jak na 7b/b+ poszło zaskakująco szybko ale też było walczone",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 88
+    },
+    {
+      "date": "2025-07-16",
+      "source": "panel",
+      "routeName": "różowa na płąskiej \"Dla koneserów\"",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "skurwiałe krawądki i dużo wklejania biodra",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 89
+    },
+    {
+      "date": "2025-08-20",
+      "source": "panel",
+      "routeName": "czerwona noga",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 90
+    },
+    {
+      "date": "2025-09-06",
+      "source": "panel",
+      "routeName": "Harda Suka - czarna noga",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "chyba pierwsze 7a+ FL, ponoć soft",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 91
+    },
+    {
+      "date": "2025-09-08",
+      "source": "panel",
+      "routeName": "Niebieskie z dachu w pion",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "7b w 2giej wstawce - musiała mi bardzo podejść. dziwne ale bardziej sie zmęczyłem na Hardej suce 7a+ soft niż na tym",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 92
+    },
+    {
+      "date": "2025-09-24",
+      "source": "panel",
+      "routeName": "Żółte sportowe",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 93
+    },
+    {
+      "date": "2025-09-27",
+      "source": "panel",
+      "routeName": "Żółte sportowe",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "znalazłem 3 resty na złapanie oddechu, ze dwie podpierdolki sekwencyjne ale sie połapałem i nie dałem wprowadzić w maliny",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 94
+    },
+    {
+      "date": "2025-09-29",
+      "source": "panel",
+      "routeName": "różowa sport",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6c+/7a",
+      "notes": "trening",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 95
+    },
+    {
+      "date": "2025-09-29",
+      "source": "panel",
+      "routeName": "czarna sport",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "trening",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 96
+    },
+    {
+      "date": "2025-10-01",
+      "source": "panel",
+      "routeName": "Żółte sportowe repeta",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "repeta",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 97
+    },
+    {
+      "date": "2025-10-01",
+      "source": "panel",
+      "routeName": "czarna sport prawa Mario",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "trening",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 98
+    },
+    {
+      "date": "2025-10-13",
+      "source": "panel",
+      "routeName": "Czerwone 7c - Milestone za 7b",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "dojście na czerwonym 7c przez scisk i krawądke do łatwiejszej sekcji. Jako takie dałbym 7b",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 99
+    },
+    {
+      "date": "2025-10-13",
+      "source": "panel",
+      "routeName": "Czerwone 7c - Milestone za 7b",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "dojście na czerwonym 7c do scisku i odpadniecie z kolejnego ruchu. daje 7a+/b",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 100
+    },
+    {
+      "date": "2025-10-31",
+      "source": "panel",
+      "routeName": "Czerwone 7c - Milestone za 7b",
+      "suggestedGrade": "7b+",
+      "subjectiveGrade": "7b+",
+      "notes": "dojście na czerwonym 7c do chwytu przed trudnosciami. daje 7b/+",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 101
+    },
+    {
+      "date": "2025-12-24",
+      "source": "panel",
+      "routeName": "niebieska speed 7a",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 102
+    },
+    {
+      "date": "2025-12-25",
+      "source": "panel",
+      "routeName": "czerwpma speedwall 6c+",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 103
+    },
+    {
+      "date": "2025-12-22",
+      "source": "panel",
+      "routeName": "fiolet mnich 6c+",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 104
+    },
+    {
+      "date": "2026-01-07",
+      "source": "panel",
+      "routeName": "czarne listwy",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "powracanie do formy jest męczące",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 105
+    },
+    {
+      "date": "2026-02-18",
+      "source": "panel",
+      "routeName": "Czerwone klamy",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "6c+",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 106
+    },
+    {
+      "date": "2026-03-09",
+      "source": "panel",
+      "routeName": "Niebieska Noga L1",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "raczej 7a+ hard. To była droga pierwotnie wyceniona na 7b+ ale wycena zeszła w dół.",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 107
+    },
+    {
+      "date": "2026-03-13",
+      "source": "panel",
+      "routeName": "żółte tufy",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "raczej 7a+ ale może i 7b. dostala wycene 7b, wiec niech będzie ze 7b. Później wstawiałem sie treningowo i nie dolazłem do resta nawet",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 108
+    },
+    {
+      "date": "2026-03-23",
+      "source": "panel",
+      "routeName": "czerwone z brzegu lewego klamy",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a",
+      "notes": "raczej 7a",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 109
+    },
+    {
+      "date": "2026-03-25",
+      "source": "panel",
+      "routeName": "niebieskie wulkany",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 110
+    },
+    {
+      "date": "2026-04-13",
+      "source": "panel",
+      "routeName": "czerwone dziórki",
+      "suggestedGrade": "6c+",
+      "subjectiveGrade": "6c+",
+      "notes": "na rozgrzewkę",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 111
+    },
+    {
+      "date": "2026-04-20",
+      "source": "panel",
+      "routeName": "czerwone z brzegu lewego klamy",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a",
+      "notes": "raczej 7a soft",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 112
+    },
+    {
+      "date": "2026-04-23",
+      "source": "panel",
+      "routeName": "żółte tufki junior",
+      "suggestedGrade": "7a+/b",
+      "subjectiveGrade": "7a+/b",
+      "notes": "droga ładna, podobna do żółtych tuf nieopodal, to samo rozdanie ale nie wiem która łatwiejsza. ta poszła w 4 próby a 7b w 2giej już...",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 113
+    },
+    {
+      "date": "2026-04-27",
+      "source": "panel",
+      "routeName": "niebieska z grzybem",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a+",
+      "notes": "sam nie wiem. najpierw mi sie wydawała łatwa, bo na flashu doszedłem pod sam top. a pozniej był jakis spadek formy chyba i nie podobała mi sie jako taka",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 114
+    },
+    {
+      "date": "2026-05-02",
+      "source": "panel",
+      "routeName": "czerwona do połowy łatwa z pocketem",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "dopiero we wstawce późnej zrozumiałem betę na cruxa. w 4tej doszedłem za pierwszego cruxa (wysoki pocket na 3 palce) i odpusciłem przy drugim cruxie, a szkoda bo okazał sie jedynie szybkim dołożeniem do podwojnej dziórki",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 115
+    },
+    {
+      "date": "2026-05-06",
+      "source": "panel",
+      "routeName": "biała ciągowa na sportowym",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "notes": "hard i długa, byłbym zrobił w 3ciej próbie gdybym nie popierdolił sekwencji, 4ta próba była na zmęczeniu zaraz po 3ciej, 5ta w chorobie, a 6ta albo to moze było w 5tej zrobione juz nie pamiętam",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 116
+    },
+    {
+      "date": "2026-05-13",
+      "source": "panel",
+      "routeName": "Szmaragd",
+      "suggestedGrade": "7b+",
+      "subjectiveGrade": "7b+",
+      "notes": "ciąg prawie do topu, dobry rest przed końcem, większośc chwytów to niezłe obłe listeweczki raczej jako niezłe chwyty. treudnośc wynika z ciągu. jeden pasaż krawadkowy . solidne już przewieszenie",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 117
+    },
+    {
+      "date": "2026-05-18",
+      "source": "panel",
+      "routeName": "różyk",
+      "suggestedGrade": "7a",
+      "subjectiveGrade": "7a",
+      "notes": "sporo restów ciekawych ruchów (feet first), knebar solidny w części łatwej, potem w samych dachu też kucająca żaba na popizdułku, a 2ga połow drogi to ciąg po niezłych i bardzo dobrych chwytach aż do topu",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 118
+    },
+    {
+      "date": "2026-06-13",
+      "source": "panel",
+      "routeName": "Różowa Baldofobia",
+      "suggestedGrade": "7a+",
+      "subjectiveGrade": "7a",
+      "notes": "średnio trudno do cruxa z wyporem, a potem do topu 6b",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 119
+    },
+    {
+      "date": "2026-06-15",
+      "source": "panel",
+      "routeName": "Brontofobia - biała",
+      "suggestedGrade": "7c",
+      "subjectiveGrade": "7b+/c",
+      "notes": "czasem po popizdółkach, dość ciagowa, na wyjebce, ale dowiozłem do końca",
+      "athleteId": "primary",
+      "createdAt": "2026-07-16T20:08:14.968Z",
+      "id": 120
+    },
+    {
+      "date": "2026-07-19",
+      "source": "panel",
+      "routeName": "Zielona Toka w Dachu",
+      "suggestedGrade": "7b",
+      "subjectiveGrade": "7b",
+      "style": "RP",
+      "notes": "",
+      "athleteId": "primary",
+      "createdAt": "2026-07-19T12:55:47.679Z",
+      "id": 517
+    }
+  ],
+  "profiles": [
+    {
+      "key": "athlete:primary",
+      "birthDate": "1984-04-24",
+      "sex": "mezczyzna",
+      "heightCm": 177,
+      "weightKg": 73.3,
+      "updatedAt": "2026-07-15T23:39:25.430Z",
+      "athleteId": "primary"
+    }
+  ],
+  "weightEntries": [
+    {
+      "date": "2026-07-09",
+      "weightKg": 74.2,
+      "createdAt": "2026-07-09T19:09:03.757Z",
+      "id": 1,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-15",
+      "weightKg": 73.3,
+      "createdAt": "2026-07-15T20:23:39.848Z",
+      "id": 2,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-13",
+      "weightKg": 73.7,
+      "createdAt": "2026-07-15T20:27:46.723Z",
+      "id": 3,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-14",
+      "weightKg": 73.7,
+      "createdAt": "2026-07-15T20:29:03.632Z",
+      "id": 4,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-11",
+      "weightKg": 73.7,
+      "createdAt": "2026-07-15T20:30:43.169Z",
+      "id": 5,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-08",
+      "weightKg": 73.7,
+      "createdAt": "2026-07-15T20:32:43.885Z",
+      "id": 6,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-06",
+      "weightKg": 73.7,
+      "createdAt": "2026-07-15T20:33:05.429Z",
+      "id": 7,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-15",
+      "weightKg": 73.3,
+      "createdAt": "2026-07-15T21:00:39.889Z",
+      "id": 8,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-09",
+      "weightKg": 73.3,
+      "createdAt": "2026-07-15T22:47:32.611Z",
+      "id": 9,
+      "time": "09:00",
+      "athleteId": "primary"
+    },
+    {
+      "date": "2026-07-16",
+      "time": "09:00",
+      "weightKg": 73.3,
+      "createdAt": "2026-07-15T23:39:20.588Z",
+      "id": 10,
+      "athleteId": "primary"
+    },
+    {
+      "athleteId": "primary",
+      "date": "2026-07-16",
+      "time": "09:00",
+      "weightKg": 73.8,
+      "createdAt": "2026-07-16T16:16:50.774Z",
+      "id": 13
+    },
+    {
+      "athleteId": "primary",
+      "date": "2026-07-19",
+      "time": "09:00",
+      "weightKg": 73,
+      "createdAt": "2026-07-19T12:57:57.088Z",
+      "id": 16
+    },
+    {
+      "athleteId": "primary",
+      "date": "2026-07-20",
+      "time": "09:00",
+      "weightKg": 73.8,
+      "createdAt": "2026-07-21T08:50:05.398Z",
+      "id": 17
+    },
+    {
+      "athleteId": "primary",
+      "date": "2026-07-21",
+      "time": "11:00",
+      "weightKg": 73.9,
+      "createdAt": "2026-07-21T10:08:53.862Z",
+      "id": 18
+    },
+    {
+      "athleteId": "primary",
+      "date": "2026-07-22",
+      "time": "09:00",
+      "weightKg": 74.7,
+      "createdAt": "2026-07-22T12:27:47.764Z",
+      "id": 19
+    }
+  ]
+}

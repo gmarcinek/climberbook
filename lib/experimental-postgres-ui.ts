@@ -23,6 +23,26 @@ type PostgresSnapshot = {
 };
 
 const testUserId = process.env.NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_USER_ID?.trim();
+export const EXPERIMENTAL_API_PENDING_EVENT = "climberbook:api-pending";
+
+export class ExperimentalApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ExperimentalApiError";
+  }
+}
+
+function notifyExperimentalApiPending(change: 1 | -1) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<number>(EXPERIMENTAL_API_PENDING_EVENT, {
+      detail: change,
+    }),
+  );
+}
 
 export function isExperimentalPostgresUiEnabled() {
   return process.env.NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_UI === "true";
@@ -33,25 +53,30 @@ async function request<T>(path: string, options: RequestInit = {}) {
     throw new Error("Eksperymentalny tryb PostgreSQL UI nie jest skonfigurowany.");
   }
 
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(testUserId ? { "X-Climberbook-User-Id": testUserId } : {}),
-      ...options.headers,
-    },
-  });
-  const body: unknown = await response.json();
+  notifyExperimentalApiPending(1);
+  try {
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(testUserId ? { "X-Climberbook-User-Id": testUserId } : {}),
+        ...options.headers,
+      },
+    });
+    const body: unknown = await response.json();
 
-  if (!response.ok) {
-    const message =
-      body && typeof body === "object" && "error" in body
-        ? String(body.error)
-        : "Żądanie do eksperymentalnego API PostgreSQL nie powiodło się.";
-    throw new Error(message);
+    if (!response.ok) {
+      const message =
+        body && typeof body === "object" && "error" in body
+          ? String(body.error)
+          : "Żądanie do eksperymentalnego API PostgreSQL nie powiodło się.";
+      throw new ExperimentalApiError(message, response.status);
+    }
+
+    return body as T;
+  } finally {
+    notifyExperimentalApiPending(-1);
   }
-
-  return body as T;
 }
 
 export function getExperimentalPostgresSnapshot() {
@@ -62,12 +87,22 @@ export function deleteExperimentalAccount() {
   return request("/api/v1/account", { method: "DELETE" });
 }
 
+export function exportExperimentalPostgresBackup() {
+  return request<ClimberbookFullDatabaseBackup>("/api/v1/backups/export");
+}
+
 export function importExperimentalPostgresBackup(
   backup: ClimberbookFullDatabaseBackup,
+  allowDifferentOwnerEmail = false,
 ) {
   return request("/api/v1/backups/import", {
     method: "POST",
-    headers: { "Idempotency-Key": crypto.randomUUID() },
+    headers: {
+      "Idempotency-Key": crypto.randomUUID(),
+      ...(allowDifferentOwnerEmail
+        ? { "X-Climberbook-Confirm-Different-Owner-Email": "true" }
+        : {}),
+    },
     body: JSON.stringify(backup),
   });
 }

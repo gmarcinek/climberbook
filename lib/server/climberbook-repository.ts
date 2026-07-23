@@ -10,11 +10,13 @@ import type {
   UserProfileRecord,
   WeightEntryRecord,
 } from "@/lib/climbs-db";
+import { createTrainingExportMetadata } from "@/lib/climbs-db";
 import {
   queryPostgres,
   withPostgresTransaction,
 } from "@/lib/server/postgres";
 import type { PoolClient } from "pg";
+import { createHash } from "node:crypto";
 
 type AthleteRow = {
   id: string;
@@ -577,6 +579,29 @@ export async function getPostgresDatabaseSnapshot(
     ascents: ascents.rows.map(mapAscent),
     profiles: profiles.rows.map(mapUserProfile),
     weightEntries: weightEntries.rows.map(mapWeightEntry),
+  };
+}
+
+export async function exportPostgresDatabaseBackup(
+  ownerUserId: string,
+): Promise<ClimberbookFullDatabaseBackup> {
+  const [ownerUser, snapshot] = await Promise.all([
+    requireExperimentalUser(ownerUserId),
+    getPostgresDatabaseSnapshot(ownerUserId),
+  ]);
+  const ownerAthlete = snapshot.athletes[0];
+
+  if (!ownerAthlete) {
+    throw new Error("Eksport pełnej bazy wymaga zawodnika właściciela.");
+  }
+
+  return {
+    formatVersion: 3,
+    exportedAt: new Date().toISOString(),
+    ownerAthleteId: ownerAthlete.id,
+    ownerEmail: ownerUser.email,
+    ...createTrainingExportMetadata(snapshot.trainings),
+    ...snapshot,
   };
 }
 
@@ -1250,31 +1275,43 @@ type BackupImportSummary = {
   };
 };
 
-function isUuid(value: string | null | undefined): value is string {
-  return Boolean(
-    value?.match(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    ),
-  );
+export class BackupOwnerEmailMismatchError extends Error {
+  constructor() {
+    super("E-mail właściciela backupu różni się od e-maila bieżącego konta.");
+    this.name = "BackupOwnerEmailMismatchError";
+  }
 }
 
-function getBackupSourceId(record: { id: string; sourceId?: string }) {
-  const sourceId = record.sourceId ?? record.id;
+function normalizeEmail(value: string) {
+  return value.trim().toLocaleLowerCase();
+}
 
-  if (!isUuid(sourceId)) {
-    throw new Error(
-      `Rekord ${record.id} nie ma poprawnego UUID sourceId wymagnego przez PostgreSQL.`,
-    );
-  }
+function normalizeAthleteName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase();
+}
 
-  return sourceId;
+function createOwnerScopedImportId(
+  ownerUserId: string,
+  recordType: string,
+  sourceId: string | number,
+) {
+  const hash = createHash("sha256")
+    .update(`${ownerUserId}:${recordType}:${sourceId}`)
+    .digest("hex");
+
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-5${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }
 
 function getMappedAthleteId(
   athleteIds: Map<string, string>,
-  sourceAthleteId: string,
+  sourceAthleteId: string | number,
 ) {
-  const athleteId = athleteIds.get(sourceAthleteId);
+  const athleteId = athleteIds.get(String(sourceAthleteId));
 
   if (!athleteId) {
     throw new Error(
@@ -1283,6 +1320,21 @@ function getMappedAthleteId(
   }
 
   return athleteId;
+}
+
+function getBackupAthleteName(athlete: Partial<AthleteRecord>) {
+  const name = typeof athlete.name === "string" ? athlete.name.trim() : "";
+  if (name) return name;
+
+  const fullName = [athlete.firstName, athlete.lastName]
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (fullName) return fullName;
+
+  const nick = typeof athlete.nick === "string" ? athlete.nick.trim() : "";
+  return nick || "Zawodnik";
 }
 
 async function insertIdempotencyKey(
@@ -1313,12 +1365,25 @@ export async function importFullBackupToPostgres(
   backup: ClimberbookFullDatabaseBackup,
   idempotencyKey: string,
   ownerUserId: string,
+  allowDifferentOwnerEmail = false,
 ): Promise<BackupImportSummary> {
   if (!idempotencyKey.trim()) {
     throw new Error("Import wymaga klucza idempotencji.");
   }
 
-  await requireExperimentalUser(ownerUserId);
+  const currentUser = await requireExperimentalUser(ownerUserId);
+  const backupOwnerEmail =
+    typeof backup.ownerEmail === "string"
+      ? normalizeEmail(backup.ownerEmail)
+      : "";
+
+  if (
+    backupOwnerEmail &&
+    backupOwnerEmail !== normalizeEmail(currentUser.email) &&
+    !allowDifferentOwnerEmail
+  ) {
+    throw new BackupOwnerEmailMismatchError();
+  }
 
   return withPostgresTransaction(async (client) => {
     const existingImport = await insertIdempotencyKey(client, idempotencyKey);
@@ -1326,14 +1391,70 @@ export async function importFullBackupToPostgres(
     if (existingImport) return existingImport;
 
     const sectionIds = new Map(
-      backup.sections.map((section) => [section.id, getBackupSourceId(section)]),
+      backup.sections.map((section) => [
+        String(section.id),
+        createOwnerScopedImportId(
+          ownerUserId,
+          "section",
+          section.sourceId ?? section.id,
+        ),
+      ]),
     );
     const athleteIds = new Map(
-      backup.athletes.map((athlete) => [athlete.id, getBackupSourceId(athlete)]),
+      backup.athletes.map((athlete) => [
+        String(athlete.id),
+        createOwnerScopedImportId(
+          ownerUserId,
+          "athlete",
+          athlete.sourceId ?? athlete.id,
+        ),
+      ]),
     );
+    const backupOwnerReference = backup.ownerAthleteId ?? "primary";
+    const backupOwner = backup.athletes.find(
+      (athlete) =>
+        String(athlete.id) === backupOwnerReference ||
+        athlete.sourceId === backupOwnerReference,
+    );
+    const currentAthletes = await client.query<{
+      id: string;
+      source_id: string | null;
+      name: string;
+    }>(
+      `
+        select id, source_id, name
+        from athletes
+        where owner_user_id = $1
+        order by created_at asc
+      `,
+      [ownerUserId],
+    );
+    const emailMatchesCurrentUser =
+      backupOwnerEmail === normalizeEmail(currentUser.email);
+    const nameMatches = backupOwner
+      ? currentAthletes.rows.filter(
+          (athlete) =>
+            typeof athlete.name === "string" &&
+            normalizeAthleteName(athlete.name) ===
+              normalizeAthleteName(getBackupAthleteName(backupOwner)),
+        )
+      : [];
+    const matchingCurrentAthlete =
+      currentAthletes.rows.find(
+        (athlete) =>
+          athlete.id === backupOwnerReference ||
+          athlete.source_id === backupOwnerReference,
+      ) ??
+      (emailMatchesCurrentUser ? currentAthletes.rows[0] : undefined) ??
+      (nameMatches.length === 1 ? nameMatches[0] : undefined) ??
+      (backupOwnerReference === "primary" ? currentAthletes.rows[0] : undefined);
+
+    if (backupOwner && matchingCurrentAthlete) {
+      athleteIds.set(String(backupOwner.id), matchingCurrentAthlete.id);
+    }
 
     for (const section of backup.sections) {
-      const sectionId = getBackupSourceId(section);
+      const sectionId = sectionIds.get(String(section.id))!;
 
       await client.query(
         `
@@ -1347,9 +1468,10 @@ export async function importFullBackupToPostgres(
     }
 
     for (const athlete of backup.athletes) {
-      const athleteId = getBackupSourceId(athlete);
+      const athleteId = athleteIds.get(String(athlete.id))!;
+      const athleteName = getBackupAthleteName(athlete);
       const sectionId = athlete.sectionId
-        ? sectionIds.get(athlete.sectionId) ?? null
+        ? sectionIds.get(String(athlete.sectionId)) ?? null
         : null;
 
       await client.query(
@@ -1369,7 +1491,7 @@ export async function importFullBackupToPostgres(
         `,
         [
           athleteId,
-          athlete.name,
+          athleteName,
           athlete.firstName ?? "",
           athlete.lastName ?? "",
           athlete.nick ?? "",
@@ -1381,9 +1503,11 @@ export async function importFullBackupToPostgres(
     }
 
     for (const facility of backup.facilities) {
-      if (!isUuid(facility.id)) {
-        throw new Error(`Obiekt ${facility.name} nie ma poprawnego UUID.`);
-      }
+      const facilityId = createOwnerScopedImportId(
+        ownerUserId,
+        "facility",
+        facility.id,
+      );
 
       await client.query(
         `
@@ -1392,12 +1516,16 @@ export async function importFullBackupToPostgres(
           on conflict (id) do update
           set name = excluded.name, created_at = excluded.created_at
         `,
-        [facility.id, facility.name, facility.createdAt, ownerUserId],
+        [facilityId, facility.name, facility.createdAt, ownerUserId],
       );
     }
 
     for (const training of backup.trainings) {
-      const trainingId = getBackupSourceId(training);
+      const trainingId = createOwnerScopedImportId(
+        ownerUserId,
+        "training",
+        training.sourceId ?? training.id,
+      );
 
       await client.query(
         `
@@ -1483,7 +1611,16 @@ export async function importFullBackupToPostgres(
       await client.query(
         `
           insert into weight_entries (athlete_id, date, time, weight_kg, created_at)
-          values ($1, $2, $3, $4, $5)
+          select $1, $2, $3, $4, $5
+          where not exists (
+            select 1
+            from weight_entries
+            where athlete_id = $1
+              and date = $2
+              and time = $3
+              and weight_kg = $4
+              and created_at = $5
+          )
         `,
         [
           getMappedAthleteId(athleteIds, entry.athleteId),
@@ -1502,7 +1639,21 @@ export async function importFullBackupToPostgres(
             athlete_id, date, source, import_source, route_name, suggested_grade,
             subjective_grade, style, notes, created_at
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          select $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+          where not exists (
+            select 1
+            from ascents
+            where athlete_id = $1
+              and date = $2
+              and source = $3
+              and import_source is not distinct from $4
+              and route_name = $5
+              and suggested_grade = $6
+              and subjective_grade = $7
+              and style is not distinct from $8
+              and notes = $9
+              and created_at = $10
+          )
         `,
         [
           getMappedAthleteId(athleteIds, ascent.athleteId),
@@ -1523,7 +1674,15 @@ export async function importFullBackupToPostgres(
       await client.query(
         `
           insert into climbs (athlete_id, name, grade, created_at)
-          values ($1, $2, $3, $4)
+          select $1, $2, $3, $4
+          where not exists (
+            select 1
+            from climbs
+            where athlete_id = $1
+              and name = $2
+              and grade = $3
+              and created_at = $4
+          )
         `,
         [
           getMappedAthleteId(athleteIds, climb.athleteId),

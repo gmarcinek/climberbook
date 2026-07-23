@@ -102,6 +102,9 @@ import {
   deleteExperimentalSection,
   deleteExperimentalTraining,
   deleteExperimentalWeightEntry,
+  EXPERIMENTAL_API_PENDING_EVENT,
+  ExperimentalApiError,
+  exportExperimentalPostgresBackup,
   getExperimentalPostgresSnapshot,
   importExperimentalPostgresBackup,
   isExperimentalPostgresUiEnabled,
@@ -437,6 +440,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const [newSectionName, setNewSectionName] = useState("");
   const [newFacilityName, setNewFacilityName] = useState("");
   const [status, setStatus] = useState("");
+  const [pendingApiRequests, setPendingApiRequests] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [importPreview, setImportPreview] =
     useState<DatabaseImportPreview | null>(null);
@@ -469,6 +473,23 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  useEffect(() => {
+    function handleApiPending(event: Event) {
+      const change =
+        event instanceof CustomEvent && typeof event.detail === "number"
+          ? event.detail
+          : 0;
+      setPendingApiRequests((current) => Math.max(0, current + change));
+    }
+
+    window.addEventListener(EXPERIMENTAL_API_PENDING_EVENT, handleApiPending);
+    return () =>
+      window.removeEventListener(
+        EXPERIMENTAL_API_PENDING_EVENT,
+        handleApiPending,
+      );
+  }, []);
 
   async function refreshData() {
     if (isExperimentalPostgresUiEnabled()) {
@@ -1033,17 +1054,22 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     URL.revokeObjectURL(url);
   }
   async function exportDatabase() {
-    if (isExperimentalPostgresUiEnabled()) {
-      setStatus("Eksport backupu nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
-      return;
-    }
     const exportTime = new Date()
       .toTimeString()
       .slice(0, 8)
       .replaceAll(":", "-");
 
+    if (isExperimentalPostgresUiEnabled()) {
+      await download(
+        await exportExperimentalPostgresBackup(),
+        `climberbook-calosciowy-${today}-${exportTime}.json`,
+      );
+      showSuccessToast("Eksport bazy zakończony sukcesem.");
+      return;
+    }
+
     await download(
-      await exportFullDatabaseBackup(),
+      await exportFullDatabaseBackup(activeAthleteId ?? "primary"),
       `climberbook-calosciowy-${today}-${exportTime}.json`,
     );
     showSuccessToast("Eksport bazy zakończony sukcesem.");
@@ -1070,9 +1096,26 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         setStatus("Import do PostgreSQL wymaga pełnego backupu bazy w formacie 3.");
         return;
       }
-      await importExperimentalPostgresBackup(
-        backup as ClimberbookFullDatabaseBackup,
-      );
+      const fullBackup = backup as ClimberbookFullDatabaseBackup;
+      try {
+        await importExperimentalPostgresBackup(fullBackup);
+      } catch (error) {
+        if (
+          !(error instanceof ExperimentalApiError) ||
+          error.status !== 409 ||
+          typeof fullBackup.ownerEmail !== "string"
+        ) {
+          throw error;
+        }
+
+        const shouldImport = window.confirm(
+          `Backup zawiera dane konta ${fullBackup.ownerEmail.trim()}. ` +
+            "To inny e-mail niż bieżące konto. Importować mimo to?",
+        );
+        if (!shouldImport) return;
+
+        await importExperimentalPostgresBackup(fullBackup, true);
+      }
       await refreshData();
       showSuccessToast("Import backupu do PostgreSQL zakończony sukcesem.");
       return;
@@ -1086,7 +1129,16 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     const text = await file.text();
     const preview = await inspectDatabaseBackup(JSON.parse(text));
     pendingImportFileRef.current = file;
-    setImportPreview(preview);
+    setImportPreview(
+      isExperimentalPostgresUiEnabled() && preview.kind === "full"
+        ? {
+            ...preview,
+            summary:
+              "Dane z pliku zostaną zaimportowane do bieżącego konta PostgreSQL.",
+            actionLabel: "Doda lub zaktualizuje dane w bieżącym koncie.",
+          }
+        : preview,
+    );
     setIsImportPreviewOpen(true);
   }
   async function prepareImportValue(value: unknown) {
@@ -1269,7 +1321,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   }
   async function deleteDatabase(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (databaseDeleteConfirmation !== "usuń konto") return;
+    if (databaseDeleteConfirmation !== "delete") return;
     if (!isExperimentalPostgresUiEnabled()) {
       setStatus("Usuwanie konta wymaga włączonego trybu PostgreSQL.");
       return;
@@ -1444,6 +1496,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           }}
         >
           {toastMessage}
+        </div>
+      ) : null}
+      {pendingApiRequests > 0 ? (
+        <div
+          className="apiOperationToast"
+          role="status"
+          aria-live="polite"
+          aria-label="Operacja w toku"
+        >
+          <div className="apiOperationLoader" />
+          <span>Operacja w toku</span>
         </div>
       ) : null}
     </ClimberbookContext.Provider>

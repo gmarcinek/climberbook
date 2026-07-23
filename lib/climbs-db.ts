@@ -318,6 +318,8 @@ export type ClimberbookDatabaseBackup = {
 export type ClimberbookFullDatabaseBackup = {
   formatVersion: 3;
   exportedAt: string;
+  ownerAthleteId: string;
+  ownerEmail?: string;
   trainingDataDisclaimer: string;
   dataInterpretation: ClimberbookDataInterpretation;
   llmTrainingSessions: LlmTrainingSession[];
@@ -409,6 +411,7 @@ export type DatabaseImportPreview = {
   counts: {
     athletes: number;
     sections: number;
+    facilities: number;
     climbs: number;
     trainings: number;
     ascents: number;
@@ -1513,7 +1516,9 @@ export async function exportDatabaseBackup(
   };
 }
 
-export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabaseBackup> {
+export async function exportFullDatabaseBackup(
+  ownerAthleteId = "primary",
+): Promise<ClimberbookFullDatabaseBackup> {
   const [
     athletes,
     sections,
@@ -1536,11 +1541,22 @@ export async function exportFullDatabaseBackup(): Promise<ClimberbookFullDatabas
     listAllWeightEntries(),
   ]);
 
+  const exportedAthletes = await ensureAthleteSourceIds(athletes);
+  const ownerAthlete =
+    exportedAthletes.find((athlete) => athlete.id === ownerAthleteId) ??
+    exportedAthletes.find((athlete) => athlete.id === "primary") ??
+    exportedAthletes[0];
+
+  if (!ownerAthlete) {
+    throw new Error("Eksport pełnej bazy wymaga zawodnika właściciela.");
+  }
+
   return {
     formatVersion: 3,
     exportedAt: new Date().toISOString(),
+    ownerAthleteId: ownerAthlete.id,
     ...createTrainingExportMetadata(trainings),
-    athletes: await ensureAthleteSourceIds(athletes),
+    athletes: exportedAthletes,
     sections: await ensureSectionSourceIds(sections),
     facilities,
     climbs,
@@ -1615,6 +1631,7 @@ export async function inspectDatabaseBackup(
       counts: {
         athletes: athletes.length,
         sections: sections.length,
+        facilities: facilities.length,
         climbs: climbs.length,
         trainings: trainings.length,
         ascents: ascents.length,
@@ -1668,6 +1685,7 @@ export async function inspectDatabaseBackup(
     counts: {
       athletes: 1,
       sections: 0,
+      facilities: 0,
       climbs: climbs.length,
       trainings: trainings.length,
       ascents: ascents.length,
