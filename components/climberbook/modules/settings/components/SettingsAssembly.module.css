@@ -1,0 +1,9 @@
+.profileMetrics {
+  display: grid;
+}
+
+@media (max-width: 599px) {
+  .profileMetrics {
+    display: none;
+  }
+}

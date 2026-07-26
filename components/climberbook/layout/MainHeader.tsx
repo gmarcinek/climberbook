@@ -2,6 +2,7 @@
 
 import { Fragment, useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   moduleConfig,
@@ -37,6 +38,7 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
     setActiveAthleteId,
   } = useClimberbook();
   const { isMobileHeader, width } = useViewport();
+  const router = useRouter();
   const isTwoRowHeader = !isMobileHeader && width > 0 && width < 900;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileImportInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +46,11 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
   async function handleMobileImport(event: ChangeEvent<HTMLInputElement>) {
     await importDatabase(event);
     setIsMobileMenuOpen(false);
+  }
+
+  function openTrainingEditor() {
+    setIsMobileMenuOpen(false);
+    router.push("/trening/dodaj");
   }
 
   const navLinks = moduleConfig.map((module, index) => {
@@ -135,7 +142,7 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
               justifyContent:
                 isMobileHeader || isTwoRowHeader ? "space-between" : undefined,
               alignItems: isMobileHeader
-                ? "flex-start"
+                ? "center"
                 : headerLeftGroupStyle.alignItems,
               width: isMobileHeader || isTwoRowHeader ? "100%" : undefined,
             }}
@@ -147,6 +154,7 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                 marginLeft: "12px",
                 color: "var(--text)",
                 textDecoration: "none",
+                fontSize: isMobileHeader ? "1.15rem" : brandStyle.fontSize,
               }}
             >
               Climberbook
@@ -243,6 +251,9 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
               }}
             >
               {navLinks}
+              <Button variant="primary" onClick={openTrainingEditor}>
+                + Trening
+              </Button>
             </nav>
             <input
               ref={mobileImportInputRef}

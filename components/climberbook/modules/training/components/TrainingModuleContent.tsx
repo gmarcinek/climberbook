@@ -13,12 +13,38 @@ import type {
   WeightEntryRecord,
 } from "@/lib/climbs-db";
 import { TrainingAnalyticsWidget } from "./TrainingAnalyticsWidget";
-import { TrainingCalendarWidget } from "./TrainingCalendarWidget";
+import {
+  TrainingCalendarWidget,
+  VisibleTrainingList,
+} from "./TrainingCalendarWidget";
 import {
   TrainingPreviewModalWidget,
   TrainingSidebarDrawer,
   TrainingSidebarWidget,
 } from "./TrainingSidebarWidget";
+
+const mobileTrainingTabs = [
+  ["trainings", "Treningi"],
+  ["metrics", "Metryki"],
+  ["weight", "Waga"],
+] as const;
+
+const mobileTrainingTabNavStyle = {
+  display: "flex",
+  gap: 4,
+  borderBottom: "1px solid var(--border-strong)",
+  order: -2,
+  width: "100%",
+  marginTop: "1rem",
+};
+
+const mobileTrainingTabStyle = {
+  border: 0,
+  background: "transparent",
+  padding: "8px 12px",
+  cursor: "pointer",
+  fontSize: "0.9rem",
+};
 
 type TrainingModuleContentProps = {
   isMobileTrainingLayout: boolean;
@@ -106,6 +132,9 @@ export function TrainingModuleContent({
 }: TrainingModuleContentProps) {
   const [requestedPreviewTraining, setRequestedPreviewTraining] =
     useState<TrainingRecord | null>(null);
+  const [mobileTab, setMobileTab] = useState<
+    "metrics" | "trainings" | "weight"
+  >("trainings");
   const showMediumInlineDrawer =
     isMediumTrainingDrawerLayout && selectedDate !== null;
   const usesOverlaySidebar = !showTrainingSidebarColumn && !showMediumInlineDrawer;
@@ -161,6 +190,37 @@ export function TrainingModuleContent({
           alignItems: isMobileTrainingLayout ? "start" : "stretch",
         }}
       >
+        {isMobileTrainingLayout ? (
+          <div
+            role="tablist"
+            aria-label="Widok treningów"
+            style={mobileTrainingTabNavStyle}
+          >
+            {mobileTrainingTabs.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={mobileTab === key}
+                style={{
+                  ...mobileTrainingTabStyle,
+                  color:
+                    mobileTab === key ? "var(--text)" : "var(--muted)",
+                  fontWeight: mobileTab === key ? 700 : 500,
+                  borderBottom:
+                    mobileTab === key
+                      ? "2px solid var(--accent)"
+                      : "2px solid transparent",
+                }}
+                onClick={() =>
+                  setMobileTab(key)
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {showMediumInlineDrawer ? (
           <div
             style={{
@@ -174,9 +234,11 @@ export function TrainingModuleContent({
           >
             {sidebar}
           </div>
-        ) : (
+        ) : !isMobileTrainingLayout || mobileTab === "metrics" ? (
           <TrainingAnalyticsWidget
             isMobileLayout={isMobileTrainingLayout}
+            section={isMobileTrainingLayout ? "metrics" : "all"}
+            mobileOrder={1}
             latestWeightKg={latestWeightKg}
             latestWeightDate={latestWeightDate}
             latestWeightChange={latestWeightChange}
@@ -193,22 +255,61 @@ export function TrainingModuleContent({
             onDeleteWeightEntry={onDeleteWeightEntry}
             recentWeightEntries={recentWeightEntries}
           />
-        )}
+        ) : null}
 
-        <TrainingCalendarWidget
-          isMobileLayout={isMobileTrainingLayout}
-          showVisibleTrainingList={!showTrainingSidebarColumn}
-          onPreviousMonth={onPreviousMonth}
-          onNextMonth={onNextMonth}
-          trainingRangeStart={trainingRangeStart}
-          trainingsByDate={trainingsByDate}
-          visibleRangeTrainings={visibleRangeTrainings}
-          selectedDate={selectedDate}
-          today={today}
-          onSelectDate={onSelectDate}
-          onEditTraining={onEditTraining}
-          onPreviewTraining={openTrainingPreview}
-        />
+        {!isMobileTrainingLayout || mobileTab === "trainings" ? (
+          <TrainingCalendarWidget
+            isMobileLayout={isMobileTrainingLayout}
+            showVisibleTrainingList={
+              !showTrainingSidebarColumn && !isMobileTrainingLayout
+            }
+            onPreviousMonth={onPreviousMonth}
+            onNextMonth={onNextMonth}
+            trainingRangeStart={trainingRangeStart}
+            trainingsByDate={trainingsByDate}
+            visibleRangeTrainings={visibleRangeTrainings}
+            selectedDate={selectedDate}
+            today={today}
+            onSelectDate={onSelectDate}
+            onEditTraining={onEditTraining}
+            onPreviewTraining={openTrainingPreview}
+          />
+        ) : null}
+
+        {isMobileTrainingLayout && mobileTab === "trainings" ? (
+          <div style={{ order: 2 }}>
+            <VisibleTrainingList
+              trainings={visibleRangeTrainings}
+              standalone
+              onAddTraining={() => onSelectDate(today)}
+              onEditTraining={onEditTraining}
+              onPreviewTraining={openTrainingPreview}
+            />
+          </div>
+        ) : null}
+
+        {isMobileTrainingLayout && mobileTab === "weight" ? (
+          <TrainingAnalyticsWidget
+            isMobileLayout
+            section="weight"
+            mobileOrder={3}
+            latestWeightKg={latestWeightKg}
+            latestWeightDate={latestWeightDate}
+            latestWeightChange={latestWeightChange}
+            averageWeight={averageWeight}
+            totalTrainingTime={totalTrainingTime}
+            totalCalories={totalCalories}
+            weightChartEntries={weightChartEntries}
+            trainings={trainings}
+            chartRange={chartRange}
+            chartRangeLabel={chartRangeLabel}
+            weightEntryDraft={weightEntryDraft}
+            onWeightEntryDraftChange={onWeightEntryDraftChange}
+            onWeightEntrySubmit={onWeightEntrySubmit}
+            onDeleteWeightEntry={onDeleteWeightEntry}
+            recentWeightEntries={recentWeightEntries}
+          />
+        ) : null}
 
         {showTrainingSidebarColumn && (
           <div style={{ gridColumn: 3, gridRow: 1, minHeight: 0 }}>

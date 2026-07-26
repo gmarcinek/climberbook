@@ -38,6 +38,7 @@ type UseClimberbookStatsOptions = {
   selectedDate: string | null;
   today: string;
   trainingRangeStart: string;
+  chartRangeOverride?: { start: string; end: string };
   trainings: TrainingRecord[];
   weightEntries: WeightEntryRecord[];
 };
@@ -69,6 +70,7 @@ export function useClimberbookStats({
   selectedDate,
   today,
   trainingRangeStart,
+  chartRangeOverride,
   trainings,
   weightEntries,
 }: UseClimberbookStatsOptions) {
@@ -108,7 +110,7 @@ export function useClimberbookStats({
         weightEntries.length
       ).toFixed(1)
     : "-";
-  const chartRange = useMemo(
+  const defaultChartRange = useMemo(
     () =>
       getRollingChartRange(
         isMobileChartLayout ? 13 : 28,
@@ -116,9 +118,12 @@ export function useClimberbookStats({
       ),
     [isMobileChartLayout],
   );
-  const chartRangeLabel = isMobileChartLayout
-    ? "Ostatnie 14 dni"
-    : "28 dni wstecz + 3 dni";
+  const chartRange = chartRangeOverride ?? defaultChartRange;
+  const chartRangeLabel = chartRangeOverride
+    ? `${chartRangeOverride.start} - ${chartRangeOverride.end}`
+    : isMobileChartLayout
+      ? "Ostatnie 14 dni"
+      : "28 dni wstecz + 3 dni";
   const resolveAscentGrade = (grade: string) => {
     const trimmed = grade.trim();
 
@@ -184,6 +189,9 @@ export function useClimberbookStats({
         boulderHours: number;
         boardHours: number;
         sprayCircuitHours: number;
+        hangboardHours: number;
+        pullupBarHours: number;
+        campusHours: number;
       }
     >();
     const firstWeek = getWeekStartIso(chartRange.start);
@@ -199,6 +207,9 @@ export function useClimberbookStats({
         boulderHours: 0,
         boardHours: 0,
         sprayCircuitHours: 0,
+        hangboardHours: 0,
+        pullupBarHours: 0,
+        campusHours: 0,
       });
       cursor.setDate(cursor.getDate() + 7);
     }
@@ -240,6 +251,13 @@ export function useClimberbookStats({
         );
 
         current.totalHours += durationHours;
+        current.hangboardHours += training.surfaces.includes("chwytotablica")
+          ? 1 / 3
+          : 0;
+        current.pullupBarHours += training.surfaces.includes("drazek")
+          ? 1 / 3
+          : 0;
+        current.campusHours += training.surfaces.includes("campus") ? 1 / 3 : 0;
 
         if (hourGroups.length) {
           const hoursPerGroup = durationHours / hourGroups.length;
@@ -259,6 +277,9 @@ export function useClimberbookStats({
         boulderHours: roundToSingleDecimal(week.boulderHours),
         boardHours: roundToSingleDecimal(week.boardHours),
         sprayCircuitHours: roundToSingleDecimal(week.sprayCircuitHours),
+        hangboardHours: roundToSingleDecimal(week.hangboardHours),
+        pullupBarHours: roundToSingleDecimal(week.pullupBarHours),
+        campusHours: roundToSingleDecimal(week.campusHours),
       }))
       .sort((left, right) => left.week.localeCompare(right.week));
   }, [chartRange, trainings]);

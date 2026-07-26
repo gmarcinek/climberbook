@@ -84,7 +84,7 @@ import {
   type TrainingSurface,
   type UserSex,
   type WeightEntryRecord,
-} from "@/lib/climbs-db";
+} from "../../../lib/climbs-db";
 import { parse8aNuCsv } from "@/lib/8a-nu-csv";
 import type { CsvSkippedAscentRow } from "@/lib/8a-nu-csv";
 import { createSampleBackupData } from "@/lib/sample-backup";
@@ -97,6 +97,7 @@ import {
   createExperimentalTraining,
   createExperimentalWeightEntry,
   deleteExperimentalAccount,
+  deleteExperimental8aNuAscents,
   deleteExperimentalAthlete,
   deleteExperimentalFacility,
   deleteExperimentalSection,
@@ -106,6 +107,7 @@ import {
   ExperimentalApiError,
   exportExperimentalPostgresBackup,
   getExperimentalPostgresSnapshot,
+  importExperimentalAscents,
   importExperimentalPostgresBackup,
   isExperimentalPostgresUiEnabled,
   saveExperimentalProfile,
@@ -139,21 +141,23 @@ export type AscentCsvImportPreview = {
   lastDate: string;
 };
 export type AthleteFormDraft = {
+  nick: string;
+  email: string;
   firstName: string;
   lastName: string;
-  nick: string;
   sectionId: string;
   birthDate: string;
   sex: UserSex;
   heightCm: string;
   weightKg: string;
 };
-export type SettingsTab = "profil" | "zespol" | "obiekty" | "zaawansowane";
+export type SettingsTab = "profil" | "zespol" | "zaawansowane";
 
 const emptyAthleteForm = (): AthleteFormDraft => ({
+  nick: "",
+  email: "",
   firstName: "",
   lastName: "",
-  nick: "",
   sectionId: "",
   birthDate: "",
   sex: "",
@@ -374,7 +378,10 @@ type ClimberbookContextValue = {
   dropBackup: (event: DragEvent<HTMLDivElement>) => void;
   confirmImportPreview: () => Promise<void>;
   closeImportPreview: () => void;
-  addSection: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  addSection: (
+    event: FormEvent<HTMLFormElement>,
+    facilityId?: string,
+  ) => Promise<void>;
   deleteSection: (section: SectionRecord) => Promise<void>;
   addFacility: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   deleteFacility: (facility: FacilityRecord) => Promise<void>;
@@ -627,7 +634,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       setStatus(
         isExperimentalPostgresUiEnabled()
           ? "Nie udało się odświeżyć danych konta."
-          : "Nie udało się otworzyć IndexedDB w tej przeglądarce.",
+          : "Nie udało się połączyć z API PostgreSQL.",
       );
     });
   }, [activeAthleteId, pathname]);
@@ -854,15 +861,14 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setAscentDraft(emptyAscentDraft());
   }
   async function previewAscentsCsv(event: ChangeEvent<HTMLInputElement>) {
-    if (isExperimentalPostgresUiEnabled()) {
-      setStatus("Import CSV nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
-      event.target.value = "";
-      return;
-    }
     const file = event.target.files?.[0];
     event.target.value = "";
 
-    if (!file || !activeAthleteId) return;
+    if (!file) return;
+    if (!activeAthleteId) {
+      showSuccessToast("Wybierz zawodnika przed importem przejść z 8a.nu.");
+      return;
+    }
 
     try {
       const {
@@ -882,7 +888,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const existingAscents = await listAscents(activeAthleteId);
+      const existingAscents = isExperimentalPostgresUiEnabled()
+        ? ascents
+        : await listAscents(activeAthleteId);
       const dates = availableAscents.map((ascent) => ascent.date).sort();
       setAscentCsvImportPreview({
         fileName: file.name,
@@ -911,10 +919,6 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     includeOtherStyles: boolean,
     overwriteDuplicates: boolean,
   ) {
-    if (isExperimentalPostgresUiEnabled()) {
-      setStatus("Import CSV nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
-      return;
-    }
     if (!activeAthleteId || !ascentCsvImportPreview) return;
 
     const ascentsToImport = [
@@ -923,7 +927,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     ];
     setIsImportingAscentsCsv(true);
     try {
-      const importedAscents = await listAscents(activeAthleteId);
+      const importedAscents = isExperimentalPostgresUiEnabled()
+        ? ascents
+        : await listAscents(activeAthleteId);
       const existingAscentsByFingerprint = new Map(
         importedAscents.map((ascent) => [
           getAscentImportFingerprint(ascent),
@@ -964,21 +970,24 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         uniqueAscents.push(ascent);
       });
 
-      await addAscents(
-        uniqueAscents.map((ascent) => ({
-          ...ascent,
-          athleteId: activeAthleteId,
-        })),
-      );
-      await Promise.all(
-        ascentsToOverwrite.map(({ existing, incoming }) =>
-          updateAscent({
-            ...incoming,
-            id: existing.id!,
-            athleteId: activeAthleteId,
-          }),
-        ),
-      );
+      const ascentsToCreate = uniqueAscents.map((ascent) => ({
+        ...ascent,
+        athleteId: activeAthleteId,
+      }));
+      const ascentsToUpdate = ascentsToOverwrite.map(({ existing, incoming }) => ({
+        ...incoming,
+        id: existing.id!,
+        athleteId: activeAthleteId,
+      }));
+      if (isExperimentalPostgresUiEnabled()) {
+        await importExperimentalAscents({
+          create: ascentsToCreate,
+          update: ascentsToUpdate,
+        });
+      } else {
+        await addAscents(ascentsToCreate);
+        await Promise.all(ascentsToUpdate.map((ascent) => updateAscent(ascent)));
+      }
       await refreshData();
       const skippedCount =
         ascentCsvImportPreview.skippedRows -
@@ -1003,18 +1012,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function delete8aNuAscents() {
     if (!activeAthleteId) return;
 
-    if (isExperimentalPostgresUiEnabled()) {
-      setStatus("Usuwanie importu 8a.nu nie jest jeszcze dostępne w eksperymentalnym trybie PostgreSQL.");
-      return;
-    }
-    await deleteAscentsByImportSource(activeAthleteId, "8a.nu");
+    if (isExperimentalPostgresUiEnabled())
+      await deleteExperimental8aNuAscents(activeAthleteId);
+    else await deleteAscentsByImportSource(activeAthleteId, "8a.nu");
     await refreshData();
     showSuccessToast("Usunięto przejścia zaimportowane z 8a.nu.");
   }
   async function submitSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!activeAthleteId) return;
-    const weightKg = parseWeightInput(profileDraft.weightKg);
+    const latestWeightEntry = getLatestWeightEntry(weightEntries);
+    const weightKg = latestWeightEntry?.weightKg ?? parseWeightInput(profileDraft.weightKg);
     const profileInput = {
       key: `athlete:${activeAthleteId}`,
       athleteId: activeAthleteId,
@@ -1026,11 +1034,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     if (isExperimentalPostgresUiEnabled())
       await saveExperimentalProfile(profileInput);
     else await saveUserProfile(profileInput);
-    if (
-      weightKg &&
-      (!getLatestWeightEntry(weightEntries) ||
-        getLatestWeightEntry(weightEntries)?.weightKg !== weightKg)
-    ) {
+    if (weightKg && !latestWeightEntry) {
       const weightEntryInput = {
         athleteId: activeAthleteId,
         date: today,
@@ -1184,11 +1188,14 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setImportPreview(null);
     setIsImportPreviewOpen(false);
   }
-  async function addSectionAction(event: FormEvent<HTMLFormElement>) {
+  async function addSectionAction(
+    event: FormEvent<HTMLFormElement>,
+    facilityId = "",
+  ) {
     event.preventDefault();
     if (newSectionName.trim()) {
       if (isExperimentalPostgresUiEnabled())
-        await createExperimentalSection(newSectionName.trim());
+        await createExperimentalSection(newSectionName.trim(), facilityId || null);
       else await addSection(newSectionName.trim());
       setNewSectionName("");
       await refreshData();
@@ -1243,9 +1250,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setAthleteFormMode("edit");
     setAthleteFormId(athlete.id);
     setAthleteForm({
+      nick: athlete.nick ?? "",
+      email: athlete.email ?? "",
       firstName: athlete.firstName ?? "",
       lastName: athlete.lastName ?? "",
-      nick: athlete.nick ?? "",
       sectionId: athlete.sectionId ?? "",
       birthDate: profile?.birthDate ?? "",
       sex: profile?.sex ?? "",
@@ -1265,9 +1273,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       return false;
     }
     const identity = {
+      nick: athleteForm.nick,
+      email: athleteForm.email,
       firstName: athleteForm.firstName,
       lastName: athleteForm.lastName,
-      nick: athleteForm.nick,
       sectionId: athleteForm.sectionId || null,
     };
     const profile = {

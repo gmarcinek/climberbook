@@ -110,6 +110,7 @@ type ModalProps = {
   onClose: () => void;
   overlayStyle?: CSSProperties;
   style?: CSSProperties;
+  fullBleedMobile?: boolean;
 };
 
 export function Modal({
@@ -118,6 +119,7 @@ export function Modal({
   onClose,
   overlayStyle,
   style,
+  fullBleedMobile = false,
 }: ModalProps) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -158,7 +160,12 @@ export function Modal({
       }}
     >
       <section
-        className={styles.dialog}
+        className={[
+          styles.dialog,
+          fullBleedMobile ? styles.dialogFullBleed : null,
+        ]
+          .filter(Boolean)
+          .join(" ")}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}

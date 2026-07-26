@@ -45,7 +45,7 @@ function notifyExperimentalApiPending(change: 1 | -1) {
 }
 
 export function isExperimentalPostgresUiEnabled() {
-  return process.env.NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_UI === "true";
+  return true;
 }
 
 async function request<T>(path: string, options: RequestInit = {}) {
@@ -63,13 +63,22 @@ async function request<T>(path: string, options: RequestInit = {}) {
         ...options.headers,
       },
     });
-    const body: unknown = await response.json();
+    const responseText = await response.text();
+    let body: unknown = null;
+
+    if (responseText) {
+      try {
+        body = JSON.parse(responseText);
+      } catch {
+        body = null;
+      }
+    }
 
     if (!response.ok) {
       const message =
         body && typeof body === "object" && "error" in body
           ? String(body.error)
-          : "Żądanie do eksperymentalnego API PostgreSQL nie powiodło się.";
+          : `Żądanie do eksperymentalnego API PostgreSQL nie powiodło się (HTTP ${response.status}).`;
       throw new ExperimentalApiError(message, response.status);
     }
 
@@ -170,6 +179,26 @@ export async function createExperimentalAscent(
   return response.ascent;
 }
 
+export function importExperimentalAscents(input: {
+  create: Array<Omit<AscentRecord, "id" | "createdAt">>;
+  update: Array<
+    Required<Pick<AscentRecord, "id">> &
+      Omit<AscentRecord, "id" | "createdAt">
+  >;
+}) {
+  return request<{ createdCount: number; updatedCount: number }>(
+    "/api/v1/ascents/import",
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export function deleteExperimental8aNuAscents(athleteId: string) {
+  return request<{ deletedCount: number }>(
+    "/api/v1/ascents/import?athleteId=" + encodeURIComponent(athleteId),
+    { method: "DELETE" },
+  );
+}
+
 export async function updateExperimentalAscent(
   input: Required<Pick<AscentRecord, "id">> &
     Omit<AscentRecord, "id" | "createdAt">,
@@ -216,10 +245,13 @@ export function deleteExperimentalAthlete(id: string) {
   });
 }
 
-export async function createExperimentalSection(name: string) {
+export async function createExperimentalSection(
+  name: string,
+  facilityId?: string | null,
+) {
   const response = await request<{ section: SectionRecord }>(
     "/api/v1/sections",
-    { method: "POST", body: JSON.stringify({ name }) },
+    { method: "POST", body: JSON.stringify({ name, facilityId }) },
   );
   return response.section;
 }

@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { Button } from "@/components/climberbook/common/Button";
 import { TextArea } from "@/components/climberbook/common/FormControls";
+import { FormActions } from "@/components/climberbook/common/FormLayout";
 import type { TrainingRecord, TrainingSurface } from "@/lib/climbs-db";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
@@ -36,12 +37,12 @@ export function TrainingSessionForm({ draft, editingTraining, editingTrainingId,
       <strong className={styles.trainingSidebar__protocolHeading}>Samopoczucie i notatki</strong>
       <TextArea value={combinedNotes} onChange={(event) => onDraftChange({ ...draft, wellbeing: "", notes: event.target.value })} rows={4} className={styles.trainingSidebar__input} />
     </label>
-    <div className={styles.trainingSidebar__formActions}>
+    <FormActions layout="inline">
       <div className={styles.trainingSidebar__formPrimaryActions}>
         <Button type="submit">{editingTrainingId ? "Zapisz zmiany" : "Zapisz trening"}</Button>
         <Button variant="secondary" onClick={onResetSelection}>Anuluj</Button>
       </div>
       {editingTraining && <Button variant="quadrary" onClick={() => onDeleteTraining(editingTraining)} className={styles.trainingSidebar__formDeleteAction}>Usuń trening</Button>}
-    </div>
+    </FormActions>
   </form>;
 }

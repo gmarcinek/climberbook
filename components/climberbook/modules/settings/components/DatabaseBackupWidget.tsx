@@ -7,6 +7,7 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { Button } from "@/components/climberbook/common/Button";
+import { Input } from "@/components/climberbook/common/FormControls";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
 import styles from "./DatabaseBackupWidget.module.css";
@@ -36,7 +37,7 @@ export function DatabaseBackupWidget({
         <Button variant="quadrary" onClick={onDatabaseExport}>
           Eksport całości
         </Button>
-        <input
+        <Input
           ref={backupImportInputRef}
           type="file"
           accept="application/json,.json"

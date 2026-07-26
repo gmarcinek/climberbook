@@ -1,4 +1,5 @@
 import type {
+  ForwardedRef,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
@@ -6,6 +7,7 @@ import type {
 } from "react";
 import { Button } from "@/components/climberbook/common/Button";
 import styles from "./FormControls.module.css";
+import { forwardRef } from "react";
 
 type BaseControlProps = {
   className?: string;
@@ -58,14 +60,18 @@ function joinClassNames(...classNames: Array<string | false | undefined>) {
   return classNames.filter(Boolean).join(" ");
 }
 
-export function Input({ className, grow = false, ...props }: TextInputProps) {
+export const Input = forwardRef(function Input(
+  { className, grow = false, ...props }: TextInputProps,
+  ref: ForwardedRef<HTMLInputElement>,
+) {
   return (
     <input
       {...props}
+      ref={ref}
       className={joinClassNames(styles.control, grow && styles.grow, className)}
     />
   );
-}
+});
 
 export function Select({
   className,

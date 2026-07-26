@@ -15,7 +15,7 @@ type Props = { training: TrainingRecord; surfaceOptions: SurfaceOption[]; onClos
 export function TrainingPreviewModal({ training, surfaceOptions, onClose, onEditTraining }: Props) {
   const calories = Math.min(Math.max(training.caloriesBurned, 0), 1000);
   const hasChart = training.surfaces.includes("spraywall") || getTrainingGradeGroups(training).length > 0 || splitDifficultyGrades(training.difficultyNotes).length > 0;
-  return <Modal labelledBy="training-preview-title" onClose={onClose} overlayStyle={{ display: "flex", justifyContent: "flex-end", padding: 0 }} style={{ width: "min(100%, 520px)", height: "100dvh", maxHeight: "100dvh", padding: 0, overflow: "hidden", background: "#fffdfa", boxShadow: "-18px 0 40px rgba(21, 34, 45, 0.2)" }}>
+  return <Modal labelledBy="training-preview-title" onClose={onClose} fullBleedMobile overlayStyle={{ display: "flex", justifyContent: "flex-end", padding: 0 }} style={{ width: "min(100%, 520px)", height: "100dvh", maxHeight: "100dvh", padding: 0, overflow: "hidden", background: "#fffdfa", boxShadow: "-18px 0 40px rgba(21, 34, 45, 0.2)" }}>
     <ScrollPane className={styles.trainingSidebar__drawerScroll} viewportClassName={styles.trainingSidebar__drawerViewport} contentClassName={styles.trainingSidebar__drawerContent} thumbColor="rgba(13, 107, 124, 0.3)" thumbHoverColor="rgba(13, 107, 124, 0.68)">
       <div className={styles.trainingSidebar__drawerHeader}><div><p className={styles.trainingSidebar__eyebrow}>Podgląd treningu</p><h2 id="training-preview-title" className={styles.trainingSidebar__drawerTitle}>{summarizeTrainingType(training)}</h2></div></div>
       <dl className={styles.trainingSidebar__previewDetails}>

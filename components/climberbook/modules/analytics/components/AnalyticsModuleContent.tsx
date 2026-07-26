@@ -1,12 +1,22 @@
 "use client";
 
-import { AnalyticsHeaderWidget } from "./AnalyticsHeaderWidget";
+import {
+  AnalyticsHeaderWidget,
+} from "./AnalyticsHeaderWidget";
 import { AnalyticsMetricsWidget } from "./AnalyticsMetricsWidget";
+import {
+  AnalyticsPeriodControls,
+  AnalyticsPeriodNavigation,
+  type AnalyticsPeriodPreset,
+} from "./AnalyticsPeriodControls";
 import { GradeDistributionWidget } from "./GradeDistributionWidget";
+import { SurfaceVolumeChartWidget } from "./SurfaceVolumeChartWidget";
 import { TrainingHistoryWidget } from "./TrainingHistoryWidget";
-import { WeeklyTrainingChartWidget } from "./WeeklyTrainingChartWidget";
+import { TrainingFatigueForecastChartWidget } from "./TrainingFatigueForecastChartWidget";
+import { TrainingOverviewTabsWidget } from "./TrainingOverviewTabsWidget";
 import { Stack } from "@/components/climberbook/common/Stack";
 import {
+  moduleContainerStyle,
   moduleContentStyle,
   twoColumnLayoutStyle,
 } from "@/components/climberbook/common/styles";
@@ -16,6 +26,14 @@ import type { TrainingSurface } from "@/lib/climbs-db";
 type AnalyticsModuleContentProps = {
   moduleMeta: { eyebrow: string; title: string; description: string };
   isMobileChartLayout: boolean;
+  period: { start: string; end: string };
+  activePeriodPreset: AnalyticsPeriodPreset | "custom";
+  onPreviousPeriod: () => void;
+  onNextPeriod: () => void;
+  onPeriodStartChange: (value: string) => void;
+  onPeriodEndChange: (value: string) => void;
+  onPeriodPreset: (preset: AnalyticsPeriodPreset) => void;
+  allTrainings: TrainingRecord[];
   trainings: TrainingRecord[];
   trainingsCount: number;
   averageWeight: string;
@@ -29,6 +47,9 @@ type AnalyticsModuleContentProps = {
     boulderHours: number;
     boardHours: number;
     sprayCircuitHours: number;
+    hangboardHours: number;
+    pullupBarHours: number;
+    campusHours: number;
   }>;
   gradeDistribution: Array<{
     grade: string;
@@ -40,6 +61,14 @@ type AnalyticsModuleContentProps = {
 export function AnalyticsModuleContent({
   moduleMeta,
   isMobileChartLayout,
+  period,
+  activePeriodPreset,
+  onPreviousPeriod,
+  onNextPeriod,
+  onPeriodStartChange,
+  onPeriodEndChange,
+  onPeriodPreset,
+  allTrainings,
   trainings,
   trainingsCount,
   averageWeight,
@@ -49,40 +78,100 @@ export function AnalyticsModuleContent({
   weeklyTrainingStats,
   gradeDistribution,
 }: AnalyticsModuleContentProps) {
+  const periodNavigation = (
+    <AnalyticsPeriodNavigation
+      label={`${period.start} - ${period.end}`}
+      onPrevious={onPreviousPeriod}
+      onNext={onNextPeriod}
+      canNavigate={activePeriodPreset !== "all" && activePeriodPreset !== "custom"}
+    />
+  );
+
   return (
-    <Stack gap="md" style={moduleContentStyle}>
+    <Stack gap="md" style={{ ...moduleContentStyle, ...moduleContainerStyle }}>
+      {isMobileChartLayout ? (
+        <AnalyticsPeriodControls
+          start={period.start}
+          end={period.end}
+          activePreset={activePeriodPreset}
+          isMobileLayout={isMobileChartLayout}
+          onStartChange={onPeriodStartChange}
+          onEndChange={onPeriodEndChange}
+          onPreset={onPeriodPreset}
+        />
+      ) : (
+        <div
+          style={{
+            alignItems: "center",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "1.5rem",
+            justifyContent: "center",
+          }}
+        >
+          <AnalyticsPeriodControls
+            start={period.start}
+            end={period.end}
+            activePreset={activePeriodPreset}
+            isMobileLayout={isMobileChartLayout}
+            onStartChange={onPeriodStartChange}
+            onEndChange={onPeriodEndChange}
+            onPreset={onPeriodPreset}
+          />
+          <div style={{ flex: "0 1 360px", width: "100%" }}>
+            {periodNavigation}
+          </div>
+        </div>
+      )}
       <AnalyticsHeaderWidget
         meta={moduleMeta}
+        isMobileLayout={isMobileChartLayout}
         trainingsCount={trainingsCount}
         averageWeight={averageWeight}
         totalCalories={totalCalories}
-      />
-      <AnalyticsMetricsWidget
-        trainingsCount={trainingsCount}
         totalTrainingTime={totalTrainingTime}
-        averageWeight={averageWeight}
       />
+      {!isMobileChartLayout ? (
+        <AnalyticsMetricsWidget
+          trainingsCount={trainingsCount}
+          totalTrainingTime={totalTrainingTime}
+          averageWeight={averageWeight}
+        />
+      ) : null}
 
-      <WeeklyTrainingChartWidget
+      {isMobileChartLayout ? periodNavigation : null}
+      <TrainingOverviewTabsWidget
+        isCalendarYearSelected={activePeriodPreset === "year"}
         isMobileLayout={isMobileChartLayout}
+        chartRange={period}
         chartRangeLabel={chartRangeLabel}
         weeklyTrainingStats={weeklyTrainingStats}
+        trainings={allTrainings}
       />
+
+      <GradeDistributionWidget gradeDistribution={gradeDistribution} />
 
       <div
         style={{
           ...twoColumnLayoutStyle,
-          gridTemplateColumns: isMobileChartLayout
-            ? "minmax(0, 1fr)"
-            : twoColumnLayoutStyle.gridTemplateColumns,
+          gridTemplateColumns: "minmax(0, 1fr)",
         }}
       >
-        <GradeDistributionWidget gradeDistribution={gradeDistribution} />
-        <TrainingHistoryWidget
-          isMobileLayout={isMobileChartLayout}
+        <SurfaceVolumeChartWidget
           trainings={trainings}
+          chartRangeLabel={chartRangeLabel}
+        />
+        <TrainingFatigueForecastChartWidget
+          trainings={trainings}
+          chartRange={period}
+          chartRangeLabel={chartRangeLabel}
         />
       </div>
+
+      <TrainingHistoryWidget
+        isMobileLayout={isMobileChartLayout}
+        trainings={trainings}
+      />
     </Stack>
   );
 }

@@ -40,12 +40,18 @@ function isAscentInput(value: unknown): value is AscentInput {
   );
 }
 
-function hasNumericId(value: unknown): value is { id: number } {
-  return (
-    Boolean(value) &&
-    typeof value === "object" &&
-    Number.isInteger((value as { id?: unknown }).id)
-  );
+function getNumericId(value: unknown): number | null {
+  if (!value || typeof value !== "object") return null;
+
+  const id = (value as { id?: unknown }).id;
+  const numericId =
+    typeof id === "number"
+      ? id
+      : typeof id === "string" && /^\d+$/.test(id)
+        ? Number(id)
+        : Number.NaN;
+
+  return Number.isInteger(numericId) && numericId > 0 ? numericId : null;
 }
 
 function invalidAscentResponse() {
@@ -91,12 +97,12 @@ export async function PATCH(request: Request) {
   if (typeof actorId !== "string") return actorId;
 
   const input: unknown = await request.json();
-  if (!isAscentInput(input) || !hasNumericId(input))
-    return invalidAscentResponse();
+  const ascentId = getNumericId(input);
+  if (!isAscentInput(input) || ascentId === null) return invalidAscentResponse();
 
   const ascent = await updateAscentInPostgres(actorId, {
     ...input,
-    id: input.id,
+    id: ascentId,
   });
   return Response.json({ ascent });
 }

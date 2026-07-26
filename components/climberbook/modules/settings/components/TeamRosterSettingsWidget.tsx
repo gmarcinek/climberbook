@@ -1,5 +1,4 @@
 import {
-  athleteSelectStyle,
   deleteButtonStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
@@ -8,6 +7,7 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { Button } from "@/components/climberbook/common/Button";
+import { Select } from "@/components/climberbook/common/FormControls";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Stack } from "@/components/climberbook/common/Stack";
 import type { TeamRosterSettingsWidgetProps } from "./SettingsWidgetTypes";
@@ -15,6 +15,7 @@ export function TeamRosterSettingsWidget({
   athletes,
   activeAthleteId,
   sections,
+  onAddAthlete,
   onAssignAthleteSection,
   onAthleteExport,
   onStartAthleteEdit,
@@ -27,11 +28,16 @@ export function TeamRosterSettingsWidget({
           <span style={moduleEyebrowStyle}>Zespół</span>
           <h2 style={sectionTitleStyle}>Lista zawodników</h2>
         </div>
-        <span style={softTagStyle}>{athletes.length}</span>
+        <Stack direction="row" gap="sm" align="center">
+          <span style={softTagStyle}>{athletes.length}</span>
+          <Button variant="primary" onClick={onAddAthlete}>
+            + Zawodnik
+          </Button>
+        </Stack>
       </div>
       {athletes.length === 0 ? (
         <p style={mutedParagraphStyle}>
-          Brak zawodników. Dodaj pierwszego w formularzu obok.
+          Brak zawodników. Dodaj pierwszego zawodnika.
         </p>
       ) : (
         <Stack gap="sm">
@@ -54,12 +60,11 @@ export function TeamRosterSettingsWidget({
             >
               <strong style={{ minWidth: 0 }}>{athlete.name}</strong>
               <Stack direction="row" gap="sm" wrap>
-                <select
+                <Select
                   value={athlete.sectionId ?? ""}
                   onChange={(event) =>
                     void onAssignAthleteSection(athlete, event.target.value)
                   }
-                  style={athleteSelectStyle}
                 >
                   <option value="">Bez sekcji</option>
                   {sections.map((section) => (
@@ -67,7 +72,7 @@ export function TeamRosterSettingsWidget({
                       {section.name}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <Button
                   size="small"
                   variant="quadrary"

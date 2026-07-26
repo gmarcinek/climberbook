@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Button } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
@@ -93,10 +94,12 @@ export function ReportsAssembly({
   onCancelAscentEdit,
   frenchGradeOptions,
 }: ReportsAssemblyProps) {
+  const router = useRouter();
   const { width } = useViewport();
   const isTabletOrMobile = width > 0 && width < 1024;
   const isMobile = width > 0 && width < 600;
   const [isAscentDrawerOpen, setIsAscentDrawerOpen] = useState(false);
+  const [isNewAscentModalOpen, setIsNewAscentModalOpen] = useState(false);
   const chronologicalAscents = ascents.slice().sort((left, right) => {
     const byDate = right.date.localeCompare(left.date);
 
@@ -106,32 +109,31 @@ export function ReportsAssembly({
 
     return right.createdAt.localeCompare(left.createdAt);
   });
-  useEffect(() => {
-    if (isMobile && editingAscentId !== null) {
-      setIsAscentDrawerOpen(true);
-    }
-  }, [editingAscentId, isMobile]);
-
-  useEffect(() => {
-    if (!isMobile) {
-      setIsAscentDrawerOpen(false);
-    }
-  }, [isMobile]);
-
   async function handleAscentSubmit(event: FormEvent<HTMLFormElement>) {
     await onAscentSubmit(event);
-
-    if (isMobile) {
-      setIsAscentDrawerOpen(false);
-    }
+    if (isMobile) setIsAscentDrawerOpen(false);
+    else setIsNewAscentModalOpen(false);
   }
 
   function handleCancelAscentEdit() {
     onCancelAscentEdit();
+    if (isMobile) setIsAscentDrawerOpen(false);
+    else setIsNewAscentModalOpen(false);
+  }
 
+  function handleNewAscent() {
+    onCancelAscentEdit();
+    if (isMobile) setIsAscentDrawerOpen(true);
+    else setIsNewAscentModalOpen(true);
+  }
+
+  function handleAscentEdit(ascent: AscentRecord) {
     if (isMobile) {
-      setIsAscentDrawerOpen(false);
+      router.push(`/raporty/edytuj/${ascent.id}`);
+      return;
     }
+
+    onAscentEdit(ascent);
   }
 
   const ascentFormWidget = (
@@ -147,28 +149,12 @@ export function ReportsAssembly({
   );
   const lowerWidgets = [
     <AscentGradeDistributionWidget key="grades" ascents={ascents} />,
-    ascentFormWidget,
   ];
-  const orderedLowerWidgets = isMobile ? [lowerWidgets[0]] : lowerWidgets;
-  const mobileAddButton = isMobile ? (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "flex-end",
-        marginTop: 4,
-      }}
-    >
-      <Button
-        onClick={() => setIsAscentDrawerOpen(true)}
-        style={{
-          background: "linear-gradient(135deg, #2f8f4e, #45b36b)",
-          boxShadow: "0 18px 30px rgba(49, 143, 78, 0.28)",
-        }}
-      >
-        + Dodaj przejście
-      </Button>
-    </div>
-  ) : null;
+  const newAscentButton = (
+    <Button onClick={handleNewAscent}>
+      + Nowe przejście
+    </Button>
+  );
 
   return (
     <Stack gap="md" style={moduleContentStyle}>
@@ -177,7 +163,7 @@ export function ReportsAssembly({
         ascentsCount={ascentsCount}
         panelAscents={panelAscents}
         rockAscents={rockAscents}
-        mobileAction={mobileAddButton}
+        desktopAction={newAscentButton}
       />
       {isMobile ? null : (
         <ReportMetricsWidget
@@ -207,17 +193,26 @@ export function ReportsAssembly({
             : twoColumnLayoutStyle.gridTemplateColumns,
         }}
       >
-        {orderedLowerWidgets}
+        {lowerWidgets}
       </div>
       <ReportedAscentsListWidget
         ascents={chronologicalAscents}
         editingAscentId={editingAscentId}
-        onEdit={onAscentEdit}
+        onEdit={handleAscentEdit}
       />
+      {!isMobile && (editingAscentId !== null || isNewAscentModalOpen) ? (
+        <Modal
+          labelledBy="ascent-form-title"
+          onClose={handleCancelAscentEdit}
+          style={{ width: "min(100%, 620px)", maxHeight: "90vh", overflowY: "auto" }}
+        >
+          {ascentFormWidget}
+        </Modal>
+      ) : null}
       {isMobile && isAscentDrawerOpen ? (
         <Modal
           labelledBy="ascent-form-title"
-          onClose={() => setIsAscentDrawerOpen(false)}
+          onClose={handleCancelAscentEdit}
           style={{ gap: 8, padding: 8 }}
         >
           {ascentFormWidget}

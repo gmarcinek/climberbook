@@ -1,14 +1,13 @@
 import {
   deleteButtonStyle,
   fieldStyle,
-  ghostButtonStyle,
-  inputStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
   sectionTitleStyle,
 } from "@/components/climberbook/common/styles";
 import { Button } from "@/components/climberbook/common/Button";
+import { Input } from "@/components/climberbook/common/FormControls";
 import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import { Modal } from "@/components/climberbook/common/Modal";
 import type { DatabaseDeleteModalWidgetProps } from "./SettingsWidgetTypes";
@@ -46,14 +45,13 @@ export function DatabaseDeleteModalWidget({
       >
         <label style={fieldStyle}>
           Potwierdzenie
-          <input
+          <Input
             value={databaseDeleteConfirmation}
             onChange={(event) =>
               setDatabaseDeleteConfirmation(event.target.value)
             }
             placeholder="delete"
             autoComplete="off"
-            style={inputStyle}
           />
         </label>
         <FormActions>

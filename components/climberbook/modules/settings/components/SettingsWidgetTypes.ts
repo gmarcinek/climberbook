@@ -14,16 +14,17 @@ import type {
   UserSex,
 } from "@/lib/climbs-db";
 export type AthleteFormDraft = {
+  nick: string;
+  email: string;
   firstName: string;
   lastName: string;
-  nick: string;
   sectionId: string;
   birthDate: string;
   sex: UserSex;
   heightCm: string;
   weightKg: string;
 };
-export type SettingsTab = "profil" | "zespol" | "obiekty" | "zaawansowane";
+export type SettingsTab = "profil" | "zespol" | "zaawansowane";
 export type ModuleMeta = {
   title: string;
   eyebrow: string;
@@ -42,6 +43,7 @@ export type ProfileMetricsWidgetProps = {
 };
 export type ProfileFormWidgetProps = {
   profileDraft: UserProfileDraft;
+  weightEntries: import("@/lib/climbs-db").WeightEntryRecord[];
   setProfileDraft: Dispatch<SetStateAction<UserProfileDraft>>;
   onSettingsSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
@@ -63,6 +65,7 @@ export type TeamRosterSettingsWidgetProps = {
   athletes: AthleteRecord[];
   activeAthleteId: string | null;
   sections: SectionRecord[];
+  onAddAthlete: () => void;
   onAssignAthleteSection: (
     athlete: AthleteRecord,
     sectionId: string,
@@ -73,9 +76,8 @@ export type TeamRosterSettingsWidgetProps = {
 };
 export type SectionManagementWidgetProps = {
   sections: SectionRecord[];
-  newSectionName: string;
-  setNewSectionName: Dispatch<SetStateAction<string>>;
-  onAddSection: (event: FormEvent<HTMLFormElement>) => void;
+  facilities: import("@/lib/climbs-db").FacilityRecord[];
+  onAddSection: () => void;
   onDeleteSection: (section: SectionRecord) => Promise<void>;
 };
 export type AthleteFormWidgetProps = {

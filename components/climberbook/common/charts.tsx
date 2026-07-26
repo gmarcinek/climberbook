@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitiv
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts/SessionGradesChart";
 import { TrainingCaloriesChart } from "@/components/climberbook/common/charts/TrainingCaloriesChart";
 import { WeightTrendChart } from "@/components/climberbook/common/charts/WeightTrendChart";
+import { TrainingFatigueForecastChartWidget } from "@/components/climberbook/modules/analytics/components/TrainingFatigueForecastChartWidget";
 import {
   formatDurationMinutes,
   formatWeightInput,
@@ -45,6 +46,7 @@ export {
 
 export function TrainingAnalyticsPanel(props: {
   isMobileLayout: boolean;
+  section?: "all" | "charts" | "metrics" | "weight";
   latestWeightKg: number | null | undefined;
   latestWeightDate: string | null;
   latestWeightChange: number | null;
@@ -66,6 +68,7 @@ export function TrainingAnalyticsPanel(props: {
 }) {
   const {
     isMobileLayout,
+    section = "all",
     latestWeightKg,
     latestWeightDate,
     latestWeightChange,
@@ -94,6 +97,9 @@ export function TrainingAnalyticsPanel(props: {
   const responsiveWeightEntryCardStyle = isMobileLayout
     ? { ...listCardStyle, padding: "4px 4px" }
     : listCardStyle;
+  const showsTrainingCharts = section !== "weight";
+  const showsWeightDetails = section === "all" || section === "weight";
+  const showsWeightChart = section !== "charts";
 
   async function handleWeightEntryModalSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -127,6 +133,7 @@ export function TrainingAnalyticsPanel(props: {
 
   return (
     <div style={analyticsPanelInnerStyle}>
+      {showsWeightDetails ? <>
       <div style={panelHeadingStyle}>
         <div>
           <span style={moduleEyebrowStyle}>Analityka</span>
@@ -181,7 +188,9 @@ export function TrainingAnalyticsPanel(props: {
           </span>
         </article>
       </div>
+      </> : null}
 
+      {showsTrainingCharts ? <>
       <section
         style={
           isMobileLayout ? { ...chartCardStyle, padding: 0 } : chartCardStyle
@@ -201,6 +210,15 @@ export function TrainingAnalyticsPanel(props: {
       </section>
 
       <section style={chartCardStyle}>
+        <TrainingFatigueForecastChartWidget
+          trainings={trainings}
+          chartRange={chartRange}
+          chartRangeLabel={chartRangeLabel}
+          embedded
+        />
+      </section>
+
+      <section style={chartCardStyle}>
         <div style={panelHeadingStyle}>
           <div>
             <span style={moduleEyebrowStyle}>Kalorie</span>
@@ -210,21 +228,9 @@ export function TrainingAnalyticsPanel(props: {
         </div>
         <TrainingCaloriesChart trainings={trainings} chartRange={chartRange} />
       </section>
+      </> : null}
 
-      <section style={chartCardStyle}>
-        <div style={panelHeadingStyle}>
-          <div>
-            <span style={moduleEyebrowStyle}>Wykres wagi</span>
-            <h3 style={sectionTitleStyle}>Ostatnie pomiary</h3>
-          </div>
-          <span style={softPillStyle}>{weightChartEntries.length} pkt</span>
-        </div>
-        <WeightTrendChart
-          entries={weightChartEntries}
-          chartRange={chartRange}
-        />
-      </section>
-
+      <>
       {isWeightEntryModalOpen && (
         <Modal
           labelledBy="weight-entry-modal-title"
@@ -376,19 +382,37 @@ export function TrainingAnalyticsPanel(props: {
         </Modal>
       )}
 
+      {showsWeightChart ? <>
+      <section style={chartCardStyle}>
+        <div style={panelHeadingStyle}>
+          <div>
+            <span style={moduleEyebrowStyle}>Wykres wagi</span>
+            <h3 style={sectionTitleStyle}>Ostatnie pomiary</h3>
+          </div>
+          {showsWeightDetails ? (
+            <Button
+              size="small"
+              variant="tertiary"
+              onClick={() => setIsWeightEntryModalOpen(true)}
+            >
+              + Dodaj pomiar
+            </Button>
+          ) : null}
+        </div>
+        <WeightTrendChart
+          entries={weightChartEntries}
+          chartRange={chartRange}
+        />
+      </section>
+      </> : null}
+
+      {showsWeightDetails ? <>
       <section style={chartCardStyle}>
         <div style={panelHeadingStyle}>
           <div>
             <span style={moduleEyebrowStyle}>Szybki przegląd</span>
             <h3 style={sectionTitleStyle}>Ostatnie wpisy</h3>
           </div>
-          <Button
-            variant="tertiary"
-            onClick={() => setIsWeightEntryModalOpen(true)}
-            style={{ justifySelf: "start" }}
-          >
-            Dodaj pomiar
-          </Button>
         </div>
 
         <ScrollPane viewportStyle={scrollListStyle}>
@@ -428,6 +452,8 @@ export function TrainingAnalyticsPanel(props: {
           ))}
         </ScrollPane>
       </section>
+      </> : null}
+      </>
     </div>
   );
 }

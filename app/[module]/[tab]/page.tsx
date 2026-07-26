@@ -1,9 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ModuleLayout } from "@/components/climberbook/layout/ModuleLayout";
 import { SettingsModule } from "@/components/climberbook/modules/settings/SettingsModule";
 import { requireAuthenticatedUser } from "@/lib/server/require-auth";
 
-const settingsTabs = new Set(["profil", "zespol", "obiekty", "zaawansowane"]);
+const settingsTabs = new Set(["profil", "zespol", "zaawansowane"]);
 
 export default async function SettingsTabPage({
   params,
@@ -12,6 +12,10 @@ export default async function SettingsTabPage({
 }) {
   await requireAuthenticatedUser();
   const { module, tab } = await params;
+
+  if (module === "ustawienia" && tab === "obiekty") {
+    redirect("/ustawienia/zespol");
+  }
 
   if (module !== "ustawienia" || !settingsTabs.has(tab)) {
     notFound();

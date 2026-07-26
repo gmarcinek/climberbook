@@ -202,22 +202,15 @@ export function AscentFormWidget({
         <Button
           type="submit"
           variant="tertiary"
-          style={isEditing ? { padding: "7px 1rem", width: "auto" } : undefined}
         >
-          {isEditing ? "Zapisz" : "Dodaj przejście"}
+          {isEditing ? "Zapisz zmiany" : "Dodaj przejście"}
         </Button>
-        {isEditing ? (
-          <Button
-            variant="quadrary"
-            style={{
-              padding: "7px 1rem",
-              width: "auto",
-            }}
-            onClick={onCancelEdit}
-          >
-            Anuluj
-          </Button>
-        ) : null}
+        <Button
+          variant="secondary"
+          onClick={onCancelEdit}
+        >
+          Anuluj
+        </Button>
       </FormActions>
     </Form>
   );

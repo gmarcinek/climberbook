@@ -1,4 +1,7 @@
-import { requireExperimentalUser } from "@/lib/server/climberbook-repository";
+import {
+  getOrCreateLocalDevelopmentUserId,
+  requireExperimentalUser,
+} from "@/lib/server/climberbook-repository";
 import { getServerSession } from "next-auth";
 import {
   authOptions,
@@ -30,6 +33,10 @@ export async function getExperimentalActorId(
     }
 
     return Response.json({ error: "Wymagane jest zalogowanie." }, { status: 401 });
+  }
+
+  if (process.env.CLIMBERBOOK_ENV === "local") {
+    return getOrCreateLocalDevelopmentUserId();
   }
 
   const userId = request.headers.get(EXPERIMENTAL_USER_HEADER)?.trim();

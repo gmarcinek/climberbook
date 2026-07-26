@@ -18,6 +18,7 @@ type GradeDistributionWidgetProps = {
     surface: TrainingSurface | "lina";
     count: number;
   }>;
+  contentOnly?: boolean;
 };
 
 type GradeDistributionTab = "lina" | "moon" | "kilter" | "baldy";
@@ -34,6 +35,7 @@ const gradeDistributionTabs: Array<{
 
 export function GradeDistributionWidget({
   gradeDistribution,
+  contentOnly = false,
 }: GradeDistributionWidgetProps) {
   const [activeTab, setActiveTab] = useState<GradeDistributionTab>("lina");
   const visibleGrades = gradeDistribution.filter(
@@ -44,15 +46,8 @@ export function GradeDistributionWidget({
     (highest, grade) => Math.max(highest, grade.count),
     0,
   );
-
-  return (
-    <Panel>
-      <div style={panelHeadingStyle}>
-        <div>
-          <span style={moduleEyebrowStyle}>Wyceny</span>
-          <h2 style={sectionTitleStyle}>Wyceny wstawek treningowych</h2>
-        </div>
-      </div>
+  const content = (
+    <>
       <div
         style={gradeDistributionTabsStyle}
         role="tablist"
@@ -130,6 +125,20 @@ export function GradeDistributionWidget({
           })}
         </div>
       )}
+    </>
+  );
+
+  if (contentOnly) return content;
+
+  return (
+    <Panel>
+      <div style={panelHeadingStyle}>
+        <div>
+          <span style={moduleEyebrowStyle}>Wyceny</span>
+          <h2 style={sectionTitleStyle}>Wyceny wstawek treningowych</h2>
+        </div>
+      </div>
+      {content}
     </Panel>
   );
 }

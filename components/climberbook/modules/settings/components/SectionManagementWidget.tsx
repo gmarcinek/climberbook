@@ -1,5 +1,4 @@
 import {
-  inputStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
@@ -7,42 +6,35 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { Button, EmotButton } from "@/components/climberbook/common/Button";
-import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
+import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import type { SectionManagementWidgetProps } from "./SettingsWidgetTypes";
 import styles from "./SectionManagementWidget.module.css";
 
 export function SectionManagementWidget({
   sections,
-  newSectionName,
-  setNewSectionName,
+  facilities,
   onAddSection,
   onDeleteSection,
 }: SectionManagementWidgetProps) {
-  return (
-    <Form
-      onSubmit={onAddSection}
-      header={
-        <div style={panelHeadingStyle}>
-          <div>
-            <span style={moduleEyebrowStyle}>Sekcje</span>
-            <h2 style={sectionTitleStyle}>Zarządzanie sekcjami</h2>
-          </div>
-          <span style={softTagStyle}>{sections.length}</span>
-        </div>
-      }
-    >
-      <input
-        value={newSectionName}
-        onChange={(event) => setNewSectionName(event.target.value)}
-        placeholder="Nazwa sekcji / teamu"
-        style={inputStyle}
-      />
-      <FormActions>
-        <Button type="submit" variant="tertiary">
-          Dodaj sekcję
-        </Button>
-      </FormActions>
+  const facilityNameById = new Map(
+    facilities.map((facility) => [facility.id, facility.name]),
+  );
 
+  return (
+    <Panel gap="md">
+      <div style={panelHeadingStyle}>
+        <div>
+          <span style={moduleEyebrowStyle}>Sekcje</span>
+          <h2 style={sectionTitleStyle}>Lista sekcji</h2>
+        </div>
+        <Stack direction="row" gap="sm" align="center">
+          <span style={softTagStyle}>{sections.length}</span>
+          <Button variant="primary" onClick={onAddSection}>
+            + Sekcja
+          </Button>
+        </Stack>
+      </div>
       {sections.length === 0 ? (
         <p style={mutedParagraphStyle}>Nie ma jeszcze żadnych sekcji.</p>
       ) : (
@@ -50,6 +42,7 @@ export function SectionManagementWidget({
           {sections.map((section) => (
             <span key={section.id} className={styles.sectionChip}>
               {section.name}
+              {section.facilityId ? ` · ${facilityNameById.get(section.facilityId) ?? "Obiekt usunięty"}` : ""}
               <EmotButton
                 size="small"
                 className={styles.deleteButton}
@@ -62,6 +55,6 @@ export function SectionManagementWidget({
           ))}
         </div>
       )}
-    </Form>
+    </Panel>
   );
 }

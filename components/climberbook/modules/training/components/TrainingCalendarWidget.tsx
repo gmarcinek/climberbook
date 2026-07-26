@@ -79,27 +79,57 @@ export function TrainingCalendarWidget({
           <TrainingCalendar anchorMonthStart={trainingRangeStart} monthCount={1} visibleColumns={1} useScrollPane={!showVisibleTrainingList} fillHeight={!showVisibleTrainingList} trainingsByDate={trainingsByDate} selectedDate={selectedDate} today={today} onSelectDate={onSelectDate} />
         </div>
         {showVisibleTrainingList && (
-          <div className={sidebarStyles.trainingSidebar__visibleList}>
-            <div className={sidebarStyles.trainingSidebar__panelHeader}>
-              <div><h2 className={sidebarStyles.trainingSidebar__title}>Treningi</h2></div>
-              <div className={sidebarStyles.trainingSidebar__headerActions}><Button onClick={() => onSelectDate(today)} variant="tertiary" className={sidebarStyles.trainingSidebar__submitButton}>+ Trening</Button></div>
-            </div>
-            {visibleRangeTrainings.length === 0 && <p className={sidebarStyles.trainingSidebar__helperText}>W wybranym zakresie jeszcze nie ma treningów.</p>}
-            {visibleRangeTrainings.map((training) => (
-              <article key={`${training.id ?? training.createdAt}-${training.time}`} className={sidebarStyles.trainingSidebar__trainingCard}>
-                <div className={sidebarStyles.trainingSidebar__trainingButtonHeader}><strong>{summarizeTrainingType(training)}</strong><span className={sidebarStyles.trainingSidebar__pill}>{training.date}</span></div>
-                <div className={sidebarStyles.trainingSidebar__metaLine}><span>{formatDurationMinutes(training.durationMinutes)} · {training.caloriesBurned} kcal</span></div>
-                <TrainingTimelineBar time={training.time} durationMinutes={training.durationMinutes} difficultyNotes={training.difficultyNotes} difficultyBySurface={training.difficultyBySurface} surfaces={training.surfaces} />
-                {training.difficultyNotes?.trim() && <div className={sidebarStyles.trainingSidebar__details}><span>Wyceny: {training.difficultyNotes}</span></div>}
-                <div className={sidebarStyles.trainingSidebar__cardActions}>
-                  <Button size="small" variant="secondary" onClick={() => onEditTraining(training)} className={sidebarStyles.trainingSidebar__linkButton}>Edytuj</Button>
-                  <Button size="small" variant="secondary" onClick={() => onPreviewTraining(training)} className={sidebarStyles.trainingSidebar__linkButton}>Podgląd</Button>
-                </div>
-              </article>
-            ))}
-          </div>
+          <VisibleTrainingList
+            trainings={visibleRangeTrainings}
+            onAddTraining={() => onSelectDate(today)}
+            onEditTraining={onEditTraining}
+            onPreviewTraining={onPreviewTraining}
+          />
         )}
       </ScrollPane>
     </Panel>
+  );
+}
+
+export function VisibleTrainingList({
+  trainings,
+  onAddTraining,
+  showAddTraining = true,
+  standalone = false,
+  onEditTraining,
+  onPreviewTraining,
+}: {
+  trainings: TrainingRecord[];
+  onAddTraining: () => void;
+  showAddTraining?: boolean;
+  standalone?: boolean;
+  onEditTraining: (training: TrainingRecord) => void;
+  onPreviewTraining: (training: TrainingRecord) => void;
+}) {
+  return (
+    <div
+      className={[
+        sidebarStyles.trainingSidebar__visibleList,
+        standalone ? sidebarStyles["trainingSidebar__visibleList--standalone"] : "",
+      ].filter(Boolean).join(" ")}
+    >
+      <div className={sidebarStyles.trainingSidebar__panelHeader}>
+        <div><h2 className={sidebarStyles.trainingSidebar__title}>Treningi</h2></div>
+        {showAddTraining ? <div className={sidebarStyles.trainingSidebar__headerActions}><Button onClick={onAddTraining} variant="primary" className={standalone ? undefined : sidebarStyles.trainingSidebar__submitButton}>+ Trening</Button></div> : null}
+      </div>
+      {trainings.length === 0 && <p className={sidebarStyles.trainingSidebar__helperText}>W wybranym zakresie jeszcze nie ma treningów.</p>}
+      {trainings.map((training) => (
+        <article key={`${training.id ?? training.createdAt}-${training.time}`} className={sidebarStyles.trainingSidebar__trainingCard}>
+          <div className={sidebarStyles.trainingSidebar__trainingButtonHeader}><strong>{summarizeTrainingType(training)}</strong><span className={sidebarStyles.trainingSidebar__pill}>{training.date}</span></div>
+          <div className={sidebarStyles.trainingSidebar__metaLine}><span>{formatDurationMinutes(training.durationMinutes)} · {training.caloriesBurned} kcal</span></div>
+          <TrainingTimelineBar time={training.time} durationMinutes={training.durationMinutes} difficultyNotes={training.difficultyNotes} difficultyBySurface={training.difficultyBySurface} surfaces={training.surfaces} />
+          {training.difficultyNotes?.trim() && <div className={sidebarStyles.trainingSidebar__details}><span>Wyceny: {training.difficultyNotes}</span></div>}
+          <div className={sidebarStyles.trainingSidebar__cardActions}>
+            <Button size="small" variant="secondary" onClick={() => onEditTraining(training)} className={sidebarStyles.trainingSidebar__linkButton}>Edytuj</Button>
+            <Button size="small" variant="secondary" onClick={() => onPreviewTraining(training)} className={sidebarStyles.trainingSidebar__linkButton}>Podgląd</Button>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }

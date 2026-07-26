@@ -25,6 +25,7 @@ type AthleteRow = {
   first_name: string;
   last_name: string;
   nick: string;
+  email: string | null;
   section_id: string | null;
   created_at: Date;
 };
@@ -67,6 +68,7 @@ type SectionRow = {
   id: string;
   source_id: string | null;
   name: string;
+  facility_id: string | null;
   created_at: Date;
 };
 
@@ -154,6 +156,7 @@ function mapAthlete(row: AthleteRow): AthleteRecord {
     firstName: row.first_name,
     lastName: row.last_name,
     nick: row.nick,
+    email: row.email ?? undefined,
     sectionId: row.section_id,
     createdAt: row.created_at.toISOString(),
   };
@@ -205,6 +208,7 @@ function mapSection(row: SectionRow): SectionRecord {
     id: row.id,
     sourceId: row.source_id ?? row.id,
     name: row.name,
+    facilityId: row.facility_id,
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -229,7 +233,7 @@ function mapClimb(row: ClimbRow): ClimbRecord {
 
 function mapAscent(row: AscentRow): AscentRecord {
   return {
-    id: row.id,
+    id: Number(row.id),
     athleteId: row.athlete_id,
     date: row.date,
     source: row.source,
@@ -297,6 +301,21 @@ export async function createExperimentalUser(input: {
   );
 
   return mapExperimentalUser(result.rows[0]);
+}
+
+export async function getOrCreateLocalDevelopmentUserId() {
+  const result = await queryPostgres<ExperimentalUserRow>(
+    `
+      insert into app_users (id, email, display_name)
+      values ($1, 'local@climberbook.test', 'Local Climberbook')
+      on conflict (email) do update
+      set display_name = app_users.display_name
+      returning id, email, display_name, onboarding_completed, created_at
+    `,
+    [crypto.randomUUID()],
+  );
+
+  return result.rows[0].id;
 }
 
 export async function findOrCreateSocialUser(input: {
@@ -407,14 +426,14 @@ async function ensureDefaultAthlete(
   await client.query(
     `
       insert into athletes (
-        id, source_id, name, first_name, last_name, nick, owner_user_id
+        id, source_id, name, first_name, last_name, nick, email, owner_user_id
       )
-      select $1, $1, $2, $3, $4, $5, $6
+      select $1, $1, $2, $3, $4, $5, $6, $7
       where not exists (
-        select 1 from athletes where owner_user_id = $6
+        select 1 from athletes where owner_user_id = $7
       )
     `,
-    [athleteId, name, firstName, lastName, nick, userId],
+    [athleteId, name, firstName, lastName, nick, email, userId],
   );
 }
 
@@ -501,9 +520,28 @@ async function getOwnedSectionId(
   return sectionId;
 }
 
+async function getOwnedFacilityId(
+  ownerUserId: string,
+  facilityId: string | null | undefined,
+) {
+  if (!facilityId) return null;
+
+  const result = await queryPostgres<{ id: string }>(`
+    select id
+    from facilities
+    where id = $1 and owner_user_id = $2
+  `, [facilityId, ownerUserId]);
+
+  if (!result.rows[0]) {
+    throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
+  }
+
+  return facilityId;
+}
+
 export async function listAthletesFromPostgres(ownerUserId: string) {
   const result = await queryPostgres<AthleteRow>(`
-    select id, source_id, name, first_name, last_name, nick, section_id, created_at
+    select id, source_id, name, first_name, last_name, nick, email, section_id, created_at
     from athletes
     where owner_user_id = $1
     order by created_at asc
@@ -527,7 +565,7 @@ export async function getPostgresDatabaseSnapshot(
   ] = await Promise.all([
     listAthletesFromPostgres(ownerUserId),
     queryPostgres<SectionRow>(
-      "select id, source_id, name, created_at from sections where owner_user_id = $1 order by created_at asc",
+      "select id, source_id, name, facility_id, created_at from sections where owner_user_id = $1 order by created_at asc",
       [ownerUserId],
     ),
     queryPostgres<FacilityRow>(
@@ -613,16 +651,17 @@ export async function createAthleteInPostgres(
   const sectionId = await getOwnedSectionId(ownerUserId, input.sectionId);
   const result = await queryPostgres<AthleteRow>(`
     insert into athletes (
-      id, source_id, name, first_name, last_name, nick, section_id, owner_user_id
+      id, source_id, name, first_name, last_name, nick, email, section_id, owner_user_id
     )
-    values ($1, $1, $2, $3, $4, $5, $6, $7)
-    returning id, source_id, name, first_name, last_name, nick, section_id, created_at
+    values ($1, $1, $2, $3, $4, $5, $6, $7, $8)
+    returning id, source_id, name, first_name, last_name, nick, email, section_id, created_at
   `, [
     athleteId,
     computeAthleteName(input),
     input.firstName?.trim() ?? "",
     input.lastName?.trim() ?? "",
     input.nick?.trim() ?? "",
+    normalizeOptionalEmail(input.email),
     sectionId,
     ownerUserId,
   ]);
@@ -642,9 +681,10 @@ export async function updateAthleteInPostgres(
       first_name = $4,
       last_name = $5,
       nick = $6,
-      section_id = $7
+      email = $7,
+      section_id = $8
     where id = $1 and owner_user_id = $2
-    returning id, source_id, name, first_name, last_name, nick, section_id, created_at
+    returning id, source_id, name, first_name, last_name, nick, email, section_id, created_at
   `, [
     athleteId,
     ownerUserId,
@@ -652,6 +692,7 @@ export async function updateAthleteInPostgres(
     input.firstName?.trim() ?? "",
     input.lastName?.trim() ?? "",
     input.nick?.trim() ?? "",
+    normalizeOptionalEmail(input.email),
     sectionId,
   ]);
 
@@ -1080,6 +1121,112 @@ export async function createAscentInPostgres(
   return mapAscent(result.rows[0]);
 }
 
+export async function importAscentsToPostgres(
+  ownerUserId: string,
+  input: {
+    create: Array<Omit<AscentRecord, "id" | "createdAt">>;
+    update: Array<
+      Required<Pick<AscentRecord, "id">> &
+        Omit<AscentRecord, "id" | "createdAt">
+    >;
+  },
+) {
+  const athleteIds = new Set(
+    [...input.create, ...input.update].map((ascent) => ascent.athleteId),
+  );
+  await Promise.all(
+    [...athleteIds].map((athleteId) =>
+      requireOwnedAthlete(ownerUserId, athleteId),
+    ),
+  );
+
+  return withPostgresTransaction(async (client) => {
+    for (const ascent of input.create) {
+      await client.query(
+        `
+          insert into ascents (
+            athlete_id, date, source, import_source, route_name, suggested_grade,
+            subjective_grade, style, notes
+          )
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `,
+        [
+          ascent.athleteId,
+          ascent.date,
+          ascent.source,
+          ascent.importSource ?? null,
+          ascent.routeName,
+          ascent.suggestedGrade,
+          ascent.subjectiveGrade,
+          ascent.style ?? null,
+          ascent.notes,
+        ],
+      );
+    }
+
+    for (const ascent of input.update) {
+      const result = await client.query(
+        `
+          update ascents
+          set date = $2,
+            source = $3,
+            import_source = $4,
+            route_name = $5,
+            suggested_grade = $6,
+            subjective_grade = $7,
+            style = $8,
+            notes = $9
+          where id = $1
+            and athlete_id = $10
+            and exists (
+              select 1
+              from athletes
+              where athletes.id = ascents.athlete_id
+                and athletes.owner_user_id = $11
+            )
+        `,
+        [
+          ascent.id,
+          ascent.date,
+          ascent.source,
+          ascent.importSource ?? null,
+          ascent.routeName,
+          ascent.suggestedGrade,
+          ascent.subjectiveGrade,
+          ascent.style ?? null,
+          ascent.notes,
+          ascent.athleteId,
+          ownerUserId,
+        ],
+      );
+
+      if (result.rowCount !== 1) {
+        throw new Error("Nie znaleziono przejścia należącego do użytkownika.");
+      }
+    }
+
+    return { createdCount: input.create.length, updatedCount: input.update.length };
+  });
+}
+
+export async function deleteAscentsByImportSourceFromPostgres(
+  ownerUserId: string,
+  athleteId: string,
+  importSource: string,
+) {
+  await requireOwnedAthlete(ownerUserId, athleteId);
+  const result = await queryPostgres(
+    `
+      delete from ascents
+      where athlete_id = $1
+        and import_source = $2
+    `,
+    [athleteId, importSource],
+  );
+
+  return result.rowCount ?? 0;
+}
+
 export async function updateAscentInPostgres(
   ownerUserId: string,
   input: Required<Pick<AscentRecord, "id">> &
@@ -1151,7 +1298,7 @@ export async function deleteAscentFromPostgres(
 
 export async function listSectionsFromPostgres(ownerUserId: string) {
   const result = await queryPostgres<SectionRow>(`
-    select id, source_id, name, created_at
+    select id, source_id, name, facility_id, created_at
     from sections
     where owner_user_id = $1
     order by created_at asc
@@ -1160,13 +1307,18 @@ export async function listSectionsFromPostgres(ownerUserId: string) {
   return result.rows.map(mapSection);
 }
 
-export async function createSectionInPostgres(ownerUserId: string, name: string) {
+export async function createSectionInPostgres(
+  ownerUserId: string,
+  name: string,
+  facilityId?: string | null,
+) {
   const sectionId = crypto.randomUUID();
+  const ownedFacilityId = await getOwnedFacilityId(ownerUserId, facilityId);
   const result = await queryPostgres<SectionRow>(`
-    insert into sections (id, source_id, name, owner_user_id)
-    values ($1, $1, $2, $3)
-    returning id, source_id, name, created_at
-  `, [sectionId, name.trim(), ownerUserId]);
+    insert into sections (id, source_id, name, facility_id, owner_user_id)
+    values ($1, $1, $2, $3, $4)
+    returning id, source_id, name, facility_id, created_at
+  `, [sectionId, name.trim(), ownedFacilityId, ownerUserId]);
 
   return mapSection(result.rows[0]);
 }
@@ -1180,7 +1332,7 @@ export async function updateSectionInPostgres(
     update sections
     set name = $3
     where id = $1 and owner_user_id = $2
-    returning id, source_id, name, created_at
+    returning id, source_id, name, facility_id, created_at
   `, [sectionId, ownerUserId, name.trim()]);
 
   const section = result.rows[0];
@@ -1284,6 +1436,11 @@ export class BackupOwnerEmailMismatchError extends Error {
 
 function normalizeEmail(value: string) {
   return value.trim().toLocaleLowerCase();
+}
+
+function normalizeOptionalEmail(value: string | undefined) {
+  const email = value ? normalizeEmail(value) : "";
+  return email || null;
 }
 
 function normalizeAthleteName(value: string) {
@@ -1400,6 +1557,12 @@ export async function importFullBackupToPostgres(
         ),
       ]),
     );
+    const facilityIds = new Map(
+      backup.facilities.map((facility) => [
+        String(facility.id),
+        createOwnerScopedImportId(ownerUserId, "facility", facility.id),
+      ]),
+    );
     const athleteIds = new Map(
       backup.athletes.map((athlete) => [
         String(athlete.id),
@@ -1420,15 +1583,28 @@ export async function importFullBackupToPostgres(
       id: string;
       source_id: string | null;
       name: string;
+      email: string | null;
     }>(
       `
-        select id, source_id, name
+        select id, source_id, name, email
         from athletes
         where owner_user_id = $1
         order by created_at asc
       `,
       [ownerUserId],
     );
+    for (const athlete of backup.athletes) {
+      const email = normalizeOptionalEmail(athlete.email);
+      if (!email) continue;
+
+      const matches = currentAthletes.rows.filter(
+        (currentAthlete) =>
+          currentAthlete.email && normalizeEmail(currentAthlete.email) === email,
+      );
+      if (matches.length === 1) {
+        athleteIds.set(String(athlete.id), matches[0].id);
+      }
+    }
     const emailMatchesCurrentUser =
       backupOwnerEmail === normalizeEmail(currentUser.email);
     const nameMatches = backupOwner
@@ -1453,17 +1629,38 @@ export async function importFullBackupToPostgres(
       athleteIds.set(String(backupOwner.id), matchingCurrentAthlete.id);
     }
 
-    for (const section of backup.sections) {
-      const sectionId = sectionIds.get(String(section.id))!;
+    for (const facility of backup.facilities) {
+      const facilityId = facilityIds.get(String(facility.id))!;
 
       await client.query(
         `
-          insert into sections (id, source_id, name, created_at, owner_user_id)
-          values ($1, $1, $2, $3, $4)
+          insert into facilities (id, name, created_at, owner_user_id)
+          values ($1, $2, $3, $4)
           on conflict (id) do update
           set name = excluded.name, created_at = excluded.created_at
         `,
-        [sectionId, section.name, section.createdAt, ownerUserId],
+        [facilityId, facility.name, facility.createdAt, ownerUserId],
+      );
+    }
+
+    for (const section of backup.sections) {
+      const sectionId = sectionIds.get(String(section.id))!;
+      const facilityId = section.facilityId
+        ? facilityIds.get(String(section.facilityId)) ?? null
+        : null;
+
+      await client.query(
+        `
+          insert into sections (
+            id, source_id, name, facility_id, created_at, owner_user_id
+          )
+          values ($1, $1, $2, $3, $4, $5)
+          on conflict (id) do update
+          set name = excluded.name,
+            facility_id = excluded.facility_id,
+            created_at = excluded.created_at
+        `,
+        [sectionId, section.name, facilityId, section.createdAt, ownerUserId],
       );
     }
 
@@ -1477,15 +1674,16 @@ export async function importFullBackupToPostgres(
       await client.query(
         `
           insert into athletes (
-            id, source_id, name, first_name, last_name, nick, section_id, created_at,
+            id, source_id, name, first_name, last_name, nick, email, section_id, created_at,
             owner_user_id
           )
-          values ($1, $1, $2, $3, $4, $5, $6, $7, $8)
+          values ($1, $1, $2, $3, $4, $5, $6, $7, $8, $9)
           on conflict (id) do update
           set name = excluded.name,
             first_name = excluded.first_name,
             last_name = excluded.last_name,
             nick = excluded.nick,
+            email = excluded.email,
             section_id = excluded.section_id,
             created_at = excluded.created_at
         `,
@@ -1495,28 +1693,11 @@ export async function importFullBackupToPostgres(
           athlete.firstName ?? "",
           athlete.lastName ?? "",
           athlete.nick ?? "",
+          normalizeOptionalEmail(athlete.email),
           sectionId,
           athlete.createdAt,
           ownerUserId,
         ],
-      );
-    }
-
-    for (const facility of backup.facilities) {
-      const facilityId = createOwnerScopedImportId(
-        ownerUserId,
-        "facility",
-        facility.id,
-      );
-
-      await client.query(
-        `
-          insert into facilities (id, name, created_at, owner_user_id)
-          values ($1, $2, $3, $4)
-          on conflict (id) do update
-          set name = excluded.name, created_at = excluded.created_at
-        `,
-        [facilityId, facility.name, facility.createdAt, ownerUserId],
       );
     }
 
@@ -1538,6 +1719,26 @@ export async function importFullBackupToPostgres(
           values (
             $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
             $15, $16, $17
+          )
+          where not exists (
+            select 1
+            from trainings
+            where athlete_id = $2
+              and date = $3
+              and time = $4
+              and duration_minutes = $5
+              and age_years = $6
+              and calories_burned = $7
+              and attempts_count = $8
+              and difficulty_notes = $9
+              and difficulty_by_surface is not distinct from $10::jsonb
+              and protocol is not distinct from $11::jsonb
+              and wellbeing = $12
+              and surfaces = $13
+              and facility_name is not distinct from $14
+              and custom_session_type is not distinct from $15
+              and notes = $16
+              and created_at = $17
           )
           on conflict (id) do update
           set athlete_id = excluded.athlete_id,

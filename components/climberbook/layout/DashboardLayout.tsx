@@ -11,7 +11,11 @@ import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { MainHeader } from "./MainHeader";
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const { isMobileTrainingLayout } = useViewport();
+  const { isMobileTrainingLayout, isReady } = useViewport();
+
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <main

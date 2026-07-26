@@ -10,6 +10,8 @@ import type { TrainingRecord, WeightEntryRecord } from "@/lib/climbs-db";
 
 type TrainingAnalyticsWidgetProps = {
   isMobileLayout: boolean;
+  section?: "all" | "charts" | "metrics" | "weight";
+  mobileOrder?: number;
   latestWeightKg: number | null | undefined;
   latestWeightDate: string | null;
   latestWeightChange: number | null;
@@ -32,6 +34,8 @@ type TrainingAnalyticsWidgetProps = {
 
 export function TrainingAnalyticsWidget({
   isMobileLayout,
+  section,
+  mobileOrder,
   ...panelProps
 }: TrainingAnalyticsWidgetProps) {
   return (
@@ -41,7 +45,7 @@ export function TrainingAnalyticsWidget({
       gap="none"
       style={
         isMobileLayout
-          ? analyticsPanelStyle
+          ? { ...analyticsPanelStyle, order: mobileOrder }
           : { ...analyticsPanelStyle, gridColumn: 2, gridRow: 1 }
       }
     >
@@ -51,6 +55,7 @@ export function TrainingAnalyticsWidget({
       >
         <TrainingAnalyticsPanel
           isMobileLayout={isMobileLayout}
+          section={section}
           {...panelProps}
         />
       </ScrollPane>

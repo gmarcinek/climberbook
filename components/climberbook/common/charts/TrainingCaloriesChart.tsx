@@ -15,6 +15,7 @@ import {
   formatDateIso,
   toDate,
 } from "@/components/training-calendar/training-calendar.helpers";
+import { formatCompactAxisNumber } from "@/components/climberbook/common/training";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { weightChartCanvasStyle } from "@/components/climberbook/common/styles";
 import type { TrainingRecord } from "@/lib/climbs-db";
@@ -71,6 +72,7 @@ export function TrainingCaloriesChart({
           <XAxis
             dataKey="date"
             minTickGap={28}
+            tick={{ fontSize: 9.6 }}
             tickFormatter={(date) =>
               new Intl.DateTimeFormat("pl-PL", {
                 day: "numeric",
@@ -79,8 +81,15 @@ export function TrainingCaloriesChart({
             }
           />
           <YAxis
-            tickFormatter={(value) => `${value}`}
-            label={{ value: "kcal", angle: -90, position: "insideLeft" }}
+            width={45}
+            tick={{ fontSize: 9.6 }}
+            tickFormatter={(value) => formatCompactAxisNumber(value, true)}
+            label={{
+              value: "kcal",
+              angle: -90,
+              position: "insideLeft",
+              style: { fontSize: 9.6 },
+            }}
           />
           {selectedChartDate && (
             <ReferenceLine

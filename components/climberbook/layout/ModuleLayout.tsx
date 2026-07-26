@@ -8,6 +8,7 @@ import {
   pageStyle,
   shellStyle,
 } from "@/components/climberbook/common/styles";
+import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { MainHeader } from "./MainHeader";
 
 const moduleContentStyle = {
@@ -21,10 +22,15 @@ export function ModuleLayout({
   activeModule: Exclude<ModuleKey, "treningowy">;
   children: ReactNode;
 }) {
+  const { isReady } = useViewport();
   const moduleContainer =
     activeModule === "raportowy" || activeModule === "analityka"
       ? { width: "100%", maxWidth: "none", margin: 0 }
       : moduleContainerStyle;
+
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <main style={pageStyle}>

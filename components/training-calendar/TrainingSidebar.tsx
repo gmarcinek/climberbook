@@ -130,7 +130,7 @@ export function TrainingSidebar({
                 <h1 className={styles.trainingSidebar__title}>Lista treningów w kalendarzu</h1>
               </div>
               <div className={styles.trainingSidebar__headerActions}>
-                <Button variant="tertiary" onClick={() => onSelectDate(today)} className={styles.trainingSidebar__submitButton}>
+                <Button variant="primary" onClick={() => onSelectDate(today)} className={styles.trainingSidebar__submitButton}>
                   + Trening
                 </Button>
               </div>

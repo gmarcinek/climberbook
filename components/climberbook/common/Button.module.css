@@ -20,7 +20,8 @@
 }
 
 .variant--primary {
-  background: #0f6d82;
+  background: linear-gradient(135deg, #0f6d82, #2595a1);
+  box-shadow: 0 18px 30px rgba(18, 113, 126, 0.24);
 }
 
 .variant--secondary {
@@ -34,7 +35,7 @@
 }
 
 .variant--quadrary {
-  background: #303151;
+  background: #343434;
 }
 
 .emotButton {

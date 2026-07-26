@@ -62,7 +62,8 @@
   gap: var(--form-actions-gap-mobile, 0.75rem);
   align-items: stretch;
   justify-self: start;
-  margin-top: var(--form-actions-margin-mobile, 1rem);
+  margin-top: var(--form-actions-margin-top-mobile, 1.5rem);
+  margin-bottom: var(--form-actions-margin-bottom-mobile, 3rem);
 }
 
 .formActionsGap--sm {
@@ -81,27 +82,52 @@
 }
 
 .formActionsMargin--none {
-  --form-actions-margin-mobile: 0;
-  --form-actions-margin-desktop: 0;
+  --form-actions-margin-top-mobile: 0;
+  --form-actions-margin-bottom-mobile: 0;
+  --form-actions-margin-top-desktop: 0;
+  --form-actions-margin-bottom-desktop: 0;
 }
 
 .formActionsMargin--sm {
-  --form-actions-margin-mobile: 0.75rem;
-  --form-actions-margin-desktop: 0.75rem;
+  --form-actions-margin-top-mobile: 0.75rem;
+  --form-actions-margin-bottom-mobile: 0.75rem;
+  --form-actions-margin-top-desktop: 0.75rem;
+  --form-actions-margin-bottom-desktop: 0.75rem;
 }
 
 .formActionsMargin--md {
-  --form-actions-margin-mobile: 1rem;
-  --form-actions-margin-desktop: 1rem;
+  --form-actions-margin-top-mobile: 1rem;
+  --form-actions-margin-bottom-mobile: 1rem;
+  --form-actions-margin-top-desktop: 1rem;
+  --form-actions-margin-bottom-desktop: 1rem;
 }
 
 .formActionsMargin--lg {
-  --form-actions-margin-mobile: 1.25rem;
-  --form-actions-margin-desktop: 1.25rem;
+  --form-actions-margin-top-mobile: 1.25rem;
+  --form-actions-margin-bottom-mobile: 1.25rem;
+  --form-actions-margin-top-desktop: 1.25rem;
+  --form-actions-margin-bottom-desktop: 1.25rem;
+}
+
+.formActionsMargin--roomy {
+  --form-actions-margin-top-mobile: 1.5rem;
+  --form-actions-margin-bottom-mobile: 3rem;
+  --form-actions-margin-top-desktop: 1.5rem;
+  --form-actions-margin-bottom-desktop: 3rem;
 }
 
 .formActions > * {
   width: 100%;
+}
+
+.formActionsInline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.formActionsInline > * {
+  width: auto;
 }
 
 @media (min-width: 720px) {
@@ -123,8 +149,12 @@
     align-items: center;
     gap: var(--form-actions-gap-desktop, var(--form-actions-gap-mobile, 0.75rem));
     margin-top: var(
-      --form-actions-margin-desktop,
-      var(--form-actions-margin-mobile, 1rem)
+      --form-actions-margin-top-desktop,
+      var(--form-actions-margin-top-mobile, 1.5rem)
+    );
+    margin-bottom: var(
+      --form-actions-margin-bottom-desktop,
+      var(--form-actions-margin-bottom-mobile, 3rem)
     );
   }
 

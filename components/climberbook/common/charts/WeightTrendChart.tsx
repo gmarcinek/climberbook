@@ -203,7 +203,7 @@ export function WeightTrendChart({
               dataKey="date"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#64574d", fontSize: 11 }}
+              tick={{ fill: "#64574d", fontSize: 8.8 }}
               minTickGap={28}
               padding={{ left: 0, right: 0 }}
               tickFormatter={(date) =>
@@ -216,11 +216,11 @@ export function WeightTrendChart({
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#64574d", fontSize: 11 }}
+              tick={{ fill: "#64574d", fontSize: 8.8 }}
               tickFormatter={(value) => `${value}`}
               domain={[axisMinimum, axisMaximum]}
               ticks={fullKilogramTicks}
-              width={32}
+              width={26}
             />
             <Tooltip
               cursor={{ stroke: "rgba(209, 109, 63, 0.32)", strokeWidth: 1 }}

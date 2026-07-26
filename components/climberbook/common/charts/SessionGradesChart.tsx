@@ -213,7 +213,13 @@ export function RopeTrainingGradesChart({
     visibleBoulderPoints.length > 0 ||
     (showsSpraywall && spraywallSessions.length > 0);
   const xAxisDataKey = isPreviewChart ? "plotX" : "trainingTimestamp";
-  const xAxisDomain = isPreviewChart ? [0, 2] : [chartStartTimestamp, chartEndTimestamp];
+  const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
+  const xAxisDomain = isPreviewChart
+    ? [0, 2]
+    : [
+        chartStartTimestamp - oneDayInMilliseconds,
+        chartEndTimestamp + oneDayInMilliseconds,
+      ];
   const xAxisTicks = isPreviewChart ? [1] : chartTicks;
   const selectedTrainingTimestamp =
     !isPreviewChart &&
@@ -296,6 +302,7 @@ export function RopeTrainingGradesChart({
                 dataKey={xAxisDataKey}
                 domain={xAxisDomain}
                 ticks={xAxisTicks}
+                tick={{ fontSize: 9.6 }}
                 tickFormatter={(value) =>
                   isPreviewChart
                     ? new Intl.DateTimeFormat("pl-PL", {
@@ -321,7 +328,7 @@ export function RopeTrainingGradesChart({
                   yAxisId="rope"
                   type="number"
                   dataKey="gradeIndex"
-                  width={48}
+                  width={40}
                   domain={[minimumGradeIndex, maximumGradeIndex]}
                   ticks={Array.from(
                     { length: maximumGradeIndex - minimumGradeIndex + 1 },
@@ -332,7 +339,9 @@ export function RopeTrainingGradesChart({
                     value: "Wycena",
                     angle: -90,
                     position: "insideLeft",
+                    style: { fontSize: 9.6 },
                   }}
+                  tick={{ fontSize: 9.6 }}
                 />
               )}
               {visiblePreviewRopeLines.map((line) => (
@@ -356,11 +365,12 @@ export function RopeTrainingGradesChart({
                   orientation="right"
                   type="number"
                   dataKey="gradeIndex"
-                  width={32}
+                  width={26}
                   domain={[1, 9]}
                   ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
                   interval={0}
                   tickFormatter={(value) => `V${value}`}
+                  tick={{ fontSize: 9.6 }}
                 />
               )}
               <Tooltip
@@ -434,12 +444,12 @@ export function RopeTrainingGradesChart({
                 />
               )}
               {showsSpraywall &&
-                spraywallSessions.map(({ intensity, trainingTimestamp }) => {
+                spraywallSessions.map(({ intensity, trainingTimestamp }, index) => {
                   const config = spraywallIntensityConfig[intensity];
 
                   return (
                     <ReferenceArea
-                      key={`spraywall-${trainingTimestamp}-${intensity}`}
+                      key={`spraywall-${trainingTimestamp}-${intensity}-${index}`}
                       yAxisId="board"
                       x1={
                         isPreviewChart
@@ -456,6 +466,7 @@ export function RopeTrainingGradesChart({
                       fill={`url(#${config.gradientId})`}
                       fillOpacity={1}
                       stroke="none"
+                      shape={FixedWidthSpraywallArea}
                     />
                   );
                 })}
@@ -682,6 +693,30 @@ function SpraywallHoverTarget({ cx, cy }: { cx?: number; cy?: number }) {
   );
 }
 
+function FixedWidthSpraywallArea({
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
+  fill,
+}: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+}) {
+  return (
+    <rect
+      x={x + width / 2 - 8}
+      y={y}
+      width={16}
+      height={height}
+      fill={fill}
+    />
+  );
+}
+
 type SessionGradePoint = {
   date: string;
   grade: string;
@@ -865,7 +900,7 @@ function RopeAttemptMarker({
   fill = "#343a40",
   payload,
 }: ChartMarkerProps) {
-  const radius = 4.5 * getMarkerScale(payload?.occurrenceCount);
+  const radius = 9 * getMarkerScale(payload?.occurrenceCount);
 
   return <circle cx={cx} cy={cy} r={radius} fill={fill} />;
 }

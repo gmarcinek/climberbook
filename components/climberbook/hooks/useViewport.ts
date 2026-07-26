@@ -20,6 +20,7 @@ export function useViewport() {
 
   return {
     width,
+    isReady: width > 0,
     isMobileChartLayout: width > 0 && width < 600,
     isMobileHeader: width > 0 && width < 600,
     isMobileTrainingLayout: width > 0 && width < 931,

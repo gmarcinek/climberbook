@@ -16,6 +16,10 @@ function getName(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getFacilityId(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 async function getActor(request: Request) {
   if (!isPostgresExperimentalApiEnabled())
     return postgresExperimentalApiDisabledResponse();
@@ -34,11 +38,12 @@ export async function POST(request: Request) {
   const actorId = await getActor(request);
   if (typeof actorId !== "string") return actorId;
 
-  const name = getName((await request.json()).name);
+  const input = await request.json();
+  const name = getName(input.name);
   if (!name) return Response.json({ error: "name jest wymagane." }, { status: 400 });
 
   return Response.json(
-    { section: await createSectionInPostgres(actorId, name) },
+    { section: await createSectionInPostgres(actorId, name, getFacilityId(input.facilityId)) },
     { status: 201 },
   );
 }

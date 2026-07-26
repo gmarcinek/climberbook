@@ -7,6 +7,11 @@
   color: var(--text);
 }
 
+input.control[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
 select.control {
   appearance: none;
   padding-right: 3rem;

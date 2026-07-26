@@ -1,18 +1,26 @@
 "use client";
 
-import type {
-  ChangeEvent,
-  Dispatch,
-  DragEvent,
-  FormEvent,
-  RefObject,
-  SetStateAction,
-} from "react";
 import {
+  useState,
+  type ChangeEvent,
+  type Dispatch,
+  type DragEvent,
+  type FormEvent,
+  type RefObject,
+  type SetStateAction,
+} from "react";
+import { Modal } from "@/components/climberbook/common/Modal";
+import {
+  moduleEyebrowStyle,
   moduleContainerStyle,
   moduleContentStyle,
+  panelHeadingStyle,
+  sectionTitleStyle,
   settingsMainColumnStyle,
 } from "@/components/climberbook/common/styles";
+import { Button } from "@/components/climberbook/common/Button";
+import { Input, Select } from "@/components/climberbook/common/FormControls";
+import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import type { UserProfileDraft } from "@/components/climberbook/common/training";
 import type {
   AthleteRecord,
@@ -32,6 +40,7 @@ import { SectionManagementWidget } from "./SectionManagementWidget";
 import { SettingsHeaderWidget } from "./SettingsHeaderWidget";
 import { SettingsTabsWidget } from "./SettingsTabsWidget";
 import { TeamRosterSettingsWidget } from "./TeamRosterSettingsWidget";
+import styles from "./SettingsAssembly.module.css";
 import type {
   AthleteFormDraft,
   ModuleMeta,
@@ -67,7 +76,7 @@ type SettingsAssemblyProps = {
   setNewSectionName: Dispatch<SetStateAction<string>>;
   newFacilityName: string;
   setNewFacilityName: Dispatch<SetStateAction<string>>;
-  onAddSection: (event: FormEvent<HTMLFormElement>) => void;
+  onAddSection: (event: FormEvent<HTMLFormElement>, facilityId?: string) => void;
   onDeleteSection: (section: SectionRecord) => Promise<void>;
   onAddFacility: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   onDeleteFacility: (facility: FacilityRecord) => Promise<void>;
@@ -82,7 +91,7 @@ type SettingsAssemblyProps = {
   athleteForm: AthleteFormDraft;
   status: string;
   setAthleteForm: Dispatch<SetStateAction<AthleteFormDraft>>;
-  onAthleteFormSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onAthleteFormSubmit: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   onResetAthleteForm: () => void;
   isDatabaseDeleteModalOpen: boolean;
   setIsDatabaseDeleteModalOpen: Dispatch<SetStateAction<boolean>>;
@@ -141,6 +150,69 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
     onDatabaseDelete,
     onCloseDatabaseDeleteModal,
   } = props;
+  const [isAthleteFormModalOpen, setIsAthleteFormModalOpen] = useState(false);
+  const [isSectionFormModalOpen, setIsSectionFormModalOpen] = useState(false);
+  const [isFacilityFormModalOpen, setIsFacilityFormModalOpen] = useState(false);
+  const [sectionFacilityId, setSectionFacilityId] = useState("");
+
+  function openAthleteForm() {
+    onResetAthleteForm();
+    setIsAthleteFormModalOpen(true);
+  }
+
+  async function editAthlete(athlete: AthleteRecord) {
+    await onStartAthleteEdit(athlete);
+    setIsAthleteFormModalOpen(true);
+  }
+
+  async function submitAthleteForm(event: FormEvent<HTMLFormElement>) {
+    const saved = await onAthleteFormSubmit(event);
+    if (saved !== false) {
+      setIsAthleteFormModalOpen(false);
+      onResetAthleteForm();
+    }
+    return saved;
+  }
+
+  function closeAthleteForm() {
+    setIsAthleteFormModalOpen(false);
+    onResetAthleteForm();
+  }
+
+  function openSectionForm() {
+    setSectionFacilityId("");
+    setIsSectionFormModalOpen(true);
+  }
+
+  function closeSectionForm() {
+    setNewSectionName("");
+    setSectionFacilityId("");
+    setIsSectionFormModalOpen(false);
+  }
+
+  async function submitSectionForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newSectionName.trim()) return;
+    await onAddSection(event, sectionFacilityId);
+    closeSectionForm();
+  }
+
+  function openFacilityForm() {
+    setIsFacilityFormModalOpen(true);
+  }
+
+  function closeFacilityForm() {
+    setNewFacilityName("");
+    setIsFacilityFormModalOpen(false);
+  }
+
+  async function submitFacilityForm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newFacilityName.trim()) return;
+    await onAddFacility(event);
+    closeFacilityForm();
+  }
+
   return (
     <>
       <div style={{ ...moduleContainerStyle, ...moduleContentStyle }}>
@@ -149,13 +221,16 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
         {settingsTab === "profil" && (
           <div style={settingsMainColumnStyle}>
             <div style={settingsMainColumnStyle}>
-              <ProfileMetricsWidget
-                profileDraft={profileDraft}
-                weightEntries={weightEntries}
-              />
+              <div className={styles.profileMetrics}>
+                <ProfileMetricsWidget
+                  profileDraft={profileDraft}
+                  weightEntries={weightEntries}
+                />
+              </div>
               <div style={settingsMainColumnStyle}>
                 <ProfileFormWidget
                   profileDraft={profileDraft}
+                  weightEntries={weightEntries}
                   setProfileDraft={setProfileDraft}
                   onSettingsSubmit={onSettingsSubmit}
                 />
@@ -165,40 +240,25 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
         )}
         {settingsTab === "zespol" && (
           <div style={settingsMainColumnStyle}>
-            <SectionManagementWidget
-              sections={sections}
-              newSectionName={newSectionName}
-              setNewSectionName={setNewSectionName}
-              onAddSection={onAddSection}
-              onDeleteSection={onDeleteSection}
-            />
-            <AthleteFormWidget
-              athleteFormMode={athleteFormMode}
-              athleteForm={athleteForm}
-              validationMessage={status}
-              setAthleteForm={setAthleteForm}
-              sections={sections}
-              onAthleteFormSubmit={onAthleteFormSubmit}
-              onResetAthleteForm={onResetAthleteForm}
-            />
             <TeamRosterSettingsWidget
               athletes={athletes}
               activeAthleteId={activeAthleteId}
               sections={sections}
+              onAddAthlete={openAthleteForm}
               onAssignAthleteSection={onAssignAthleteSection}
               onAthleteExport={onAthleteExport}
-              onStartAthleteEdit={onStartAthleteEdit}
+              onStartAthleteEdit={editAthlete}
               onDeleteAthlete={onDeleteAthlete}
             />
-          </div>
-        )}
-        {settingsTab === "obiekty" && (
-          <div style={settingsMainColumnStyle}>
+            <SectionManagementWidget
+              sections={sections}
+              facilities={facilities}
+              onAddSection={openSectionForm}
+              onDeleteSection={onDeleteSection}
+            />
             <FacilityManagementWidget
               facilities={facilities}
-              newFacilityName={newFacilityName}
-              setNewFacilityName={setNewFacilityName}
-              onAddFacility={onAddFacility}
+              onAddFacility={openFacilityForm}
               onDeleteFacility={onDeleteFacility}
             />
           </div>
@@ -219,6 +279,90 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
           </div>
         )}
       </div>
+      {isAthleteFormModalOpen ? (
+        <Modal
+          labelledBy="athlete-form-title"
+          onClose={closeAthleteForm}
+          style={{ width: "min(100%, 720px)", maxHeight: "90vh", overflowY: "auto" }}
+        >
+          <AthleteFormWidget
+            athleteFormMode={athleteFormMode}
+            athleteForm={athleteForm}
+            validationMessage={status}
+            setAthleteForm={setAthleteForm}
+            sections={sections}
+            onAthleteFormSubmit={submitAthleteForm}
+            onResetAthleteForm={closeAthleteForm}
+          />
+        </Modal>
+      ) : null}
+      {isSectionFormModalOpen ? (
+        <Modal labelledBy="section-form-title" onClose={closeSectionForm}>
+          <Form
+            onSubmit={submitSectionForm}
+            header={
+              <div style={panelHeadingStyle}>
+                <div>
+                  <span style={moduleEyebrowStyle}>Nowa</span>
+                  <h2 id="section-form-title" style={sectionTitleStyle}>
+                    Dodaj sekcję
+                  </h2>
+                </div>
+              </div>
+            }
+          >
+            <Input
+              autoFocus
+              value={newSectionName}
+              onChange={(event) => setNewSectionName(event.target.value)}
+              placeholder="Nazwa sekcji / teamu"
+            />
+            <Select
+              value={sectionFacilityId}
+              onChange={(event) => setSectionFacilityId(event.target.value)}
+            >
+              <option value="">Miejsce odbywania się: bez obiektu</option>
+              {facilities.map((facility) => (
+                <option key={facility.id} value={facility.id}>
+                  {facility.name}
+                </option>
+              ))}
+            </Select>
+            <FormActions layout="inline">
+              <Button type="submit" variant="tertiary">Dodaj sekcję</Button>
+              <Button variant="secondary" onClick={closeSectionForm}>Anuluj</Button>
+            </FormActions>
+          </Form>
+        </Modal>
+      ) : null}
+      {isFacilityFormModalOpen ? (
+        <Modal labelledBy="facility-form-title" onClose={closeFacilityForm}>
+          <Form
+            onSubmit={submitFacilityForm}
+            header={
+              <div style={panelHeadingStyle}>
+                <div>
+                  <span style={moduleEyebrowStyle}>Nowy</span>
+                  <h2 id="facility-form-title" style={sectionTitleStyle}>
+                    Dodaj obiekt
+                  </h2>
+                </div>
+              </div>
+            }
+          >
+            <Input
+              autoFocus
+              value={newFacilityName}
+              onChange={(event) => setNewFacilityName(event.target.value)}
+              placeholder="Np. Crux, Centrum Wspinaczkowe"
+            />
+            <FormActions layout="inline">
+              <Button type="submit" variant="tertiary">Dodaj obiekt</Button>
+              <Button variant="secondary" onClick={closeFacilityForm}>Anuluj</Button>
+            </FormActions>
+          </Form>
+        </Modal>
+      ) : null}
       {isDatabaseDeleteModalOpen && (
         <DatabaseDeleteModalWidget
           databaseDeleteConfirmation={databaseDeleteConfirmation}

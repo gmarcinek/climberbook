@@ -65,6 +65,7 @@
   }
 
   .dialog {
+    display: block !important;
     width: 100% !important;
     max-width: none !important;
 
@@ -82,8 +83,17 @@
 
     grid-template-rows: auto minmax(0, 1fr) !important;
 
-    overflow: hidden !important;
+    padding: 1rem !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     border-radius: 0 !important;
+  }
+
+  .dialogFullBleed {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
 
   .content {
@@ -91,12 +101,14 @@
     min-width: 0;
     min-height: 0;
 
+    overflow: visible;
+  }
+
+  .dialogFullBleed .content {
     overflow-x: hidden;
     overflow-y: auto;
-
     overscroll-behavior-x: none;
     overscroll-behavior-y: contain;
-
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
   }

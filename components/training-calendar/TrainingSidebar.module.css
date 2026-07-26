@@ -554,18 +554,10 @@
   box-shadow: 0 18px 30px rgba(18, 113, 126, 0.24);
 }
 
-.trainingSidebar__formActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
 .trainingSidebar__formPrimaryActions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 2rem;
 }
 
 .trainingSidebar__formDeleteAction {
@@ -575,6 +567,10 @@
 .trainingSidebar__visibleList {
   display: grid;
   gap: 6px;
+}
+
+.trainingSidebar__visibleList--standalone {
+  padding: 0 11px;
 }
 
 .trainingSidebar__visibleItem {
@@ -814,16 +810,6 @@
   .trainingSidebar__submitButton {
     width: 100%;
     justify-self: stretch;
-  }
-
-  .trainingSidebar__formActions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .trainingSidebar__formPrimaryActions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .trainingSidebar__formDeleteAction {

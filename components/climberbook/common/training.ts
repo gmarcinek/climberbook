@@ -122,6 +122,22 @@ export function formatDurationMinutes(value: number | string) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} h`;
 }
 
+export function formatCompactAxisNumber(
+  value: number | string,
+  alwaysUseThousands = false,
+) {
+  const numericValue = Number(value);
+
+  if (
+    !Number.isFinite(numericValue) ||
+    (!alwaysUseThousands && Math.abs(numericValue) < 1000)
+  ) {
+    return String(value);
+  }
+
+  return `${Math.round((numericValue / 1000) * 10) / 10}k`;
+}
+
 export function roundToSingleDecimal(value: number) {
   return Math.round(value * 10) / 10;
 }
