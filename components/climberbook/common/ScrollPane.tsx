@@ -19,6 +19,7 @@ type ScrollPaneProps = {
   contentStyle?: CSSProperties;
   thumbColor?: string;
   thumbHoverColor?: string;
+  onViewportScroll?: (event: React.UIEvent<HTMLDivElement>) => void;
 };
 
 function joinClasses(...classNames: Array<string | undefined>) {
@@ -35,6 +36,7 @@ export function ScrollPane({
   contentStyle,
   thumbColor = "#99999933",
   thumbHoverColor = "#999999",
+  onViewportScroll,
 }: ScrollPaneProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -104,6 +106,7 @@ export function ScrollPane({
         ref={viewportRef}
         className={joinClasses(styles.viewport, viewportClassName)}
         style={viewportStyle}
+        onScroll={onViewportScroll}
       >
         <div
           ref={contentRef}

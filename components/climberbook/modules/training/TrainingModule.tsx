@@ -23,6 +23,7 @@ export function TrainingModule() {
     trainings: app.trainings,
     weightEntries: app.weightEntries,
   });
+  const currentAge = stats.currentAge ? Number(stats.currentAge) : null;
 
   return (
     <TrainingModuleContent
@@ -48,6 +49,7 @@ export function TrainingModule() {
       onWeightEntrySubmit={app.submitWeightEntry}
       onDeleteWeightEntry={app.deleteWeightEntry}
       recentWeightEntries={stats.recentWeightEntries}
+      currentAge={currentAge}
       onPreviousMonth={app.previousTrainingMonth}
       onNextMonth={app.nextTrainingMonth}
       trainingRangeStart={app.trainingRangeStart}

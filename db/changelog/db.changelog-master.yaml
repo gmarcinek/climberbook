@@ -19,3 +19,5 @@ databaseChangeLog:
       file: changelog/changes/009-add-section-facility.sql
   - include:
       file: changelog/changes/010-add-athlete-email.sql
+  - include:
+      file: changelog/changes/011-add-password-auth.sql

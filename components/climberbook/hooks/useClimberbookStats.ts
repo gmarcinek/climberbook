@@ -509,8 +509,7 @@ export function useClimberbookStats({
           `${right.date}-${right.time}-${right.createdAt}`.localeCompare(
             `${left.date}-${left.time}-${left.createdAt}`,
           ),
-        )
-        .slice(0, 12),
+        ),
     [weightEntries],
   );
   const sortedWeightEntries = useMemo(

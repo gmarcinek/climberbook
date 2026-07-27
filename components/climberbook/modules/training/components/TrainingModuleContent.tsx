@@ -68,6 +68,7 @@ type TrainingModuleContentProps = {
   ) => Promise<boolean>;
   onDeleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
   recentWeightEntries: WeightEntryRecord[];
+  currentAge: number | null;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   trainingRangeStart: string;
@@ -109,6 +110,7 @@ export function TrainingModuleContent({
   onWeightEntrySubmit,
   onDeleteWeightEntry,
   recentWeightEntries,
+  currentAge,
   onPreviousMonth,
   onNextMonth,
   trainingRangeStart,
@@ -254,6 +256,7 @@ export function TrainingModuleContent({
             onWeightEntrySubmit={onWeightEntrySubmit}
             onDeleteWeightEntry={onDeleteWeightEntry}
             recentWeightEntries={recentWeightEntries}
+            currentAge={currentAge}
           />
         ) : null}
 
@@ -308,6 +311,7 @@ export function TrainingModuleContent({
             onWeightEntrySubmit={onWeightEntrySubmit}
             onDeleteWeightEntry={onDeleteWeightEntry}
             recentWeightEntries={recentWeightEntries}
+            currentAge={currentAge}
           />
         ) : null}
 

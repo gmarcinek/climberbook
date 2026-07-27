@@ -15,6 +15,7 @@ import {
   queryPostgres,
   withPostgresTransaction,
 } from "@/lib/server/postgres";
+import { hashPassword, verifyPassword } from "@/lib/server/passwords";
 import type { PoolClient } from "pg";
 import { createHash } from "node:crypto";
 
@@ -36,6 +37,10 @@ type ExperimentalUserRow = {
   display_name: string;
   onboarding_completed: boolean;
   created_at: Date;
+};
+
+type PasswordCredentialRow = {
+  password_hash: string;
 };
 
 type SocialIdentityRow = {
@@ -408,6 +413,76 @@ export async function findOrCreateSocialUser(input: {
   });
 }
 
+export class EmailPasswordRegistrationError extends Error {}
+
+export async function registerEmailPasswordUser(input: {
+  email: string;
+  password: string;
+  displayName: string;
+}) {
+  const email = input.email.trim().toLowerCase();
+  const passwordHash = await hashPassword(input.password);
+
+  return withPostgresTransaction(async (client) => {
+    const existingUsers = await client.query<ExperimentalUserRow>(
+      `
+        select id, email, display_name, onboarding_completed, created_at
+        from app_users
+        where lower(email) = $1
+        limit 2
+      `,
+      [email],
+    );
+    const existingUser =
+      existingUsers.rows.length === 1 ? existingUsers.rows[0] : null;
+
+    if (existingUser) {
+      throw new EmailPasswordRegistrationError(
+        "Konto z tym adresem e-mail już istnieje. Zaloguj się istniejącą metodą.",
+      );
+    }
+
+    const userId = crypto.randomUUID();
+    const userResult = await client.query<ExperimentalUserRow>(
+      `
+        insert into app_users (id, email, display_name)
+        values ($1, $2, $3)
+        returning id, email, display_name, onboarding_completed, created_at
+      `,
+      [userId, email, input.displayName],
+    );
+    await client.query(
+      "insert into auth_password_credentials (user_id, password_hash) values ($1, $2)",
+      [userId, passwordHash],
+    );
+    await ensureDefaultAthlete(client, userId, { nick: input.displayName }, email);
+
+    return mapExperimentalUser(userResult.rows[0]);
+  });
+}
+
+export async function authenticateEmailPasswordUser(
+  emailInput: string,
+  password: string,
+) {
+  const email = emailInput.trim().toLowerCase();
+  const result = await queryPostgres<ExperimentalUserRow & PasswordCredentialRow>(
+    `
+      select app_users.id, app_users.email, app_users.display_name,
+        app_users.onboarding_completed, app_users.created_at,
+        auth_password_credentials.user_id, auth_password_credentials.password_hash
+      from app_users
+      join auth_password_credentials on auth_password_credentials.user_id = app_users.id
+      where lower(app_users.email) = $1
+    `,
+    [email],
+  );
+  const user = result.rows[0];
+  if (!user || !(await verifyPassword(password, user.password_hash))) return null;
+
+  return mapExperimentalUser(user);
+}
+
 async function ensureDefaultAthlete(
   client: PoolClient,
   userId: string,
@@ -422,6 +497,24 @@ async function ensureDefaultAthlete(
   const nick = input.nick?.trim() || email;
   const name = [firstName, lastName].filter(Boolean).join(" ") || nick;
   const athleteId = crypto.randomUUID();
+
+  await client.query(
+    `
+      update athletes
+      set name = case when btrim(name) = '' or name = 'Zawodnik' then $1 else name end,
+        first_name = case when btrim(first_name) = '' then $2 else first_name end,
+        last_name = case when btrim(last_name) = '' then $3 else last_name end,
+        nick = case when btrim(nick) = '' then $4 else nick end,
+        email = case when email is null or btrim(email) = '' then $5 else email end
+      where id = (
+        select id from athletes
+        where owner_user_id = $6
+        order by created_at asc
+        limit 1
+      )
+    `,
+    [name, firstName, lastName, nick, email, userId],
+  );
 
   await client.query(
     `
@@ -633,6 +726,26 @@ export async function exportPostgresDatabaseBackup(
     throw new Error("Eksport pełnej bazy wymaga zawodnika właściciela.");
   }
 
+  const displayNameParts = ownerUser.displayName.trim().split(/\s+/).filter(Boolean);
+  const ownerFirstName = ownerAthlete.firstName?.trim() || displayNameParts[0] || "";
+  const ownerLastName = ownerAthlete.lastName?.trim() || displayNameParts.slice(1).join(" ");
+  const ownerNick = ownerAthlete.nick?.trim() || ownerUser.displayName.trim() || ownerUser.email;
+  const ownerName =
+    (ownerAthlete.name !== "Zawodnik" && ownerAthlete.name.trim()) ||
+    [ownerFirstName, ownerLastName].filter(Boolean).join(" ") ||
+    ownerNick;
+  const exportedOwnerAthlete: AthleteRecord = {
+    ...ownerAthlete,
+    name: ownerName,
+    firstName: ownerFirstName,
+    lastName: ownerLastName,
+    nick: ownerNick,
+    email: ownerAthlete.email?.trim() || ownerUser.email,
+  };
+  const athletes = snapshot.athletes.map((athlete) =>
+    athlete.id === ownerAthlete.id ? exportedOwnerAthlete : athlete,
+  );
+
   return {
     formatVersion: 3,
     exportedAt: new Date().toISOString(),
@@ -640,6 +753,7 @@ export async function exportPostgresDatabaseBackup(
     ownerEmail: ownerUser.email,
     ...createTrainingExportMetadata(snapshot.trainings),
     ...snapshot,
+    athletes,
   };
 }
 
@@ -1629,6 +1743,8 @@ export async function importFullBackupToPostgres(
       athleteIds.set(String(backupOwner.id), matchingCurrentAthlete.id);
     }
 
+    const protectedAthleteId = matchingCurrentAthlete?.id ?? null;
+
     for (const facility of backup.facilities) {
       const facilityId = facilityIds.get(String(facility.id))!;
 
@@ -1686,6 +1802,7 @@ export async function importFullBackupToPostgres(
             email = excluded.email,
             section_id = excluded.section_id,
             created_at = excluded.created_at
+          where $10::uuid is null or athletes.id <> $10
         `,
         [
           athleteId,
@@ -1697,6 +1814,7 @@ export async function importFullBackupToPostgres(
           sectionId,
           athlete.createdAt,
           ownerUserId,
+          protectedAthleteId,
         ],
       );
     }
@@ -1716,10 +1834,9 @@ export async function importFullBackupToPostgres(
             difficulty_by_surface, protocol, wellbeing, surfaces, facility_name,
             custom_session_type, notes, created_at
           )
-          values (
+          select
             $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
             $15, $16, $17
-          )
           where not exists (
             select 1
             from trainings

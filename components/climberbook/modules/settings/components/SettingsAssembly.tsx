@@ -154,6 +154,8 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
   const [isSectionFormModalOpen, setIsSectionFormModalOpen] = useState(false);
   const [isFacilityFormModalOpen, setIsFacilityFormModalOpen] = useState(false);
   const [sectionFacilityId, setSectionFacilityId] = useState("");
+  const activeAthlete =
+    athletes.find((athlete) => athlete.id === activeAthleteId) ?? null;
 
   function openAthleteForm() {
     onResetAthleteForm();
@@ -229,10 +231,13 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               </div>
               <div style={settingsMainColumnStyle}>
                 <ProfileFormWidget
+                  activeAthlete={activeAthlete}
+                  accountEmail={accountEmail}
                   profileDraft={profileDraft}
                   weightEntries={weightEntries}
                   setProfileDraft={setProfileDraft}
                   onSettingsSubmit={onSettingsSubmit}
+                  onStartAthleteEdit={editAthlete}
                 />
               </div>
             </div>

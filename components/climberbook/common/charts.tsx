@@ -6,9 +6,8 @@ import { Button } from "@/components/climberbook/common/Button";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts/SessionGradesChart";
-import { TrainingCaloriesChart } from "@/components/climberbook/common/charts/TrainingCaloriesChart";
+import { TrainingRecoveryChart } from "@/components/climberbook/common/charts/TrainingRecoveryChart";
 import { WeightTrendChart } from "@/components/climberbook/common/charts/WeightTrendChart";
-import { TrainingFatigueForecastChartWidget } from "@/components/climberbook/modules/analytics/components/TrainingFatigueForecastChartWidget";
 import {
   formatDurationMinutes,
   formatWeightInput,
@@ -36,6 +35,10 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
+import {
+  addDays,
+  formatDateIso,
+} from "@/components/training-calendar/training-calendar.helpers";
 import { useSelectedDates } from "@/contexts/SelectedDatesContext";
 import type { TrainingRecord, WeightEntryRecord } from "@/lib/climbs-db";
 
@@ -65,6 +68,7 @@ export function TrainingAnalyticsPanel(props: {
   ) => Promise<boolean>;
   onDeleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
   recentWeightEntries: WeightEntryRecord[];
+  currentAge: number | null;
 }) {
   const {
     isMobileLayout,
@@ -84,6 +88,7 @@ export function TrainingAnalyticsPanel(props: {
     onWeightEntrySubmit,
     onDeleteWeightEntry,
     recentWeightEntries,
+    currentAge,
   } = props;
   const { selectedDate } = useSelectedDates();
   const [isWeightEntryModalOpen, setIsWeightEntryModalOpen] = useState(false);
@@ -91,6 +96,7 @@ export function TrainingAnalyticsPanel(props: {
     useState<WeightEntryRecord | null>(null);
   const [weightEntryPendingDeletion, setWeightEntryPendingDeletion] =
     useState<WeightEntryRecord | null>(null);
+  const [visibleWeightEntriesCount, setVisibleWeightEntriesCount] = useState(50);
   const responsiveMetricCardStyle = isMobileLayout
     ? { ...metricCardStyle, padding: 0, background: "transparent" }
     : metricCardStyle;
@@ -100,6 +106,15 @@ export function TrainingAnalyticsPanel(props: {
   const showsTrainingCharts = section !== "weight";
   const showsWeightDetails = section === "all" || section === "weight";
   const showsWeightChart = section !== "charts";
+  const weightChartRange = isMobileLayout
+    ? chartRange
+    : {
+        start: addDays(chartRange.end, -20),
+        end: chartRange.end,
+      };
+  const now = new Date();
+  const currentWeightDate = formatDateIso(now);
+  const currentWeightTime = now.toTimeString().slice(0, 5);
 
   async function handleWeightEntryModalSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -129,6 +144,17 @@ export function TrainingAnalyticsPanel(props: {
 
     await onDeleteWeightEntry(weightEntryPendingDeletion);
     setWeightEntryPendingDeletion(null);
+  }
+
+  function loadMoreWeightEntries(event: React.UIEvent<HTMLDivElement>) {
+    const { clientHeight, scrollHeight, scrollTop } = event.currentTarget;
+    const isNearEnd = scrollTop + clientHeight >= scrollHeight - 48;
+
+    if (isNearEnd) {
+      setVisibleWeightEntriesCount((count) =>
+        Math.min(count + 50, recentWeightEntries.length),
+      );
+    }
   }
 
   return (
@@ -209,25 +235,13 @@ export function TrainingAnalyticsPanel(props: {
         />
       </section>
 
-      <section style={chartCardStyle}>
-        <TrainingFatigueForecastChartWidget
-          trainings={trainings}
-          chartRange={chartRange}
-          chartRangeLabel={chartRangeLabel}
-          embedded
-        />
-      </section>
-
-      <section style={chartCardStyle}>
-        <div style={panelHeadingStyle}>
-          <div>
-            <span style={moduleEyebrowStyle}>Kalorie</span>
-            <h3 style={sectionTitleStyle}>Dzienne spalanie</h3>
-          </div>
-          <span style={softPillStyle}>{chartRangeLabel}</span>
-        </div>
-        <TrainingCaloriesChart trainings={trainings} chartRange={chartRange} />
-      </section>
+      <TrainingRecoveryChart
+        trainings={trainings}
+        chartRange={chartRange}
+        chartRangeLabel={chartRangeLabel}
+        age={currentAge}
+        isMobileLayout={isMobileLayout}
+      />
       </> : null}
 
       <>
@@ -260,6 +274,7 @@ export function TrainingAnalyticsPanel(props: {
                   })
                 }
                 type="date"
+                max={currentWeightDate}
                 required
                 style={inputStyle}
               />
@@ -275,6 +290,11 @@ export function TrainingAnalyticsPanel(props: {
                   })
                 }
                 type="time"
+                max={
+                  weightEntryDraft.date === currentWeightDate
+                    ? currentWeightTime
+                    : undefined
+                }
                 required
                 style={inputStyle}
               />
@@ -391,7 +411,6 @@ export function TrainingAnalyticsPanel(props: {
           </div>
           {showsWeightDetails ? (
             <Button
-              size="small"
               variant="tertiary"
               onClick={() => setIsWeightEntryModalOpen(true)}
             >
@@ -401,7 +420,7 @@ export function TrainingAnalyticsPanel(props: {
         </div>
         <WeightTrendChart
           entries={weightChartEntries}
-          chartRange={chartRange}
+          chartRange={weightChartRange}
         />
       </section>
       </> : null}
@@ -415,11 +434,18 @@ export function TrainingAnalyticsPanel(props: {
           </div>
         </div>
 
-        <ScrollPane viewportStyle={scrollListStyle}>
+        <ScrollPane
+          viewportStyle={{
+            ...scrollListStyle,
+            height: "min(420px, 52vh)",
+          }}
+          contentStyle={{ display: "grid", gap: 6 }}
+          onViewportScroll={loadMoreWeightEntries}
+        >
           {recentWeightEntries.length === 0 && (
             <EmptyState message="Nie ma jeszcze osobnych pomiarów wagi." />
           )}
-          {recentWeightEntries.slice(0, 28).map((entry) => (
+          {recentWeightEntries.slice(0, visibleWeightEntriesCount).map((entry) => (
             <button
               type="button"
               key={`${entry.id ?? entry.createdAt}-${entry.date}`}

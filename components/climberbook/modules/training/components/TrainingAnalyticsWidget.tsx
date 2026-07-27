@@ -30,6 +30,7 @@ type TrainingAnalyticsWidgetProps = {
   ) => Promise<boolean>;
   onDeleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
   recentWeightEntries: WeightEntryRecord[];
+  currentAge: number | null;
 };
 
 export function TrainingAnalyticsWidget({

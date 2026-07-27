@@ -228,6 +228,12 @@ export function RopeTrainingGradesChart({
     selectedDate <= chartRange.end
       ? toDate(selectedDate).getTime()
       : null;
+  const todayTimestamp = Date.now();
+  const showsTodayMarker =
+    !isPreviewChart &&
+    todayTimestamp >= xAxisDomain[0] &&
+    todayTimestamp <= xAxisDomain[1];
+  const referenceYAxisId = showsRope ? "rope" : "board";
   const previewDate = trainingsInRange[0]?.date ?? chartRange.start;
   const visiblePreviewRopeLines = isPreviewChart
     ? visibleRopePoints.map((point, index) => ({
@@ -315,6 +321,15 @@ export function RopeTrainingGradesChart({
                       }).format(new Date(value))
                 }
               />
+              {showsTodayMarker && (
+                <ReferenceLine
+                  yAxisId={referenceYAxisId}
+                  x={todayTimestamp}
+                  stroke="#d34b46"
+                  strokeDasharray="5 5"
+                  label={{ value: "Dzisiaj", position: "insideTopRight", fill: "#d34b46", fontSize: 9.6 }}
+                />
+              )}
                 {selectedTrainingTimestamp !== null && (
                   <ReferenceLine
                     x={selectedTrainingTimestamp}

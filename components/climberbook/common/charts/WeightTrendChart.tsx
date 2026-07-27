@@ -26,6 +26,20 @@ import {
 } from "@/components/climberbook/common/styles";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import type { WeightEntryRecord } from "@/lib/climbs-db";
+
+function getWeightTimestamp(entry: WeightEntryRecord) {
+  const match = entry.time.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  const hours = match ? Number(match[1]) : 12;
+  const minutes = match ? Number(match[2]) : 0;
+  const seconds = match?.[3] ? Number(match[3]) : 0;
+  const isValidTime = hours < 24 && minutes < 60 && seconds < 60;
+  const time = isValidTime
+    ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : "12:00:00";
+
+  return new Date(`${formatDateIso(entry.date)}T${time}`).getTime();
+}
+
 export function WeightTrendChart({
   entries,
   chartRange,
@@ -41,30 +55,14 @@ export function WeightTrendChart({
     );
   }
 
-  const dailyWeights = Array.from(
-    entries
-      .reduce((groupedEntries, entry) => {
-        const date = formatDateIso(entry.date);
-        const existingEntry = groupedEntries.get(date) ?? {
-          date,
-          totalWeight: 0,
-          count: 0,
-        };
-
-        existingEntry.totalWeight += entry.weightKg;
-        existingEntry.count += 1;
-        groupedEntries.set(date, existingEntry);
-
-        return groupedEntries;
-      }, new Map<string, { date: string; totalWeight: number; count: number }>())
-      .values(),
-  )
+  const weightMeasurements = entries
     .map((entry) => ({
-      date: entry.date,
-      weightKg: roundToSingleDecimal(entry.totalWeight / entry.count),
+      ...entry,
+      date: formatDateIso(entry.date),
+      timestamp: getWeightTimestamp(entry),
     }))
-    .sort((left, right) => left.date.localeCompare(right.date));
-  const chartEntries = dailyWeights.map((entry, index, allEntries) => {
+    .sort((left, right) => left.timestamp - right.timestamp);
+  const chartEntries = weightMeasurements.map((entry, index, allEntries) => {
     const weightedEntries = allEntries.slice(Math.max(0, index - 2), index + 1);
     const weightSum = weightedEntries.reduce(
       (sum, weightEntry, weightedIndex) =>
@@ -78,10 +76,14 @@ export function WeightTrendChart({
 
     return {
       date: entry.date,
+      time: entry.time,
+      timestamp: entry.timestamp,
       label: new Intl.DateTimeFormat("pl-PL", {
         day: "numeric",
         month: "short",
-      }).format(toDate(entry.date)),
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(entry.timestamp)),
       weightKg: entry.weightKg,
       weightedAverage: roundToSingleDecimal(weightSum / divisor),
     };
@@ -90,18 +92,27 @@ export function WeightTrendChart({
     entry.weightKg,
     entry.weightedAverage,
   ]);
-  const todayChartDate = formatDateIso(new Date());
+  const now = new Date();
+  const todayTimestamp = now.getTime();
+  const chartStartTimestamp = toDate(chartRange.start).getTime();
+  const requestedChartEndTimestamp = new Date(`${chartRange.end}T23:59:59.999`).getTime();
+  const tomorrowEnd = new Date(now);
+  tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+  tomorrowEnd.setHours(23, 59, 59, 999);
+  const chartEndTimestamp = Math.min(
+    requestedChartEndTimestamp,
+    tomorrowEnd.getTime(),
+  );
   const selectedChartDate =
     selectedDate &&
     selectedDate >= chartRange.start &&
     selectedDate <= chartRange.end
       ? formatDateIso(selectedDate)
       : null;
-  const isFutureSelectedDate =
-    selectedChartDate !== null && selectedChartDate > todayChartDate;
   const selectedChartPoint = selectedChartDate
     ? {
         date: selectedChartDate,
+        timestamp: toDate(selectedChartDate).getTime(),
         label: new Intl.DateTimeFormat("pl-PL", {
           day: "numeric",
           month: "short",
@@ -115,33 +126,35 @@ export function WeightTrendChart({
     chartEntries[chartEntries.length - 2] ?? latestChartEntry;
   const trendDays = Math.max(
     1,
-    (toDate(latestChartEntry.date).getTime() -
-      toDate(previousChartEntry.date).getTime()) /
+    (latestChartEntry.timestamp - previousChartEntry.timestamp) /
       86_400_000,
   );
   const trendPerDay =
     (latestChartEntry.weightedAverage - previousChartEntry.weightedAverage) /
     trendDays;
-  const selectedDayOffset = selectedChartDate
-    ? (toDate(selectedChartDate).getTime() -
-        toDate(latestChartEntry.date).getTime()) /
-      86_400_000
+  const visibleChartEntries = chartEntries.filter(
+    (entry) =>
+      entry.timestamp >= chartStartTimestamp &&
+      entry.timestamp <= chartEndTimestamp,
+  );
+  const latestVisibleChartEntry = visibleChartEntries.at(-1) ?? null;
+  const estimationDays = latestVisibleChartEntry
+    ? Math.max(0, (chartEndTimestamp - latestVisibleChartEntry.timestamp) / 86_400_000)
     : 0;
-  const projectedWeight = isFutureSelectedDate
+  const estimatedWeight = latestVisibleChartEntry && estimationDays > 0
     ? roundToSingleDecimal(
         Math.min(
-          latestChartEntry.weightKg + 1,
+          latestVisibleChartEntry.weightKg + 1,
           Math.max(
-            latestChartEntry.weightKg - 1,
-            latestChartEntry.weightKg + trendPerDay * selectedDayOffset,
+            latestVisibleChartEntry.weightKg - 1,
+            latestVisibleChartEntry.weightKg + trendPerDay * estimationDays,
           ),
         ),
       )
     : null;
-  const chartWeights =
-    projectedWeight === null
-      ? measuredWeights
-      : [...measuredWeights, projectedWeight];
+  const chartWeights = estimatedWeight === null
+    ? measuredWeights
+    : [...measuredWeights, estimatedWeight];
   const minWeight = Math.min(...chartWeights);
   const maxWeight = Math.max(...chartWeights);
   const domainPadding = Math.max((maxWeight - minWeight) * 0.4, 0.5);
@@ -154,31 +167,45 @@ export function WeightTrendChart({
   const halfKilogramMarks = fullKilogramTicks
     .slice(0, -1)
     .map((tick) => tick + 0.5);
-  const chartEntriesByDate = new Map(
-    chartEntries.map((entry) => [entry.date, entry]),
-  );
   const chartData = [] as Array<{
+    timestamp: number;
     date: string;
+    time: string;
     label: string;
     weightKg: number | null;
     weightedAverage: number | null;
     projectedWeight: number | null;
   }>;
-  const chartCursor = toDate(chartRange.start);
-
-  while (formatDateIso(chartCursor) <= chartRange.end) {
-    const date = formatDateIso(chartCursor);
-    const entry = chartEntriesByDate.get(date);
-
+  chartData.push(...visibleChartEntries.map((entry) => ({
+    ...entry,
+    projectedWeight:
+      entry.timestamp === latestVisibleChartEntry?.timestamp
+        ? entry.weightKg
+        : null,
+  })));
+  if (estimatedWeight !== null) {
     chartData.push({
-      date,
-      label: entry?.label ?? "",
-      weightKg: entry?.weightKg ?? null,
-      weightedAverage: entry?.weightedAverage ?? null,
-      projectedWeight: date === selectedChartDate ? projectedWeight : null,
+      timestamp: chartEndTimestamp,
+      date: formatDateIso(new Date(chartEndTimestamp)),
+      time: "23:59",
+      label: new Intl.DateTimeFormat("pl-PL", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(chartEndTimestamp)),
+      weightKg: null,
+      weightedAverage: null,
+      projectedWeight: estimatedWeight,
     });
-    chartCursor.setDate(chartCursor.getDate() + 1);
   }
+  chartData.sort((left, right) => left.timestamp - right.timestamp);
+  const showsTodayMarker =
+    todayTimestamp >= chartStartTimestamp && todayTimestamp <= chartEndTimestamp;
+  const showsSelectedMarker =
+    selectedChartPoint !== null &&
+    selectedChartPoint.timestamp >= chartStartTimestamp &&
+    selectedChartPoint.timestamp <= chartEndTimestamp;
 
   return (
     <div style={weightChartCardStyle}>
@@ -200,17 +227,20 @@ export function WeightTrendChart({
               strokeDasharray="3 5"
             />
             <XAxis
-              dataKey="date"
+              dataKey="timestamp"
+              type="number"
+              scale="time"
+              domain={[chartStartTimestamp, chartEndTimestamp]}
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#64574d", fontSize: 8.8 }}
               minTickGap={28}
               padding={{ left: 0, right: 0 }}
-              tickFormatter={(date) =>
+              tickFormatter={(timestamp) =>
                 new Intl.DateTimeFormat("pl-PL", {
                   day: "numeric",
                   month: "short",
-                }).format(toDate(date))
+                }).format(new Date(timestamp))
               }
             />
             <YAxis
@@ -239,9 +269,12 @@ export function WeightTrendChart({
                   label,
                 ];
               }}
-              labelFormatter={(_label, payload) =>
-                payload[0]?.payload.date ?? ""
-              }
+              labelFormatter={(_label, payload) => {
+                const point = payload[0]?.payload;
+                return point
+                  ? `${point.date} · ${point.time}`
+                  : "";
+              }}
             />
             {halfKilogramMarks.map((mark) => (
               <ReferenceLine
@@ -267,12 +300,12 @@ export function WeightTrendChart({
               dataKey="weightKg"
               stroke="#176f86"
               strokeWidth={2}
-              dot={false}
-              activeDot={false}
+              dot={{ r: 3, fill: "#176f86", stroke: "white", strokeWidth: 1 }}
+              activeDot={{ r: 4.5, fill: "#176f86", stroke: "white", strokeWidth: 1.5 }}
               connectNulls
               animationDuration={750}
             />
-            {projectedWeight !== null && (
+            {estimatedWeight !== null && (
               <>
                 <Line
                   type="linear"
@@ -286,8 +319,8 @@ export function WeightTrendChart({
                   animationDuration={750}
                 />
                 <ReferenceDot
-                  x={selectedChartPoint?.date}
-                  y={projectedWeight}
+                  x={chartEndTimestamp}
+                  y={estimatedWeight}
                   r={4}
                   fill="#7050a8"
                   stroke="#ffffff"
@@ -295,31 +328,35 @@ export function WeightTrendChart({
                 />
               </>
             )}
-            {selectedChartPoint && (
+            {showsSelectedMarker && selectedChartPoint && (
               <ReferenceLine
-                x={selectedChartPoint.date}
+                x={selectedChartPoint.timestamp}
                 stroke="#176f86"
                 strokeWidth={2}
                 strokeDasharray="4 4"
-                ifOverflow="extendDomain"
               />
             )}
-            <ReferenceLine
-              x={todayChartDate}
-              stroke="#dc3e4b"
-              strokeWidth={1}
-              strokeDasharray="4 4"
-              ifOverflow="extendDomain"
-            />
+            {showsTodayMarker && (
+              <ReferenceLine
+                x={todayTimestamp}
+                stroke="#dc3e4b"
+                strokeWidth={1}
+                strokeDasharray="4 4"
+                label={{ value: "Dzisiaj", position: "insideTopRight", fill: "#dc3e4b", fontSize: 8.8 }}
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
       <div style={weightChartSummaryStyle}>
         <span>Trend: średnia ważona z maks. 3 pomiarów</span>
-        {selectedChartDate && projectedWeight !== null && (
+        {estimatedWeight !== null && (
           <span>
-            Prognoza na {selectedChartDate}: {projectedWeight.toFixed(1)} kg
+            Estymacja na {new Intl.DateTimeFormat("pl-PL", {
+              day: "numeric",
+              month: "short",
+            }).format(new Date(chartEndTimestamp))}: {estimatedWeight.toFixed(1)} kg
           </span>
         )}
         <span>

@@ -26,10 +26,13 @@ import {
 import type { UserSex } from "@/lib/climbs-db";
 import type { ProfileFormWidgetProps } from "./SettingsWidgetTypes";
 export function ProfileFormWidget({
+  activeAthlete,
+  accountEmail,
   profileDraft,
   weightEntries,
   setProfileDraft,
   onSettingsSubmit,
+  onStartAthleteEdit,
 }: ProfileFormWidgetProps) {
   const latestWeightEntry = getLatestWeightEntry(weightEntries);
 
@@ -42,10 +45,42 @@ export function ProfileFormWidget({
             <span style={moduleEyebrowStyle}>Profil</span>
             <h2 style={sectionTitleStyle}>Settings użytkownika</h2>
           </div>
-          <span style={softTagStyle}>Data urodzenia, płeć, wzrost, waga</span>
+          <span style={softTagStyle}>Dane konta i parametry treningowe</span>
         </div>
       }
     >
+      <div style={fieldStyle}>
+        <span>Dane zawodnika</span>
+        <strong>
+          {activeAthlete?.name || "Nie wybrano zawodnika"}
+        </strong>
+        {activeAthlete ? (
+          <span>
+            {[
+              activeAthlete.firstName,
+              activeAthlete.lastName,
+              activeAthlete.nick && `nick: ${activeAthlete.nick}`,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Brak dodatkowych danych"}
+          </span>
+        ) : null}
+        {accountEmail ? (
+          <span>
+            E-mail logowania Google: {accountEmail}. Aby go zmienić, zaloguj
+            się innym kontem Google.
+          </span>
+        ) : null}
+        {activeAthlete ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => void onStartAthleteEdit(activeAthlete)}
+          >
+            Edytuj dane zawodnika
+          </Button>
+        ) : null}
+      </div>
       <FormGrid>
         <label style={fieldStyle}>
           Data urodzenia

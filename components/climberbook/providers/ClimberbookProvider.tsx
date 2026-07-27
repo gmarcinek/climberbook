@@ -627,7 +627,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setStatus(trainingItems.length || ascentItems.length ? "" : "");
   }
   useEffect(() => {
-    if (isExperimentalPostgresUiEnabled() && pathname === "/login") return;
+    if (
+      isExperimentalPostgresUiEnabled() &&
+      (pathname === "/login" || pathname === "/rejestracja")
+    )
+      return;
 
     void refreshData().catch((error) => {
       console.error("Nie udało się odświeżyć danych Climberbook.", error);
@@ -806,10 +810,21 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       weightKg <= 0
     )
       return false;
+    const measurementTimestamp = Date.parse(
+      `${weightEntryDraft.date}T${weightEntryDraft.time}`,
+    );
+    if (
+      Number.isNaN(measurementTimestamp) ||
+      measurementTimestamp > Date.now()
+    ) {
+      setStatus("Data i godzina pomiaru nie mogą być późniejsze niż teraz.");
+      return false;
+    }
     if (entryToUpdate?.id !== undefined) {
       const input: WeightEntryRecord = {
         ...entryToUpdate,
         id: entryToUpdate.id,
+        athleteId: activeAthleteId,
         date: weightEntryDraft.date,
         time: weightEntryDraft.time,
         weightKg,

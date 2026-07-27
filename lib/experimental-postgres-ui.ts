@@ -155,12 +155,26 @@ export async function createExperimentalWeightEntry(
 export async function updateExperimentalWeightEntryRecord(
   input: WeightEntryRecord,
 ) {
-  if (input.id === undefined) {
+  const id = Number(input.id);
+  const weightKg = Number(input.weightKg);
+  if (!Number.isInteger(id) || id < 1) {
     throw new Error("Aktualizacja wpisu wagi wymaga identyfikatora.");
+  }
+  if (!Number.isFinite(weightKg) || weightKg <= 0) {
+    throw new Error("Aktualizacja wpisu wagi wymaga dodatniej wagi.");
   }
   const response = await request<{ weightEntry: WeightEntryRecord }>(
     "/api/v1/weight-entries",
-    { method: "PATCH", body: JSON.stringify(input) },
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        id,
+        athleteId: input.athleteId,
+        date: input.date,
+        time: input.time,
+        weightKg,
+      }),
+    },
   );
   return response.weightEntry;
 }

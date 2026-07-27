@@ -180,6 +180,48 @@ test("eksperymentalne API izoluje dane użytkowników i obsługuje pełny przep�
   assert.deepEqual(isolatedSnapshot.body.ascents, []);
   assert.deepEqual(isolatedSnapshot.body.climbs, []);
 
+  const exportedBackup = await request("/api/v1/backups/export", {
+    headers: ownerHeaders,
+  });
+  assert.equal(exportedBackup.response.status, 200, exportedBackup.body.error);
+  assert.match(
+    exportedBackup.body.trainingDataDisclaimer,
+    /INSTRUKCJA INTERPRETACJI DLA AGENTA LLM/,
+  );
+  assert.equal(
+    exportedBackup.body.dataInterpretation.primaryDataset,
+    "llmTrainingSessions",
+  );
+  assert.match(
+    exportedBackup.body.dataInterpretation.datasets.llmTrainingSessions,
+    /Warstwa przeznaczona do analizy LLM/,
+  );
+  exportedBackup.body.athletes[0] = {
+    ...exportedBackup.body.athletes[0],
+    name: "Zawodnik",
+    firstName: "",
+    lastName: "",
+    nick: "",
+  };
+
+  const importedBackup = await request("/api/v1/backups/import", {
+    method: "POST",
+    headers: {
+      ...ownerHeaders,
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    body: JSON.stringify(exportedBackup.body),
+  });
+  assert.equal(importedBackup.response.status, 201, importedBackup.body.error);
+
+  const restoredSnapshot = await request("/api/v1/snapshot", {
+    headers: ownerHeaders,
+  });
+  assert.equal(restoredSnapshot.response.status, 200, restoredSnapshot.body.error);
+  assert.equal(restoredSnapshot.body.athletes[0].name, "Ala Testowa");
+  assert.equal(restoredSnapshot.body.athletes[0].firstName, "Ala");
+  assert.equal(restoredSnapshot.body.athletes[0].lastName, "Testowa");
+
   for (const path of [
     `/api/v1/trainings?id=${training.body.training.id}`,
     `/api/v1/climbs?id=${climb.body.climb.id}`,

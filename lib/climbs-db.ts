@@ -26,14 +26,66 @@ export type ClimberbookDatabaseBackup = { formatVersion: 2; exportedAt: string; 
 export type ClimberbookFullDatabaseBackup = { formatVersion: 3; exportedAt: string; ownerAthleteId: string; ownerEmail?: string; trainingDataDisclaimer: string; dataInterpretation: ClimberbookDataInterpretation; llmTrainingSessions: LlmTrainingSession[]; athletes: AthleteRecord[]; sections: SectionRecord[]; facilities: FacilityRecord[]; climbs: ClimbRecord[]; trainings: TrainingRecord[]; ascents: AscentRecord[]; profiles: UserProfileRecord[]; weightEntries: WeightEntryRecord[] };
 export type DatabaseImportPreview = { formatVersion: number; kind: "athlete" | "full"; title: string; summary: string; actionLabel: string; athleteName?: string; counts: { athletes: number; sections: number; facilities: number; climbs: number; trainings: number; ascents: number; profiles: number; weightEntries: number } };
 
-const emptyInterpretation: ClimberbookDataInterpretation = { purpose: "Analiza ekspozycji treningowej.", primaryDataset: "llmTrainingSessions", datasets: {}, trainingFields: {}, ascentFields: {}, relationships: {}, interpretationRules: [], unsupportedInferences: [] };
+const trainingDataDisclaimer = "INSTRUKCJA INTERPRETACJI DLA AGENTA LLM: Głównym celem aplikacji są dane o ekspozycji treningowej. Do analizy używaj `llmTrainingSessions`, a dokładną legendę odczytaj z `dataInterpretation`. Ten zbiór przedstawia ekspozycję przez skalę oraz minimum i maksimum, bez surowych list wycen. `trainings` zawiera surowe rekordy techniczne dla importu backupu; nie analizuj jego tekstowego `difficultyBySurface`, jeśli dostępne jest `llmTrainingSessions`. `ascents` to niezależny, opcjonalny dodatek zawierający wyłącznie raportowane przejścia, nie próby. Brak `ascents` nie oznacza braku treningu, ekspozycji ani postępu. Nie wyprowadzaj liczby prób z żadnej części eksportu: `attemptsCount` jest historycznym polem, obecnie zapisywanym jako 0. `climbs` jest katalogiem obiektów wspinaczkowych, nie historią ich przejść.";
+
+const trainingDataInterpretation: ClimberbookDataInterpretation = {
+  purpose: "Głównym celem aplikacji jest zbieranie danych o ekspozycji treningowej. Analizy LLM opieraj przede wszystkim na zbiorze llmTrainingSessions.",
+  primaryDataset: "llmTrainingSessions",
+  datasets: {
+    llmTrainingSessions: "Warstwa przeznaczona do analizy LLM. Zawiera sesje z jednoznaczną ekspozycją per powierzchnia: skalą, minimum i maksimum. Nie zawiera surowych list wycen.",
+    trainings: "Surowe rekordy aplikacji zachowane na potrzeby importu i odtworzenia backupu. Pole difficultyBySurface może zawierać listy tekstowe; dla analizy LLM używaj zamiast niego llmTrainingSessions.",
+    ascents: "Opcjonalne, samodzielnie raportowane przejścia. Brak rekordów nie oznacza braku treningu, ekspozycji ani postępu.",
+    climbs: "Katalog obiektów wspinaczkowych. Nie jest historią przejść ani listą prób.",
+    athletes: "Tożsamości zawodników, łączone z danymi przez athleteId.",
+    profiles: "Profil i dane antropometryczne zawodnika.",
+    weightEntries: "Niezależne pomiary masy ciała w czasie.",
+    sections: "Opcjonalne grupy lub sekcje zawodników.",
+    facilities: "Słownik obiektów lub miejsc treningu.",
+  },
+  trainingFields: {
+    durationMinutes: "Czas całej sesji w minutach, nie czas pojedynczej aktywności.",
+    surfaces: "Aktywności obecne w sesji, np. lina, baldy, Moon, Kilter, chwytotablica.",
+    difficultyBySurface: "Tekstowa deklaracja ekspozycji na trudność dla aktywności w ramach sesji. Może zawierać listę wycen; elementy listy nie są osobnymi drogami, baldami, próbami ani przejściami.",
+    protocol: "Szczegóły protokołu treningowego, np. serie, obciążenie, zwisy i przerwy.",
+    facilityName: "Opcjonalna nazwa obiektu zapisana przy sesji jako historyczna etykieta.",
+    caloriesBurned: "Szacowane, a nie zmierzone spalanie energii.",
+    wellbeing: "Subiektywna ocena samopoczucia.",
+    notes: "Wolny opis użytkownika; nie zakładaj ujednoliconej struktury.",
+    attemptsCount: "Pole historyczne, obecnie zapisywane jako 0. Nie jest miarą liczby prób i nie nadaje się do analizy prób.",
+  },
+  ascentFields: {
+    date: "Data raportowanego przejścia.",
+    routeName: "Nazwa zgłoszonego przejścia.",
+    suggestedGrade: "Wycena proponowana lub źródłowa dla raportowanego przejścia.",
+    subjectiveGrade: "Subiektywna wycena użytkownika dla raportowanego przejścia.",
+    style: "Opcjonalny styl raportowanego przejścia.",
+  },
+  relationships: {
+    athleteId: "Łączy rekordy zawodnika między zbiorami danych.",
+    facilityName: "Łączy trening z nazwą miejsca tylko opisowo; nie jest stabilnym identyfikatorem relacyjnym do facilities.",
+    sectionId: "Opcjonalnie łączy zawodnika z rekordem sections.",
+  },
+  interpretationRules: [
+    "W pierwszej kolejności analizuj częstotliwość, czas, aktywności, protokoły i deklarowaną ekspozycję w llmTrainingSessions.",
+    "W llmTrainingSessions traktuj difficultyBySurface jako jakościowy wskaźnik poziomu i obciążenia ekspozycją w sesji.",
+    "Traktuj ascents jako opcjonalny kontekst raportowanych przejść, oddzielny od danych treningowych.",
+    "Wyraźnie rozdzielaj w analizie ekspozycję treningową od raportowanych przejść.",
+  ],
+  unsupportedInferences: [
+    "Nie analizuj surowych list difficultyBySurface w trainings, gdy dostępne jest llmTrainingSessions.",
+    "Nie licz dróg, baldów, poprowadzeń ani prób na podstawie difficultyBySurface.",
+    "Nie wyprowadzaj liczby prób z attemptsCount, trainings, ascents ani climbs.",
+    "Nie uznawaj braku ascents za brak treningu, ekspozycji lub rozwoju sportowego.",
+    "Nie traktuj caloriesBurned jako precyzyjnego pomiaru fizjologicznego.",
+  ],
+};
 
 export function createEmptyUserProfile(): UserProfileRecord {
   return { key: "athlete:primary", athleteId: "primary", birthDate: "", sex: "", heightCm: null, weightKg: null, updatedAt: "" };
 }
 
 export function createTrainingExportMetadata(trainings: TrainingRecord[]) {
-  return { trainingDataDisclaimer: "Dane treningowe są przeznaczone do analizy ekspozycji treningowej.", dataInterpretation: emptyInterpretation, llmTrainingSessions: trainings.map((training): LlmTrainingSession => ({ sourceTrainingId: training.id, athleteId: training.athleteId, date: training.date, time: training.time, durationMinutes: training.durationMinutes, surfaces: training.surfaces, difficultyBySurface: {}, protocol: training.protocol, facilityName: training.facilityName, caloriesBurned: training.caloriesBurned, wellbeing: training.wellbeing, notes: training.notes, customSessionType: training.customSessionType })) };
+  return { trainingDataDisclaimer, dataInterpretation: trainingDataInterpretation, llmTrainingSessions: trainings.map((training): LlmTrainingSession => ({ sourceTrainingId: training.id, athleteId: training.athleteId, date: training.date, time: training.time, durationMinutes: training.durationMinutes, surfaces: training.surfaces, difficultyBySurface: {}, protocol: training.protocol, facilityName: training.facilityName, caloriesBurned: training.caloriesBurned, wellbeing: training.wellbeing, notes: training.notes, customSessionType: training.customSessionType })) };
 }
 
 export async function inspectDatabaseBackup(input: unknown): Promise<DatabaseImportPreview> {

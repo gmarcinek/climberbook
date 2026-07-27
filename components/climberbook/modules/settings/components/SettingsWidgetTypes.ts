@@ -42,10 +42,13 @@ export type ProfileMetricsWidgetProps = {
   weightEntries: import("@/lib/climbs-db").WeightEntryRecord[];
 };
 export type ProfileFormWidgetProps = {
+  activeAthlete: AthleteRecord | null;
+  accountEmail: string | null;
   profileDraft: UserProfileDraft;
   weightEntries: import("@/lib/climbs-db").WeightEntryRecord[];
   setProfileDraft: Dispatch<SetStateAction<UserProfileDraft>>;
   onSettingsSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onStartAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
 };
 export type DatabaseBackupWidgetProps = {
   backupImportInputRef: RefObject<HTMLInputElement | null>;
