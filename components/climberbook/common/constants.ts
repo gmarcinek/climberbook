@@ -91,13 +91,12 @@ export const surfaceOptions: Array<{ value: TrainingSurface; label: string }> =
     { value: "drazek", label: "Drążek" },
     { value: "chwytotablica", label: "Tablica" },
     { value: "campus", label: "Campus" },
-    { value: "spraywall", label: "Spraywall" },
+    { value: "spraywall", label: "Spray" },
     { value: "kilter", label: "Kilter" },
-    { value: "silownia", label: "Siłownia" },
-    { value: "bieznia", label: "Bieżnia" },
+    { value: "silownia", label: "Siłka" },
     { value: "rower", label: "Rower" },
     { value: "bieg", label: "Bieg" },
-    { value: "treking", label: "Treking" },
+    { value: "treking", label: "Treck" },
   ];
 
 export const frenchGradeOptions = [

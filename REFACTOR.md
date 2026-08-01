@@ -134,6 +134,63 @@ Użytkownik: Tak, 10 kg.
 
 Dla chwytotablicy GPT może pytać o chwyt, liczbę serii, czas pracy, przerwę i obciążenie. Użytkownik może pominąć pole lub powiedzieć, że nie pamięta; GPT zapisuje wtedy `null` i nie zgaduje danych.
 
+## Model obciążenia i regeneracji
+
+Każda zapisana aktywność ma własne obciążenie. Model nie zapisuje pojedynczego, niejednoznacznego wskaźnika zmęczenia jako źródła prawdy. Zamiast tego zapisuje wektor pięciu niezależnych wymiarów; jedna aktywność może równocześnie obciążać kilka z nich.
+
+```json
+{
+  "fatigueDimensions": {
+    "fitness": 0.0,
+    "structural": 0.0,
+    "strength": 0.0,
+    "fingers": 0.0,
+    "skill": 0.0
+  }
+}
+```
+
+- `fitness`: koszt wydolnościowy i ogólne zmęczenie po pracy o większej objętości lub czasie trwania; rośnie m.in. z długością dróg, czasem aktywności i liczbą prób.
+- `structural`: ekspozycja układu ruchu, w szczególności ścięgien, łokci i barków; rośnie wolniej niż `fitness`, lecz regeneruje się wolniej.
+- `strength`: koszt siłowy dla pleców, ramion i całego ciała; szczególnie istotny dla drążka, campusów, chwytotablicy z dodatkowym obciążeniem i ruchów blisko limitu.
+- `fingers`: lokalna ekspozycja palców; zależy od intensywności, rodzaju chwytu, głębokości krawądki, dodatkowego obciążenia oraz liczby wymagających prób.
+- `skill`: jakość ekspozycji technicznej. Służy do analizy bodźca ruchowego i nie jest kanałem prognozy regeneracji.
+
+Wartość całkowita aktywności może być dalej pokazywana jako pomocniczy `fatigueCoin`, ale nie jest podziałem ani sumą wymiarów. Wymiary wynikają z niezależnych współczynników aktywności, objętości, intensywności i ukończenia.
+
+```json
+{
+  "activityType": "ROPE_ATTEMPT",
+  "blockType": "MAIN",
+  "gradeSystem": "FRENCH",
+  "grade": "6a+",
+  "attemptCount": 1,
+  "completionRatio": 1.0,
+  "routeLengthMeters": 20,
+  "baseFatigueCoin": 0.014,
+  "lengthReferenceMeters": 20,
+  "lengthFactor": 1.0,
+  "intensityFactor": 1.0,
+  "fatigueSupplement": 0.014,
+  "fatigueDimensions": {
+    "fitness": 0.014,
+    "structural": 0.009,
+    "strength": 0.006,
+    "fingers": 0.007,
+    "skill": 0.004
+  }
+}
+```
+
+Przykładowo droga 6a+ o długości 20 m podnosi przede wszystkim `fitness`, bo ma istotny czas pracy. Krótki boulder blisko limitu może otrzymać niższe `fitness`, ale wyższe `structural`, `strength` i `fingers`. Rozgrzewka i łatwe drogi mogą tworzyć niski koszt w pierwszych czterech wymiarach, a wciąż wnosić `skill`.
+
+### Agregacja i regeneracja
+
+- Dzienny i sesyjny profil powstaje przez sumowanie tego samego wymiaru ze wszystkich aktywności; wartości różnych wymiarów nie są sumowane ze sobą.
+- Prognoza regeneracji wyświetla oddzielne kanały `fitness`, `structural`, `strength` i `fingers`. Każdy kanał ma własny współczynnik zaniku, przy czym `structural` i `fingers` powinny schodzić wolniej niż `fitness`.
+- `skill` nie jest odejmowany przez regenerację i nie wpływa na komunikat o gotowości organizmu.
+- Kalkulator musi przechowywać wejściowe dane aktywności oraz wersję algorytmu, aby można było przeliczyć historię po zmianie współczynników bez utraty pierwotnego zapisu.
+
 ## Integracja GPT
 
 Preferowany wariant to remote MCP z publicznym endpointem HTTPS i narzędziami:

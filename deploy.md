@@ -15,6 +15,7 @@ IMAGE="climberbook"
 
 RESOURCE_GROUP="rm_gmarcinek"
 APP_SERVICE="climberbook"
+```
 ````
 
 Przy każdym wdrożeniu zmień tylko `VERSION`.
@@ -88,7 +89,35 @@ az acr repository show-tags \
   --output table
 ```
 
-## 5. Ustaw nową wersję w App Service
+## 5. Zmigruj produkcyjną bazę danych
+
+Wykonaj migrację **przed** przełączeniem App Service na nowy obraz. Liquibase
+musi uruchamiać się z Azure albo z hosta dopuszczonego przez firewall serwera
+PostgreSQL. Nie używaj lokalnego `.env` ani lokalnej bazy Docker.
+
+Najpierw sprawdź oczekujące zmiany:
+
+```bash
+docker compose --env-file .env.azure run --no-deps --rm liquibase status --verbose
+```
+
+Następnie zastosuj migracje:
+
+```bash
+docker compose --env-file .env.azure run --no-deps --rm liquibase update
+```
+
+Po migracji status nie powinien wskazywać zmian oczekujących:
+
+```bash
+docker compose --env-file .env.azure run --no-deps --rm liquibase status --verbose
+```
+
+Jeżeli tymczasowo dodasz adres do firewalla Azure PostgreSQL, usuń tę regułę po
+zakończeniu migracji. Hasła pozostają w `.env.azure` lub w sekretach Azure i
+nie mogą trafić do obrazu ani do logów wdrożenia.
+
+## 6. Ustaw nową wersję w App Service
 
 ```bash
 az webapp config container set \
@@ -100,7 +129,7 @@ az webapp config container set \
 
 App Service jest przypinany do konkretnej wersji, na przykład `0.1.2`. Tag `latest` jest pomocniczy.
 
-## 6. Uruchom aplikację ponownie
+## 7. Uruchom aplikację ponownie
 
 ```bash
 az webapp restart \
@@ -108,7 +137,7 @@ az webapp restart \
   --name "$APP_SERVICE"
 ```
 
-## 7. Sprawdź wdrożoną wersję
+## 8. Sprawdź wdrożoną wersję
 
 ```bash
 az webapp config show \
@@ -201,11 +230,12 @@ az webapp restart \
 
 App Service ma już:
 
-* włączoną systemową tożsamość zarządzaną,
-* rolę `AcrPull` na rejestrze `acrgmarcinek`,
-* włączone `acrUseManagedIdentityCreds`.
+- włączoną systemową tożsamość zarządzaną,
+- rolę `AcrPull` na rejestrze `acrgmarcinek`,
+- włączone `acrUseManagedIdentityCreds`.
 
 Tych ustawień nie trzeba powtarzać przy kolejnych wdrożeniach.
 
 ```
+
 ```

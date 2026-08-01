@@ -1,8 +1,6 @@
 "use client";
 
-import {
-  AnalyticsHeaderWidget,
-} from "./AnalyticsHeaderWidget";
+import { AnalyticsHeaderWidget } from "./AnalyticsHeaderWidget";
 import { AnalyticsMetricsWidget } from "./AnalyticsMetricsWidget";
 import {
   AnalyticsPeriodControls,
@@ -20,7 +18,7 @@ import {
   moduleContentStyle,
   twoColumnLayoutStyle,
 } from "@/components/climberbook/common/styles";
-import type { TrainingRecord } from "@/lib/climbs-db";
+import type { FacilityRecord, TrainingRecord } from "@/lib/climbs-db";
 import type { TrainingSurface } from "@/lib/climbs-db";
 
 type AnalyticsModuleContentProps = {
@@ -33,6 +31,7 @@ type AnalyticsModuleContentProps = {
   onPeriodStartChange: (value: string) => void;
   onPeriodEndChange: (value: string) => void;
   onPeriodPreset: (preset: AnalyticsPeriodPreset) => void;
+  facilities: FacilityRecord[];
   allTrainings: TrainingRecord[];
   trainings: TrainingRecord[];
   trainingsCount: number;
@@ -68,6 +67,7 @@ export function AnalyticsModuleContent({
   onPeriodStartChange,
   onPeriodEndChange,
   onPeriodPreset,
+  facilities,
   allTrainings,
   trainings,
   trainingsCount,
@@ -83,7 +83,9 @@ export function AnalyticsModuleContent({
       label={`${period.start} - ${period.end}`}
       onPrevious={onPreviousPeriod}
       onNext={onNextPeriod}
-      canNavigate={activePeriodPreset !== "all" && activePeriodPreset !== "custom"}
+      canNavigate={
+        activePeriodPreset !== "all" && activePeriodPreset !== "custom"
+      }
     />
   );
 
@@ -147,6 +149,7 @@ export function AnalyticsModuleContent({
         chartRangeLabel={chartRangeLabel}
         weeklyTrainingStats={weeklyTrainingStats}
         trainings={allTrainings}
+        facilities={facilities}
       />
 
       <GradeDistributionWidget gradeDistribution={gradeDistribution} />
@@ -163,6 +166,7 @@ export function AnalyticsModuleContent({
         />
         <TrainingFatigueForecastChartWidget
           trainings={trainings}
+          facilities={facilities}
           chartRange={period}
           chartRangeLabel={chartRangeLabel}
         />

@@ -15,7 +15,12 @@ import {
   YAxis,
 } from "recharts";
 import { useSelectedDates } from "@/contexts/SelectedDatesContext";
-import { toDate } from "@/components/training-calendar/training-calendar.helpers";
+import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
+import { getTrainingStimulusImpact } from "@/components/climberbook/modules/analytics/components/TrainingLoadModel";
+import {
+  addDays,
+  toDate,
+} from "@/components/training-calendar/training-calendar.helpers";
 import {
   getRollingChartTicks,
   getRopeGradeColor,
@@ -24,7 +29,33 @@ import {
 } from "@/components/climberbook/common/training";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { weightChartCanvasStyle } from "@/components/climberbook/common/styles";
-import type { SpraywallIntensity, TrainingRecord } from "@/lib/climbs-db";
+import type {
+  FatigueDimension,
+  FatigueDimensions,
+  FacilityRecord,
+  SpraywallIntensity,
+  TrainingRecord,
+} from "@/lib/climbs-db";
+
+const stimulusDimensionKeys = [
+  "fitness",
+  "structural",
+  "strength",
+  "fingers",
+  "skill",
+] as const satisfies readonly FatigueDimension[];
+
+const stimulusDimensionConfig: Record<
+  FatigueDimension,
+  { label: string; color: string }
+> = {
+  fitness: { label: "Wydolność", color: "#0d6b7c" },
+  structural: { label: "Strukturalne", color: "#bc6c25" },
+  strength: { label: "Siła", color: "#c43b50" },
+  fingers: { label: "Palce", color: "#6656a6" },
+  skill: { label: "Technika", color: "#3a8f5c" },
+};
+
 export function RopeTrainingGradesChart({
   trainings,
   chartRange,
@@ -36,10 +67,14 @@ export function RopeTrainingGradesChart({
 }) {
   const { selectedDate } = useSelectedDates();
   const [activeGradeTab, setActiveGradeTab] = useState<GradeChartTab>("all");
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const chartEnd = previewMode
+    ? chartRange.end
+    : [chartRange.end, addDays(todayDate, 1)].sort()[0];
   const trainingsInRange = trainings
     .filter(
       (training) =>
-        training.date >= chartRange.start && training.date <= chartRange.end,
+        training.date >= chartRange.start && training.date <= chartEnd,
     )
     .sort((left, right) =>
       `${left.date}-${left.time}-${left.createdAt}`.localeCompare(
@@ -181,10 +216,11 @@ export function RopeTrainingGradesChart({
     ...visibleBoulderPoints,
   ]);
   const chartStartTimestamp = toDate(chartRange.start).getTime();
-  const chartEndTimestamp = toDate(chartRange.end).getTime();
-  const chartTicks = getRollingChartTicks(chartRange.start, chartRange.end);
-  const spraywallMarkerHalfWidth =
-    isPreviewChart ? 0.08 : ((chartEndTimestamp - chartStartTimestamp) * 2.5) / 480;
+  const chartEndTimestamp = toDate(chartEnd).getTime();
+  const chartTicks = getRollingChartTicks(chartRange.start, chartEnd);
+  const spraywallMarkerHalfWidth = isPreviewChart
+    ? 0.08
+    : ((chartEndTimestamp - chartStartTimestamp) * 2.5) / 480;
   const spraywallHoverPoints = spraywallSessions.map((session) => {
     const config = spraywallIntensityConfig[session.intensity];
 
@@ -194,6 +230,16 @@ export function RopeTrainingGradesChart({
       surface: "spraywall" as const,
     };
   });
+  const hangboardTimelineItems = trainingsInRange
+    .filter((training) => training.surfaces.includes("chwytotablica"))
+    .map((training) => ({
+      kind: "hangboard" as const,
+      trainingTimestamp: toDate(training.date).getTime(),
+      plotX: getPreviewPlotX("chwytotablica"),
+      date: training.date,
+      time: training.time,
+      gradeIndex: 1.35,
+    }));
   const boardAxisAnchors = [
     {
       trainingTimestamp: chartStartTimestamp,
@@ -216,16 +262,13 @@ export function RopeTrainingGradesChart({
   const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
   const xAxisDomain = isPreviewChart
     ? [0, 2]
-    : [
-        chartStartTimestamp - oneDayInMilliseconds,
-        chartEndTimestamp + oneDayInMilliseconds,
-      ];
+    : [chartStartTimestamp - oneDayInMilliseconds, chartEndTimestamp];
   const xAxisTicks = isPreviewChart ? [1] : chartTicks;
   const selectedTrainingTimestamp =
     !isPreviewChart &&
     selectedDate &&
     selectedDate >= chartRange.start &&
-    selectedDate <= chartRange.end
+    selectedDate <= chartEnd
       ? toDate(selectedDate).getTime()
       : null;
   const todayTimestamp = Date.now();
@@ -240,9 +283,27 @@ export function RopeTrainingGradesChart({
         key: `${point.label}-${point.grade}-${index}`,
         color: getRopeGradeColor(point.grade),
         data: [
-          { plotX: 0, gradeIndex: minimumGradeIndex, date: point.date, surface: point.surface, grade: point.grade },
-          { plotX: 1, gradeIndex: point.gradeIndex, date: point.date, surface: point.surface, grade: point.grade },
-          { plotX: 2, gradeIndex: minimumGradeIndex, date: point.date, surface: point.surface, grade: point.grade },
+          {
+            plotX: 0,
+            gradeIndex: minimumGradeIndex,
+            date: point.date,
+            surface: point.surface,
+            grade: point.grade,
+          },
+          {
+            plotX: 1,
+            gradeIndex: point.gradeIndex,
+            date: point.date,
+            surface: point.surface,
+            grade: point.grade,
+          },
+          {
+            plotX: 2,
+            gradeIndex: minimumGradeIndex,
+            date: point.date,
+            surface: point.surface,
+            grade: point.grade,
+          },
         ],
       }))
     : [];
@@ -279,7 +340,13 @@ export function RopeTrainingGradesChart({
       {!hasVisibleGrades ? (
         <EmptyState message="Brak wycen dla wybranej powierzchni w tym okresie." />
       ) : (
-        <div style={{ ...weightChartCanvasStyle, height: 270 }}>
+        <div
+          style={{
+            ...weightChartCanvasStyle,
+            height: 270,
+            position: "relative",
+          }}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart margin={{ top: 12, right: 0, bottom: 4, left: -12 }}>
               <defs>
@@ -327,17 +394,22 @@ export function RopeTrainingGradesChart({
                   x={todayTimestamp}
                   stroke="#d34b46"
                   strokeDasharray="5 5"
-                  label={{ value: "Dzisiaj", position: "insideTopRight", fill: "#d34b46", fontSize: 9.6 }}
+                  label={{
+                    value: "Dzisiaj",
+                    position: "insideTopRight",
+                    fill: "#d34b46",
+                    fontSize: 9.6,
+                  }}
                 />
               )}
-                {selectedTrainingTimestamp !== null && (
-                  <ReferenceLine
-                    x={selectedTrainingTimestamp}
-                    stroke="#176f86"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                  />
-                )}
+              {selectedTrainingTimestamp !== null && (
+                <ReferenceLine
+                  x={selectedTrainingTimestamp}
+                  stroke="#176f86"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                />
+              )}
               {showsRope && (
                 <YAxis
                   yAxisId="rope"
@@ -351,7 +423,7 @@ export function RopeTrainingGradesChart({
                   )}
                   tickFormatter={(value) => ROPE_GRADE_SCALE[value] ?? ""}
                   label={{
-                    value: "Wycena",
+                    value: "Francuska",
                     angle: -90,
                     position: "insideLeft",
                     style: { fontSize: 9.6 },
@@ -377,15 +449,14 @@ export function RopeTrainingGradesChart({
               {showsBoards && (
                 <YAxis
                   yAxisId="board"
-                  orientation="right"
+                  orientation="left"
                   type="number"
                   dataKey="gradeIndex"
-                  width={26}
+                  width={0}
                   domain={[1, 9]}
                   ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
                   interval={0}
-                  tickFormatter={(value) => `V${value}`}
-                  tick={{ fontSize: 9.6 }}
+                  hide
                 />
               )}
               <Tooltip
@@ -398,9 +469,23 @@ export function RopeTrainingGradesChart({
 
                   const point = payload[0].payload as
                     | SessionGradePoint
-                    | SpraywallHoverPoint;
+                    | SpraywallHoverPoint
+                    | HangboardTimelinePoint;
 
-                  if (point.surface === "spraywall") {
+                  if ("kind" in point && point.kind === "hangboard") {
+                    return (
+                      <div style={sessionGradeTooltipStyle}>
+                        <span>
+                          {point.date} {point.time}
+                        </span>
+                        <div style={sessionGradeTooltipGroupStyle}>
+                          <strong>Chwytotablica</strong>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if ("surface" in point && point.surface === "spraywall") {
                     const config = spraywallIntensityConfig[point.intensity];
 
                     return (
@@ -459,32 +544,44 @@ export function RopeTrainingGradesChart({
                 />
               )}
               {showsSpraywall &&
-                spraywallSessions.map(({ intensity, trainingTimestamp }, index) => {
-                  const config = spraywallIntensityConfig[intensity];
+                spraywallSessions.map(
+                  ({ intensity, trainingTimestamp }, index) => {
+                    const config = spraywallIntensityConfig[intensity];
 
-                  return (
-                    <ReferenceArea
-                      key={`spraywall-${trainingTimestamp}-${intensity}-${index}`}
-                      yAxisId="board"
-                      x1={
-                        isPreviewChart
-                          ? getPreviewPlotX("spraywall") - spraywallMarkerHalfWidth
-                          : trainingTimestamp - spraywallMarkerHalfWidth
-                      }
-                      x2={
-                        isPreviewChart
-                          ? getPreviewPlotX("spraywall") + spraywallMarkerHalfWidth
-                          : trainingTimestamp + spraywallMarkerHalfWidth
-                      }
-                      y1={config.minimumGrade}
-                      y2={config.maximumGrade}
-                      fill={`url(#${config.gradientId})`}
-                      fillOpacity={1}
-                      stroke="none"
-                      shape={FixedWidthSpraywallArea}
-                    />
-                  );
-                })}
+                    return (
+                      <ReferenceArea
+                        key={`spraywall-${trainingTimestamp}-${intensity}-${index}`}
+                        yAxisId="board"
+                        x1={
+                          isPreviewChart
+                            ? getPreviewPlotX("spraywall") -
+                              spraywallMarkerHalfWidth
+                            : trainingTimestamp - spraywallMarkerHalfWidth
+                        }
+                        x2={
+                          isPreviewChart
+                            ? getPreviewPlotX("spraywall") +
+                              spraywallMarkerHalfWidth
+                            : trainingTimestamp + spraywallMarkerHalfWidth
+                        }
+                        y1={config.minimumGrade}
+                        y2={config.maximumGrade}
+                        fill={`url(#${config.gradientId})`}
+                        fillOpacity={1}
+                        stroke="none"
+                        shape={FixedWidthSpraywallArea}
+                      />
+                    );
+                  },
+                )}
+              {showsBoards && (
+                <Scatter
+                  data={hangboardTimelineItems}
+                  name="Chwytotablica"
+                  yAxisId="board"
+                  shape={HangboardTimelineBlock}
+                />
+              )}
               {showsSpraywall && (
                 <Scatter
                   data={spraywallHoverPoints}
@@ -553,6 +650,9 @@ export function RopeTrainingGradesChart({
         <span style={sessionGradeLegendItemStyle}>
           <PlusLegendMarker stroke="#3b9edb" /> Baldy
         </span>
+        <span style={sessionGradeLegendItemStyle}>
+          <HangboardLegendMarker /> Chwytotablica
+        </span>
         {(Object.keys(spraywallIntensityConfig) as SpraywallIntensity[]).map(
           (intensity) => {
             const config = spraywallIntensityConfig[intensity];
@@ -570,11 +670,237 @@ export function RopeTrainingGradesChart({
   );
 }
 
+export function TrainingStimulusChart({
+  trainings,
+  chartRange,
+}: {
+  trainings: TrainingRecord[];
+  chartRange: { start: string; end: string };
+}) {
+  const { facilities } = useClimberbook();
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const chartEnd = [chartRange.end, addDays(todayDate, 1)].sort()[0];
+  const series = getDailyStimulusSeries(
+    trainings,
+    chartRange.start,
+    chartEnd,
+    facilities,
+  );
+  const gapSegments = getStimulusGapSegments(series);
+  const axisMax = Math.max(
+    0.001,
+    ...series.flatMap((point) =>
+      stimulusDimensionKeys.map((dimension) => point[dimension] ?? 0),
+    ),
+  );
+  const hasStimulus = series.some((point) => point.coin !== null);
+  const startTimestamp = toDate(chartRange.start).getTime();
+  const endTimestamp = toDate(chartEnd).getTime();
+  const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
+
+  if (!hasStimulus) {
+    return <EmptyState message="Brak danych o bodźcu w wybranym okresie." />;
+  }
+
+  return (
+    <>
+      <div style={{ ...weightChartCanvasStyle, height: 230 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart margin={{ top: 12, right: 0, bottom: 4, left: -12 }}>
+            <CartesianGrid
+              stroke="rgba(100, 87, 77, 0.14)"
+              strokeDasharray="3 5"
+            />
+            <XAxis
+              type="number"
+              dataKey="trainingTimestamp"
+              domain={[startTimestamp - oneDayInMilliseconds, endTimestamp]}
+              ticks={getRollingChartTicks(chartRange.start, chartEnd)}
+              tick={{ fontSize: 9.6 }}
+              tickFormatter={(value) =>
+                new Intl.DateTimeFormat("pl-PL", {
+                  day: "numeric",
+                  month: "short",
+                }).format(new Date(value))
+              }
+            />
+            <YAxis
+              type="number"
+              width={52}
+              domain={[0, axisMax * 1.12]}
+              tickFormatter={(value) => Number(value).toFixed(3)}
+              label={{
+                value: "bodziec",
+                angle: 90,
+                position: "insideRight",
+                style: { fontSize: 9.6 },
+              }}
+              tick={{ fontSize: 9.6 }}
+            />
+            <Tooltip
+              shared={false}
+              isAnimationActive={false}
+              content={({ active, payload }) => {
+                const point = payload?.[0]?.payload as
+                  | DailyStimulusPoint
+                  | undefined;
+                if (!active || !point) return null;
+
+                return (
+                  <div style={sessionGradeTooltipStyle}>
+                    <span>{point.date}</span>
+                    <div style={sessionGradeTooltipGroupStyle}>
+                      {stimulusDimensionKeys.map((dimension) => (
+                        <span key={dimension}>
+                          {stimulusDimensionConfig[dimension].label}:{" "}
+                          {(point[dimension] ?? 0).toFixed(3)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }}
+            />
+            {stimulusDimensionKeys.map((dimension) => {
+              const config = stimulusDimensionConfig[dimension];
+
+              return (
+                <Line
+                  key={dimension}
+                  data={series}
+                  type="linear"
+                  dataKey={dimension}
+                  name={config.label}
+                  stroke={config.color}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  dot={{
+                    r: 2.5,
+                    fill: config.color,
+                    stroke: "white",
+                    strokeWidth: 1,
+                  }}
+                  activeDot={{
+                    r: 4,
+                    fill: config.color,
+                    stroke: "white",
+                    strokeWidth: 1.5,
+                  }}
+                  connectNulls={false}
+                  animationDuration={400}
+                />
+              );
+            })}
+            {stimulusDimensionKeys.flatMap((dimension) => {
+              const config = stimulusDimensionConfig[dimension];
+
+              return gapSegments.map((segment) => (
+                <Line
+                  key={`${dimension}-${segment[0].trainingTimestamp}-${segment[1].trainingTimestamp}`}
+                  data={segment}
+                  type="linear"
+                  dataKey={dimension}
+                  stroke={config.color}
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  strokeLinecap="round"
+                  dot={false}
+                  activeDot={false}
+                  isAnimationActive={false}
+                />
+              ));
+            })}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div style={sessionGradeLegendStyle} aria-label="Legenda bodźców">
+        {stimulusDimensionKeys.map((dimension) => {
+          const config = stimulusDimensionConfig[dimension];
+
+          return (
+            <span key={dimension} style={sessionGradeLegendItemStyle}>
+              <i
+                style={{ ...stimulusLegendLineStyle, background: config.color }}
+              />
+              {config.label}
+            </span>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 function getSurfaceGradeValues(value?: string) {
   return (value ?? "")
     .split(",")
     .map((grade) => grade.trim())
     .filter(Boolean);
+}
+
+type DailyStimulusPoint = {
+  kind: "stimulus";
+  date: string;
+  trainingTimestamp: number;
+  coin: number | null;
+} & Record<FatigueDimension, number | null>;
+
+function getDailyStimulusSeries(
+  trainings: TrainingRecord[],
+  start: string,
+  end: string,
+  facilities: FacilityRecord[],
+): DailyStimulusPoint[] {
+  const coinsByDate = new Map<string, number>();
+  const dimensionsByDate = new Map<string, FatigueDimensions>();
+  trainings.forEach((training) => {
+    const impact = getTrainingStimulusImpact(training, facilities);
+    coinsByDate.set(
+      training.date,
+      (coinsByDate.get(training.date) ?? 0) + impact.coin,
+    );
+    const dimensions = dimensionsByDate.get(training.date) ?? {
+      fitness: 0,
+      structural: 0,
+      strength: 0,
+      fingers: 0,
+      skill: 0,
+    };
+    stimulusDimensionKeys.forEach((dimension) => {
+      dimensions[dimension] += impact.dimensions[dimension];
+    });
+    dimensionsByDate.set(training.date, dimensions);
+  });
+
+  const series: DailyStimulusPoint[] = [];
+  for (let date = start; date <= end; date = addDays(date, 1)) {
+    const dimensions = dimensionsByDate.get(date);
+    series.push({
+      kind: "stimulus",
+      date,
+      trainingTimestamp: toDate(date).getTime(),
+      coin: coinsByDate.get(date) ?? null,
+      fitness: dimensions?.fitness ?? null,
+      structural: dimensions?.structural ?? null,
+      strength: dimensions?.strength ?? null,
+      fingers: dimensions?.fingers ?? null,
+      skill: dimensions?.skill ?? null,
+    });
+  }
+  return series;
+}
+
+function getStimulusGapSegments(series: DailyStimulusPoint[]) {
+  const sessionPoints = series.filter(
+    (point): point is DailyStimulusPoint & { coin: number } =>
+      point.coin !== null,
+  );
+  return sessionPoints.slice(1).flatMap((point, index) => {
+    const previous = sessionPoints[index];
+    return point.trainingTimestamp - previous.trainingTimestamp > 86_400_000
+      ? [[previous, point]]
+      : [];
+  });
 }
 
 const sessionGradeLegendStyle = {
@@ -591,7 +917,7 @@ type GradeChartTab = "all" | "lina" | "baldy" | "moon" | "kilter" | "spraywall";
 const gradeChartTabs: Array<{ key: GradeChartTab; label: string }> = [
   { key: "all", label: "Zbiorczo" },
   { key: "lina", label: "Lina" },
-  { key: "spraywall", label: "Spraywall" },
+  { key: "spraywall", label: "Spray" },
   { key: "baldy", label: "Baldy" },
   { key: "moon", label: "Moon" },
   { key: "kilter", label: "Kilter" },
@@ -657,7 +983,7 @@ const spraywallIntensityConfig: Record<
   }
 > = {
   soft: {
-    label: "Soft (V1-V3)",
+    label: "Regeneracja tlenowa",
     minimumGrade: 1,
     maximumGrade: 3,
     gradientId: "spraywall-soft-gradient",
@@ -665,7 +991,7 @@ const spraywallIntensityConfig: Record<
     endColor: "#8e9aaa",
   },
   medium: {
-    label: "Medium (V3-V6)",
+    label: "Obwody (V3-V6)",
     minimumGrade: 3,
     maximumGrade: 6,
     gradientId: "spraywall-medium-gradient",
@@ -673,7 +999,7 @@ const spraywallIntensityConfig: Record<
     endColor: "#d52d27",
   },
   hard: {
-    label: "Hard (V4-V7)",
+    label: "Projekty",
     minimumGrade: 4,
     maximumGrade: 7,
     gradientId: "spraywall-hard-gradient",
@@ -692,6 +1018,15 @@ type SpraywallHoverPoint = {
   surface: "spraywall";
 };
 
+type HangboardTimelinePoint = {
+  kind: "hangboard";
+  trainingTimestamp: number;
+  plotX: number;
+  date: string;
+  time: string;
+  gradeIndex: number;
+};
+
 function SpraywallHoverTarget({ cx, cy }: { cx?: number; cy?: number }) {
   if (cx === undefined || cy === undefined) {
     return null;
@@ -704,6 +1039,24 @@ function SpraywallHoverTarget({ cx, cy }: { cx?: number; cy?: number }) {
       width={18}
       height={100}
       fill="rgba(0, 0, 0, 0.001)"
+    />
+  );
+}
+
+function HangboardTimelineBlock({ cx, cy }: { cx?: number; cy?: number }) {
+  if (cx === undefined || cy === undefined) {
+    return null;
+  }
+
+  return (
+    <rect
+      x={cx - 8}
+      y={cy - 6}
+      width={16}
+      height={12}
+      fill="#697783"
+      stroke="rgba(66, 47, 39, 0.45)"
+      strokeWidth={1}
     />
   );
 }
@@ -722,13 +1075,7 @@ function FixedWidthSpraywallArea({
   fill?: string;
 }) {
   return (
-    <rect
-      x={x + width / 2 - 8}
-      y={y}
-      width={16}
-      height={height}
-      fill={fill}
-    />
+    <rect x={x + width / 2 - 8} y={y} width={16} height={height} fill={fill} />
   );
 }
 
@@ -811,6 +1158,13 @@ const sessionGradeLegendItemStyle = {
   alignItems: "center",
 };
 
+const stimulusLegendLineStyle = {
+  display: "inline-block",
+  width: 16,
+  height: 3,
+  background: "#0d6b7c",
+};
+
 function TriangleLegendMarker({ fill }: { fill: string }) {
   return (
     <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12">
@@ -829,6 +1183,14 @@ function PlusLegendMarker({ stroke }: { stroke: string }) {
         strokeLinecap="round"
         strokeWidth={2.5}
       />
+    </svg>
+  );
+}
+
+function HangboardLegendMarker() {
+  return (
+    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12">
+      <rect x="1" y="2" width="10" height="8" fill="#697783" />
     </svg>
   );
 }
@@ -1027,7 +1389,7 @@ function getBoardGradeColor(
 }
 
 function getPreviewPlotX(
-  surface: "lina" | "moon" | "kilter" | "baldy" | "spraywall",
+  surface: "lina" | "moon" | "kilter" | "baldy" | "spraywall" | "chwytotablica",
 ) {
   switch (surface) {
     case "lina":
@@ -1040,6 +1402,8 @@ function getPreviewPlotX(
       return 1.38;
     case "spraywall":
       return 1.56;
+    case "chwytotablica":
+      return 1.75;
     default:
       return 1;
   }

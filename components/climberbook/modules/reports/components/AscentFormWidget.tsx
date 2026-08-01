@@ -21,6 +21,7 @@ import { Button } from "@/components/climberbook/common/Button";
 type AscentDraftValues = {
   date: string;
   source: "panel" | "skala";
+  discipline: "lina" | "baldy" | "moon" | "kilter";
   routeName: string;
   suggestedGrade: string;
   subjectiveGrade: string;
@@ -97,6 +98,25 @@ export function AscentFormWidget({
           >
             <option value="panel">Panel</option>
             <option value="skala">Skała</option>
+          </select>
+        </label>
+        <label style={fieldStyle}>
+          Dyscyplina
+          <select
+            value={ascentDraft.discipline}
+            onChange={(event) =>
+              onAscentDraftChange({
+                ...ascentDraft,
+                discipline: event.target
+                  .value as AscentDraftValues["discipline"],
+              })
+            }
+            style={inputStyle}
+          >
+            <option value="lina">Lina</option>
+            <option value="baldy">Baldy</option>
+            <option value="moon">Moonboard</option>
+            <option value="kilter">Kilterboard</option>
           </select>
         </label>
         <label style={fieldStyle} className={formLayoutClassNames.fullSpan}>
@@ -199,16 +219,10 @@ export function AscentFormWidget({
             : undefined
         }
       >
-        <Button
-          type="submit"
-          variant="tertiary"
-        >
+        <Button type="submit" variant="tertiary">
           {isEditing ? "Zapisz zmiany" : "Dodaj przejście"}
         </Button>
-        <Button
-          variant="secondary"
-          onClick={onCancelEdit}
-        >
+        <Button variant="secondary" onClick={onCancelEdit}>
           Anuluj
         </Button>
       </FormActions>

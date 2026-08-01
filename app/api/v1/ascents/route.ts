@@ -16,6 +16,7 @@ type AscentInput = {
   athleteId: string;
   date: string;
   source: "panel" | "skala";
+  discipline?: "lina" | "baldy" | "moon" | "kilter";
   importSource?: "8a.nu";
   routeName: string;
   suggestedGrade: string;
@@ -33,6 +34,11 @@ function isAscentInput(value: unknown): value is AscentInput {
     typeof input.athleteId === "string" &&
     typeof input.date === "string" &&
     (input.source === "panel" || input.source === "skala") &&
+    (input.discipline === undefined ||
+      input.discipline === "lina" ||
+      input.discipline === "baldy" ||
+      input.discipline === "moon" ||
+      input.discipline === "kilter") &&
     typeof input.routeName === "string" &&
     typeof input.suggestedGrade === "string" &&
     typeof input.subjectiveGrade === "string" &&
@@ -98,7 +104,8 @@ export async function PATCH(request: Request) {
 
   const input: unknown = await request.json();
   const ascentId = getNumericId(input);
-  if (!isAscentInput(input) || ascentId === null) return invalidAscentResponse();
+  if (!isAscentInput(input) || ascentId === null)
+    return invalidAscentResponse();
 
   const ascent = await updateAscentInPostgres(actorId, {
     ...input,
@@ -116,7 +123,10 @@ export async function DELETE(request: Request) {
 
   const ascentId = Number(new URL(request.url).searchParams.get("id"));
   if (!Number.isInteger(ascentId) || ascentId < 1)
-    return Response.json({ error: "id przejścia jest wymagane." }, { status: 400 });
+    return Response.json(
+      { error: "id przejścia jest wymagane." },
+      { status: 400 },
+    );
 
   await deleteAscentFromPostgres(actorId, ascentId);
   return Response.json({ deleted: true });

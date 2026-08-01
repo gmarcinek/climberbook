@@ -11,10 +11,7 @@ import type {
   WeightEntryRecord,
 } from "@/lib/climbs-db";
 import { createTrainingExportMetadata } from "@/lib/climbs-db";
-import {
-  queryPostgres,
-  withPostgresTransaction,
-} from "@/lib/server/postgres";
+import { queryPostgres, withPostgresTransaction } from "@/lib/server/postgres";
 import { hashPassword, verifyPassword } from "@/lib/server/passwords";
 import type { PoolClient } from "pg";
 import { createHash } from "node:crypto";
@@ -61,9 +58,12 @@ type TrainingRow = {
   difficulty_notes: string;
   difficulty_by_surface: TrainingRecord["difficultyBySurface"] | null;
   protocol: TrainingRecord["protocol"] | null;
+  load_profile: TrainingRecord["loadProfile"] | null;
   wellbeing: string;
   surfaces: TrainingRecord["surfaces"];
   facility_name: string | null;
+  rope_wall_name: string | null;
+  rope_routes: TrainingRecord["ropeRoutes"] | null;
   custom_session_type: string | null;
   notes: string;
   created_at: Date;
@@ -80,6 +80,7 @@ type SectionRow = {
 type FacilityRow = {
   id: string;
   name: string;
+  capabilities: FacilityRecord["capabilities"] | null;
   created_at: Date;
 };
 
@@ -96,6 +97,7 @@ type AscentRow = {
   athlete_id: string;
   date: string;
   source: AscentRecord["source"];
+  discipline: AscentRecord["discipline"] | null;
   import_source: AscentRecord["importSource"] | null;
   route_name: string;
   suggested_grade: string;
@@ -129,7 +131,9 @@ function mapPostgresNumeric(value: number | string | null) {
 
   const numericValue = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numericValue)) {
-    throw new Error("Nieprawidłowa wartość numeryczna zwrócona przez PostgreSQL.");
+    throw new Error(
+      "Nieprawidłowa wartość numeryczna zwrócona przez PostgreSQL.",
+    );
   }
 
   return numericValue;
@@ -199,9 +203,12 @@ function mapTraining(row: TrainingRow): TrainingRecord {
     difficultyNotes: row.difficulty_notes,
     difficultyBySurface: row.difficulty_by_surface ?? undefined,
     protocol: row.protocol ?? undefined,
+    loadProfile: row.load_profile ?? undefined,
     wellbeing: row.wellbeing,
     surfaces: row.surfaces,
     facilityName: row.facility_name ?? undefined,
+    ropeWallName: row.rope_wall_name ?? undefined,
+    ropeRoutes: row.rope_routes ?? undefined,
     customSessionType: row.custom_session_type ?? undefined,
     notes: row.notes,
     createdAt: row.created_at.toISOString(),
@@ -219,9 +226,17 @@ function mapSection(row: SectionRow): SectionRecord {
 }
 
 function mapFacility(row: FacilityRow): FacilityRecord {
+  const capabilities = row.capabilities ?? { activities: [], ropeWalls: [] };
   return {
     id: row.id,
     name: row.name,
+    capabilities: {
+      ...capabilities,
+      ropeWalls: capabilities.ropeWalls.map((wall, index) => ({
+        ...wall,
+        name: wall.name?.trim() || `Ściana ${index + 1}`,
+      })),
+    },
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -242,6 +257,7 @@ function mapAscent(row: AscentRow): AscentRecord {
     athleteId: row.athlete_id,
     date: row.date,
     source: row.source,
+    discipline: row.discipline ?? undefined,
     importSource: row.import_source ?? undefined,
     routeName: row.route_name,
     suggestedGrade: row.suggested_grade,
@@ -353,7 +369,12 @@ export async function findOrCreateSocialUser(input: {
       [existingUserId, input.email.trim().toLowerCase(), input.displayName],
     );
     await withPostgresTransaction((client) =>
-      ensureDefaultAthlete(client, existingUserId, input, input.email.trim().toLowerCase()),
+      ensureDefaultAthlete(
+        client,
+        existingUserId,
+        input,
+        input.email.trim().toLowerCase(),
+      ),
     );
     return mapExperimentalUser(result.rows[0]);
   }
@@ -455,7 +476,12 @@ export async function registerEmailPasswordUser(input: {
       "insert into auth_password_credentials (user_id, password_hash) values ($1, $2)",
       [userId, passwordHash],
     );
-    await ensureDefaultAthlete(client, userId, { nick: input.displayName }, email);
+    await ensureDefaultAthlete(
+      client,
+      userId,
+      { nick: input.displayName },
+      email,
+    );
 
     return mapExperimentalUser(userResult.rows[0]);
   });
@@ -466,7 +492,9 @@ export async function authenticateEmailPasswordUser(
   password: string,
 ) {
   const email = emailInput.trim().toLowerCase();
-  const result = await queryPostgres<ExperimentalUserRow & PasswordCredentialRow>(
+  const result = await queryPostgres<
+    ExperimentalUserRow & PasswordCredentialRow
+  >(
     `
       select app_users.id, app_users.email, app_users.display_name,
         app_users.onboarding_completed, app_users.created_at,
@@ -478,7 +506,8 @@ export async function authenticateEmailPasswordUser(
     [email],
   );
   const user = result.rows[0];
-  if (!user || !(await verifyPassword(password, user.password_hash))) return null;
+  if (!user || !(await verifyPassword(password, user.password_hash)))
+    return null;
 
   return mapExperimentalUser(user);
 }
@@ -541,11 +570,14 @@ export async function listExperimentalUsers() {
 }
 
 export async function requireExperimentalUser(userId: string) {
-  const result = await queryPostgres<ExperimentalUserRow>(`
+  const result = await queryPostgres<ExperimentalUserRow>(
+    `
     select id, email, display_name, onboarding_completed, created_at
     from app_users
     where id = $1
-  `, [userId]);
+  `,
+    [userId],
+  );
 
   const user = result.rows[0];
 
@@ -583,11 +615,14 @@ export async function hasCompletedUserOnboarding(userId: string) {
 }
 
 async function requireOwnedAthlete(ownerUserId: string, athleteId: string) {
-  const result = await queryPostgres<{ id: string }>(`
+  const result = await queryPostgres<{ id: string }>(
+    `
     select id
     from athletes
     where id = $1 and owner_user_id = $2
-  `, [athleteId, ownerUserId]);
+  `,
+    [athleteId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono zawodnika należącego do użytkownika.");
@@ -600,11 +635,14 @@ async function getOwnedSectionId(
 ) {
   if (!sectionId) return null;
 
-  const result = await queryPostgres<{ id: string }>(`
+  const result = await queryPostgres<{ id: string }>(
+    `
     select id
     from sections
     where id = $1 and owner_user_id = $2
-  `, [sectionId, ownerUserId]);
+  `,
+    [sectionId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono sekcji należącej do użytkownika.");
@@ -619,11 +657,14 @@ async function getOwnedFacilityId(
 ) {
   if (!facilityId) return null;
 
-  const result = await queryPostgres<{ id: string }>(`
+  const result = await queryPostgres<{ id: string }>(
+    `
     select id
     from facilities
     where id = $1 and owner_user_id = $2
-  `, [facilityId, ownerUserId]);
+  `,
+    [facilityId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
@@ -633,12 +674,15 @@ async function getOwnedFacilityId(
 }
 
 export async function listAthletesFromPostgres(ownerUserId: string) {
-  const result = await queryPostgres<AthleteRow>(`
+  const result = await queryPostgres<AthleteRow>(
+    `
     select id, source_id, name, first_name, last_name, nick, email, section_id, created_at
     from athletes
     where owner_user_id = $1
     order by created_at asc
-  `, [ownerUserId]);
+  `,
+    [ownerUserId],
+  );
 
   return result.rows.map(mapAthlete);
 }
@@ -662,27 +706,34 @@ export async function getPostgresDatabaseSnapshot(
       [ownerUserId],
     ),
     queryPostgres<FacilityRow>(
-      "select id, name, created_at from facilities where owner_user_id = $1 order by created_at asc",
+      "select id, name, capabilities, created_at from facilities where owner_user_id = $1 order by created_at asc",
       [ownerUserId],
     ),
-    queryPostgres<ClimbRow>(`
+    queryPostgres<ClimbRow>(
+      `
       select climbs.id, climbs.athlete_id, climbs.name, climbs.grade, climbs.created_at
       from climbs
       join athletes on athletes.id = climbs.athlete_id
       where athletes.owner_user_id = $1
       order by climbs.created_at asc
-    `, [ownerUserId]),
+    `,
+      [ownerUserId],
+    ),
     listTrainingsFromPostgres(ownerUserId),
-    queryPostgres<AscentRow>(`
+    queryPostgres<AscentRow>(
+      `
       select ascents.id, ascents.athlete_id, ascents.date, ascents.source,
-        ascents.import_source, ascents.route_name, ascents.suggested_grade,
+        ascents.discipline, ascents.import_source, ascents.route_name, ascents.suggested_grade,
         ascents.subjective_grade, ascents.style, ascents.notes, ascents.created_at
       from ascents
       join athletes on athletes.id = ascents.athlete_id
       where athletes.owner_user_id = $1
       order by ascents.created_at desc
-    `, [ownerUserId]),
-    queryPostgres<UserProfileRow>(`
+    `,
+      [ownerUserId],
+    ),
+    queryPostgres<UserProfileRow>(
+      `
       select user_profiles.key, user_profiles.athlete_id, user_profiles.birth_date,
         user_profiles.sex, user_profiles.height_cm, user_profiles.weight_kg,
         user_profiles.updated_at
@@ -690,15 +741,20 @@ export async function getPostgresDatabaseSnapshot(
       join athletes on athletes.id = user_profiles.athlete_id
       where athletes.owner_user_id = $1
       order by user_profiles.updated_at desc
-    `, [ownerUserId]),
-    queryPostgres<WeightEntryRow>(`
+    `,
+      [ownerUserId],
+    ),
+    queryPostgres<WeightEntryRow>(
+      `
       select weight_entries.id, weight_entries.athlete_id, weight_entries.date,
         weight_entries.time, weight_entries.weight_kg, weight_entries.created_at
       from weight_entries
       join athletes on athletes.id = weight_entries.athlete_id
       where athletes.owner_user_id = $1
       order by weight_entries.created_at desc
-    `, [ownerUserId]),
+    `,
+      [ownerUserId],
+    ),
   ]);
 
   return {
@@ -726,10 +782,18 @@ export async function exportPostgresDatabaseBackup(
     throw new Error("Eksport pełnej bazy wymaga zawodnika właściciela.");
   }
 
-  const displayNameParts = ownerUser.displayName.trim().split(/\s+/).filter(Boolean);
-  const ownerFirstName = ownerAthlete.firstName?.trim() || displayNameParts[0] || "";
-  const ownerLastName = ownerAthlete.lastName?.trim() || displayNameParts.slice(1).join(" ");
-  const ownerNick = ownerAthlete.nick?.trim() || ownerUser.displayName.trim() || ownerUser.email;
+  const displayNameParts = ownerUser.displayName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const ownerFirstName =
+    ownerAthlete.firstName?.trim() || displayNameParts[0] || "";
+  const ownerLastName =
+    ownerAthlete.lastName?.trim() || displayNameParts.slice(1).join(" ");
+  const ownerNick =
+    ownerAthlete.nick?.trim() ||
+    ownerUser.displayName.trim() ||
+    ownerUser.email;
   const ownerName =
     (ownerAthlete.name !== "Zawodnik" && ownerAthlete.name.trim()) ||
     [ownerFirstName, ownerLastName].filter(Boolean).join(" ") ||
@@ -763,22 +827,25 @@ export async function createAthleteInPostgres(
 ) {
   const athleteId = crypto.randomUUID();
   const sectionId = await getOwnedSectionId(ownerUserId, input.sectionId);
-  const result = await queryPostgres<AthleteRow>(`
+  const result = await queryPostgres<AthleteRow>(
+    `
     insert into athletes (
       id, source_id, name, first_name, last_name, nick, email, section_id, owner_user_id
     )
     values ($1, $1, $2, $3, $4, $5, $6, $7, $8)
     returning id, source_id, name, first_name, last_name, nick, email, section_id, created_at
-  `, [
-    athleteId,
-    computeAthleteName(input),
-    input.firstName?.trim() ?? "",
-    input.lastName?.trim() ?? "",
-    input.nick?.trim() ?? "",
-    normalizeOptionalEmail(input.email),
-    sectionId,
-    ownerUserId,
-  ]);
+  `,
+    [
+      athleteId,
+      computeAthleteName(input),
+      input.firstName?.trim() ?? "",
+      input.lastName?.trim() ?? "",
+      input.nick?.trim() ?? "",
+      normalizeOptionalEmail(input.email),
+      sectionId,
+      ownerUserId,
+    ],
+  );
 
   return mapAthlete(result.rows[0]);
 }
@@ -789,7 +856,8 @@ export async function updateAthleteInPostgres(
   input: AthleteInput,
 ) {
   const sectionId = await getOwnedSectionId(ownerUserId, input.sectionId);
-  const result = await queryPostgres<AthleteRow>(`
+  const result = await queryPostgres<AthleteRow>(
+    `
     update athletes
     set name = $3,
       first_name = $4,
@@ -799,19 +867,22 @@ export async function updateAthleteInPostgres(
       section_id = $8
     where id = $1 and owner_user_id = $2
     returning id, source_id, name, first_name, last_name, nick, email, section_id, created_at
-  `, [
-    athleteId,
-    ownerUserId,
-    computeAthleteName(input),
-    input.firstName?.trim() ?? "",
-    input.lastName?.trim() ?? "",
-    input.nick?.trim() ?? "",
-    normalizeOptionalEmail(input.email),
-    sectionId,
-  ]);
+  `,
+    [
+      athleteId,
+      ownerUserId,
+      computeAthleteName(input),
+      input.firstName?.trim() ?? "",
+      input.lastName?.trim() ?? "",
+      input.nick?.trim() ?? "",
+      normalizeOptionalEmail(input.email),
+      sectionId,
+    ],
+  );
 
   const athlete = result.rows[0];
-  if (!athlete) throw new Error("Nie znaleziono zawodnika należącego do użytkownika.");
+  if (!athlete)
+    throw new Error("Nie znaleziono zawodnika należącego do użytkownika.");
 
   return mapAthlete(athlete);
 }
@@ -820,11 +891,14 @@ export async function deleteAthleteFromPostgres(
   ownerUserId: string,
   athleteId: string,
 ) {
-  const result = await queryPostgres<{ id: string }>(`
+  const result = await queryPostgres<{ id: string }>(
+    `
     delete from athletes
     where id = $1 and owner_user_id = $2
     returning id
-  `, [athleteId, ownerUserId]);
+  `,
+    [athleteId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono zawodnika należącego do użytkownika.");
@@ -835,20 +909,24 @@ export async function listTrainingsFromPostgres(
   ownerUserId: string,
   athleteId?: string,
 ) {
-  const result = await queryPostgres<TrainingRow>(`
+  const result = await queryPostgres<TrainingRow>(
+    `
     select trainings.id, trainings.source_id, trainings.athlete_id,
       trainings.date, trainings.time, trainings.duration_minutes,
       trainings.age_years, trainings.calories_burned, trainings.attempts_count,
       trainings.difficulty_notes, trainings.difficulty_by_surface,
-      trainings.protocol, trainings.wellbeing, trainings.surfaces,
-      trainings.custom_session_type, trainings.facility_name, trainings.notes,
+      trainings.protocol, trainings.load_profile, trainings.wellbeing, trainings.surfaces,
+      trainings.custom_session_type, trainings.facility_name, trainings.rope_wall_name,
+      trainings.rope_routes, trainings.notes,
       trainings.created_at
     from trainings
     join athletes on athletes.id = trainings.athlete_id
     where athletes.owner_user_id = $1
       and ($2::uuid is null or trainings.athlete_id = $2::uuid)
     order by trainings.date desc, trainings.time desc, trainings.created_at desc
-  `, [ownerUserId, athleteId ?? null]);
+  `,
+    [ownerUserId, athleteId ?? null],
+  );
 
   return result.rows.map(mapTraining);
 }
@@ -861,37 +939,43 @@ export async function createTrainingInPostgres(
 
   const trainingId = crypto.randomUUID();
   const sourceId = input.sourceId ?? trainingId;
-  const result = await queryPostgres<TrainingRow>(`
+  const result = await queryPostgres<TrainingRow>(
+    `
     insert into trainings (
       id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
-      difficulty_by_surface, protocol, wellbeing, surfaces, facility_name,
-      custom_session_type, notes
+      difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, facility_name,
+      rope_wall_name, rope_routes, custom_session_type, notes
     )
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
-      difficulty_by_surface, protocol, wellbeing, surfaces, custom_session_type,
-      facility_name, notes, created_at
-  `, [
-    trainingId,
-    sourceId,
-    input.athleteId,
-    input.date,
-    input.time,
-    input.durationMinutes,
-    input.ageYears,
-    input.caloriesBurned,
-    input.attemptsCount,
-    input.difficultyNotes,
-    input.difficultyBySurface ?? null,
-    input.protocol ?? null,
-    input.wellbeing,
-    input.surfaces,
-    input.facilityName ?? null,
-    input.customSessionType ?? null,
-    input.notes,
-  ]);
+      difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
+      facility_name, rope_wall_name, rope_routes, notes, created_at
+  `,
+    [
+      trainingId,
+      sourceId,
+      input.athleteId,
+      input.date,
+      input.time,
+      input.durationMinutes,
+      input.ageYears,
+      input.caloriesBurned,
+      input.attemptsCount,
+      input.difficultyNotes,
+      input.difficultyBySurface ?? null,
+      input.protocol ?? null,
+      input.loadProfile ?? null,
+      input.wellbeing,
+      input.surfaces,
+      input.facilityName ?? null,
+      input.ropeWallName ?? null,
+      input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
+      input.customSessionType ?? null,
+      input.notes,
+    ],
+  );
 
   return mapTraining(result.rows[0]);
 }
@@ -901,7 +985,8 @@ export async function updateTrainingInPostgres(
   input: Omit<TrainingRecord, "createdAt">,
 ) {
   await requireOwnedAthlete(ownerUserId, input.athleteId);
-  const result = await queryPostgres<TrainingRow>(`
+  const result = await queryPostgres<TrainingRow>(
+    `
     update trainings
     set athlete_id = $2,
       date = $3,
@@ -913,44 +998,53 @@ export async function updateTrainingInPostgres(
       difficulty_notes = $9,
       difficulty_by_surface = $10,
       protocol = $11,
-      wellbeing = $12,
-      surfaces = $13,
-      facility_name = $14,
-      custom_session_type = $15,
-      notes = $16
+      load_profile = $12,
+      wellbeing = $13,
+      surfaces = $14,
+      facility_name = $15,
+      rope_wall_name = $16,
+      rope_routes = $17,
+      custom_session_type = $18,
+      notes = $19
     where id = $1
       and exists (
         select 1
         from athletes
         where athletes.id = trainings.athlete_id
-          and athletes.owner_user_id = $17
+          and athletes.owner_user_id = $20
       )
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
-      difficulty_by_surface, protocol, wellbeing, surfaces, custom_session_type,
-      facility_name, notes, created_at
-  `, [
-    input.id,
-    input.athleteId,
-    input.date,
-    input.time,
-    input.durationMinutes,
-    input.ageYears,
-    input.caloriesBurned,
-    input.attemptsCount,
-    input.difficultyNotes,
-    input.difficultyBySurface ?? null,
-    input.protocol ?? null,
-    input.wellbeing,
-    input.surfaces,
-    input.facilityName ?? null,
-    input.customSessionType ?? null,
-    input.notes,
-    ownerUserId,
-  ]);
+      difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
+      facility_name, rope_wall_name, rope_routes, notes, created_at
+  `,
+    [
+      input.id,
+      input.athleteId,
+      input.date,
+      input.time,
+      input.durationMinutes,
+      input.ageYears,
+      input.caloriesBurned,
+      input.attemptsCount,
+      input.difficultyNotes,
+      input.difficultyBySurface ?? null,
+      input.protocol ?? null,
+      input.loadProfile ?? null,
+      input.wellbeing,
+      input.surfaces,
+      input.facilityName ?? null,
+      input.ropeWallName ?? null,
+      input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
+      input.customSessionType ?? null,
+      input.notes,
+      ownerUserId,
+    ],
+  );
 
   const training = result.rows[0];
-  if (!training) throw new Error("Nie znaleziono treningu należącego do użytkownika.");
+  if (!training)
+    throw new Error("Nie znaleziono treningu należącego do użytkownika.");
 
   return mapTraining(training);
 }
@@ -959,7 +1053,8 @@ export async function deleteTrainingFromPostgres(
   ownerUserId: string,
   trainingId: string,
 ) {
-  const result = await queryPostgres<{ id: string }>(`
+  const result = await queryPostgres<{ id: string }>(
+    `
     delete from trainings
     where id = $1
       and exists (
@@ -969,7 +1064,9 @@ export async function deleteTrainingFromPostgres(
           and athletes.owner_user_id = $2
       )
     returning id
-  `, [trainingId, ownerUserId]);
+  `,
+    [trainingId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono treningu należącego do użytkownika.");
@@ -981,12 +1078,15 @@ export async function listClimbsFromPostgres(
   athleteId: string,
 ) {
   await requireOwnedAthlete(ownerUserId, athleteId);
-  const result = await queryPostgres<ClimbRow>(`
+  const result = await queryPostgres<ClimbRow>(
+    `
     select id, athlete_id, name, grade, created_at
     from climbs
     where athlete_id = $1
     order by created_at asc
-  `, [athleteId]);
+  `,
+    [athleteId],
+  );
 
   return result.rows.map(mapClimb);
 }
@@ -996,11 +1096,14 @@ export async function createClimbInPostgres(
   input: Omit<ClimbRecord, "id" | "createdAt">,
 ) {
   await requireOwnedAthlete(ownerUserId, input.athleteId);
-  const result = await queryPostgres<ClimbRow>(`
+  const result = await queryPostgres<ClimbRow>(
+    `
     insert into climbs (athlete_id, name, grade)
     values ($1, $2, $3)
     returning id, athlete_id, name, grade, created_at
-  `, [input.athleteId, input.name.trim(), input.grade.trim()]);
+  `,
+    [input.athleteId, input.name.trim(), input.grade.trim()],
+  );
 
   return mapClimb(result.rows[0]);
 }
@@ -1010,7 +1113,8 @@ export async function updateClimbInPostgres(
   input: Required<Pick<ClimbRecord, "id">> &
     Omit<ClimbRecord, "id" | "createdAt">,
 ) {
-  const result = await queryPostgres<ClimbRow>(`
+  const result = await queryPostgres<ClimbRow>(
+    `
     update climbs
     set name = $2, grade = $3
     where id = $1
@@ -1022,10 +1126,19 @@ export async function updateClimbInPostgres(
           and athletes.owner_user_id = $5
       )
     returning id, athlete_id, name, grade, created_at
-  `, [input.id, input.name.trim(), input.grade.trim(), input.athleteId, ownerUserId]);
+  `,
+    [
+      input.id,
+      input.name.trim(),
+      input.grade.trim(),
+      input.athleteId,
+      ownerUserId,
+    ],
+  );
 
   const climb = result.rows[0];
-  if (!climb) throw new Error("Nie znaleziono wspinaczki należącej do użytkownika.");
+  if (!climb)
+    throw new Error("Nie znaleziono wspinaczki należącej do użytkownika.");
 
   return mapClimb(climb);
 }
@@ -1034,7 +1147,8 @@ export async function deleteClimbFromPostgres(
   ownerUserId: string,
   climbId: number,
 ) {
-  const result = await queryPostgres<{ id: number }>(`
+  const result = await queryPostgres<{ id: number }>(
+    `
     delete from climbs
     where id = $1
       and exists (
@@ -1044,7 +1158,9 @@ export async function deleteClimbFromPostgres(
           and athletes.owner_user_id = $2
       )
     returning id
-  `, [climbId, ownerUserId]);
+  `,
+    [climbId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono wspinaczki należącej do użytkownika.");
@@ -1056,11 +1172,14 @@ export async function getUserProfileFromPostgres(
   athleteId: string,
 ) {
   await requireOwnedAthlete(ownerUserId, athleteId);
-  const result = await queryPostgres<UserProfileRow>(`
+  const result = await queryPostgres<UserProfileRow>(
+    `
     select key, athlete_id, birth_date, sex, height_cm, weight_kg, updated_at
     from user_profiles
     where athlete_id = $1
-  `, [athleteId]);
+  `,
+    [athleteId],
+  );
 
   const profile = result.rows[0];
 
@@ -1082,7 +1201,8 @@ export async function saveUserProfileToPostgres(
   input: Omit<UserProfileRecord, "key" | "updatedAt">,
 ) {
   await requireOwnedAthlete(ownerUserId, input.athleteId);
-  const result = await queryPostgres<UserProfileRow>(`
+  const result = await queryPostgres<UserProfileRow>(
+    `
     insert into user_profiles (
       key, athlete_id, birth_date, sex, height_cm, weight_kg
     )
@@ -1094,14 +1214,16 @@ export async function saveUserProfileToPostgres(
       weight_kg = excluded.weight_kg,
       updated_at = now()
     returning key, athlete_id, birth_date, sex, height_cm, weight_kg, updated_at
-  `, [
-    `athlete:${input.athleteId}`,
-    input.athleteId,
-    input.birthDate,
-    input.sex,
-    input.heightCm,
-    input.weightKg,
-  ]);
+  `,
+    [
+      `athlete:${input.athleteId}`,
+      input.athleteId,
+      input.birthDate,
+      input.sex,
+      input.heightCm,
+      input.weightKg,
+    ],
+  );
 
   return mapUserProfile(result.rows[0]);
 }
@@ -1111,12 +1233,15 @@ export async function listWeightEntriesFromPostgres(
   athleteId: string,
 ) {
   await requireOwnedAthlete(ownerUserId, athleteId);
-  const result = await queryPostgres<WeightEntryRow>(`
+  const result = await queryPostgres<WeightEntryRow>(
+    `
     select id, athlete_id, date, time, weight_kg, created_at
     from weight_entries
     where athlete_id = $1
     order by date desc, time desc, created_at desc
-  `, [athleteId]);
+  `,
+    [athleteId],
+  );
 
   return result.rows.map(mapWeightEntry);
 }
@@ -1126,11 +1251,14 @@ export async function createWeightEntryInPostgres(
   input: Omit<WeightEntryRecord, "id" | "createdAt">,
 ) {
   await requireOwnedAthlete(ownerUserId, input.athleteId);
-  const result = await queryPostgres<WeightEntryRow>(`
+  const result = await queryPostgres<WeightEntryRow>(
+    `
     insert into weight_entries (athlete_id, date, time, weight_kg)
     values ($1, $2, $3, $4)
     returning id, athlete_id, date, time, weight_kg, created_at
-  `, [input.athleteId, input.date, input.time, input.weightKg]);
+  `,
+    [input.athleteId, input.date, input.time, input.weightKg],
+  );
 
   return mapWeightEntry(result.rows[0]);
 }
@@ -1140,7 +1268,8 @@ export async function updateWeightEntryInPostgres(
   input: Required<Pick<WeightEntryRecord, "id">> &
     Omit<WeightEntryRecord, "id" | "createdAt">,
 ) {
-  const result = await queryPostgres<WeightEntryRow>(`
+  const result = await queryPostgres<WeightEntryRow>(
+    `
     update weight_entries
     set date = $2, time = $3, weight_kg = $4
     where id = $1
@@ -1152,14 +1281,16 @@ export async function updateWeightEntryInPostgres(
           and athletes.owner_user_id = $6
       )
     returning id, athlete_id, date, time, weight_kg, created_at
-  `, [
-    input.id,
-    input.date,
-    input.time,
-    input.weightKg,
-    input.athleteId,
-    ownerUserId,
-  ]);
+  `,
+    [
+      input.id,
+      input.date,
+      input.time,
+      input.weightKg,
+      input.athleteId,
+      ownerUserId,
+    ],
+  );
 
   const entry = result.rows[0];
 
@@ -1174,7 +1305,8 @@ export async function deleteWeightEntryFromPostgres(
   ownerUserId: string,
   entryId: number,
 ) {
-  const result = await queryPostgres<{ id: number }>(`
+  const result = await queryPostgres<{ id: number }>(
+    `
     delete from weight_entries
     where id = $1
       and exists (
@@ -1184,7 +1316,9 @@ export async function deleteWeightEntryFromPostgres(
           and athletes.owner_user_id = $2
       )
     returning id
-  `, [entryId, ownerUserId]);
+  `,
+    [entryId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono wpisu wagi należącego do użytkownika.");
@@ -1196,13 +1330,16 @@ export async function listAscentsFromPostgres(
   athleteId: string,
 ) {
   await requireOwnedAthlete(ownerUserId, athleteId);
-  const result = await queryPostgres<AscentRow>(`
-    select id, athlete_id, date, source, import_source, route_name,
+  const result = await queryPostgres<AscentRow>(
+    `
+    select id, athlete_id, date, source, discipline, import_source, route_name,
       suggested_grade, subjective_grade, style, notes, created_at
     from ascents
     where athlete_id = $1
     order by created_at desc
-  `, [athleteId]);
+  `,
+    [athleteId],
+  );
 
   return result.rows.map(mapAscent);
 }
@@ -1212,25 +1349,29 @@ export async function createAscentInPostgres(
   input: Omit<AscentRecord, "id" | "createdAt">,
 ) {
   await requireOwnedAthlete(ownerUserId, input.athleteId);
-  const result = await queryPostgres<AscentRow>(`
+  const result = await queryPostgres<AscentRow>(
+    `
     insert into ascents (
-      athlete_id, date, source, import_source, route_name, suggested_grade,
+      athlete_id, date, source, discipline, import_source, route_name, suggested_grade,
       subjective_grade, style, notes
     )
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    returning id, athlete_id, date, source, import_source, route_name,
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    returning id, athlete_id, date, source, discipline, import_source, route_name,
       suggested_grade, subjective_grade, style, notes, created_at
-  `, [
-    input.athleteId,
-    input.date,
-    input.source,
-    input.importSource ?? null,
-    input.routeName,
-    input.suggestedGrade,
-    input.subjectiveGrade,
-    input.style ?? null,
-    input.notes,
-  ]);
+  `,
+    [
+      input.athleteId,
+      input.date,
+      input.source,
+      input.discipline ?? null,
+      input.importSource ?? null,
+      input.routeName,
+      input.suggestedGrade,
+      input.subjectiveGrade,
+      input.style ?? null,
+      input.notes,
+    ],
+  );
 
   return mapAscent(result.rows[0]);
 }
@@ -1259,15 +1400,16 @@ export async function importAscentsToPostgres(
       await client.query(
         `
           insert into ascents (
-            athlete_id, date, source, import_source, route_name, suggested_grade,
+            athlete_id, date, source, discipline, import_source, route_name, suggested_grade,
             subjective_grade, style, notes
           )
-          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         `,
         [
           ascent.athleteId,
           ascent.date,
           ascent.source,
+          ascent.discipline ?? null,
           ascent.importSource ?? null,
           ascent.routeName,
           ascent.suggestedGrade,
@@ -1284,25 +1426,27 @@ export async function importAscentsToPostgres(
           update ascents
           set date = $2,
             source = $3,
-            import_source = $4,
-            route_name = $5,
-            suggested_grade = $6,
-            subjective_grade = $7,
-            style = $8,
-            notes = $9
+            discipline = $4,
+            import_source = $5,
+            route_name = $6,
+            suggested_grade = $7,
+            subjective_grade = $8,
+            style = $9,
+            notes = $10
           where id = $1
-            and athlete_id = $10
+            and athlete_id = $11
             and exists (
               select 1
               from athletes
               where athletes.id = ascents.athlete_id
-                and athletes.owner_user_id = $11
+                and athletes.owner_user_id = $12
             )
         `,
         [
           ascent.id,
           ascent.date,
           ascent.source,
+          ascent.discipline ?? null,
           ascent.importSource ?? null,
           ascent.routeName,
           ascent.suggestedGrade,
@@ -1319,7 +1463,10 @@ export async function importAscentsToPostgres(
       }
     }
 
-    return { createdCount: input.create.length, updatedCount: input.update.length };
+    return {
+      createdCount: input.create.length,
+      updatedCount: input.update.length,
+    };
   });
 }
 
@@ -1346,39 +1493,44 @@ export async function updateAscentInPostgres(
   input: Required<Pick<AscentRecord, "id">> &
     Omit<AscentRecord, "id" | "createdAt">,
 ) {
-  const result = await queryPostgres<AscentRow>(`
+  const result = await queryPostgres<AscentRow>(
+    `
     update ascents
     set date = $2,
       source = $3,
-      import_source = $4,
-      route_name = $5,
-      suggested_grade = $6,
-      subjective_grade = $7,
-      style = $8,
-      notes = $9
+      discipline = $4,
+      import_source = $5,
+      route_name = $6,
+      suggested_grade = $7,
+      subjective_grade = $8,
+      style = $9,
+      notes = $10
     where id = $1
-      and athlete_id = $10
+      and athlete_id = $11
       and exists (
         select 1
         from athletes
         where athletes.id = ascents.athlete_id
-          and athletes.owner_user_id = $11
+              and athletes.owner_user_id = $12
       )
-    returning id, athlete_id, date, source, import_source, route_name,
+            returning id, athlete_id, date, source, discipline, import_source, route_name,
       suggested_grade, subjective_grade, style, notes, created_at
-  `, [
-    input.id,
-    input.date,
-    input.source,
-    input.importSource ?? null,
-    input.routeName,
-    input.suggestedGrade,
-    input.subjectiveGrade,
-    input.style ?? null,
-    input.notes,
-    input.athleteId,
-    ownerUserId,
-  ]);
+  `,
+    [
+      input.id,
+      input.date,
+      input.source,
+      input.discipline ?? null,
+      input.importSource ?? null,
+      input.routeName,
+      input.suggestedGrade,
+      input.subjectiveGrade,
+      input.style ?? null,
+      input.notes,
+      input.athleteId,
+      ownerUserId,
+    ],
+  );
 
   const ascent = result.rows[0];
 
@@ -1393,7 +1545,8 @@ export async function deleteAscentFromPostgres(
   ownerUserId: string,
   ascentId: number,
 ) {
-  const result = await queryPostgres<{ id: number }>(`
+  const result = await queryPostgres<{ id: number }>(
+    `
     delete from ascents
     where id = $1
       and exists (
@@ -1403,7 +1556,9 @@ export async function deleteAscentFromPostgres(
           and athletes.owner_user_id = $2
       )
     returning id
-  `, [ascentId, ownerUserId]);
+  `,
+    [ascentId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono przejścia należącego do użytkownika.");
@@ -1411,12 +1566,15 @@ export async function deleteAscentFromPostgres(
 }
 
 export async function listSectionsFromPostgres(ownerUserId: string) {
-  const result = await queryPostgres<SectionRow>(`
+  const result = await queryPostgres<SectionRow>(
+    `
     select id, source_id, name, facility_id, created_at
     from sections
     where owner_user_id = $1
     order by created_at asc
-  `, [ownerUserId]);
+  `,
+    [ownerUserId],
+  );
 
   return result.rows.map(mapSection);
 }
@@ -1428,11 +1586,14 @@ export async function createSectionInPostgres(
 ) {
   const sectionId = crypto.randomUUID();
   const ownedFacilityId = await getOwnedFacilityId(ownerUserId, facilityId);
-  const result = await queryPostgres<SectionRow>(`
+  const result = await queryPostgres<SectionRow>(
+    `
     insert into sections (id, source_id, name, facility_id, owner_user_id)
     values ($1, $1, $2, $3, $4)
     returning id, source_id, name, facility_id, created_at
-  `, [sectionId, name.trim(), ownedFacilityId, ownerUserId]);
+  `,
+    [sectionId, name.trim(), ownedFacilityId, ownerUserId],
+  );
 
   return mapSection(result.rows[0]);
 }
@@ -1442,15 +1603,19 @@ export async function updateSectionInPostgres(
   sectionId: string,
   name: string,
 ) {
-  const result = await queryPostgres<SectionRow>(`
+  const result = await queryPostgres<SectionRow>(
+    `
     update sections
     set name = $3
     where id = $1 and owner_user_id = $2
     returning id, source_id, name, facility_id, created_at
-  `, [sectionId, ownerUserId, name.trim()]);
+  `,
+    [sectionId, ownerUserId, name.trim()],
+  );
 
   const section = result.rows[0];
-  if (!section) throw new Error("Nie znaleziono sekcji należącej do użytkownika.");
+  if (!section)
+    throw new Error("Nie znaleziono sekcji należącej do użytkownika.");
 
   return mapSection(section);
 }
@@ -1459,11 +1624,14 @@ export async function deleteSectionFromPostgres(
   ownerUserId: string,
   sectionId: string,
 ) {
-  const result = await queryPostgres<{ id: string }>(`
+  const result = await queryPostgres<{ id: string }>(
+    `
     delete from sections
     where id = $1 and owner_user_id = $2
     returning id
-  `, [sectionId, ownerUserId]);
+  `,
+    [sectionId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono sekcji należącej do użytkownika.");
@@ -1471,26 +1639,32 @@ export async function deleteSectionFromPostgres(
 }
 
 export async function listFacilitiesFromPostgres(ownerUserId: string) {
-  const result = await queryPostgres<FacilityRow>(`
-    select id, name, created_at
+  const result = await queryPostgres<FacilityRow>(
+    `
+    select id, name, capabilities, created_at
     from facilities
     where owner_user_id = $1
     order by created_at asc
-  `, [ownerUserId]);
+  `,
+    [ownerUserId],
+  );
 
   return result.rows.map(mapFacility);
 }
 
 export async function createFacilityInPostgres(
   ownerUserId: string,
-  name: string,
+  input: Pick<FacilityRecord, "name" | "capabilities">,
 ) {
   const facilityId = crypto.randomUUID();
-  const result = await queryPostgres<FacilityRow>(`
-    insert into facilities (id, name, owner_user_id)
-    values ($1, $2, $3)
-    returning id, name, created_at
-  `, [facilityId, name.trim(), ownerUserId]);
+  const result = await queryPostgres<FacilityRow>(
+    `
+    insert into facilities (id, name, capabilities, owner_user_id)
+    values ($1, $2, $3, $4)
+    returning id, name, capabilities, created_at
+  `,
+    [facilityId, input.name.trim(), input.capabilities, ownerUserId],
+  );
 
   return mapFacility(result.rows[0]);
 }
@@ -1498,17 +1672,21 @@ export async function createFacilityInPostgres(
 export async function updateFacilityInPostgres(
   ownerUserId: string,
   facilityId: string,
-  name: string,
+  input: Pick<FacilityRecord, "name" | "capabilities">,
 ) {
-  const result = await queryPostgres<FacilityRow>(`
+  const result = await queryPostgres<FacilityRow>(
+    `
     update facilities
-    set name = $3
+    set name = $3, capabilities = $4
     where id = $1 and owner_user_id = $2
-    returning id, name, created_at
-  `, [facilityId, ownerUserId, name.trim()]);
+    returning id, name, capabilities, created_at
+  `,
+    [facilityId, ownerUserId, input.name.trim(), input.capabilities],
+  );
 
   const facility = result.rows[0];
-  if (!facility) throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
+  if (!facility)
+    throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
 
   return mapFacility(facility);
 }
@@ -1517,11 +1695,14 @@ export async function deleteFacilityFromPostgres(
   ownerUserId: string,
   facilityId: string,
 ) {
-  const result = await queryPostgres<{ id: string }>(`
+  const result = await queryPostgres<{ id: string }>(
+    `
     delete from facilities
     where id = $1 and owner_user_id = $2
     returning id
-  `, [facilityId, ownerUserId]);
+  `,
+    [facilityId, ownerUserId],
+  );
 
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
@@ -1713,7 +1894,8 @@ export async function importFullBackupToPostgres(
 
       const matches = currentAthletes.rows.filter(
         (currentAthlete) =>
-          currentAthlete.email && normalizeEmail(currentAthlete.email) === email,
+          currentAthlete.email &&
+          normalizeEmail(currentAthlete.email) === email,
       );
       if (matches.length === 1) {
         athleteIds.set(String(athlete.id), matches[0].id);
@@ -1737,7 +1919,9 @@ export async function importFullBackupToPostgres(
       ) ??
       (emailMatchesCurrentUser ? currentAthletes.rows[0] : undefined) ??
       (nameMatches.length === 1 ? nameMatches[0] : undefined) ??
-      (backupOwnerReference === "primary" ? currentAthletes.rows[0] : undefined);
+      (backupOwnerReference === "primary"
+        ? currentAthletes.rows[0]
+        : undefined);
 
     if (backupOwner && matchingCurrentAthlete) {
       athleteIds.set(String(backupOwner.id), matchingCurrentAthlete.id);
@@ -1750,19 +1934,25 @@ export async function importFullBackupToPostgres(
 
       await client.query(
         `
-          insert into facilities (id, name, created_at, owner_user_id)
-          values ($1, $2, $3, $4)
+          insert into facilities (id, name, capabilities, created_at, owner_user_id)
+          values ($1, $2, $3, $4, $5)
           on conflict (id) do update
-          set name = excluded.name, created_at = excluded.created_at
+          set name = excluded.name, capabilities = excluded.capabilities, created_at = excluded.created_at
         `,
-        [facilityId, facility.name, facility.createdAt, ownerUserId],
+        [
+          facilityId,
+          facility.name,
+          facility.capabilities ?? { activities: [], ropeWalls: [] },
+          facility.createdAt,
+          ownerUserId,
+        ],
       );
     }
 
     for (const section of backup.sections) {
       const sectionId = sectionIds.get(String(section.id))!;
       const facilityId = section.facilityId
-        ? facilityIds.get(String(section.facilityId)) ?? null
+        ? (facilityIds.get(String(section.facilityId)) ?? null)
         : null;
 
       await client.query(
@@ -1784,7 +1974,7 @@ export async function importFullBackupToPostgres(
       const athleteId = athleteIds.get(String(athlete.id))!;
       const athleteName = getBackupAthleteName(athlete);
       const sectionId = athlete.sectionId
-        ? sectionIds.get(String(athlete.sectionId)) ?? null
+        ? (sectionIds.get(String(athlete.sectionId)) ?? null)
         : null;
 
       await client.query(
@@ -1831,12 +2021,12 @@ export async function importFullBackupToPostgres(
           insert into trainings (
             id, source_id, athlete_id, date, time, duration_minutes,
             age_years, calories_burned, attempts_count, difficulty_notes,
-            difficulty_by_surface, protocol, wellbeing, surfaces, facility_name,
-            custom_session_type, notes, created_at
+            difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, facility_name,
+            rope_wall_name, rope_routes, custom_session_type, notes, created_at
           )
           select
             $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-            $15, $16, $17
+            $15, $16, $17, $18, $19, $20
           where not exists (
             select 1
             from trainings
@@ -1850,12 +2040,15 @@ export async function importFullBackupToPostgres(
               and difficulty_notes = $9
               and difficulty_by_surface is not distinct from $10::jsonb
               and protocol is not distinct from $11::jsonb
-              and wellbeing = $12
-              and surfaces = $13
-              and facility_name is not distinct from $14
-              and custom_session_type is not distinct from $15
-              and notes = $16
-              and created_at = $17
+              and load_profile is not distinct from $12::jsonb
+              and wellbeing = $13
+              and surfaces = $14
+              and facility_name is not distinct from $15
+              and rope_wall_name is not distinct from $16
+              and rope_routes is not distinct from $17::jsonb
+              and custom_session_type is not distinct from $18
+              and notes = $19
+              and created_at = $20
           )
           on conflict (id) do update
           set athlete_id = excluded.athlete_id,
@@ -1868,9 +2061,12 @@ export async function importFullBackupToPostgres(
             difficulty_notes = excluded.difficulty_notes,
             difficulty_by_surface = excluded.difficulty_by_surface,
             protocol = excluded.protocol,
+            load_profile = excluded.load_profile,
             wellbeing = excluded.wellbeing,
             surfaces = excluded.surfaces,
             facility_name = excluded.facility_name,
+            rope_wall_name = excluded.rope_wall_name,
+            rope_routes = excluded.rope_routes,
             custom_session_type = excluded.custom_session_type,
             notes = excluded.notes,
             created_at = excluded.created_at
@@ -1887,9 +2083,12 @@ export async function importFullBackupToPostgres(
           training.difficultyNotes,
           training.difficultyBySurface ?? null,
           training.protocol ?? null,
+          training.loadProfile ?? null,
           training.wellbeing,
           training.surfaces,
           training.facilityName ?? null,
+          training.ropeWallName ?? null,
+          training.ropeRoutes ? JSON.stringify(training.ropeRoutes) : null,
           training.customSessionType ?? null,
           training.notes,
           training.createdAt,
@@ -1954,29 +2153,31 @@ export async function importFullBackupToPostgres(
       await client.query(
         `
           insert into ascents (
-            athlete_id, date, source, import_source, route_name, suggested_grade,
+            athlete_id, date, source, discipline, import_source, route_name, suggested_grade,
             subjective_grade, style, notes, created_at
           )
-          select $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+          select $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
           where not exists (
             select 1
             from ascents
             where athlete_id = $1
               and date = $2
               and source = $3
-              and import_source is not distinct from $4
-              and route_name = $5
-              and suggested_grade = $6
-              and subjective_grade = $7
-              and style is not distinct from $8
-              and notes = $9
-              and created_at = $10
+              and discipline is not distinct from $4
+              and import_source is not distinct from $5
+              and route_name = $6
+              and suggested_grade = $7
+              and subjective_grade = $8
+              and style is not distinct from $9
+              and notes = $10
+              and created_at = $11
           )
         `,
         [
           getMappedAthleteId(athleteIds, ascent.athleteId),
           ascent.date,
           ascent.source,
+          ascent.discipline ?? null,
           ascent.importSource ?? null,
           ascent.routeName,
           ascent.suggestedGrade,

@@ -23,6 +23,7 @@ import {
 type AscentDraftValues = {
   date: string;
   source: "panel" | "skala";
+  discipline: "lina" | "baldy" | "moon" | "kilter";
   routeName: string;
   suggestedGrade: string;
   subjectiveGrade: string;
@@ -151,9 +152,7 @@ export function ReportsAssembly({
     <AscentGradeDistributionWidget key="grades" ascents={ascents} />,
   ];
   const newAscentButton = (
-    <Button onClick={handleNewAscent}>
-      + Nowe przejście
-    </Button>
+    <Button onClick={handleNewAscent}>+ Nowe przejście</Button>
   );
 
   return (
@@ -204,7 +203,11 @@ export function ReportsAssembly({
         <Modal
           labelledBy="ascent-form-title"
           onClose={handleCancelAscentEdit}
-          style={{ width: "min(100%, 620px)", maxHeight: "90vh", overflowY: "auto" }}
+          style={{
+            width: "min(100%, 620px)",
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}
         >
           {ascentFormWidget}
         </Modal>

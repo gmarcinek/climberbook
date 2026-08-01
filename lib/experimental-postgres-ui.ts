@@ -22,7 +22,8 @@ type PostgresSnapshot = {
   weightEntries: WeightEntryRecord[];
 };
 
-const testUserId = process.env.NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_USER_ID?.trim();
+const testUserId =
+  process.env.NEXT_PUBLIC_EXPERIMENTAL_POSTGRES_USER_ID?.trim();
 export const EXPERIMENTAL_API_PENDING_EVENT = "climberbook:api-pending";
 
 export class ExperimentalApiError extends Error {
@@ -50,7 +51,9 @@ export function isExperimentalPostgresUiEnabled() {
 
 async function request<T>(path: string, options: RequestInit = {}) {
   if (!isExperimentalPostgresUiEnabled()) {
-    throw new Error("Eksperymentalny tryb PostgreSQL UI nie jest skonfigurowany.");
+    throw new Error(
+      "Eksperymentalny tryb PostgreSQL UI nie jest skonfigurowany.",
+    );
   }
 
   notifyExperimentalApiPending(1);
@@ -196,8 +199,7 @@ export async function createExperimentalAscent(
 export function importExperimentalAscents(input: {
   create: Array<Omit<AscentRecord, "id" | "createdAt">>;
   update: Array<
-    Required<Pick<AscentRecord, "id">> &
-      Omit<AscentRecord, "id" | "createdAt">
+    Required<Pick<AscentRecord, "id">> & Omit<AscentRecord, "id" | "createdAt">
   >;
 }) {
   return request<{ createdCount: number; updatedCount: number }>(
@@ -276,10 +278,23 @@ export function deleteExperimentalSection(id: string) {
   });
 }
 
-export async function createExperimentalFacility(name: string) {
+export async function createExperimentalFacility(
+  input: Pick<FacilityRecord, "name" | "capabilities">,
+) {
   const response = await request<{ facility: FacilityRecord }>(
     "/api/v1/facilities",
-    { method: "POST", body: JSON.stringify({ name }) },
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return response.facility;
+}
+
+export async function updateExperimentalFacility(
+  id: string,
+  input: Pick<FacilityRecord, "name" | "capabilities">,
+) {
+  const response = await request<{ facility: FacilityRecord }>(
+    "/api/v1/facilities",
+    { method: "PATCH", body: JSON.stringify({ id, ...input }) },
   );
   return response.facility;
 }

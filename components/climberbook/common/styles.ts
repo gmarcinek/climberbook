@@ -567,6 +567,9 @@ export const moduleShellStyles: Record<
   team: {
     background: "#ffffff9e",
   },
+  obiekty: {
+    background: "#ffffff9e",
+  },
   ustawienia: {
     background: "#ffffff9e",
   },

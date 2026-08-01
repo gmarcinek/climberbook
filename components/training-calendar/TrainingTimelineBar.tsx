@@ -59,7 +59,7 @@ function getTimelineGradeRows(
       surface === "lina"
         ? Boolean(
             difficultyBySurface?.lina ||
-              (surfaces.includes("lina") && difficultyNotes),
+            (surfaces.includes("lina") && difficultyNotes),
           )
         : Boolean(difficultyBySurface?.[surface]),
     ),
@@ -72,8 +72,8 @@ function getTimelineGradeRows(
     );
     const gradeValue =
       surface === "lina"
-        ? (difficultyBySurface?.lina ||
-          (surfaces.includes("lina") ? difficultyNotes : ""))
+        ? difficultyBySurface?.lina ||
+          (surfaces.includes("lina") ? difficultyNotes : "")
         : (difficultyBySurface?.[surface] ?? "");
 
     return {
@@ -144,7 +144,7 @@ const gradeColorByGrade: Record<string, string> = {
   "7a": "#83cde7",
   "7a+": "#86d8f6",
   "7b": "#4abce7",
-  "7b+": "#218fce",
+  "7b+": "#218fcgit ",
   "7c": "#1765ac",
   "7c+": "#103d78",
   "8a": "#ec8dc2",
@@ -203,14 +203,14 @@ const timelineSurfaceLabels = {
   kilter: "Kilter",
   baldy: "Baldy",
   drazek: "Drążek",
-  spraywall: "Spraywall",
-  silownia: "Siłownia",
+  spraywall: "Spray",
+  silownia: "Siłka",
   chwytotablica: "Chwytotablica",
   campus: "Campus",
   bieznia: "Bieżnia",
   rower: "Rower",
   bieg: "Bieg",
-  treking: "Treking",
+  treking: "Treck",
 } as const;
 
 const moonGradeColors = [

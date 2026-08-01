@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/climberbook/common/Button";
 import {
   formControlClassNames,
   Input,
@@ -12,7 +13,11 @@ import { formatDurationMinutes } from "@/components/climberbook/common/training"
 import type { FacilityRecord, TrainingSurface } from "@/lib/climbs-db";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
 import type { SurfaceOption, TrainingDraftValues } from "./types";
-import { adjustCaloriesValue, getSurfaceOptionGroups, timeOptions } from "./training-session.utils";
+import {
+  adjustCaloriesValue,
+  getSurfaceOptionGroups,
+  timeOptions,
+} from "./training-session.utils";
 
 const surfaceEmojis: Record<TrainingSurface, string> = {
   lina: "🧗",
@@ -46,6 +51,11 @@ export function TrainingSessionDetails({
   onToggleSurface,
 }: Props) {
   const [isCustomSessionExpanded, setIsCustomSessionExpanded] = useState(false);
+  const [defaultFacilityName, setDefaultFacilityName] = useState(() =>
+    typeof window === "undefined"
+      ? ""
+      : (window.localStorage.getItem("climberbook:defaultFacilityName") ?? ""),
+  );
   const groups = getSurfaceOptionGroups(surfaceOptions);
   const update = (changes: Partial<TrainingDraftValues>) =>
     onDraftChange({ ...draft, ...changes });
@@ -61,10 +71,15 @@ export function TrainingSessionDetails({
           draft.surfaces.includes(option.value)
             ? styles["trainingSidebar__chip--active"]
             : "",
-        ].filter(Boolean).join(" ")}
+        ]
+          .filter(Boolean)
+          .join(" ")}
         aria-label={option.label}
       >
-        <span className={styles.trainingSidebar__sessionChipIcon} aria-hidden="true">
+        <span
+          className={styles.trainingSidebar__sessionChipIcon}
+          aria-hidden="true"
+        >
           {surfaceEmojis[option.value]}
         </span>
         <span>{option.label}</span>
@@ -72,23 +87,66 @@ export function TrainingSessionDetails({
     ));
 
   return (
-    <div className={`${styles.trainingSidebar__stack} ${styles.trainingSidebar__formSectionStack}`}>
-      <label className={styles.trainingSidebar__field}>
-        Obiekt
-        <Select value={draft.facilityName} onChange={(event) => update({ facilityName: event.target.value })} className={styles.trainingSidebar__input}>
-          <option value="">Bez obiektu</option>
-          {facilities.map((facility) => <option key={facility.id} value={facility.name}>{facility.name}</option>)}
-        </Select>
-      </label>
+    <div
+      className={`${styles.trainingSidebar__stack} ${styles.trainingSidebar__formSectionStack}`}
+    >
       <div className={styles.trainingSidebar__stack}>
-        <strong className={styles.trainingSidebar__protocolHeading}>Rodzaj sesji</strong>
-        <div className={styles.trainingSidebar__chipGrid}>{renderSurfaceOptions(groups.primary)}</div>
-        <div className={styles.trainingSidebar__chipGrid}>{renderSurfaceOptions(groups.secondary)}</div>
-        <div className={styles.trainingSidebar__chipGrid}>
+        <label className={styles.trainingSidebar__field}>
+          Obiekt
+          <Select
+            value={draft.facilityName}
+            onChange={(event) =>
+              update({
+                facilityName: event.target.value,
+                ropeWallName: "",
+              })
+            }
+            className={styles.trainingSidebar__input}
+          >
+            <option value="">Bez obiektu</option>
+            {facilities.map((facility) => (
+              <option key={facility.id} value={facility.name}>
+                {facility.name}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {draft.facilityName ? (
+          <Button
+            type="button"
+            size="small"
+            variant="secondary"
+            onClick={() => {
+              window.localStorage.setItem(
+                "climberbook:defaultFacilityName",
+                draft.facilityName,
+              );
+              setDefaultFacilityName(draft.facilityName);
+            }}
+          >
+            {defaultFacilityName === draft.facilityName
+              ? "Domyślny obiekt"
+              : "Make Default"}
+          </Button>
+        ) : null}
+      </div>
+      <div className={styles.trainingSidebar__stack}>
+        <strong className={styles.trainingSidebar__protocolHeading}>
+          Rodzaj sesji
+        </strong>
+        <div className={styles.trainingSidebar__sessionChipGrid}>
+          {renderSurfaceOptions(groups.primary)}
+        </div>
+        <div className={styles.trainingSidebar__sessionChipGrid}>
+          {renderSurfaceOptions(groups.secondary)}
+        </div>
+        <div className={styles.trainingSidebar__sessionChipGrid}>
           {renderSurfaceOptions(groups.remaining)}
           <button
             type="button"
-            aria-expanded={isCustomSessionExpanded || Boolean(draft.customSessionType)}
+            aria-expanded={
+              isCustomSessionExpanded || Boolean(draft.customSessionType)
+            }
             onClick={() => setIsCustomSessionExpanded((expanded) => !expanded)}
             className={[
               styles.trainingSidebar__chip,
@@ -96,49 +154,157 @@ export function TrainingSessionDetails({
               isCustomSessionExpanded || draft.customSessionType
                 ? styles["trainingSidebar__chip--active"]
                 : "",
-            ].filter(Boolean).join(" ")}
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
-            <span className={styles.trainingSidebar__sessionChipIcon} aria-hidden="true">✨</span>
+            <span
+              className={styles.trainingSidebar__sessionChipIcon}
+              aria-hidden="true"
+            >
+              ✨
+            </span>
             <span>Inne</span>
           </button>
         </div>
         {(isCustomSessionExpanded || draft.customSessionType) && (
           <label className={styles.trainingSidebar__field}>
             Inne
-            <Input value={draft.customSessionType} onChange={(event) => update({ customSessionType: event.target.value })} placeholder="Np. mobility, joga, regeneracja" className={styles.trainingSidebar__input} />
+            <Input
+              value={draft.customSessionType}
+              onChange={(event) =>
+                update({ customSessionType: event.target.value })
+              }
+              placeholder="Np. mobility, joga, regeneracja"
+              className={styles.trainingSidebar__input}
+            />
           </label>
         )}
       </div>
       <div className={styles.trainingSidebar__formGrid}>
         <label className={styles.trainingSidebar__field}>
           Data
-          <Input value={draft.date} onChange={(event) => update({ date: event.target.value })} type="date" required className={styles.trainingSidebar__input} />
+          <Input
+            value={draft.date}
+            onChange={(event) => update({ date: event.target.value })}
+            type="date"
+            required
+            className={styles.trainingSidebar__input}
+          />
         </label>
         <label className={styles.trainingSidebar__field}>
           Godzina
-          <Select value={draft.time} onChange={(event) => update({ time: event.target.value })} required className={styles.trainingSidebar__input}>
-            {timeOptions.map((time) => <option key={time} value={time}>{time}</option>)}
+          <Select
+            value={draft.time}
+            onChange={(event) => update({ time: event.target.value })}
+            required
+            className={styles.trainingSidebar__input}
+          >
+            {timeOptions.map((time) => (
+              <option key={time} value={time}>
+                {time}
+              </option>
+            ))}
           </Select>
         </label>
         <label className={styles.trainingSidebar__field}>
           Czas
-          <NumericRangeControl value={draft.durationMinutes} onChange={(event) => update({ durationMinutes: event.target.value })} min="15" max="300" step="15" ariaLabel="Długość treningu" valueLabel={formatDurationMinutes(draft.durationMinutes)} className={styles.trainingSidebar__durationControl} />
+          <NumericRangeControl
+            value={draft.durationMinutes}
+            onChange={(event) =>
+              update({ durationMinutes: event.target.value })
+            }
+            min="15"
+            max="300"
+            step="15"
+            ariaLabel="Długość treningu"
+            valueLabel={formatDurationMinutes(draft.durationMinutes)}
+            className={styles.trainingSidebar__durationControl}
+          />
         </label>
         <label className={styles.trainingSidebar__field}>
           Kalorie
           <NumericStepperControl
             value={draft.caloriesBurned}
-            onChange={(event) => update({ caloriesBurned: event.target.value, caloriesMode: "manual" })}
-            onDecrement={() => update({ caloriesBurned: adjustCaloriesValue(draft.caloriesBurned, -100), caloriesMode: "manual" })}
-            onIncrement={() => update({ caloriesBurned: adjustCaloriesValue(draft.caloriesBurned, 100), caloriesMode: "manual" })}
+            onChange={(event) =>
+              update({
+                caloriesBurned: event.target.value,
+                caloriesMode: "manual",
+              })
+            }
+            onDecrement={() =>
+              update({
+                caloriesBurned: adjustCaloriesValue(draft.caloriesBurned, -100),
+                caloriesMode: "manual",
+              })
+            }
+            onIncrement={() =>
+              update({
+                caloriesBurned: adjustCaloriesValue(draft.caloriesBurned, 100),
+                caloriesMode: "manual",
+              })
+            }
             decrementAriaLabel="Odejmij 100 kalorii"
             incrementAriaLabel="Dodaj 100 kalorii"
             decrementTitle="Odejmij 100 kalorii"
             incrementTitle="Dodaj 100 kalorii"
-            trailingActions={<button type="button" onClick={() => update({ caloriesBurned: "", caloriesMode: "auto" })} className={formControlClassNames.stepButton}>Auto</button>}
-            inputProps={{ placeholder: "Auto z wagi, wieku i czasu", type: "number" }}
+            trailingActions={
+              <button
+                type="button"
+                onClick={() =>
+                  update({ caloriesBurned: "", caloriesMode: "auto" })
+                }
+                className={formControlClassNames.stepButton}
+              >
+                Auto
+              </button>
+            }
+            inputProps={{
+              placeholder: "Auto z wagi, wieku i czasu",
+              type: "number",
+            }}
             className={styles.trainingSidebar__controlGroup}
           />
+        </label>
+        <label className={styles.trainingSidebar__field}>
+          Główny cel
+          <Select
+            value={draft.focus}
+            onChange={(event) =>
+              update({
+                focus: event.target.value as TrainingDraftValues["focus"],
+              })
+            }
+            className={styles.trainingSidebar__input}
+          >
+            <option value="none">Brak dominującego celu</option>
+            <option value="strength">Siła</option>
+            <option value="specific_endurance">Wytrzymałość specyficzna</option>
+            <option value="strength_endurance">Wytrzymałość siłowa</option>
+            <option value="finger_strength">Specyficzna siła palców</option>
+            <option value="contact_strength">Siła kontaktowa</option>
+            <option value="volume">Objętość</option>
+            <option value="intervals">Interwały</option>
+            <option value="general_conditioning">Ogólnorozwojówka</option>
+          </Select>
+        </label>
+        <label className={styles.trainingSidebar__field}>
+          Warunki
+          <Select
+            value={draft.conditions}
+            onChange={(event) =>
+              update({
+                conditions: event.target
+                  .value as TrainingDraftValues["conditions"],
+              })
+            }
+            className={styles.trainingSidebar__input}
+          >
+            <option value="optimal">Optymalnie</option>
+            <option value="cold">Zimno</option>
+            <option value="stuffy">Duszno</option>
+            <option value="too_warm">Za ciepło</option>
+          </Select>
         </label>
       </div>
     </div>

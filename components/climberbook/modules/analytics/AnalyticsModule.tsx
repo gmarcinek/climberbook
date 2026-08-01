@@ -43,7 +43,8 @@ export function AnalyticsModule() {
     () =>
       app.trainings.filter(
         (training) =>
-          training.date >= activePeriod.start && training.date <= activePeriod.end,
+          training.date >= activePeriod.start &&
+          training.date <= activePeriod.end,
       ),
     [activePeriod.end, activePeriod.start, app.trainings],
   );
@@ -73,9 +74,7 @@ export function AnalyticsModule() {
   }
 
   function shiftPeriod(direction: -1 | 1) {
-    setActivePeriodPreset((preset) =>
-      preset === "all" ? "custom" : preset,
-    );
+    setActivePeriodPreset((preset) => (preset === "all" ? "custom" : preset));
     setPeriod((current) => {
       const value = current ?? activePeriod;
       const days = Math.max(
@@ -94,9 +93,10 @@ export function AnalyticsModule() {
 
   function setPreset(preset: AnalyticsPeriodPreset) {
     setActivePeriodPreset(preset);
-    const earliestRecordedDate = [...app.trainings, ...app.weightEntries].reduce<
-      string | null
-    >(
+    const earliestRecordedDate = [
+      ...app.trainings,
+      ...app.weightEntries,
+    ].reduce<string | null>(
       (earliest, record) =>
         !earliest || record.date < earliest ? record.date : earliest,
       null,
@@ -106,7 +106,7 @@ export function AnalyticsModule() {
     setPeriod({
       start:
         preset === "all"
-          ? earliestRecordedDate ?? app.today
+          ? (earliestRecordedDate ?? app.today)
           : addDays(app.today, -(daysByPreset[preset] - 1)),
       end: app.today,
     });
@@ -134,6 +134,7 @@ export function AnalyticsModule() {
       onPeriodStartChange={setStart}
       onPeriodEndChange={setEnd}
       onPeriodPreset={setPreset}
+      facilities={app.facilities}
       allTrainings={app.trainings}
       trainings={periodTrainings}
       trainingsCount={periodTrainings.length}

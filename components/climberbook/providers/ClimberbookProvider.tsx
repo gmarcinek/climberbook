@@ -78,6 +78,7 @@ import {
   type AthleteRecord,
   type DatabaseImportPreview,
   type ClimberbookFullDatabaseBackup,
+  type FacilityCapabilities,
   type FacilityRecord,
   type SectionRecord,
   type TrainingRecord,
@@ -113,6 +114,7 @@ import {
   saveExperimentalProfile,
   updateExperimentalAscent,
   updateExperimentalAthlete,
+  updateExperimentalFacility,
   updateExperimentalTraining,
   updateExperimentalWeightEntryRecord,
 } from "@/lib/experimental-postgres-ui";
@@ -120,6 +122,7 @@ import {
 export type AscentDraft = {
   date: string;
   source: "panel" | "skala";
+  discipline: "lina" | "baldy" | "moon" | "kilter";
   routeName: string;
   suggestedGrade: string;
   subjectiveGrade: string;
@@ -167,6 +170,7 @@ const emptyAthleteForm = (): AthleteFormDraft => ({
 const emptyAscentDraft = (): AscentDraft => ({
   date: formatDateIso(new Date()),
   source: "panel",
+  discipline: "lina",
   routeName: "Projekt A",
   suggestedGrade: "7a",
   subjectiveGrade: "7a",
@@ -239,6 +243,8 @@ const createTrainingDraft = (
       ageYears: "",
       caloriesBurned: "",
       caloriesMode: "auto",
+      focus: "none",
+      conditions: "optimal",
       difficultyNotes: "",
       difficultyBySurface: {},
       protocol: {
@@ -248,7 +254,13 @@ const createTrainingDraft = (
       },
       wellbeing: "",
       surfaces: [],
-      facilityName: "",
+      facilityName:
+        typeof window === "undefined"
+          ? ""
+          : (window.localStorage.getItem("climberbook:defaultFacilityName") ??
+            ""),
+      ropeWallName: "",
+      ropeRoutes: [],
       customSessionType: "",
       notes: "",
     },
@@ -267,6 +279,8 @@ const mapTrainingToDraft = (
       ageYears: "",
       caloriesBurned: String(training.caloriesBurned),
       caloriesMode: "manual",
+      focus: training.loadProfile?.focus ?? "none",
+      conditions: training.loadProfile?.conditions ?? "optimal",
       difficultyNotes: training.difficultyNotes,
       difficultyBySurface: training.difficultyBySurface ?? {},
       protocol: {
@@ -295,6 +309,17 @@ const mapTrainingToDraft = (
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
       facilityName: training.facilityName ?? "",
+      ropeWallName: training.ropeWallName ?? "",
+      ropeRoutes:
+        training.ropeRoutes ??
+        (training.difficultyBySurface?.lina ?? "")
+          .split(",")
+          .map((grade) => grade.trim())
+          .filter(Boolean)
+          .map((grade) => ({
+            grade,
+            ropeWallName: training.ropeWallName ?? "",
+          })),
       customSessionType: training.customSessionType ?? "",
       notes: training.notes,
     },
@@ -383,7 +408,16 @@ type ClimberbookContextValue = {
     facilityId?: string,
   ) => Promise<void>;
   deleteSection: (section: SectionRecord) => Promise<void>;
-  addFacility: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  addFacility: (
+    event: FormEvent<HTMLFormElement>,
+    capabilities: FacilityCapabilities,
+    name?: string,
+  ) => Promise<void>;
+  updateFacility: (
+    facility: FacilityRecord,
+    name: string,
+    capabilities: FacilityCapabilities,
+  ) => Promise<void>;
   deleteFacility: (facility: FacilityRecord) => Promise<void>;
   assignAthleteSection: (
     athlete: AthleteRecord,
@@ -563,14 +597,19 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const [athleteItems, allTrainingItems, allWeightItems, sectionItems, facilityItems] =
-      await Promise.all([
-        listAthletes(),
-        listAllTrainings(),
-        listAllWeightEntries(),
-        listSections(),
-        listFacilities(),
-      ]);
+    const [
+      athleteItems,
+      allTrainingItems,
+      allWeightItems,
+      sectionItems,
+      facilityItems,
+    ] = await Promise.all([
+      listAthletes(),
+      listAllTrainings(),
+      listAllWeightEntries(),
+      listSections(),
+      listFacilities(),
+    ]);
     setIsDatabaseEmpty(
       athleteItems.length === 0 &&
         allTrainingItems.length === 0 &&
@@ -692,6 +731,15 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     event.preventDefault();
     const customSessionType = trainingDraft.customSessionType.trim();
     const bodyWeightKg = getTrainingWeight(trainingDraft.date);
+    const ropeRoutes = trainingDraft.surfaces.includes("lina")
+      ? trainingDraft.ropeRoutes.filter((route) => route.grade.trim())
+      : [];
+    const difficultyBySurface = {
+      ...trainingDraft.difficultyBySurface,
+      ...(trainingDraft.surfaces.includes("lina") && {
+        lina: ropeRoutes.map((route) => route.grade.trim()).join(", "),
+      }),
+    };
 
     if (
       !activeAthleteId ||
@@ -720,11 +768,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
             )
           : Number(trainingDraft.caloriesBurned),
       attemptsCount: 0,
-      difficultyNotes: Object.values(trainingDraft.difficultyBySurface)
+      difficultyNotes: Object.values(difficultyBySurface)
         .map((grades) => grades?.trim())
         .filter(Boolean)
         .join(", "),
-      difficultyBySurface: trainingDraft.difficultyBySurface,
+      difficultyBySurface,
       protocol: {
         ...(trainingDraft.surfaces.includes("drazek") && {
           pullUp: trainingDraft.protocol.pullUp.map((protocolSet) => ({
@@ -755,8 +803,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       wellbeing: trainingDraft.wellbeing,
       surfaces: trainingDraft.surfaces,
       facilityName: trainingDraft.facilityName.trim() || undefined,
+      ropeWallName: trainingDraft.surfaces.includes("lina")
+        ? trainingDraft.ropeWallName.trim() || undefined
+        : undefined,
+      ropeRoutes,
       customSessionType,
       notes: trainingDraft.notes,
+    };
+    const loadProfile = {
+      algorithmVersion: 1 as const,
+      focus: trainingDraft.focus,
+      conditions: trainingDraft.conditions,
     };
     try {
       const current = trainings.find(
@@ -766,12 +823,24 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         throw new Error("Nie znaleziono treningu do edycji.");
       if (current) {
         if (isExperimentalPostgresUiEnabled())
-          await updateExperimentalTraining({ ...current, ...payload });
-        else await updateTraining({ ...current, ...payload });
+          await updateExperimentalTraining({
+            ...current,
+            ...payload,
+            loadProfile,
+          });
+        else await updateTraining({ ...current, ...payload, loadProfile });
       } else if (isExperimentalPostgresUiEnabled()) {
-        await createExperimentalTraining({ ...payload, athleteId: activeAthleteId });
+        await createExperimentalTraining({
+          ...payload,
+          loadProfile,
+          athleteId: activeAthleteId,
+        });
       } else {
-        await addTraining({ ...payload, athleteId: activeAthleteId });
+        await addTraining({
+          ...payload,
+          loadProfile,
+          athleteId: activeAthleteId,
+        });
       }
       await refreshData();
       resetTrainingSelection();
@@ -864,11 +933,13 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         athleteId: activeAthleteId,
         ...ascentDraft,
       };
-      if (isExperimentalPostgresUiEnabled()) await updateExperimentalAscent(input);
+      if (isExperimentalPostgresUiEnabled())
+        await updateExperimentalAscent(input);
       else await updateAscent(input);
     } else {
       const input = { ...ascentDraft, athleteId: activeAthleteId };
-      if (isExperimentalPostgresUiEnabled()) await createExperimentalAscent(input);
+      if (isExperimentalPostgresUiEnabled())
+        await createExperimentalAscent(input);
       else await addAscent(input);
     }
     await refreshData();
@@ -989,11 +1060,13 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         ...ascent,
         athleteId: activeAthleteId,
       }));
-      const ascentsToUpdate = ascentsToOverwrite.map(({ existing, incoming }) => ({
-        ...incoming,
-        id: existing.id!,
-        athleteId: activeAthleteId,
-      }));
+      const ascentsToUpdate = ascentsToOverwrite.map(
+        ({ existing, incoming }) => ({
+          ...incoming,
+          id: existing.id!,
+          athleteId: activeAthleteId,
+        }),
+      );
       if (isExperimentalPostgresUiEnabled()) {
         await importExperimentalAscents({
           create: ascentsToCreate,
@@ -1001,7 +1074,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         });
       } else {
         await addAscents(ascentsToCreate);
-        await Promise.all(ascentsToUpdate.map((ascent) => updateAscent(ascent)));
+        await Promise.all(
+          ascentsToUpdate.map((ascent) => updateAscent(ascent)),
+        );
       }
       await refreshData();
       const skippedCount =
@@ -1037,7 +1112,8 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     event.preventDefault();
     if (!activeAthleteId) return;
     const latestWeightEntry = getLatestWeightEntry(weightEntries);
-    const weightKg = latestWeightEntry?.weightKg ?? parseWeightInput(profileDraft.weightKg);
+    const weightKg =
+      latestWeightEntry?.weightKg ?? parseWeightInput(profileDraft.weightKg);
     const profileInput = {
       key: `athlete:${activeAthleteId}`,
       athleteId: activeAthleteId,
@@ -1069,8 +1145,13 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
+    link.style.display = "none";
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => {
+      link.remove();
+      URL.revokeObjectURL(url);
+    }, 100);
   }
   async function exportDatabase() {
     const exportTime = new Date()
@@ -1095,7 +1176,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   }
   async function exportAthlete(athlete: AthleteRecord) {
     if (isExperimentalPostgresUiEnabled()) {
-      setStatus("Eksport backupu nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.");
+      setStatus(
+        "Eksport backupu nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.",
+      );
       return;
     }
     await download(
@@ -1112,7 +1195,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         typeof backup !== "object" ||
         (backup as { formatVersion?: unknown }).formatVersion !== 3
       ) {
-        setStatus("Import do PostgreSQL wymaga pełnego backupu bazy w formacie 3.");
+        setStatus(
+          "Import do PostgreSQL wymaga pełnego backupu bazy w formacie 3.",
+        );
         return;
       }
       const fullBackup = backup as ClimberbookFullDatabaseBackup;
@@ -1210,7 +1295,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     event.preventDefault();
     if (newSectionName.trim()) {
       if (isExperimentalPostgresUiEnabled())
-        await createExperimentalSection(newSectionName.trim(), facilityId || null);
+        await createExperimentalSection(
+          newSectionName.trim(),
+          facilityId || null,
+        );
       else await addSection(newSectionName.trim());
       setNewSectionName("");
       await refreshData();
@@ -1228,12 +1316,20 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       await refreshData();
     }
   }
-  async function addFacilityAction(event: FormEvent<HTMLFormElement>) {
+  async function addFacilityAction(
+    event: FormEvent<HTMLFormElement>,
+    capabilities: FacilityCapabilities,
+    name?: string,
+  ) {
     event.preventDefault();
-    if (newFacilityName.trim()) {
+    const facilityName = name?.trim() || newFacilityName.trim();
+    if (facilityName) {
       if (isExperimentalPostgresUiEnabled())
-        await createExperimentalFacility(newFacilityName.trim());
-      else await addFacility(newFacilityName.trim());
+        await createExperimentalFacility({
+          name: facilityName,
+          capabilities,
+        });
+      else await addFacility({ name: facilityName, capabilities });
       setNewFacilityName("");
       await refreshData();
     }
@@ -1245,6 +1341,22 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       else await deleteFacility(facility.id);
       await refreshData();
     }
+  }
+  async function updateFacilityAction(
+    facility: FacilityRecord,
+    name: string,
+    capabilities: FacilityCapabilities,
+  ) {
+    if (!name.trim()) return;
+    if (!isExperimentalPostgresUiEnabled()) {
+      setStatus("Edycja obiektów wymaga aktywnego API PostgreSQL.");
+      return;
+    }
+    await updateExperimentalFacility(facility.id, {
+      name: name.trim(),
+      capabilities,
+    });
+    await refreshData();
   }
   async function assignAthleteSection(
     athlete: AthleteRecord,
@@ -1441,6 +1553,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       setAscentDraft({
         date: ascent.date,
         source: ascent.source,
+        discipline: ascent.discipline ?? "lina",
         routeName: ascent.routeName,
         suggestedGrade: ascent.suggestedGrade,
         subjectiveGrade: ascent.subjectiveGrade,
@@ -1462,6 +1575,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     addSection: addSectionAction,
     deleteSection: deleteSectionAction,
     addFacility: addFacilityAction,
+    updateFacility: updateFacilityAction,
     deleteFacility: deleteFacilityAction,
     assignAthleteSection,
     exportAthlete,
@@ -1651,6 +1765,7 @@ export function useReportsModule() {
 export function useAnalyticsModule() {
   const {
     ascents,
+    facilities,
     profileDraft,
     selectedDate,
     today,
@@ -1660,6 +1775,7 @@ export function useAnalyticsModule() {
   } = useClimberbook();
   return {
     ascents,
+    facilities,
     profileDraft,
     selectedDate,
     today,

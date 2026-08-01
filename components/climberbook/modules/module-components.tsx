@@ -4,11 +4,13 @@ import { TrainingModule } from "./training/TrainingModule";
 import { ReportsModule } from "./reports/ReportsModule";
 import { AnalyticsModule } from "./analytics/AnalyticsModule";
 import { TeamModule } from "./team/TeamModule";
+import { FacilitiesModule } from "./facilities/FacilitiesModule";
 import { SettingsModule } from "./settings/SettingsModule";
 export const moduleComponents: Record<ModuleKey, ComponentType> = {
   treningowy: TrainingModule,
   raportowy: ReportsModule,
   analityka: AnalyticsModule,
   team: TeamModule,
+  obiekty: FacilitiesModule,
   ustawienia: SettingsModule,
 };

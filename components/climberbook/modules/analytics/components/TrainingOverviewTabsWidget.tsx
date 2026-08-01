@@ -8,7 +8,7 @@ import {
   sectionTitleStyle,
   softTagStyle,
 } from "@/components/climberbook/common/styles";
-import type { TrainingRecord } from "@/lib/climbs-db";
+import type { FacilityRecord, TrainingRecord } from "@/lib/climbs-db";
 import { TrainingLoadHeatmapWidget } from "./TrainingLoadHeatmapWidget";
 import { TrainingRegularityChartWidget } from "./TrainingRegularityChartWidget";
 import { WeeklyTrainingChartWidget } from "./WeeklyTrainingChartWidget";
@@ -28,6 +28,7 @@ export function TrainingOverviewTabsWidget({
   chartRangeLabel,
   weeklyTrainingStats,
   trainings,
+  facilities,
 }: {
   isCalendarYearSelected: boolean;
   isMobileLayout: boolean;
@@ -45,6 +46,7 @@ export function TrainingOverviewTabsWidget({
     campusHours: number;
   }>;
   trainings: TrainingRecord[];
+  facilities: FacilityRecord[];
 }) {
   const [activeTab, setActiveTab] = useState<OverviewTab>("rhythm");
   const year = chartRange.end.slice(0, 4);
@@ -56,10 +58,22 @@ export function TrainingOverviewTabsWidget({
     : chartRangeLabel;
   const heading =
     activeTab === "rhythm"
-      ? { eyebrow: "Objętość", title: "Zawartość treningu", badge: chartRangeLabel }
+      ? {
+          eyebrow: "Objętość",
+          title: "Zawartość treningu",
+          badge: chartRangeLabel,
+        }
       : activeTab === "activity"
-        ? { eyebrow: "Regularność", title: `Aktywność treningowa ${year}`, badge: heatmapRangeLabel }
-        : { eyebrow: "Heatmap", title: `Obciążenie treningowe ${year}`, badge: heatmapRangeLabel };
+        ? {
+            eyebrow: "Regularność",
+            title: `Aktywność treningowa ${year}`,
+            badge: heatmapRangeLabel,
+          }
+        : {
+            eyebrow: "Heatmap",
+            title: `Obciążenie treningowe ${year}`,
+            badge: heatmapRangeLabel,
+          };
 
   return (
     <Panel>
@@ -74,7 +88,10 @@ export function TrainingOverviewTabsWidget({
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveTab(tab.key)}
-              style={{ ...tabStyle, ...(isActive ? activeTabStyle : undefined) }}
+              style={{
+                ...tabStyle,
+                ...(isActive ? activeTabStyle : undefined),
+              }}
             >
               {tab.label}
             </button>
@@ -104,6 +121,7 @@ export function TrainingOverviewTabsWidget({
       ) : (
         <TrainingLoadHeatmapWidget
           trainings={trainings}
+          facilities={facilities}
           chartRange={heatmapRange}
           contentOnly
         />

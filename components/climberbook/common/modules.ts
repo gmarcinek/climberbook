@@ -3,6 +3,7 @@ export type ModuleKey =
   | "raportowy"
   | "analityka"
   | "team"
+  | "obiekty"
   | "ustawienia";
 
 export type ClimberbookModule = {
@@ -38,6 +39,14 @@ export const moduleConfig: ClimberbookModule[] = [
     navLabel: "Team",
     description: "Edycja zawodników i porównanie aktualnych wyników.",
     eyebrow: "Drużyna",
+  },
+  {
+    key: "obiekty",
+    route: "/obiekty",
+    title: "Obiekty",
+    navLabel: "Obiekty",
+    description: "Konfiguracja obiektów, aktywności i ścian z liną.",
+    eyebrow: "Infrastruktura",
   },
   {
     key: "raportowy",

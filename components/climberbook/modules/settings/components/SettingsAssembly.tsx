@@ -24,8 +24,11 @@ import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import type { UserProfileDraft } from "@/components/climberbook/common/training";
 import type {
   AthleteRecord,
+  FacilityCapabilities,
   FacilityRecord,
+  RopeWallInclination,
   SectionRecord,
+  TrainingSurface,
   WeightEntryRecord,
 } from "@/lib/climbs-db";
 import { AthleteFormWidget } from "./AthleteFormWidget";
@@ -34,7 +37,6 @@ import { DatabaseBackupWidget } from "./DatabaseBackupWidget";
 import { DatabaseDeleteModalWidget } from "./DatabaseDeleteModalWidget";
 import { ImportPreviewModalWidget } from "./ImportPreviewModalWidget";
 import { ProfileFormWidget } from "./ProfileFormWidget";
-import { FacilityManagementWidget } from "./FacilityManagementWidget";
 import { ProfileMetricsWidget } from "./ProfileMetricsWidget";
 import { SectionManagementWidget } from "./SectionManagementWidget";
 import { SettingsHeaderWidget } from "./SettingsHeaderWidget";
@@ -76,9 +78,15 @@ type SettingsAssemblyProps = {
   setNewSectionName: Dispatch<SetStateAction<string>>;
   newFacilityName: string;
   setNewFacilityName: Dispatch<SetStateAction<string>>;
-  onAddSection: (event: FormEvent<HTMLFormElement>, facilityId?: string) => void;
+  onAddSection: (
+    event: FormEvent<HTMLFormElement>,
+    facilityId?: string,
+  ) => void;
   onDeleteSection: (section: SectionRecord) => Promise<void>;
-  onAddFacility: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  onAddFacility: (
+    event: FormEvent<HTMLFormElement>,
+    capabilities: FacilityCapabilities,
+  ) => Promise<void>;
   onDeleteFacility: (facility: FacilityRecord) => Promise<void>;
   onAssignAthleteSection: (
     athlete: AthleteRecord,
@@ -154,6 +162,11 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
   const [isSectionFormModalOpen, setIsSectionFormModalOpen] = useState(false);
   const [isFacilityFormModalOpen, setIsFacilityFormModalOpen] = useState(false);
   const [sectionFacilityId, setSectionFacilityId] = useState("");
+  const [facilityCapabilities, setFacilityCapabilities] =
+    useState<FacilityCapabilities>({
+      activities: [],
+      ropeWalls: [],
+    });
   const activeAthlete =
     athletes.find((athlete) => athlete.id === activeAthleteId) ?? null;
 
@@ -200,20 +213,86 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
   }
 
   function openFacilityForm() {
+    setFacilityCapabilities({ activities: [], ropeWalls: [] });
     setIsFacilityFormModalOpen(true);
   }
 
   function closeFacilityForm() {
     setNewFacilityName("");
+    setFacilityCapabilities({ activities: [], ropeWalls: [] });
     setIsFacilityFormModalOpen(false);
   }
 
   async function submitFacilityForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!newFacilityName.trim()) return;
-    await onAddFacility(event);
+    await onAddFacility(event, facilityCapabilities);
     closeFacilityForm();
   }
+
+  function toggleFacilityActivity(activity: TrainingSurface) {
+    setFacilityCapabilities((current) => ({
+      ...current,
+      activities: current.activities.includes(activity)
+        ? current.activities.filter((item) => item !== activity)
+        : [...current.activities, activity],
+    }));
+  }
+
+  function addRopeWall() {
+    setFacilityCapabilities((current) => ({
+      ...current,
+      ropeWalls: [
+        ...current.ropeWalls,
+        {
+          name: `Ściana ${current.ropeWalls.length + 1}`,
+          lengthMeters: 18,
+          inclination: "vertical",
+        },
+      ],
+    }));
+  }
+
+  function updateRopeWall(
+    index: number,
+    changes: Partial<FacilityCapabilities["ropeWalls"][number]>,
+  ) {
+    setFacilityCapabilities((current) => ({
+      ...current,
+      ropeWalls: current.ropeWalls.map((wall, wallIndex) =>
+        wallIndex === index ? { ...wall, ...changes } : wall,
+      ),
+    }));
+  }
+
+  const facilityActivityOptions: Array<{
+    value: TrainingSurface;
+    label: string;
+  }> = [
+    { value: "lina", label: "Lina" },
+    { value: "baldy", label: "Baldy" },
+    { value: "moon", label: "Moonboard" },
+    { value: "kilter", label: "Kilterboard" },
+    { value: "spraywall", label: "Spray" },
+    { value: "chwytotablica", label: "Chwytotablica" },
+    { value: "campus", label: "Campus" },
+    { value: "drazek", label: "Drążek" },
+    { value: "silownia", label: "Siłka" },
+    { value: "rower", label: "Rower" },
+    { value: "bieg", label: "Bieg" },
+    { value: "treking", label: "Treck" },
+  ];
+
+  const ropeInclinationOptions: Array<{
+    value: RopeWallInclination;
+    label: string;
+  }> = [
+    { value: "slab", label: "Pozytyw" },
+    { value: "vertical", label: "Pion" },
+    { value: "slight_overhang", label: "Lekki przewis" },
+    { value: "overhang", label: "Przewieszenie" },
+    { value: "steep", label: "Mocne przewieszenie" },
+  ];
 
   return (
     <>
@@ -261,11 +340,6 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               onAddSection={openSectionForm}
               onDeleteSection={onDeleteSection}
             />
-            <FacilityManagementWidget
-              facilities={facilities}
-              onAddFacility={openFacilityForm}
-              onDeleteFacility={onDeleteFacility}
-            />
           </div>
         )}
         {settingsTab === "zaawansowane" && (
@@ -288,7 +362,11 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
         <Modal
           labelledBy="athlete-form-title"
           onClose={closeAthleteForm}
-          style={{ width: "min(100%, 720px)", maxHeight: "90vh", overflowY: "auto" }}
+          style={{
+            width: "min(100%, 720px)",
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}
         >
           <AthleteFormWidget
             athleteFormMode={athleteFormMode}
@@ -334,8 +412,12 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               ))}
             </Select>
             <FormActions layout="inline">
-              <Button type="submit" variant="tertiary">Dodaj sekcję</Button>
-              <Button variant="secondary" onClick={closeSectionForm}>Anuluj</Button>
+              <Button type="submit" variant="tertiary">
+                Dodaj sekcję
+              </Button>
+              <Button variant="secondary" onClick={closeSectionForm}>
+                Anuluj
+              </Button>
             </FormActions>
           </Form>
         </Modal>
@@ -361,9 +443,132 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               onChange={(event) => setNewFacilityName(event.target.value)}
               placeholder="Np. Crux, Centrum Wspinaczkowe"
             />
+            <div style={{ display: "grid", gap: "8px" }}>
+              <strong>Dostępne aktywności</strong>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {facilityActivityOptions.map((activity) => (
+                  <label
+                    key={activity.value}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={facilityCapabilities.activities.includes(
+                        activity.value,
+                      )}
+                      onChange={() => toggleFacilityActivity(activity.value)}
+                    />
+                    {activity.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            {facilityCapabilities.activities.includes("lina") ? (
+              <div style={{ display: "grid", gap: "8px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <strong>Ściany z liną</strong>
+                  <Button
+                    type="button"
+                    size="small"
+                    variant="secondary"
+                    onClick={addRopeWall}
+                  >
+                    + Ściana
+                  </Button>
+                </div>
+                {facilityCapabilities.ropeWalls.map((wall, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "minmax(0, 2fr) 82px minmax(0, 2fr) 48px",
+                      gap: "8px",
+                    }}
+                  >
+                    <Input
+                      value={wall.name}
+                      placeholder="Nazwa ściany"
+                      aria-label={`Nazwa ściany ${index + 1}`}
+                      onChange={(event) =>
+                        updateRopeWall(index, { name: event.target.value })
+                      }
+                    />
+                    <Input
+                      value={String(wall.lengthMeters)}
+                      type="number"
+                      min="1"
+                      step="1"
+                      aria-label={`Długość ściany ${index + 1}`}
+                      onChange={(event) =>
+                        updateRopeWall(index, {
+                          lengthMeters: Number(event.target.value) || 1,
+                        })
+                      }
+                    />
+                    <Select
+                      value={wall.inclination}
+                      aria-label={`Profil ściany ${index + 1}`}
+                      onChange={(event) =>
+                        updateRopeWall(index, {
+                          inclination: event.target
+                            .value as RopeWallInclination,
+                        })
+                      }
+                    >
+                      {ropeInclinationOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <Button
+                      type="button"
+                      size="small"
+                      variant="secondary"
+                      aria-label={`Usuń ścianę ${wall.name || index + 1}`}
+                      title="Usuń ścianę"
+                      style={{
+                        width: "48px",
+                        minWidth: "48px",
+                        padding: 0,
+                        fontSize: "18px",
+                      }}
+                      onClick={() =>
+                        setFacilityCapabilities((current) => ({
+                          ...current,
+                          ropeWalls: current.ropeWalls.filter(
+                            (_, wallIndex) => wallIndex !== index,
+                          ),
+                        }))
+                      }
+                    >
+                      🗑
+                    </Button>
+                  </div>
+                ))}
+                {facilityCapabilities.ropeWalls.length === 0 ? (
+                  <span>Dodaj długość i profil każdej ściany z liną.</span>
+                ) : null}
+              </div>
+            ) : null}
             <FormActions layout="inline">
-              <Button type="submit" variant="tertiary">Dodaj obiekt</Button>
-              <Button variant="secondary" onClick={closeFacilityForm}>Anuluj</Button>
+              <Button type="submit" variant="tertiary">
+                Dodaj obiekt
+              </Button>
+              <Button variant="secondary" onClick={closeFacilityForm}>
+                Anuluj
+              </Button>
             </FormActions>
           </Form>
         </Modal>

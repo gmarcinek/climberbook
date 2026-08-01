@@ -21,3 +21,13 @@ databaseChangeLog:
       file: changelog/changes/010-add-athlete-email.sql
   - include:
       file: changelog/changes/011-add-password-auth.sql
+  - include:
+      file: changelog/changes/012-add-training-load-profile.sql
+  - include:
+      file: changelog/changes/013-add-ascent-discipline.sql
+  - include:
+      file: changelog/changes/014-add-facility-capabilities.sql
+  - include:
+      file: changelog/changes/015-add-training-rope-wall.sql
+  - include:
+      file: changelog/changes/016-add-training-rope-routes.sql
