@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useRef, useState, type ChangeEvent } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -33,20 +33,12 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
   const {
     athletes,
     activeAthleteId,
-    exportDatabase,
-    importDatabase,
     setActiveAthleteId,
   } = useClimberbook();
   const { isMobileHeader, width } = useViewport();
   const router = useRouter();
   const isTwoRowHeader = !isMobileHeader && width > 0 && width < 900;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const mobileImportInputRef = useRef<HTMLInputElement>(null);
-
-  async function handleMobileImport(event: ChangeEvent<HTMLInputElement>) {
-    await importDatabase(event);
-    setIsMobileMenuOpen(false);
-  }
 
   function openTrainingEditor() {
     setIsMobileMenuOpen(false);
@@ -239,7 +231,14 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
           onClose={() => setIsMobileMenuOpen(false)}
           style={{ padding: 16 }}
         >
-          <div style={{ display: "grid", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: "calc(100svh - 64px)",
+              gap: 12,
+            }}
+          >
             <h2 id="mobile-navigation-title" style={brandStyle}>
               Menu
             </h2>
@@ -250,66 +249,18 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                 alignContent: "start",
               }}
             >
-              {navLinks}
               <Button variant="primary" onClick={openTrainingEditor}>
                 + Trening
               </Button>
+              {navLinks}
             </nav>
-            <input
-              ref={mobileImportInputRef}
-              type="file"
-              accept="application/json,.json"
-              onChange={(event) => void handleMobileImport(event)}
-              style={{ display: "none" }}
-            />
-            <section
-              aria-labelledby="mobile-backup-title"
-              style={{
-                display: "grid",
-                gap: 10,
-                paddingTop: 16,
-                borderTop: "1px solid var(--border-strong)",
-              }}
+            <div style={{ flexGrow: 1 }} />
+            <Button
+              onClick={() => void signOut({ callbackUrl: "/login" })}
+              variant="quadrary"
             >
-              <div style={{ display: "grid", gap: 2 }}>
-                <span
-                  style={{
-                    color: "var(--accent)",
-                    fontSize: "0.72rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Dane
-                </span>
-                <h3 id="mobile-backup-title" style={{ margin: 0 }}>
-                  Pełna kopia bazy
-                </h3>
-              </div>
-              <p
-                style={{
-                  margin: 0,
-                  color: "var(--muted)",
-                  fontSize: "0.95rem",
-                  lineHeight: 1.5,
-                }}
-              >
-                Eksport zapisuje wszystkich zawodników i ich dane. Import
-                rozpoznaje backup całej bazy albo pojedynczego zawodnika.
-              </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                <Button
-                  onClick={() => void exportDatabase()}
-                  variant="quadrary"
-                >
-                  Eksport całości
-                </Button>
-                <Button onClick={() => mobileImportInputRef.current?.click()}>
-                  Import z pliku
-                </Button>
-              </div>
-            </section>
+              Wyloguj
+            </Button>
           </div>
         </Modal>
       ) : null}

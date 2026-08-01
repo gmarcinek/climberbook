@@ -322,8 +322,16 @@
 .trainingSidebar__field {
   display: grid;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.trainingSidebar__field input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .trainingSidebar__protocolHeading {

@@ -93,7 +93,14 @@ export function TrainingEditorPage(props: TrainingEditorPageProps) {
       </header>
 
       {isReady ? (
-        <div style={{ minHeight: 0, overflowY: "auto", padding: 12 }}>
+        <div
+          style={{
+            minHeight: 0,
+            overflowX: "hidden",
+            overflowY: "auto",
+            padding: 12,
+          }}
+        >
           <TrainingSessionForm
             draft={app.trainingDraft}
             editingTraining={editingTraining}
