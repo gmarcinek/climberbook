@@ -8,7 +8,7 @@
 .dialog {
   position: relative;
   display: grid;
-  grid-template-rows: 32px minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr);
   align-content: start;
 
   min-width: 0;
@@ -23,9 +23,10 @@
   align-items: center;
   position: relative;
   z-index: 1;
-  height: 32px;
-  min-height: 32px;
-  max-height: 32px;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 6px 6px 6px 0;
   align-self: start;
 }
 
@@ -35,13 +36,15 @@
   max-width: 100%;
 }
 
-.closeButton {
+.closeButton.closeButton {
   position: relative;
   z-index: 1;
   width: 32px;
+  min-width: 32px;
   height: 32px;
+  min-height: 32px;
   border: 1px solid var(--theme-border-strong);
-  border-radius: 50%;
+  border-radius: 0;
   padding: 0;
   background: var(--component-modal-close-background);
   color: var(--theme-text);

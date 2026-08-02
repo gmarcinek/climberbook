@@ -73,7 +73,7 @@ export function TrainingEditorPage(props: TrainingEditorPageProps) {
         gridTemplateRows: "auto minmax(0, 1fr)",
         minHeight: 0,
         height: "100%",
-        background: "rgba(255, 250, 243, 0.96)",
+        background: "var(--component-drawer-background)",
       }}
     >
       <header
@@ -102,7 +102,13 @@ export function TrainingEditorPage(props: TrainingEditorPageProps) {
           variant="secondary"
           aria-label="Zamknij edycję treningu"
           onClick={leaveEditor}
-          style={{ width: 36, height: 36, padding: 0, fontSize: "1.5rem" }}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 0,
+            padding: 0,
+            fontSize: "1.5rem",
+          }}
         >
           ×
         </EmotButton>
