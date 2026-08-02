@@ -21,20 +21,8 @@ export function TrainingCalendarDay(props: TrainingCalendarDayProps) {
     return <div className={styles.emptyDay} />;
   }
 
-  const totalDurationMinutes = trainings.reduce(
-    (sum, training) => sum + training.durationMinutes,
-    0,
-  );
   const intensityClassName =
-    totalDurationMinutes >= 240
-      ? styles.intensityVeryHigh
-      : totalDurationMinutes >= 150
-        ? styles.intensityHigh
-        : totalDurationMinutes >= 90
-          ? styles.intensityMedium
-          : trainings.length > 0
-            ? styles.intensityLow
-            : undefined;
+    trainings.length > 0 ? styles.intensityLow : undefined;
 
   const dayClasses = styles.calendarDay;
   const itemClasses = joinClasses(

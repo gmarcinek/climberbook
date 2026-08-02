@@ -32,16 +32,16 @@ import type { FacilityRecord, TrainingRecord } from "@/lib/climbs-db";
 
 const forecastDays = 7;
 const recoveryDimensionKeys = [
-  "fitness",
-  "structural",
-  "strength",
-  "fingers",
+  "aerobicEndurance",
+  "strengthEndurance",
+  "strengthPower",
+  "contactStrength",
 ] as const;
 const dailyRecoveryMultipliers = {
-  fitness: 0.72,
-  structural: 0.88,
-  strength: 0.8,
-  fingers: 0.9,
+  aerobicEndurance: 0.72,
+  strengthEndurance: 0.8,
+  strengthPower: 0.82,
+  contactStrength: 0.9,
 } as const;
 
 function getSessionTimestamp(training: TrainingRecord) {
@@ -68,17 +68,16 @@ function formatFatigueForecastData(
   const data: Array<{
     date: string;
     load: number;
-    fitness: number;
-    structural: number;
-    strength: number;
-    fingers: number;
+    aerobicEndurance: number;
+    strengthEndurance: number;
+    strengthPower: number;
+    contactStrength: number;
   }> = [];
   let fatigue: FatigueDimensions = {
-    fitness: 0,
-    structural: 0,
-    strength: 0,
-    fingers: 0,
-    skill: 0,
+    aerobicEndurance: 0,
+    strengthEndurance: 0,
+    strengthPower: 0,
+    contactStrength: 0,
   };
   let lastTimestamp = new Date(`${range.start}T00:00:00`).getTime();
 
@@ -103,7 +102,11 @@ function formatFatigueForecastData(
           recoveryDays,
         );
       });
-      const dimensions = getTrainingFatigueDimensions(session, facilities);
+      const dimensions = getTrainingFatigueDimensions(
+        session,
+        facilities,
+        trainings,
+      );
 
       recoveryDimensionKeys.forEach((dimension) => {
         fatigue[dimension] += dimensions[dimension];
@@ -127,10 +130,10 @@ function formatFatigueForecastData(
     data.push({
       date,
       load: Math.round(load * 10) / 10,
-      fitness: Math.round(fatigue.fitness * 100) / 100,
-      structural: Math.round(fatigue.structural * 100) / 100,
-      strength: Math.round(fatigue.strength * 100) / 100,
-      fingers: Math.round(fatigue.fingers * 100) / 100,
+      aerobicEndurance: Math.round(fatigue.aerobicEndurance * 100) / 100,
+      strengthEndurance: Math.round(fatigue.strengthEndurance * 100) / 100,
+      strengthPower: Math.round(fatigue.strengthPower * 100) / 100,
+      contactStrength: Math.round(fatigue.contactStrength * 100) / 100,
     });
   }
 
@@ -170,7 +173,7 @@ export function TrainingFatigueForecastChartWidget({
           <YAxis width={34} tick={analyticsChartAxisTickStyle} />
           <ReferenceLine
             x={chartRange.end}
-            stroke="rgba(23, 111, 134, 0.56)"
+            stroke="var(--component-chart-marker-selected)"
             strokeDasharray="4 4"
           />
           <Tooltip
@@ -181,36 +184,36 @@ export function TrainingFatigueForecastChartWidget({
           />
           <Line
             type="monotone"
-            dataKey="fitness"
-            name="Wydolność"
-            stroke="#d16d3f"
+            dataKey="aerobicEndurance"
+            name="Wytrzymałość tlenowa"
+            stroke="var(--component-chart-stimulus-aerobic)"
             strokeWidth={2.5}
             dot={false}
             activeDot={{ r: 4 }}
           />
           <Line
             type="monotone"
-            dataKey="structural"
-            name="Strukturalne"
-            stroke="#176f86"
+            dataKey="strengthEndurance"
+            name="Wytrzymałość siłowa"
+            stroke="var(--component-chart-stimulus-strength-endurance)"
             strokeWidth={2.5}
             dot={false}
             activeDot={{ r: 4 }}
           />
           <Line
             type="monotone"
-            dataKey="strength"
-            name="Siła"
-            stroke="#7d6a34"
+            dataKey="strengthPower"
+            name="Siła / moc"
+            stroke="var(--component-chart-stimulus-strength-power)"
             strokeWidth={2.5}
             dot={false}
             activeDot={{ r: 4 }}
           />
           <Line
             type="monotone"
-            dataKey="fingers"
-            name="Palce"
-            stroke="#76516c"
+            dataKey="contactStrength"
+            name="Siła kontaktowa"
+            stroke="var(--component-chart-stimulus-contact-strength)"
             strokeWidth={2.5}
             dot={false}
             activeDot={{ r: 4 }}

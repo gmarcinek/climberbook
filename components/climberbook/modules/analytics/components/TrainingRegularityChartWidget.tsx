@@ -29,7 +29,11 @@ function formatActivityData(
   const yearEnd = `${year}-12-31`;
   const startDate = addDays(yearStart, -getMondayIndex(yearStart));
   const endDateWithOffset = addDays(yearEnd, 6 - getMondayIndex(yearEnd));
-  const data: Array<{ date: string; isOutsideRange: boolean; sessions: number }> = [];
+  const data: Array<{
+    date: string;
+    isOutsideRange: boolean;
+    sessions: number;
+  }> = [];
 
   for (
     let date = startDate;
@@ -62,30 +66,34 @@ export function TrainingRegularityChartWidget({
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const { data, year } = formatActivityData(trainings, chartRange);
-  const content = trainings.length === 0 ? (
-    <EmptyState message="Dodaj treningi, aby zobaczyć regularność." />
-  ) : (
-    <TrainingHeatmapGrid weeksCount={data.length / 7}>
-      {data.map(({ date, isOutsideRange, sessions }) => (
-        <span
-          key={date}
-          aria-current={date === today ? "date" : undefined}
-          aria-label={`${formatAnalyticsDate(date)}: ${sessions} sesji`}
-          title={`${formatAnalyticsDate(date)}: ${sessions} sesji`}
-          style={{
-            background:
-              sessions > 0
-                ? "#176f86"
-                : isOutsideRange
-                  ? "rgba(100, 87, 77, 0.06)"
-                  : "rgba(100, 87, 77, 0.12)",
-                border: date === today ? "1px solid #c83d29" : "1px solid transparent",
-                opacity: isOutsideRange ? 0.4 : 1,
-          }}
-        />
-      ))}
-    </TrainingHeatmapGrid>
-  );
+  const content =
+    trainings.length === 0 ? (
+      <EmptyState message="Dodaj treningi, aby zobaczyć regularność." />
+    ) : (
+      <TrainingHeatmapGrid weeksCount={data.length / 7}>
+        {data.map(({ date, isOutsideRange, sessions }) => (
+          <span
+            key={date}
+            aria-current={date === today ? "date" : undefined}
+            aria-label={`${formatAnalyticsDate(date)}: ${sessions} sesji`}
+            title={`${formatAnalyticsDate(date)}: ${sessions} sesji`}
+            style={{
+              background:
+                sessions > 0
+                  ? "var(--component-chart-regularity-active)"
+                  : isOutsideRange
+                    ? "var(--component-chart-regularity-outside)"
+                    : "var(--component-chart-regularity-empty)",
+              border:
+                date === today
+                  ? "1px solid var(--component-chart-regularity-today)"
+                  : "1px solid transparent",
+              opacity: isOutsideRange ? 0.4 : 1,
+            }}
+          />
+        ))}
+      </TrainingHeatmapGrid>
+    );
 
   if (contentOnly) return content;
 

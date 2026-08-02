@@ -3,11 +3,8 @@ import type {
   FatigueDimensions,
   AscentRecord,
   TrainingLoadActivity,
-  TrainingConditions,
-  TrainingFocus,
   TrainingRecord,
   TrainingSurface,
-  SpraywallIntensity,
   FacilityRecord,
 } from "@/lib/climbs-db";
 import { getGradeRank } from "@/components/climberbook/common/training";
@@ -17,129 +14,26 @@ const minimumCoin = 0.001;
 const maxSessionLoad = 120;
 
 export const fatigueDimensionKeys = [
-  "fitness",
-  "structural",
-  "strength",
-  "fingers",
-  "skill",
+  "aerobicEndurance",
+  "strengthEndurance",
+  "strengthPower",
+  "contactStrength",
 ] as const;
 
 export type { FatigueDimension, FatigueDimensions, TrainingLoadActivity };
 
-const dimensionPrices: Record<TrainingSurface | "general", FatigueDimensions> =
-  {
-    lina: {
-      fitness: 0.9,
-      structural: 0.6,
-      strength: 0.4,
-      fingers: 0.45,
-      skill: 0.35,
-    },
-    baldy: {
-      fitness: 0.55,
-      structural: 0.85,
-      strength: 0.8,
-      fingers: 0.9,
-      skill: 0.5,
-    },
-    moon: {
-      fitness: 0.5,
-      structural: 1,
-      strength: 0.9,
-      fingers: 1,
-      skill: 0.4,
-    },
-    kilter: {
-      fitness: 0.5,
-      structural: 1,
-      strength: 0.9,
-      fingers: 1,
-      skill: 0.4,
-    },
-    drazek: {
-      fitness: 0.4,
-      structural: 0.7,
-      strength: 1.2,
-      fingers: 0.15,
-      skill: 0.1,
-    },
-    spraywall: {
-      fitness: 0.75,
-      structural: 0.6,
-      strength: 0.6,
-      fingers: 0.65,
-      skill: 0.65,
-    },
-    silownia: {
-      fitness: 0.4,
-      structural: 0.6,
-      strength: 1,
-      fingers: 0.1,
-      skill: 0.1,
-    },
-    chwytotablica: {
-      fitness: 0.2,
-      structural: 0.95,
-      strength: 0.6,
-      fingers: 1.2,
-      skill: 0.1,
-    },
-    campus: {
-      fitness: 0.25,
-      structural: 1.1,
-      strength: 1.1,
-      fingers: 1.2,
-      skill: 0.15,
-    },
-    bieznia: {
-      fitness: 1,
-      structural: 0.2,
-      strength: 0.1,
-      fingers: 0,
-      skill: 0.05,
-    },
-    rower: {
-      fitness: 0.9,
-      structural: 0.15,
-      strength: 0.2,
-      fingers: 0,
-      skill: 0.05,
-    },
-    bieg: {
-      fitness: 1,
-      structural: 0.45,
-      strength: 0.3,
-      fingers: 0,
-      skill: 0.05,
-    },
-    treking: {
-      fitness: 0.8,
-      structural: 0.35,
-      strength: 0.25,
-      fingers: 0,
-      skill: 0.1,
-    },
-    general: {
-      fitness: 0.5,
-      structural: 0.3,
-      strength: 0.3,
-      fingers: 0.1,
-      skill: 0.1,
-    },
-  };
-
-const recoveryDimensionWeights: Record<
-  Exclude<FatigueDimension, "skill">,
-  number
-> = {
-  fitness: 10,
-  structural: 14,
-  strength: 12,
-  fingers: 16,
+const recoveryDimensionWeights: Record<FatigueDimension, number> = {
+  aerobicEndurance: 10,
+  strengthEndurance: 12,
+  strengthPower: 14,
+  contactStrength: 16,
 };
 
 type TrainingLoadInput = Pick<
   TrainingRecord,
+  | "id"
+  | "athleteId"
+  | "date"
   | "surfaces"
   | "durationMinutes"
   | "caloriesBurned"
@@ -147,14 +41,11 @@ type TrainingLoadInput = Pick<
   | "protocol"
   | "facilityName"
   | "ropeRoutes"
-> &
-  Partial<Pick<TrainingRecord, "loadProfile">> & {
-    focus?: TrainingFocus;
-    conditions?: TrainingConditions;
-    performanceReferences?: Partial<
-      Record<ClimbingSurface, PerformanceReference>
-    >;
-  };
+> & {
+  performanceReferences?: Partial<
+    Record<ClimbingSurface, PerformanceReference>
+  >;
+};
 
 type ClimbingSurface = "lina" | "baldy" | "moon" | "kilter";
 
@@ -163,69 +54,13 @@ export type PerformanceReference = {
   source: "recent_report" | "recent_training" | "lifetime_report";
 };
 
-const focusDimensionMultipliers: Record<
-  TrainingFocus,
-  Partial<FatigueDimensions>
-> = {
-  none: {},
-  strength: { strength: 1.25 },
-  specific_endurance: { fitness: 1.25 },
-  strength_endurance: { fitness: 1.2, strength: 1.15 },
-  finger_strength: { structural: 1.1, fingers: 1.25 },
-  contact_strength: { structural: 1.15, strength: 1.2, fingers: 1.2 },
-  volume: { fitness: 1.25, structural: 1.05 },
-  intervals: { fitness: 1.3, strength: 1.1 },
-  general_conditioning: { fitness: 1.1, structural: 1.1, strength: 1.05 },
-};
-
-const spraywallFocusDimensionMultipliers: Record<
-  SpraywallIntensity,
-  Record<TrainingFocus, Partial<FatigueDimensions>>
-> = {
-  soft: {
-    none: {},
-    strength: { fitness: 0.85 },
-    specific_endurance: { fitness: 1.25 },
-    strength_endurance: { fitness: 1.1 },
-    finger_strength: { fitness: 0.85 },
-    contact_strength: { fitness: 0.8 },
-    volume: { fitness: 1.2 },
-    intervals: { fitness: 1.15 },
-    general_conditioning: { fitness: 1.1 },
-  },
-  medium: {
-    none: {},
-    strength: { structural: 1.1, strength: 1.25 },
-    specific_endurance: { fitness: 1.3, skill: 1.1 },
-    strength_endurance: { fitness: 1.2, strength: 1.2, fingers: 1.1 },
-    finger_strength: { structural: 1.1, fingers: 1.3 },
-    contact_strength: { structural: 1.15, strength: 1.2, fingers: 1.2 },
-    volume: { fitness: 1.25, structural: 1.05 },
-    intervals: { fitness: 1.3, strength: 1.1 },
-    general_conditioning: { fitness: 1.1, structural: 1.1, strength: 1.05 },
-  },
-  hard: {
-    none: {},
-    strength: { structural: 1.15, strength: 1.35 },
-    specific_endurance: { fitness: 1.4, strength: 1.1 },
-    strength_endurance: { fitness: 1.2, strength: 1.3, fingers: 1.2 },
-    finger_strength: { structural: 1.2, fingers: 1.4 },
-    contact_strength: { structural: 1.25, strength: 1.35, fingers: 1.35 },
-    volume: { fitness: 1.15, structural: 1.15, fingers: 1.1 },
-    intervals: { fitness: 1.2, strength: 1.25, fingers: 1.15 },
-    general_conditioning: { fitness: 1.05, structural: 1.15, strength: 1.15 },
-  },
-};
-
-const conditionsMultiplier: Record<TrainingConditions, number> = {
-  optimal: 1,
-  cold: 1.1,
-  stuffy: 1.1,
-  too_warm: 1.1,
-};
-
 function emptyDimensions(): FatigueDimensions {
-  return { fitness: 0, structural: 0, strength: 0, fingers: 0, skill: 0 };
+  return {
+    aerobicEndurance: 0,
+    strengthEndurance: 0,
+    strengthPower: 0,
+    contactStrength: 0,
+  };
 }
 
 function countGrades(value: string | undefined) {
@@ -368,49 +203,40 @@ function getIntensityMultiplier(training: TrainingLoadInput) {
 export function getTrainingLoadActivities(
   training: TrainingLoadInput,
   facilities: FacilityRecord[] = [],
+  referenceTrainings: TrainingRecord[] = [],
 ): TrainingLoadActivity[] {
-  const focus = training.focus ?? training.loadProfile?.focus ?? "none";
-  const conditionMultiplier =
-    conditionsMultiplier[
-      training.conditions ?? training.loadProfile?.conditions ?? "optimal"
-    ];
+  return getObjectiveStimulusActivities(
+    training,
+    facilities,
+    referenceTrainings,
+  ).map((activity) => {
+    const fatigueDimensions = fatigueDimensionKeys.reduce<FatigueDimensions>(
+      (dimensions, dimension) => {
+        dimensions[dimension] =
+          activity.dimensionCoin?.[dimension] ??
+          activity.coin * activity.dimensionSplit[dimension];
+        return dimensions;
+      },
+      emptyDimensions(),
+    );
 
-  return getObjectiveStimulusActivities(training, facilities).map(
-    (activity) => {
-      const focusMultipliers =
-        activity.surface === "spraywall"
-          ? spraywallFocusDimensionMultipliers[
-              training.protocol?.spraywallIntensity ?? "medium"
-            ][focus]
-          : focusDimensionMultipliers[focus];
-      const fatigueDimensions = fatigueDimensionKeys.reduce<FatigueDimensions>(
-        (dimensions, dimension) => {
-          dimensions[dimension] =
-            (activity.dimensionCoin?.[dimension] ??
-              activity.coin * activity.dimensionSplit[dimension]) *
-            (focusMultipliers[dimension] ?? 1) *
-            conditionMultiplier;
-          return dimensions;
-        },
-        emptyDimensions(),
-      );
-
-      return {
-        surface: activity.surface,
-        coin: activity.coin,
-        fatigueDimensions,
-      };
-    },
-  );
+    return {
+      surface: activity.surface,
+      coin: activity.coin,
+      fatigueDimensions,
+    };
+  });
 }
 
 export function getTrainingFatigueDimensions(
   training: TrainingRecord,
   facilities: FacilityRecord[] = [],
+  referenceTrainings: TrainingRecord[] = [],
 ): FatigueDimensions {
   return getTrainingLoadActivities(
     training,
     facilities,
+    referenceTrainings,
   ).reduce<FatigueDimensions>((total, activity) => {
     fatigueDimensionKeys.forEach((dimension) => {
       total[dimension] += activity.fatigueDimensions[dimension];
@@ -422,11 +248,16 @@ export function getTrainingFatigueDimensions(
 export function getTrainingLoad(
   training: TrainingRecord,
   facilities: FacilityRecord[] = [],
+  referenceTrainings: TrainingRecord[] = [],
 ) {
-  const dimensions = getTrainingFatigueDimensions(training, facilities);
+  const dimensions = getTrainingFatigueDimensions(
+    training,
+    facilities,
+    referenceTrainings,
+  );
   const recoveryLoad = (
     Object.entries(recoveryDimensionWeights) as Array<
-      [Exclude<FatigueDimension, "skill">, number]
+      [FatigueDimension, number]
     >
   ).reduce(
     (total, [dimension, weight]) => total + dimensions[dimension] * weight,
@@ -452,19 +283,28 @@ export type TrainingStimulusScale = {
 export function getTrainingStimulusImpact(
   training: TrainingRecord,
   facilities: FacilityRecord[] = [],
+  referenceTrainings: TrainingRecord[] = [],
 ): TrainingStimulusImpact {
-  const activities = getTrainingLoadActivities(training, facilities);
+  const activities = getTrainingLoadActivities(
+    training,
+    facilities,
+    referenceTrainings,
+  );
   const dimensions = activities.reduce<FatigueDimensions>((total, activity) => {
     fatigueDimensionKeys.forEach((dimension) => {
       total[dimension] += activity.fatigueDimensions[dimension];
     });
     return total;
   }, emptyDimensions());
+  const coin = fatigueDimensionKeys.reduce(
+    (total, dimension) => total + dimensions[dimension],
+    0,
+  );
 
   return {
-    coin: activities.reduce((total, activity) => total + activity.coin, 0),
+    coin,
     dimensions,
-    recoveryLoad: getTrainingLoad(training, facilities),
+    recoveryLoad: getTrainingLoad(training, facilities, referenceTrainings),
   };
 }
 
@@ -487,13 +327,15 @@ export function getTrainingStimulusScale(
   const baselineCoin =
     recentTrainings.reduce(
       (total, candidate) =>
-        total + getTrainingStimulusImpact(candidate, facilities).coin,
+        total +
+        getTrainingStimulusImpact(candidate, facilities, trainings).coin,
       0,
     ) / recentTrainings.length;
   if (baselineCoin <= 0) return null;
 
   const ratio =
-    getTrainingStimulusImpact(training, facilities).coin / baselineCoin;
+    getTrainingStimulusImpact(training, facilities, trainings).coin /
+    baselineCoin;
   return {
     baselineCoin,
     ratio,

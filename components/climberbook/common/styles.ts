@@ -9,14 +9,8 @@ export const pageStyle = {
 export const shellStyle = {
   position: "relative" as const,
   minHeight: "100vh",
-  boxShadow: "var(--glass-shadow)",
-  backdropFilter: "blur(var(--glass-blur)) saturate(160%)",
 };
-
 export const pageHeaderStyle = {
-  position: "sticky" as const,
-  top: 0,
-  left: 0,
   right: 0,
   zIndex: 20,
   height: 80,
@@ -111,9 +105,8 @@ export const analyticsPanelStyle = {
   padding: 0,
   overflowX: "hidden" as const,
   overflowY: "auto" as const,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
-  border: "1px solid var(--border-strong)",
+  background: "var(--component-panel-background)",
+  border: "var(--component-panel-border)",
 };
 
 export const analyticsPanelInnerStyle = {
@@ -135,9 +128,8 @@ export const chartCardStyle = {
   display: "grid",
   gap: 8,
   padding: 10,
-  border: "1px solid var(--border-strong)",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.44))",
+  border: "var(--component-card-border)",
+  background: "var(--component-card-background)",
 };
 
 export const weightChartCardStyle = {
@@ -160,11 +152,11 @@ export const weightChartSummaryStyle = {
 };
 
 export const weightChartTooltipStyle = {
-  border: "1px solid rgba(209, 109, 63, 0.3)",
+  border: "var(--component-chart-tooltip-border)",
   borderRadius: 4,
-  background: "rgba(255, 250, 243, 0.96)",
-  boxShadow: "0 12px 30px rgba(72, 49, 33, 0.14)",
-  color: "var(--text)",
+  background: "var(--component-chart-tooltip-background)",
+  boxShadow: "var(--component-chart-tooltip-shadow)",
+  color: "var(--component-chart-tooltip-text)",
 };
 
 export const weightEntryModalOverlayStyle = {
@@ -178,7 +170,7 @@ export const weightEntryModalOverlayStyle = {
   padding: 16,
   overflowY: "auto" as const,
   overscrollBehavior: "contain" as const,
-  background: "rgba(30, 25, 22, 0.34)",
+  background: "var(--component-weight-entry-modal-backdrop)",
 };
 
 export const weightEntryModalStyle = {
@@ -189,9 +181,9 @@ export const weightEntryModalStyle = {
   padding: 16,
   overflowY: "auto" as const,
   overscrollBehavior: "contain" as const,
-  background: "rgba(255, 250, 243, 0.98)",
-  border: "1px solid var(--border-strong)",
-  boxShadow: "0 24px 70px rgba(72, 49, 33, 0.24)",
+  background: "var(--component-modal-background)",
+  border: "var(--component-modal-border)",
+  boxShadow: "var(--component-modal-shadow)",
 };
 
 export const calendarPanelStyle = {
@@ -202,9 +194,8 @@ export const calendarPanelStyle = {
   minHeight: 0,
   padding: 11,
   overflow: "hidden",
-  border: "1px solid var(--border-strong)",
-  background:
-    "linear-gradient(180deg, rgba(255,255,255,0.52), rgba(255,255,255,0.3))",
+  border: "var(--component-panel-border)",
+  background: "var(--component-calendar-panel-background)",
 };
 
 export const calendarNavStyle = {
@@ -271,9 +262,10 @@ export const rangeNavigationStyle = {
 };
 
 export const navButtonStyle = {
-  border: "1px solid var(--border-strong)",
+  border: "var(--component-navigation-button-border)",
   padding: "5px 7px",
-  background: "rgba(255,255,255,0.78)",
+  background: "var(--component-navigation-button-background)",
+  color: "var(--theme-text)",
   cursor: "pointer",
 };
 
@@ -299,10 +291,9 @@ export const headerBadgeRowStyle = {
 export const headerBadgeStyle = {
   padding: "5px 7px",
   borderRadius: 999,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.44))",
-  border: "1px solid var(--border-strong)",
-  color: "var(--muted)",
+  background: "var(--component-soft-pill-background)",
+  border: "var(--component-soft-pill-border)",
+  color: "var(--component-soft-pill-text)",
   fontSize: "0.88rem",
 };
 
@@ -316,9 +307,8 @@ export const metricCardStyle = {
   display: "grid",
   gap: 6,
   padding: 8,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.34))",
-  border: "1px solid var(--border-strong)",
+  background: "var(--component-metric-card-background)",
+  border: "var(--component-card-border)",
 };
 
 export const metricValueStyle = {
@@ -332,9 +322,8 @@ export const panelStyle = {
   gap: 9,
   minHeight: 0,
   padding: "1.5rem",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
-  border: "1px solid var(--border-strong)",
+  background: "var(--component-panel-background)",
+  border: "var(--component-panel-border)",
 };
 
 export const panelHeadingStyle = {
@@ -378,11 +367,10 @@ export const fieldStyle = {
 };
 
 export const inputStyle = {
-  border: "1px solid rgb(227 215 215 / 68%)",
+  border: "var(--component-input-border)",
   padding: "0.75rem 1rem",
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))",
-  color: "var(--text)",
+  background: "var(--component-input-background)",
+  color: "var(--component-input-text)",
   width: "100%",
 };
 
@@ -408,10 +396,10 @@ export const secondaryButtonStyle = {
 };
 
 export const deleteButtonStyle = {
-  border: "1px solid #b83d35",
+  border: "1px solid var(--component-button-danger-border)",
   padding: "7px 9px",
-  background: "rgba(184, 61, 53, 0.08)",
-  color: "#9e2e28",
+  background: "var(--component-button-danger-background)",
+  color: "var(--component-button-danger-text)",
   cursor: "pointer",
 };
 
@@ -461,15 +449,14 @@ export const mobileDrawerSheetStyle = {
   minHeight: 0,
   overflow: "hidden",
   padding: 8,
-  borderTop: "1px solid var(--border-strong)",
-  background: "rgba(245, 244, 241, 0.98)",
-  boxShadow: "0 -20px 40px rgba(35, 29, 25, 0.16)",
+  borderTop: "var(--component-drawer-border)",
+  background: "var(--component-drawer-background)",
+  boxShadow: "var(--component-drawer-shadow)",
 };
 
 export const listCardStyle = {
   padding: 8,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.84), rgba(255,255,255,0.56))",
+  background: "var(--component-list-card-background)",
   border: "1px solid var(--border-strong)",
 };
 
@@ -532,10 +519,9 @@ export const mutedParagraphStyle = {
 export const softTagStyle = {
   padding: "4px 6px",
   borderRadius: 999,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.44))",
-  border: "1px solid rgba(255,255,255,0.38)",
-  color: "var(--accent)",
+  background: "var(--component-soft-tag-background)",
+  border: "var(--component-soft-tag-border)",
+  color: "var(--component-soft-tag-text)",
   fontSize: "0.85rem",
   justifySelf: "start" as const,
 };
@@ -543,36 +529,10 @@ export const softTagStyle = {
 export const softPillStyle = {
   padding: "4px 6px",
   borderRadius: 999,
-  background:
-    "linear-gradient(135deg, rgba(255,255,255,0.74), rgba(255,255,255,0.52))",
-  border: "1px solid rgba(255,255,255,0.34)",
-  color: "var(--muted)",
+  background: "var(--component-soft-pill-background)",
+  border: "var(--component-soft-pill-border)",
+  color: "var(--component-soft-pill-text)",
   fontSize: "0.85rem",
-};
-
-export const moduleShellStyles: Record<
-  ModuleKey,
-  { background: string; border?: string }
-> = {
-  treningowy: {
-    background: "#ffffff9e",
-    border: "1px solid var(--border-strong)",
-  },
-  raportowy: {
-    background: "#ffffff9e",
-  },
-  analityka: {
-    background: "#ffffff9e",
-  },
-  team: {
-    background: "#ffffff9e",
-  },
-  obiekty: {
-    background: "#ffffff9e",
-  },
-  ustawienia: {
-    background: "#ffffff9e",
-  },
 };
 
 export const topBarStyle = {

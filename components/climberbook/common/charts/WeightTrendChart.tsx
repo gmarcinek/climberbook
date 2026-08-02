@@ -14,8 +14,8 @@ import {
 } from "recharts";
 import { useSelectedDates } from "@/contexts/SelectedDatesContext";
 import {
+  addDays,
   formatDateIso,
-  toDate,
 } from "@/components/training-calendar/training-calendar.helpers";
 import { roundToSingleDecimal } from "@/components/climberbook/common/training";
 import {
@@ -38,6 +38,11 @@ function getWeightTimestamp(entry: WeightEntryRecord) {
     : "12:00:00";
 
   return new Date(`${formatDateIso(entry.date)}T${time}`).getTime();
+}
+
+function getDayStartTimestamp(date: string | Date) {
+  const isoDate = formatDateIso(date);
+  return new Date(`${isoDate}T00:00:00`).getTime();
 }
 
 export function WeightTrendChart({
@@ -94,15 +99,21 @@ export function WeightTrendChart({
   ]);
   const now = new Date();
   const todayTimestamp = now.getTime();
-  const chartStartTimestamp = toDate(chartRange.start).getTime();
-  const requestedChartEndTimestamp = new Date(`${chartRange.end}T23:59:59.999`).getTime();
-  const tomorrowEnd = new Date(now);
-  tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
-  tomorrowEnd.setHours(23, 59, 59, 999);
-  const chartEndTimestamp = Math.min(
-    requestedChartEndTimestamp,
-    tomorrowEnd.getTime(),
-  );
+  const todayDateTimestamp = getDayStartTimestamp(now);
+  const chartStartTimestamp = getDayStartTimestamp(chartRange.start);
+  const chartEndDate = [
+    chartRange.end,
+    addDays(formatDateIso(now), 1),
+  ].sort()[0];
+  const chartEndTimestamp = getDayStartTimestamp(addDays(chartEndDate, 1));
+  const dailyTicks: number[] = [];
+  for (
+    let date = chartRange.start;
+    date <= chartEndDate;
+    date = addDays(date, 1)
+  ) {
+    dailyTicks.push(getDayStartTimestamp(date));
+  }
   const selectedChartDate =
     selectedDate &&
     selectedDate >= chartRange.start &&
@@ -112,11 +123,11 @@ export function WeightTrendChart({
   const selectedChartPoint = selectedChartDate
     ? {
         date: selectedChartDate,
-        timestamp: toDate(selectedChartDate).getTime(),
+        timestamp: getDayStartTimestamp(selectedChartDate),
         label: new Intl.DateTimeFormat("pl-PL", {
           day: "numeric",
           month: "short",
-        }).format(toDate(selectedChartDate)),
+        }).format(new Date(getDayStartTimestamp(selectedChartDate))),
         weightKg: null,
         weightedAverage: null,
       }
@@ -126,8 +137,7 @@ export function WeightTrendChart({
     chartEntries[chartEntries.length - 2] ?? latestChartEntry;
   const trendDays = Math.max(
     1,
-    (latestChartEntry.timestamp - previousChartEntry.timestamp) /
-      86_400_000,
+    (latestChartEntry.timestamp - previousChartEntry.timestamp) / 86_400_000,
   );
   const trendPerDay =
     (latestChartEntry.weightedAverage - previousChartEntry.weightedAverage) /
@@ -139,22 +149,27 @@ export function WeightTrendChart({
   );
   const latestVisibleChartEntry = visibleChartEntries.at(-1) ?? null;
   const estimationDays = latestVisibleChartEntry
-    ? Math.max(0, (chartEndTimestamp - latestVisibleChartEntry.timestamp) / 86_400_000)
-    : 0;
-  const estimatedWeight = latestVisibleChartEntry && estimationDays > 0
-    ? roundToSingleDecimal(
-        Math.min(
-          latestVisibleChartEntry.weightKg + 1,
-          Math.max(
-            latestVisibleChartEntry.weightKg - 1,
-            latestVisibleChartEntry.weightKg + trendPerDay * estimationDays,
-          ),
-        ),
+    ? Math.max(
+        0,
+        (chartEndTimestamp - latestVisibleChartEntry.timestamp) / 86_400_000,
       )
-    : null;
-  const chartWeights = estimatedWeight === null
-    ? measuredWeights
-    : [...measuredWeights, estimatedWeight];
+    : 0;
+  const estimatedWeight =
+    latestVisibleChartEntry && estimationDays > 0
+      ? roundToSingleDecimal(
+          Math.min(
+            latestVisibleChartEntry.weightKg + 1,
+            Math.max(
+              latestVisibleChartEntry.weightKg - 1,
+              latestVisibleChartEntry.weightKg + trendPerDay * estimationDays,
+            ),
+          ),
+        )
+      : null;
+  const chartWeights =
+    estimatedWeight === null
+      ? measuredWeights
+      : [...measuredWeights, estimatedWeight];
   const minWeight = Math.min(...chartWeights);
   const maxWeight = Math.max(...chartWeights);
   const domainPadding = Math.max((maxWeight - minWeight) * 0.4, 0.5);
@@ -176,18 +191,20 @@ export function WeightTrendChart({
     weightedAverage: number | null;
     projectedWeight: number | null;
   }>;
-  chartData.push(...visibleChartEntries.map((entry) => ({
-    ...entry,
-    projectedWeight:
-      entry.timestamp === latestVisibleChartEntry?.timestamp
-        ? entry.weightKg
-        : null,
-  })));
+  chartData.push(
+    ...visibleChartEntries.map((entry) => ({
+      ...entry,
+      projectedWeight:
+        entry.timestamp === latestVisibleChartEntry?.timestamp
+          ? entry.weightKg
+          : null,
+    })),
+  );
   if (estimatedWeight !== null) {
     chartData.push({
       timestamp: chartEndTimestamp,
-      date: formatDateIso(new Date(chartEndTimestamp)),
-      time: "23:59",
+      date: chartEndDate,
+      time: "12:00",
       label: new Intl.DateTimeFormat("pl-PL", {
         day: "numeric",
         month: "short",
@@ -201,7 +218,8 @@ export function WeightTrendChart({
   }
   chartData.sort((left, right) => left.timestamp - right.timestamp);
   const showsTodayMarker =
-    todayTimestamp >= chartStartTimestamp && todayTimestamp <= chartEndTimestamp;
+    todayDateTimestamp >= chartStartTimestamp &&
+    todayDateTimestamp <= chartEndTimestamp;
   const showsSelectedMarker =
     selectedChartPoint !== null &&
     selectedChartPoint.timestamp >= chartStartTimestamp &&
@@ -213,17 +231,24 @@ export function WeightTrendChart({
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
-            margin={{ top: 12, right: 0, bottom: 0, left: 0 }}
+            margin={{ top: 12, right: 0, bottom: 4, left: -16 }}
           >
             <defs>
               <linearGradient id="weightTrendFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#d16d3f" stopOpacity={0.48} />
-                <stop offset="85%" stopColor="#d16d3f" stopOpacity={0.05} />
+                <stop
+                  offset="0%"
+                  stopColor="var(--component-chart-series-average)"
+                  stopOpacity={0.48}
+                />
+                <stop
+                  offset="85%"
+                  stopColor="var(--component-chart-series-average)"
+                  stopOpacity={0.05}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid
-              vertical={false}
-              stroke="rgba(100, 87, 77, 0.14)"
+              stroke="var(--component-chart-grid)"
               strokeDasharray="3 5"
             />
             <XAxis
@@ -231,11 +256,9 @@ export function WeightTrendChart({
               type="number"
               scale="time"
               domain={[chartStartTimestamp, chartEndTimestamp]}
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#64574d", fontSize: 8.8 }}
-              minTickGap={28}
-              padding={{ left: 0, right: 0 }}
+              ticks={dailyTicks}
+              interval={0}
+              tick={{ fontSize: 9.6, fill: "var(--component-chart-axis)" }}
               tickFormatter={(timestamp) =>
                 new Intl.DateTimeFormat("pl-PL", {
                   day: "numeric",
@@ -244,16 +267,17 @@ export function WeightTrendChart({
               }
             />
             <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#64574d", fontSize: 8.8 }}
+              tick={{ fontSize: 9.6, fill: "var(--component-chart-axis)" }}
               tickFormatter={(value) => `${value}`}
               domain={[axisMinimum, axisMaximum]}
               ticks={fullKilogramTicks}
-              width={26}
+              width={44}
             />
             <Tooltip
-              cursor={{ stroke: "rgba(209, 109, 63, 0.32)", strokeWidth: 1 }}
+              cursor={{
+                stroke: "var(--component-chart-cursor)",
+                strokeWidth: 1,
+              }}
               contentStyle={weightChartTooltipStyle}
               formatter={(value, name) => {
                 const measuredValue = Array.isArray(value) ? value[0] : value;
@@ -271,23 +295,21 @@ export function WeightTrendChart({
               }}
               labelFormatter={(_label, payload) => {
                 const point = payload[0]?.payload;
-                return point
-                  ? `${point.date} · ${point.time}`
-                  : "";
+                return point ? `${point.date} · ${point.time}` : "";
               }}
             />
             {halfKilogramMarks.map((mark) => (
               <ReferenceLine
                 key={mark}
                 y={mark}
-                stroke="rgba(100, 87, 77, 0.1)"
+                stroke="var(--component-chart-grid-subtle)"
                 strokeDasharray="2 5"
               />
             ))}
             <Area
               type="monotone"
               dataKey="weightedAverage"
-              stroke="#b84f27"
+              stroke="var(--component-chart-series-average)"
               strokeWidth={2.5}
               fill="url(#weightTrendFill)"
               dot={false}
@@ -298,10 +320,20 @@ export function WeightTrendChart({
             <Line
               type="monotone"
               dataKey="weightKg"
-              stroke="#176f86"
+              stroke="var(--component-chart-series-measured)"
               strokeWidth={2}
-              dot={{ r: 3, fill: "#176f86", stroke: "white", strokeWidth: 1 }}
-              activeDot={{ r: 4.5, fill: "#176f86", stroke: "white", strokeWidth: 1.5 }}
+              dot={{
+                r: 3,
+                fill: "var(--component-chart-series-measured)",
+                stroke: "var(--component-chart-marker-outline)",
+                strokeWidth: 1,
+              }}
+              activeDot={{
+                r: 4.5,
+                fill: "var(--component-chart-series-measured)",
+                stroke: "var(--component-chart-marker-outline)",
+                strokeWidth: 1.5,
+              }}
               connectNulls
               animationDuration={750}
             />
@@ -310,7 +342,7 @@ export function WeightTrendChart({
                 <Line
                   type="linear"
                   dataKey="projectedWeight"
-                  stroke="#7050a8"
+                  stroke="var(--component-chart-series-projection)"
                   strokeWidth={2}
                   strokeDasharray="5 4"
                   dot={false}
@@ -322,8 +354,8 @@ export function WeightTrendChart({
                   x={chartEndTimestamp}
                   y={estimatedWeight}
                   r={4}
-                  fill="#7050a8"
-                  stroke="#ffffff"
+                  fill="var(--component-chart-series-projection)"
+                  stroke="var(--component-chart-marker-outline)"
                   strokeWidth={2}
                 />
               </>
@@ -331,7 +363,7 @@ export function WeightTrendChart({
             {showsSelectedMarker && selectedChartPoint && (
               <ReferenceLine
                 x={selectedChartPoint.timestamp}
-                stroke="#176f86"
+                stroke="var(--component-chart-marker-selected)"
                 strokeWidth={2}
                 strokeDasharray="4 4"
               />
@@ -339,10 +371,14 @@ export function WeightTrendChart({
             {showsTodayMarker && (
               <ReferenceLine
                 x={todayTimestamp}
-                stroke="#dc3e4b"
-                strokeWidth={1}
-                strokeDasharray="4 4"
-                label={{ value: "Dzisiaj", position: "insideTopRight", fill: "#dc3e4b", fontSize: 8.8 }}
+                stroke="var(--component-chart-marker-today)"
+                strokeDasharray="5 5"
+                label={{
+                  value: "Dzisiaj",
+                  position: "insideTopRight",
+                  fill: "var(--component-chart-marker-today)",
+                  fontSize: 9.6,
+                }}
               />
             )}
           </AreaChart>
@@ -353,10 +389,12 @@ export function WeightTrendChart({
         <span>Trend: średnia ważona z maks. 3 pomiarów</span>
         {estimatedWeight !== null && (
           <span>
-            Estymacja na {new Intl.DateTimeFormat("pl-PL", {
+            Estymacja na{" "}
+            {new Intl.DateTimeFormat("pl-PL", {
               day: "numeric",
               month: "short",
-            }).format(new Date(chartEndTimestamp))}: {estimatedWeight.toFixed(1)} kg
+            }).format(new Date(chartEndTimestamp))}
+            : {estimatedWeight.toFixed(1)} kg
           </span>
         )}
         <span>

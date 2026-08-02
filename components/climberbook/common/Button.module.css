@@ -1,17 +1,22 @@
 .button {
+  min-height: var(--common-button-height);
   border: 0;
-  color: #ffffff;
+  padding: 0.5rem var(--common-button-padding-inline);
+  color: var(--component-button-primary-text);
   cursor: pointer;
   font: inherit;
+  font-size: var(--common-button-font-size);
+  justify-self: start;
   line-height: 1.2;
+  width: fit-content;
 }
 
 .size--medium {
-  padding: 0.5rem 1rem;
+  min-height: var(--common-button-height);
 }
 
 .size--small {
-  padding: 0.25rem 0.5rem;
+  min-height: var(--common-button-height);
 }
 
 .button:disabled {
@@ -20,22 +25,23 @@
 }
 
 .variant--primary {
-  background: linear-gradient(135deg, #0f6d82, #2595a1);
-  box-shadow: 0 18px 30px rgba(18, 113, 126, 0.24);
+  background: var(--component-button-primary-background);
+  box-shadow: var(--theme-shadow-button);
 }
 
 .variant--secondary {
-  border: 1px solid var(--border-strong);
-  background: rgba(255, 255, 255, 0.78);
-  color: var(--text);
+  background: var(--component-button-secondary-background);
+  color: var(--component-button-secondary-text);
 }
 
 .variant--tertiary {
-  background: #b84f27;
+  background: var(--component-button-tertiary-background);
+  color: var(--component-button-tertiary-text);
 }
 
 .variant--quadrary {
-  background: #343434;
+  background: var(--component-button-quadrary-background);
+  color: var(--component-button-quadrary-text);
 }
 
 .emotButton {
@@ -46,14 +52,13 @@
 }
 
 .emotButton.size--medium {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--common-button-icon-size);
+  height: var(--common-button-icon-size);
   padding: 0;
 }
 
 .emotButton.size--small {
-  width: 2rem;
-  height: 2rem;
+  width: var(--common-button-icon-size);
+  height: var(--common-button-icon-size);
   padding: 0;
-  font-size: 1rem;
 }

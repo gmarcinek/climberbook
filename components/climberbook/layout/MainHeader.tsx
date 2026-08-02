@@ -8,33 +8,20 @@ import {
   moduleConfig,
   type ModuleKey,
 } from "@/components/climberbook/common/modules";
-import {
-  athleteSelectStyle,
-  athleteSelectorLabelStyle,
-  athleteSelectorStyle,
-  brandStyle,
-  headerLeftGroupStyle,
-  moduleButtonStyle,
-  moduleNavStyle,
-  navSeparatorStyle,
-  pageHeaderStyle,
-  topBarStyle,
-} from "@/components/climberbook/common/styles";
 import { Button, EmotButton } from "@/components/climberbook/common/Button";
+import { Select } from "@/components/climberbook/common/FormControls";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
+import { ThemeSelector } from "@/components/climberbook/providers/ThemeSelector";
+import styles from "./MainHeader.module.scss";
 
 type MainHeaderProps = {
   activeModule: ModuleKey;
 };
 
 export function MainHeader({ activeModule }: MainHeaderProps) {
-  const {
-    athletes,
-    activeAthleteId,
-    setActiveAthleteId,
-  } = useClimberbook();
+  const { athletes, activeAthleteId, setActiveAthleteId } = useClimberbook();
   const { isMobileHeader, width } = useViewport();
   const router = useRouter();
   const isTwoRowHeader = !isMobileHeader && width > 0 && width < 900;
@@ -50,31 +37,15 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
       <Link
         href={module.route}
         onClick={() => setIsMobileMenuOpen(false)}
-        style={
-          isMobileHeader
-            ? {
-                display: "block",
-                width: "100%",
-                padding: "14px 16px",
-                border: "1px solid var(--border-strong)",
-                background:
-                  activeModule === module.key
-                    ? "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.72))"
-                    : "linear-gradient(135deg, rgba(255,255,255,0.78), rgba(255,255,255,0.54))",
-                color:
-                  activeModule === module.key ? "var(--text)" : "var(--muted)",
-                fontSize: "1.05rem",
-                fontWeight: activeModule === module.key ? 700 : 600,
-                lineHeight: 1.2,
-                textDecoration: "none",
-              }
-            : {
-                ...moduleButtonStyle,
-                color:
-                  activeModule === module.key ? "var(--text)" : "var(--muted)",
-                fontWeight: activeModule === module.key ? 700 : 500,
-              }
-        }
+        className={[
+          isMobileHeader ? styles.navigationLinkMobile : styles.navigationLink,
+          activeModule === module.key &&
+            (isMobileHeader
+              ? styles.navigationLinkMobileActive
+              : styles.navigationLinkActive),
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
         {module.navLabel}
       </Link>
@@ -86,7 +57,7 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
 
     return (
       <Fragment key={module.key}>
-        {index > 0 && <span style={navSeparatorStyle}>|</span>}
+        {index > 0 && <span className={styles.navigationSeparator}>|</span>}
         {link}
       </Fragment>
     );
@@ -95,59 +66,34 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
   return (
     <>
       <header
-        style={{
-          ...pageHeaderStyle,
-          position: isMobileHeader ? "relative" : pageHeaderStyle.position,
-          top: isMobileHeader ? undefined : pageHeaderStyle.top,
-          left: isMobileHeader ? undefined : pageHeaderStyle.left,
-          right: isMobileHeader ? undefined : pageHeaderStyle.right,
-          height: isMobileHeader || isTwoRowHeader ? "auto" : 80,
-          overflow:
-            isMobileHeader || isTwoRowHeader
-              ? "visible"
-              : pageHeaderStyle.overflow,
-        }}
+        className={[
+          styles.header,
+          (isMobileHeader || isTwoRowHeader) && styles.headerResponsive,
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
         <div
-          style={{
-            ...topBarStyle,
-            height: isMobileHeader || isTwoRowHeader ? "auto" : 80,
-            gridTemplateColumns:
-              isMobileHeader || isTwoRowHeader
-                ? "minmax(0, 1fr)"
-                : "auto minmax(0, 1fr) auto",
-            gridTemplateRows:
-              isMobileHeader || isTwoRowHeader ? "auto auto" : "none",
-            gap: isMobileHeader || isTwoRowHeader ? 8 : 12,
-            overflow:
-              isMobileHeader || isTwoRowHeader
-                ? "visible"
-                : topBarStyle.overflow,
-            padding: isMobileHeader || isTwoRowHeader ? "8px 12px" : "5px",
-          }}
+          className={[
+            styles.topBar,
+            (isMobileHeader || isTwoRowHeader) && styles.topBarResponsive,
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           <div
-            style={{
-              ...headerLeftGroupStyle,
-              gridRow: isMobileHeader ? 1 : "auto",
-              flexWrap: isMobileHeader || isTwoRowHeader ? "wrap" : undefined,
-              justifyContent:
-                isMobileHeader || isTwoRowHeader ? "space-between" : undefined,
-              alignItems: isMobileHeader
-                ? "center"
-                : headerLeftGroupStyle.alignItems,
-              width: isMobileHeader || isTwoRowHeader ? "100%" : undefined,
-            }}
+            className={[
+              styles.headerLeft,
+              (isMobileHeader || isTwoRowHeader) && styles.headerLeftResponsive,
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             <Link
               href="/"
-              style={{
-                ...brandStyle,
-                marginLeft: "12px",
-                color: "var(--text)",
-                textDecoration: "none",
-                fontSize: isMobileHeader ? "1.15rem" : brandStyle.fontSize,
-              }}
+              className={[styles.brand, isMobileHeader && styles.brandMobile]
+                .filter(Boolean)
+                .join(" ")}
             >
               Climberbook
             </Link>
@@ -157,42 +103,32 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                 aria-label="Otwórz menu"
                 aria-expanded={isMobileMenuOpen}
                 onClick={() => setIsMobileMenuOpen(true)}
-                style={{
-                  border: "0px solid var(--border-strong)",
-                  padding: "0px 0px",
-                  background: "rgba(255, 255, 255, 0.72)",
-                  color: "var(--text)",
-                  cursor: "pointer",
-                  fontSize: "3rem",
-                  lineHeight: 1,
-                  height: "3rem",
-                  width: "3rem",
-                }}
+                className={styles.menuButton}
               >
                 ≡
               </EmotButton>
             ) : null}
             <label
-              style={{
-                ...athleteSelectorStyle,
-                flexWrap: isMobileHeader ? "wrap" : undefined,
-                width: isMobileHeader ? "100%" : undefined,
-              }}
+              className={[
+                styles.athleteSelector,
+                isMobileHeader && styles.athleteSelectorMobile,
+              ]
+                .filter(Boolean)
+                .join(" ")}
             >
-              <span style={athleteSelectorLabelStyle}>Zawodnik</span>
-              <select
+              <span className={styles.athleteLabel}>Zawodnik</span>
+              <Select
+                size="small"
                 value={activeAthleteId ?? ""}
                 onChange={(event) =>
                   setActiveAthleteId(event.target.value || null)
                 }
-                style={{
-                  ...athleteSelectStyle,
-                  maxWidth: isMobileHeader
-                    ? "100%"
-                    : athleteSelectStyle.maxWidth,
-                  minWidth: isMobileHeader ? 0 : 180,
-                  width: isMobileHeader ? "100%" : undefined,
-                }}
+                className={[
+                  styles.athleteSelect,
+                  isMobileHeader && styles.athleteSelectMobile,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 <option value="">Wybierz zawodnika</option>
                 {athletes.map((athlete) => (
@@ -200,21 +136,23 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                     {athlete.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
+            {!isMobileHeader ? <ThemeSelector compact /> : null}
           </div>
 
           {!isMobileHeader ? (
             <nav
-              style={{
-                ...moduleNavStyle,
-                gridRow: isTwoRowHeader ? 2 : "auto",
-                justifyContent: isTwoRowHeader ? "flex-start" : "flex-end",
-              }}
+              className={[
+                styles.navigation,
+                isTwoRowHeader && styles.navigationTwoRows,
+              ]
+                .filter(Boolean)
+                .join(" ")}
             >
               {navLinks}
               <Button
-                style={{ marginLeft: "2rem" }}
+                className={styles.logoutButton}
                 onClick={() => void signOut({ callbackUrl: "/login" })}
                 variant="quadrary"
               >
@@ -229,32 +167,22 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
         <Modal
           labelledBy="mobile-navigation-title"
           onClose={() => setIsMobileMenuOpen(false)}
-          style={{ padding: 16 }}
+          className={styles.mobileNavigationDialog}
         >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              minHeight: "calc(100svh - 64px)",
-              gap: 12,
-            }}
-          >
-            <h2 id="mobile-navigation-title" style={brandStyle}>
+          <div className={styles.mobileNavigationContent}>
+            <h2
+              id="mobile-navigation-title"
+              className={styles.mobileNavigationTitle}
+            >
               Menu
             </h2>
-            <nav
-              style={{
-                display: "grid",
-                gap: 10,
-                alignContent: "start",
-              }}
-            >
+            <nav className={styles.mobileNavigationLinks}>
               <Button variant="primary" onClick={openTrainingEditor}>
                 + Trening
               </Button>
               {navLinks}
             </nav>
-            <div style={{ flexGrow: 1 }} />
+            <div className={styles.mobileNavigationSpacer} />
             <Button
               onClick={() => void signOut({ callbackUrl: "/login" })}
               variant="quadrary"

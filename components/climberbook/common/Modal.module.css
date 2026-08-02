@@ -40,15 +40,15 @@
   z-index: 1;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--theme-border-strong);
   border-radius: 50%;
   padding: 0;
-  background: rgba(255, 250, 243, 0.96);
-  color: var(--text);
+  background: var(--component-modal-close-background);
+  color: var(--theme-text);
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 4px 12px rgba(72, 49, 33, 0.18);
+  box-shadow: var(--component-modal-close-shadow);
 }
 
 @media (max-width: 767px) {

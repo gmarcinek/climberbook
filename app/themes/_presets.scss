@@ -1,0 +1,360 @@
+$preset-themes: "monokai", "text", "dark", "flower";
+
+body.theme-monokai,
+body.theme-text,
+body.theme-dark,
+body.theme-flower {
+  --theme-ink: var(--theme-text);
+  --theme-navy: var(--theme-surface-strong);
+  --theme-taupe: var(--theme-text-muted);
+  --theme-beige: var(--theme-secondary);
+  --theme-parchment: var(--theme-surface-raised);
+  --theme-cognac: var(--theme-primary);
+  --theme-burgundy: var(--theme-danger);
+  --theme-app-background: var(--theme-page-background);
+  --theme-shadow-color: none;
+  --theme-shadow-panel: none;
+  --theme-shadow-button: none;
+  --theme-shadow-button-secondary: none;
+  --theme-glass-blur: 0px;
+  --theme-header-blur: none;
+  --component-header-background: var(--theme-surface);
+  --component-header-border: 1px solid var(--theme-border);
+  --component-header-shadow: none;
+  --component-layout-background: var(--theme-page-background);
+  --component-layout-shadow: none;
+  --component-layout-backdrop-filter: none;
+  --component-drawer-background: var(--theme-surface-raised);
+  --component-drawer-border: 1px solid var(--theme-border);
+  --component-drawer-shadow: none;
+  --component-navigation-active: var(--theme-primary);
+  --component-navigation-idle: var(--theme-text-muted);
+  --component-settings-tab-border: var(--theme-border);
+  --component-panel-background: var(--theme-surface-raised);
+  --component-panel-border: 1px solid var(--theme-border);
+  --component-panel-shadow: none;
+  --component-card-background: var(--theme-surface);
+  --component-card-border: 1px solid var(--theme-border);
+  --component-list-card-background: var(--theme-surface-strong);
+  --component-weight-entry-selected-background: var(--theme-primary-soft);
+  --component-weight-entry-selected-shadow: inset 3px 0 0 var(--theme-primary);
+  --component-metric-card-background: var(--theme-surface);
+  --component-calendar-panel-background: var(--theme-surface-raised);
+  --component-calendar-viewport-background: var(--theme-surface);
+  --component-calendar-week-body-background: var(--theme-surface-strong);
+  --component-training-card-background: var(--theme-surface);
+  --component-training-pill-background: var(--theme-surface-strong);
+  --component-training-link-text: var(--theme-primary);
+  --component-training-timeline-track: var(--theme-surface-strong);
+  --component-training-timeline-fill: linear-gradient(90deg, var(--palette-one), var(--palette-two));
+  --component-soft-tag-background: var(--theme-primary-soft);
+  --component-soft-tag-border: 1px solid var(--theme-border);
+  --component-soft-tag-text: var(--theme-primary);
+  --component-soft-pill-background: var(--theme-surface-strong);
+  --component-soft-pill-border: 1px solid var(--theme-border);
+  --component-soft-pill-text: var(--theme-text-muted);
+  --component-weight-entry-value-text: var(--theme-text);
+  --component-upload-action-background: var(--theme-surface-strong);
+  --component-upload-action-border: 1px solid var(--theme-border);
+  --component-upload-action-text: var(--theme-text);
+  --component-navigation-button-background: var(--theme-surface-strong);
+  --component-navigation-button-border: 1px solid var(--theme-border);
+  --component-input-background: var(--theme-surface-strong);
+  --component-input-border: 1px solid var(--theme-border-input);
+  --component-input-text: var(--theme-text);
+  --component-input-placeholder: var(--theme-text-muted);
+  --component-input-color-scheme: var(--theme-color-scheme);
+  --component-button-primary-background: var(--theme-primary);
+  --component-button-primary-text: var(--theme-primary-text);
+  --component-button-secondary-background: var(--theme-secondary);
+  --component-button-secondary-text: var(--theme-secondary-text);
+  --component-button-tertiary-background: var(--theme-tertiary);
+  --component-button-tertiary-text: var(--theme-tertiary-text);
+  --component-button-quadrary-background: var(--theme-success);
+  --component-button-quadrary-text: var(--theme-success-text);
+  --component-button-ghost-background: var(--theme-surface-strong);
+  --component-button-ghost-border: var(--theme-border);
+  --component-button-danger-background: var(--theme-danger-soft);
+  --component-button-danger-border: var(--theme-danger);
+  --component-button-danger-text: var(--theme-danger);
+  --component-spraywall-option-active-background: var(--theme-primary);
+  --component-spraywall-option-active-border: 1px solid var(--theme-primary);
+  --component-spraywall-option-active-text: var(--theme-primary-text);
+  --component-spraywall-option-active-muted-text: var(--theme-primary-muted-text);
+  --component-training-route-grade-background: var(--theme-secondary);
+  --component-training-route-grade-border: 1px solid var(--theme-border);
+  --component-training-route-grade-text: var(--theme-secondary-text);
+  --component-modal-backdrop: var(--theme-backdrop);
+  --component-weight-entry-modal-backdrop: var(--theme-backdrop);
+  --component-modal-background: var(--theme-surface-raised);
+  --component-modal-border: 1px solid var(--theme-border);
+  --component-modal-shadow: none;
+  --component-training-preview-drawer-background: var(--theme-surface-raised);
+  --component-training-preview-drawer-shadow: none;
+  --component-modal-close-background: var(--theme-surface-strong);
+  --component-modal-close-shadow: none;
+  --component-toast-background: var(--theme-backdrop);
+  --component-toast-text: var(--theme-text-inverse);
+  --component-chart-grid: var(--theme-border);
+  --component-chart-grid-subtle: var(--theme-border);
+  --component-chart-axis: var(--theme-text-muted);
+  --component-chart-cursor: var(--theme-primary-soft);
+  --component-chart-marker-outline: var(--theme-text);
+  --component-chart-marker-today: var(--theme-danger);
+  --component-chart-marker-selected: var(--theme-primary);
+  --component-chart-tooltip-background: var(--theme-surface-strong);
+  --component-chart-tooltip-border: var(--theme-border);
+  --component-chart-tooltip-text: var(--theme-text);
+  --component-chart-tooltip-muted-text: var(--theme-text-muted);
+  --component-chart-tooltip-divider: var(--theme-border);
+  --component-chart-tooltip-shadow: none;
+  --component-chart-tab-inactive-background: var(--theme-surface-strong);
+  --component-chart-tab-inactive-border: var(--theme-border);
+  --component-chart-tab-inactive-text: var(--theme-text-muted);
+  --component-chart-tab-active-background: var(--theme-primary);
+  --component-chart-tab-active-border: var(--theme-primary);
+  --component-chart-tab-active-text: var(--theme-primary-text);
+  --component-chart-series-calories: var(--palette-one);
+  --component-training-calories-progress-background: var(--theme-surface-strong);
+  --component-training-calories-progress-start: var(--palette-three);
+  --component-training-calories-progress-end: var(--component-chart-series-calories);
+  --component-chart-series-recovery: var(--palette-two);
+  --component-chart-series-baseline: var(--palette-three);
+  --component-chart-series-measured: var(--palette-four);
+  --component-chart-series-average: var(--palette-five);
+  --component-chart-series-projection: var(--palette-six);
+  --component-chart-focus-strength: var(--palette-one);
+  --component-chart-focus-specific-endurance: var(--palette-six);
+  --component-chart-focus-strength-endurance: var(--palette-five);
+  --component-chart-focus-finger-strength: var(--palette-one);
+  --component-chart-focus-contact-strength: var(--palette-three);
+  --component-chart-focus-volume: var(--palette-two);
+  --component-chart-focus-intervals: var(--palette-four);
+  --component-chart-focus-general-conditioning: var(--palette-five);
+  --component-chart-focus-none: var(--theme-text-muted);
+  --component-chart-activity-rope: var(--palette-two);
+  --component-chart-activity-boulder: var(--palette-five);
+  --component-chart-activity-board: var(--palette-six);
+  --component-chart-activity-spray: var(--palette-three);
+  --component-chart-activity-campus: var(--theme-text-muted);
+  --component-chart-activity-hangboard-start: var(--palette-one);
+  --component-chart-activity-hangboard-end: var(--palette-three);
+  --component-chart-stimulus-aerobic: var(--palette-two);
+  --component-chart-stimulus-strength-endurance: var(--palette-five);
+  --component-chart-stimulus-strength-power: var(--palette-one);
+  --component-chart-stimulus-contact-strength: var(--palette-four);
+  --component-chart-stimulus-strength-endurance-texture: var(--palette-three);
+  --component-chart-stimulus-strength-power-texture: var(--palette-six);
+  --component-chart-stimulus-contact-strength-texture: var(--palette-four);
+  --component-chart-stimulus-area-opacity: 0.6;
+  --component-chart-regularity-outside: var(--theme-surface);
+  --component-chart-regularity-empty: var(--theme-surface-subtle);
+  --component-chart-regularity-active: var(--palette-four);
+  --component-chart-regularity-today: var(--theme-danger);
+  --component-chart-load-base: var(--theme-surface-subtle);
+  --component-chart-load-medium: var(--palette-three);
+  --component-chart-load-high: var(--palette-one);
+  --component-chart-load-extreme: var(--theme-surface-strong);
+  --component-chart-spraywall-soft-start: var(--palette-six);
+  --component-chart-spraywall-soft-end: var(--palette-four);
+  --component-chart-spraywall-medium-start: var(--palette-five);
+  --component-chart-spraywall-medium-end: var(--palette-three);
+  --component-chart-spraywall-hard-start: var(--palette-one);
+  --component-chart-spraywall-hard-end: var(--theme-surface-strong);
+  --component-calendar-empty: var(--theme-surface);
+  --component-calendar-weekend-background: var(--theme-surface-strong);
+  --component-calendar-today: var(--theme-primary);
+  --component-calendar-today-marker: var(--theme-danger);
+  --component-calendar-today-marker-ring: var(--theme-text);
+  --component-calendar-highlight: var(--theme-secondary);
+  --component-calendar-day-text: var(--theme-text);
+  --component-calendar-event-text: var(--theme-primary-text);
+  --component-calendar-event-low-text: var(--theme-primary-text);
+  --component-calendar-event-background: var(--theme-primary);
+  --component-calendar-intensity-low: var(--theme-success);
+  --component-calendar-intensity-medium: var(--theme-success);
+  --component-calendar-intensity-high: var(--theme-tertiary);
+  --component-calendar-intensity-very-high: var(--theme-danger);
+  --component-calendar-selected-background: var(--theme-tertiary);
+  --component-calendar-selected-stripe: var(--theme-danger);
+  --component-calendar-selected-text: var(--theme-tertiary-text);
+  --component-calendar-selected-shadow: none;
+  --component-calendar-sticky-background: var(--theme-surface-raised);
+  --component-calendar-sticky-background-idle: transparent;
+  --component-calendar-sticky-border: 1px solid var(--theme-border);
+  --component-calendar-sticky-shadow: none;
+  --component-grade-chip-background: var(--theme-surface-strong);
+  --component-grade-chip-text: var(--theme-text);
+  --component-grade-distribution-track: var(--theme-surface-strong);
+  --component-grade-distribution-fallback: var(--grade-medium);
+  --component-report-distribution-panel: var(--palette-two);
+  --component-report-distribution-middle: var(--palette-four);
+  --component-report-distribution-rock: var(--palette-three);
+  --component-report-distribution-projects: var(--palette-five);
+
+  --grade-rope-5a: var(--grade-low); --grade-rope-5a-plus: var(--grade-low); --grade-rope-5b: var(--grade-low); --grade-rope-5b-plus: var(--grade-low); --grade-rope-5c: var(--grade-low); --grade-rope-5c-plus: var(--grade-low);
+  --grade-rope-6a: var(--grade-medium); --grade-rope-6a-plus: var(--grade-medium); --grade-rope-6b: var(--grade-medium); --grade-rope-6b-plus: var(--grade-medium); --grade-rope-6c: var(--grade-medium); --grade-rope-6c-plus: var(--grade-medium);
+  --grade-rope-7a: var(--grade-high); --grade-rope-7a-plus: var(--grade-high); --grade-rope-7b: var(--grade-high); --grade-rope-7b-plus: var(--grade-high); --grade-rope-7c: var(--grade-high); --grade-rope-7c-plus: var(--grade-high);
+  --grade-rope-8a: var(--grade-extreme); --grade-rope-8a-plus: var(--grade-extreme); --grade-rope-8b: var(--grade-extreme); --grade-rope-8b-plus: var(--grade-extreme); --grade-rope-8c: var(--grade-extreme); --grade-rope-8c-plus: var(--grade-extreme); --grade-rope-9a: var(--grade-extreme); --grade-rope-9a-plus: var(--grade-extreme); --grade-rope-9b: var(--grade-extreme); --grade-rope-9b-plus: var(--grade-extreme); --grade-rope-9c: var(--grade-extreme); --grade-rope-9c-plus: var(--grade-extreme);
+  --grade-boulder-v1: var(--grade-low); --grade-boulder-v2: var(--grade-low); --grade-boulder-v3: var(--grade-medium); --grade-boulder-v4: var(--grade-medium); --grade-boulder-v5: var(--grade-high); --grade-boulder-v6: var(--grade-high); --grade-boulder-v7: var(--grade-extreme); --grade-boulder-v8: var(--grade-extreme); --grade-boulder-v9: var(--grade-extreme);
+  --grade-moon-v0: var(--grade-low); --grade-kilter-v0: var(--grade-low);
+}
+
+@each $theme in $preset-themes {
+  body.theme-#{$theme} {
+    @for $grade from 1 through 17 {
+      $boulder-band: if($grade < 3, low, if($grade < 5, medium, if($grade < 7, high, extreme)));
+      $board-band: if($grade < 5, low, if($grade < 9, medium, if($grade < 13, high, extreme)));
+      --grade-boulder-v#{$grade}: var(--grade-#{$boulder-band});
+      --grade-moon-v#{$grade}: var(--grade-#{$board-band});
+      --grade-kilter-v#{$grade}: var(--grade-#{$board-band});
+    }
+  }
+}
+
+body.theme-monokai { --theme-color-scheme: dark; --theme-page-background: #272822; --theme-surface: #34352d; --theme-surface-raised: #3e3d32; --theme-surface-strong: #1e1f1c; --theme-surface-subtle: #49483e; --theme-text: #f8f8f2; --theme-text-muted: #b5b3a4; --theme-text-inverse: #272822; --theme-border: #f8f8f233; --theme-border-strong: #f8f8f233; --theme-border-input: #f8f8f233; --theme-primary: #a6e22e; --theme-primary-strong: #84bf16; --theme-primary-soft: #a6e22e26; --theme-primary-text: #1e1f1c; --theme-primary-muted-text: #485b1d; --theme-secondary: #f8f8f2; --theme-secondary-text: #272822; --theme-tertiary: #ae81ff; --theme-tertiary-text: #1e1f1c; --theme-success: #66d9ef; --theme-success-text: #1e1f1c; --theme-danger: #f92672; --theme-danger-strong: #d10f56; --theme-danger-soft: #f9267226; --theme-focus-ring: 0 0 0 2px #f8f8f2, 0 0 0 4px #a6e22e; --theme-backdrop: #11120f; --theme-scrollbar-thumb: #75715e; --theme-scrollbar-thumb-hover: #a6e22e; --theme-text-glow: none; --palette-one: #f92672; --palette-two: #a6e22e; --palette-three: #fd971f; --palette-four: #66d9ef; --palette-five: #e6db74; --palette-six: #ae81ff; --grade-low: #a6e22e; --grade-medium: #e6db74; --grade-high: #66d9ef; --grade-extreme: #f92672; }
+body.theme-monokai { --theme-color-scheme: dark; --theme-page-background: #272822; --theme-surface: #34352d; --theme-surface-raised: #3e3d32; --theme-surface-strong: #1e1f1c; --theme-surface-subtle: #49483e; --theme-text: #f8f8f2; --theme-text-muted: #b5b3a4; --theme-text-inverse: #272822; --theme-border: #f8f8f233; --theme-border-strong: #f8f8f233; --theme-border-input: #f8f8f233; --theme-primary: #a6e22e; --theme-primary-strong: #84bf16; --theme-primary-soft: #a6e22e26; --theme-primary-text: #1e1f1c; --theme-primary-muted-text: #485b1d; --theme-secondary: #f8f8f2; --theme-secondary-text: #272822; --theme-tertiary: #ae81ff; --theme-tertiary-text: #1e1f1c; --theme-success: #66d9ef; --theme-success-text: #1e1f1c; --theme-danger: #f92672; --theme-danger-strong: #d10f56; --theme-danger-soft: #f9267226; --theme-focus-ring: 0 0 0 2px #f8f8f2, 0 0 0 4px #a6e22e; --theme-backdrop: #11120f; --theme-scrollbar-thumb: #75715e; --theme-scrollbar-thumb-hover: #a6e22e; --theme-text-glow: none; --palette-one: #f92672; --palette-two: #a6e22e; --palette-three: #fd971f; --palette-four: #66d9ef; --palette-five: #e6db74; --palette-six: #ae81ff; --grade-low: #a6e22e; --grade-medium: #e6db74; --grade-high: #66d9ef; --grade-extreme: #f92672; --component-button-primary-background: #66d9ef; --component-button-primary-text: #1e1f1c; --component-button-secondary-background: #b7c7e6; --component-button-secondary-text: #272822; --component-button-tertiary-background: #a78bfa; --component-button-tertiary-text: #1e1f1c; --component-button-quadrary-background: #66d9ef; --component-button-quadrary-text: #1e1f1c; --component-button-danger-background: #c084fc26; --component-button-danger-border: #c084fc; --component-button-danger-text: #c084fc; --component-chart-tab-active-background: var(--component-button-primary-background); --component-chart-tab-active-border: var(--component-button-primary-background); --component-chart-tab-active-text: var(--component-button-primary-text); }
+body.theme-monokai { --component-chart-stimulus-aerobic: #7584ff; --component-training-link-text: #7584ff; --component-modal-backdrop: #66d9ef33; --component-weight-entry-modal-backdrop: #66d9ef33; }
+body.theme-text { --theme-color-scheme: dark; --theme-page-background: #000000; --theme-surface: #000000; --theme-surface-raised: #000000; --theme-surface-strong: #111111; --theme-surface-subtle: #1c1c1c; --theme-text: #ffffff; --theme-text-muted: #ffffff; --theme-text-inverse: #000000; --theme-border: #ffffff; --theme-border-strong: #ffffff; --theme-border-input: #ffffff; --theme-primary: #ffffff; --theme-primary-strong: #ffffff; --theme-primary-soft: #ffffff; --theme-primary-text: #000000; --theme-primary-muted-text: #000000; --theme-secondary: #ffffff; --theme-secondary-text: #000000; --theme-tertiary: #ffffff; --theme-tertiary-text: #000000; --theme-success: #ffffff; --theme-success-text: #000000; --theme-danger: #ffffff; --theme-danger-strong: #ffffff; --theme-danger-soft: #111111; --theme-focus-ring: 0 0 0 2px #000000, 0 0 0 4px #ffffff; --theme-backdrop: #000000; --theme-scrollbar-thumb: #ffffff; --theme-scrollbar-thumb-hover: #ffffff; --theme-text-glow: none; --palette-one: #ffffff; --palette-two: #ffffff; --palette-three: #ffffff; --palette-four: #ffffff; --palette-five: #ffffff; --palette-six: #ffffff; --grade-low: #ffffff; --grade-medium: #ffffff; --grade-high: #ffffff; --grade-extreme: #ffffff; }
+body.theme-text {
+  --theme-color-scheme: light;
+  --theme-page-background:
+    radial-gradient(ellipse 78% 92% at 50% 45%, #ffffff 0%, #ffffff 48%, #ffffffcc 68%, #ffffff00 100%),
+    repeating-linear-gradient(135deg, #e9e9e9 0 5px, transparent 5px 10px),
+    #f0f0f0;
+  --theme-surface: transparent;
+  --theme-surface-raised: transparent;
+  --theme-surface-strong: transparent;
+  --theme-surface-subtle: transparent;
+  --theme-text: #000000;
+  --theme-text-muted: #292929;
+  --theme-text-inverse: #ffffff;
+  --theme-border: transparent;
+  --theme-border-strong: transparent;
+  --theme-border-input: #d0d0d0;
+  --theme-primary: #050505;
+  --theme-primary-strong: #000000;
+  --theme-primary-soft: #dedede;
+  --theme-primary-text: #ffffff;
+  --theme-primary-muted-text: #ffffff;
+  --theme-secondary: #d6d6d6;
+  --theme-secondary-text: #000000;
+  --theme-tertiary: #555555;
+  --theme-tertiary-text: #ffffff;
+  --theme-success: #8b8b8b;
+  --theme-success-text: #000000;
+  --theme-danger: #1b1b1b;
+  --theme-danger-strong: #000000;
+  --theme-danger-soft: #e2e2e2;
+  --theme-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #000000;
+  --theme-backdrop: #000000;
+  --theme-scrollbar-thumb: #454545;
+  --theme-scrollbar-thumb-hover: #000000;
+  --palette-one: #000000;
+  --palette-two: #343434;
+  --palette-three: #5f5f5f;
+  --palette-four: #858585;
+  --palette-five: #ababab;
+  --palette-six: #d0d0d0;
+  --grade-low: #c8c8c8;
+  --grade-medium: #909090;
+  --grade-high: #585858;
+  --grade-extreme: #000000;
+  --grade-rope-4a: #ffffff; --grade-rope-4a-plus: #ffffff; --grade-rope-4b: #ffffff; --grade-rope-4b-plus: #ffffff; --grade-rope-4c: #ffffff; --grade-rope-4c-plus: #ffffff; --grade-rope-4-text: #000000;
+  --grade-rope-5a: #ffffff; --grade-rope-5a-plus: #ffffff; --grade-rope-5b: #ffffff; --grade-rope-5b-plus: #ffffff; --grade-rope-5c: #ffffff; --grade-rope-5c-plus: #ffffff; --grade-rope-5-text: #000000;
+  --grade-rope-6a: #f0f0f0; --grade-rope-6a-plus: #e6e6e6; --grade-rope-6b: #dddddd; --grade-rope-6b-plus: #d2d2d2; --grade-rope-6c: #c8c8c8; --grade-rope-6c-plus: #bdbdbd;
+  --grade-rope-7a: #b3b3b3; --grade-rope-7a-plus: #a8a8a8; --grade-rope-7b: #9e9e9e; --grade-rope-7b-plus: #939393; --grade-rope-7c: #898989; --grade-rope-7c-plus: #7e7e7e;
+  --grade-rope-8a: #747474; --grade-rope-8a-plus: #696969; --grade-rope-8b: #5f5f5f; --grade-rope-8b-plus: #545454; --grade-rope-8c: #4a4a4a; --grade-rope-8c-plus: #3f3f3f;
+  --grade-rope-9a: #353535; --grade-rope-9a-plus: #2a2a2a; --grade-rope-9b: #202020; --grade-rope-9b-plus: #151515; --grade-rope-9c: #0b0b0b; --grade-rope-9c-plus: #000000;
+  --grade-boulder-v1: #f0f0f0; --grade-boulder-v2: #d2d2d2; --grade-boulder-v3: #b4b4b4; --grade-boulder-v4: #969696; --grade-boulder-v5: #787878; --grade-boulder-v6: #5a5a5a; --grade-boulder-v7: #3c3c3c; --grade-boulder-v8: #1e1e1e; --grade-boulder-v9: #000000;
+  --grade-boulder-v10: #000000; --grade-boulder-v11: #000000; --grade-boulder-v12: #000000; --grade-boulder-v13: #000000; --grade-boulder-v14: #000000; --grade-boulder-v15: #000000; --grade-boulder-v16: #000000; --grade-boulder-v17: #000000;
+  --grade-moon-v1: #f0f0f0; --grade-moon-v2: #d2d2d2; --grade-moon-v3: #b4b4b4; --grade-moon-v4: #969696; --grade-moon-v5: #787878; --grade-moon-v6: #5a5a5a; --grade-moon-v7: #3c3c3c; --grade-moon-v8: #1e1e1e; --grade-moon-v9: #000000;
+  --grade-moon-v10: #000000; --grade-moon-v11: #000000; --grade-moon-v12: #000000; --grade-moon-v13: #000000; --grade-moon-v14: #000000; --grade-moon-v15: #000000; --grade-moon-v16: #000000; --grade-moon-v17: #000000;
+  --grade-kilter-v1: #f0f0f0; --grade-kilter-v2: #d2d2d2; --grade-kilter-v3: #b4b4b4; --grade-kilter-v4: #969696; --grade-kilter-v5: #787878; --grade-kilter-v6: #5a5a5a; --grade-kilter-v7: #3c3c3c; --grade-kilter-v8: #1e1e1e; --grade-kilter-v9: #000000;
+  --grade-kilter-v10: #000000; --grade-kilter-v11: #000000; --grade-kilter-v12: #000000; --grade-kilter-v13: #000000; --grade-kilter-v14: #000000; --grade-kilter-v15: #000000; --grade-kilter-v16: #000000; --grade-kilter-v17: #000000;
+  --component-chart-stimulus-aerobic: #222222;
+  --component-chart-stimulus-strength-endurance: #666666;
+  --component-chart-stimulus-strength-endurance-texture: #ededed;
+  --component-chart-stimulus-strength-power: #ffffff;
+  --component-chart-stimulus-strength-power-texture: #000000;
+  --component-chart-stimulus-contact-strength: #303030;
+  --component-chart-stimulus-contact-strength-texture: #d7d7d7;
+  --component-chart-stimulus-area-opacity: 1;
+  --component-chart-regularity-outside: #f8f8f8;
+  --component-chart-regularity-empty: #ededed;
+  --component-chart-regularity-active: #222222;
+  --component-chart-regularity-today: #000000;
+  --component-chart-load-base: #ededed;
+  --component-chart-load-medium: #b0b0b0;
+  --component-chart-load-high: #555555;
+  --component-chart-load-extreme: #000000;
+  --component-calendar-highlight: #555555;
+  --component-calendar-day-text: #222222;
+  --component-calendar-weekend-background: #c0c0c0;
+  --component-calendar-event-background: #222222;
+  --component-calendar-intensity-low: #222222;
+  --component-calendar-intensity-medium: #222222;
+  --component-calendar-intensity-high: #222222;
+  --component-calendar-intensity-very-high: #222222;
+  --component-layout-background: transparent;
+  --component-list-card-background: transparent;
+  --component-metric-card-background: transparent;
+  --component-calendar-panel-background: transparent;
+  --component-calendar-viewport-background: transparent;
+  --component-calendar-week-body-background: #f0f0f0;
+  --component-training-card-background: transparent;
+  --component-training-pill-background: transparent;
+  --component-training-timeline-track: transparent;
+  --component-training-timeline-height: 20px;
+  --component-training-timeline-radius: 0;
+  --component-soft-tag-background: transparent;
+  --component-soft-pill-background: transparent;
+  --component-upload-action-background: transparent;
+  --component-navigation-button-background: transparent;
+  --component-modal-backdrop:
+    radial-gradient(ellipse 42% 54% at 50% 45%, #ffffff 0%, #ffffff 28%, #ffffffe6 48%, #ffffff00 78%),
+    repeating-linear-gradient(135deg, #e9e9e9 0 5px, transparent 5px 10px),
+    #f0f0f0;
+  --component-weight-entry-modal-backdrop: var(--component-modal-backdrop);
+  --component-modal-background: #ffffff;
+  --component-training-preview-drawer-background: #ffffff;
+  --component-modal-close-background: #ffffff;
+  --component-chart-tooltip-background: #ffffff;
+  --component-chart-tab-inactive-background: transparent;
+  --component-calendar-sticky-background: transparent;
+  --component-grade-chip-background: transparent;
+  --component-grade-distribution-track: transparent;
+  --component-header-border: none;
+  --component-drawer-border: none;
+  --component-panel-border: none;
+  --component-card-border: none;
+  --component-soft-tag-border: none;
+  --component-soft-pill-border: none;
+  --component-upload-action-border: none;
+  --component-navigation-button-border: none;
+  --component-input-border: 1px solid var(--theme-border-input);
+  --component-button-ghost-border: none;
+  --component-button-danger-border: none;
+  --component-spraywall-option-active-border: none;
+  --component-training-route-grade-border: none;
+  --component-modal-border: none;
+  --component-chart-tooltip-border: none;
+  --component-chart-tab-inactive-border: none;
+  --component-chart-tab-active-border: none;
+  --component-calendar-sticky-border: none;
+}
+
+body.theme-text,
+body.theme-text button,
+body.theme-text input,
+body.theme-text select,
+body.theme-text textarea {
+  font-weight: 700;
+}
+body.theme-dark { --theme-color-scheme: dark; --theme-page-background: #14161a; --theme-surface: #1d2026; --theme-surface-raised: #262a32; --theme-surface-strong: #101216; --theme-surface-subtle: #303640; --theme-text: #edf1f5; --theme-text-muted: #aab3bf; --theme-text-inverse: #101216; --theme-border: #4c5665; --theme-border-strong: #697687; --theme-border-input: #5a6575; --theme-primary: #5ba7ff; --theme-primary-strong: #3287e8; --theme-primary-soft: #5ba7ff26; --theme-primary-text: #071726; --theme-primary-muted-text: #183f6d; --theme-secondary: #e6ebf0; --theme-secondary-text: #14161a; --theme-tertiary: #b38bf5; --theme-tertiary-text: #171020; --theme-success: #59c49a; --theme-success-text: #071d17; --theme-danger: #f07878; --theme-danger-strong: #d85858; --theme-danger-soft: #f0787826; --theme-focus-ring: 0 0 0 2px #14161a, 0 0 0 4px #5ba7ff; --theme-backdrop: #07090c; --theme-scrollbar-thumb: #4c5665; --theme-scrollbar-thumb-hover: #697687; --theme-text-glow: none; --palette-one: #f07878; --palette-two: #59c49a; --palette-three: #e7b85d; --palette-four: #5ba7ff; --palette-five: #b38bf5; --palette-six: #71d2d0; --grade-low: #59c49a; --grade-medium: #e7b85d; --grade-high: #5ba7ff; --grade-extreme: #f07878; }
+body.theme-flower { --theme-color-scheme: light; --theme-page-background: #fff4fa; --theme-surface: #fffafd; --theme-surface-raised: #ffffff; --theme-surface-strong: #f5e8f1; --theme-surface-subtle: #fae4ef; --theme-text: #39223a; --theme-text-muted: #7f637b; --theme-text-inverse: #fffafd; --theme-border: #dcb4cb; --theme-border-strong: #c891b5; --theme-border-input: #d6a8c3; --theme-primary: #d9577b; --theme-primary-strong: #b63d63; --theme-primary-soft: #f8d9e5; --theme-primary-text: #fffafd; --theme-primary-muted-text: #7d2743; --theme-secondary: #6f4fa4; --theme-secondary-text: #fffafd; --theme-tertiary: #e7a341; --theme-tertiary-text: #34220a; --theme-success: #4d9976; --theme-success-text: #f6fffa; --theme-danger: #b83d5d; --theme-danger-strong: #963048; --theme-danger-soft: #f7d6e0; --theme-focus-ring: 0 0 0 2px #fffafd, 0 0 0 4px #d9577b; --theme-backdrop: #281526; --theme-scrollbar-thumb: #c891b5; --theme-scrollbar-thumb-hover: #a66f97; --theme-text-glow: none; --palette-one: #d9577b; --palette-two: #4d9976; --palette-three: #e7a341; --palette-four: #569ec2; --palette-five: #8b63b5; --palette-six: #ce6caa; --grade-low: #4d9976; --grade-medium: #e7a341; --grade-high: #569ec2; --grade-extreme: #d9577b; }
+
+body.theme-flower {
+  --component-modal-backdrop: rgba(40, 21, 38, 0.48);
+  --component-weight-entry-modal-backdrop: rgba(40, 21, 38, 0.48);
+}

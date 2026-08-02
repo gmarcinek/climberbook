@@ -20,7 +20,16 @@ APP_SERVICE="climberbook"
 
 Przy każdym wdrożeniu zmień tylko `VERSION`.
 
-## 1. Zbuduj obraz lokalnie
+## 1. Sprawdź TypeScript i TSX
+
+Przed zbudowaniem obrazu uruchom jawne sprawdzenie typów. Nie kontynuuj
+wdrożenia, jeżeli polecenie zwróci błąd:
+
+```bash
+npx tsc --noEmit
+```
+
+## 2. Zbuduj obraz lokalnie
 
 Uruchom w głównym katalogu projektu, obok `Dockerfile`:
 
@@ -36,7 +45,7 @@ Sprawdź obraz:
 docker image ls | grep -i climberbook
 ```
 
-## 2. Oznacz obraz tagami
+## 3. Oznacz obraz tagami
 
 Tag konkretnej wersji:
 
@@ -60,7 +69,7 @@ Sprawdź tagi:
 docker image ls | grep -i climberbook
 ```
 
-## 3. Zaloguj się do Azure Container Registry
+## 4. Zaloguj się do Azure Container Registry
 
 ```bash
 az login
@@ -72,7 +81,7 @@ Jeżeli jesteś już zalogowany, wystarczy:
 az acr login --name "$ACR"
 ```
 
-## 4. Wypchnij obrazy do ACR
+## 5. Wypchnij obrazy do ACR
 
 ```bash
 docker push "$ACR_HOST/$IMAGE:$VERSION"
@@ -89,7 +98,7 @@ az acr repository show-tags \
   --output table
 ```
 
-## 5. Zmigruj produkcyjną bazę danych
+## 6. Zmigruj produkcyjną bazę danych
 
 Wykonaj migrację **przed** przełączeniem App Service na nowy obraz. Liquibase
 musi uruchamiać się z Azure albo z hosta dopuszczonego przez firewall serwera
@@ -117,7 +126,7 @@ Jeżeli tymczasowo dodasz adres do firewalla Azure PostgreSQL, usuń tę reguł�
 zakończeniu migracji. Hasła pozostają w `.env.azure` lub w sekretach Azure i
 nie mogą trafić do obrazu ani do logów wdrożenia.
 
-## 6. Ustaw nową wersję w App Service
+## 7. Ustaw nową wersję w App Service
 
 ```bash
 az webapp config container set \
@@ -129,7 +138,7 @@ az webapp config container set \
 
 App Service jest przypinany do konkretnej wersji, na przykład `0.1.2`. Tag `latest` jest pomocniczy.
 
-## 7. Uruchom aplikację ponownie
+## 8. Uruchom aplikację ponownie
 
 ```bash
 az webapp restart \
@@ -137,7 +146,7 @@ az webapp restart \
   --name "$APP_SERVICE"
 ```
 
-## 8. Sprawdź wdrożoną wersję
+## 9. Sprawdź wdrożoną wersję
 
 ```bash
 az webapp config show \
@@ -173,6 +182,8 @@ IMAGE="climberbook"
 
 RESOURCE_GROUP="rm_gmarcinek"
 APP_SERVICE="climberbook"
+
+npx tsc --noEmit
 
 docker build \
   -t "$LOCAL_IMAGE:latest" \

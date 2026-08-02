@@ -16,6 +16,7 @@ import {
   type UserProfileDraft,
 } from "@/components/climberbook/common/training";
 import {
+  addMonths,
   addDays,
   formatDateIso,
   getTrainingsForDate,
@@ -38,6 +39,7 @@ type UseClimberbookStatsOptions = {
   selectedDate: string | null;
   today: string;
   trainingRangeStart: string;
+  visibleTrainingMonthCount?: number;
   chartRangeOverride?: { start: string; end: string };
   trainings: TrainingRecord[];
   weightEntries: WeightEntryRecord[];
@@ -70,13 +72,21 @@ export function useClimberbookStats({
   selectedDate,
   today,
   trainingRangeStart,
+  visibleTrainingMonthCount = 1,
   chartRangeOverride,
   trainings,
   weightEntries,
 }: UseClimberbookStatsOptions) {
+  const visibleTrainingRangeStart = useMemo(
+    () =>
+      visibleTrainingMonthCount > 1
+        ? addMonths(trainingRangeStart, -(visibleTrainingMonthCount - 1))
+        : trainingRangeStart,
+    [trainingRangeStart, visibleTrainingMonthCount],
+  );
   const visibleRange = useMemo(
-    () => getVisibleRange(trainingRangeStart, 1),
-    [trainingRangeStart],
+    () => getVisibleRange(visibleTrainingRangeStart, visibleTrainingMonthCount),
+    [visibleTrainingMonthCount, visibleTrainingRangeStart],
   );
   const trainingsByDate = useMemo(
     () =>

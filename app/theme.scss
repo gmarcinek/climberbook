@@ -1,0 +1,40 @@
+@use "themes/default";
+@use "themes/old-money";
+@use "themes/presets";
+
+/* Common primitives shared by every theme. */
+:root {
+  --common-white: #ffffff;
+  --common-black: #000000;
+  --common-transparent: transparent;
+  --common-shadow-black: rgba(0, 0, 0, 0.24);
+  --common-focus-ring: rgba(209, 109, 63, 0.14);
+  --common-radius-none: 0;
+  --common-radius-sm: 4px;
+  --common-radius-md: 8px;
+  --common-radius-lg: 12px;
+  --common-space-1: 0.25rem;
+  --common-space-2: 0.375rem;
+  --common-space-3: 0.5rem;
+  --common-space-4: 0.75rem;
+  --common-space-5: 1rem;
+  --common-space-6: 1.5rem;
+  --common-space-7: 2rem;
+  --common-font-body: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+  --common-font-size-xs: 0.75rem;
+  --common-font-size-sm: 0.86rem;
+  --common-font-size-md: 0.94rem;
+  --common-font-size-lg: 1rem;
+  --common-font-size-xl: 1.4rem;
+  --common-font-weight-regular: 400;
+  --common-font-weight-medium: 500;
+  --common-font-weight-semibold: 600;
+  --common-font-weight-bold: 700;
+  --common-button-height: 44px;
+  --common-button-icon-size: 44px;
+  --common-button-padding-inline: 1rem;
+  --common-button-font-size: 0.94rem;
+  --common-z-header: 20;
+  --common-z-modal: 1000;
+  --common-z-toast: 2000;
+}

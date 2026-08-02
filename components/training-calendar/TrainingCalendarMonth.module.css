@@ -7,6 +7,11 @@
   box-sizing: border-box;
 }
 
+.calendarMonth--headerless {
+  margin-top: 0;
+  border-top: 0;
+}
+
 .heading {
   padding: 0 0 8px;
   margin-bottom: 8px;

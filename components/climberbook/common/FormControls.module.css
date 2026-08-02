@@ -1,10 +1,13 @@
 .control {
   width: 100%;
-  border: 1px solid rgb(227 215 215 / 68%);
+  border: var(--component-input-border);
   padding: 0.75rem 1rem;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
-  color: var(--text);
+  background: var(--component-input-background);
+  color: var(--component-input-text);
+}
+
+.size--small {
+  padding: 0.4rem 0.55rem;
 }
 
 input.control[type="date"] {
@@ -16,11 +19,20 @@ select.control {
   appearance: none;
   padding-right: 3rem;
   background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%231e1916' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-position: 0 0, right 1rem center;
-  background-repeat: repeat, no-repeat;
-  background-size: auto, 0.95rem;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%231e1916' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(
+      var(--component-input-background),
+      var(--component-input-background)
+    );
+  background-position: right 1rem center, 0 0;
+  background-repeat: no-repeat, repeat;
+  background-size: 0.95rem, auto;
+}
+
+select.control.size--small {
+  padding-right: 1.7rem;
+  background-position: right 0.55rem center, 0 0;
+  background-size: 0.8rem, auto;
 }
 
 .textarea {
@@ -87,12 +99,12 @@ select.control {
 }
 
 .stepButton {
-  min-width: 42px;
-  min-height: 44px;
+  min-width: var(--common-button-icon-size);
+  min-height: var(--common-button-height);
   border: none;
-  padding: 0.75rem 0.9rem;
-  background: rgb(205 205 205 / 74%);
-  color: var(--text);
+  padding: 0;
+  background: var(--component-button-ghost-background);
+  color: var(--theme-text);
   cursor: pointer;
 }
 
@@ -106,13 +118,13 @@ select.control {
 .rangeSlider {
   width: 100%;
   margin: 0;
-  accent-color: #168f91;
+  accent-color: var(--theme-success);
   cursor: pointer;
 }
 
 .rangeValue {
   min-width: 60px;
-  color: var(--text);
+  color: var(--theme-text);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   text-align: right;

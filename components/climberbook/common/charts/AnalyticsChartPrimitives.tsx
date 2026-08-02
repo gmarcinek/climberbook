@@ -8,11 +8,14 @@ import {
 } from "@/components/climberbook/common/styles";
 
 export const analyticsChartGridStyle = {
-  stroke: "rgba(100, 87, 77, 0.14)",
+  stroke: "var(--component-chart-grid)",
   strokeDasharray: "3 5",
 };
 
-export const analyticsChartAxisTickStyle = { fontSize: 9.6 };
+export const analyticsChartAxisTickStyle = {
+  fontSize: 9.6,
+  fill: "var(--component-chart-axis)",
+};
 
 export function formatAnalyticsDate(value: string) {
   return new Intl.DateTimeFormat("pl-PL", {
@@ -53,7 +56,5 @@ export function AnalyticsChartPanel({
     return content;
   }
 
-  return (
-    <Panel>{content}</Panel>
-  );
+  return <Panel>{content}</Panel>;
 }

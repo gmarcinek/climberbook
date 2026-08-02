@@ -52,45 +52,63 @@ const ropeExponentialGrades = [
   "9c+",
 ];
 
+const ropePriceGrades = [
+  "4a",
+  "4a+",
+  "4b",
+  "4b+",
+  "4c",
+  "4c+",
+  ...ropeLinearGrades,
+  ...ropeExponentialGrades,
+];
+const ropeCoinGradeMultiplier = 1.15;
+
 export const ropeCoinPer10mByGrade: Record<string, number> = (() => {
-  const prices: Record<string, number> = {
-    "4a": 0.0002,
-    "4a+": 0.00025,
-    "4b": 0.0003,
-    "4b+": 0.00035,
-    "4c": 0.00038,
-    "4c+": 0.00039,
-  };
+  const sixBGradeIndex = ropePriceGrades.indexOf("6b");
 
-  ropeLinearGrades.forEach((grade, index) => {
-    prices[grade] = 0.0004 + index * 0.0002;
-  });
-
-  let price = prices["6b"];
-  ropeExponentialGrades.forEach((grade) => {
-    price *= 1.5;
-    prices[grade] = price;
-  });
-
-  return prices;
+  return Object.fromEntries(
+    ropePriceGrades.map((grade, index) => [
+      grade,
+      0.002 * ropeCoinGradeMultiplier ** (index - sixBGradeIndex),
+    ]),
+  );
 })();
 
-const boulderCoinByGrade: Record<string, number> = Array.from(
-  { length: 12 },
-  (_value, index) => index + 1,
-).reduce<Record<string, number>>((prices, level) => {
-  prices[`V${level}`] = level * 0.0035;
-  prices[String(level)] = prices[`V${level}`];
+const boulderRopeGradeByV: Record<string, string> = {
+  V1: "6a+",
+  V2: "6b",
+  V3: "6c",
+  V4: "7a+",
+  V5: "7b",
+  V6: "7b+",
+  V7: "7c",
+  V8: "7c+",
+  V9: "8a",
+  V10: "8a+",
+  V11: "8b",
+  V12: "8b+",
+};
+
+const boulderCoinByGrade: Record<string, number> = Object.entries(
+  boulderRopeGradeByV,
+).reduce<Record<string, number>>((prices, [grade, ropeGrade]) => {
+  const coin = (ropeCoinPer10mByGrade[ropeGrade] ?? minimumCoin) / 3;
+  prices[grade] = coin;
+  prices[grade.slice(1)] = coin;
   return prices;
 }, {});
 
-const boulderSurfaceCoinMultiplier = {
-  baldy: 0.08575,
-  moon: 1,
-  kilter: 1,
-} satisfies Partial<Record<TrainingSurface, number>>;
+const spraywallAttemptProfile = {
+  soft: { grade: "V2", attemptIntervalMinutes: 2 },
+  medium: { grade: "V3", attemptIntervalMinutes: 4 },
+  hard: { grade: "V7", attemptIntervalMinutes: 5.5 },
+} satisfies Record<
+  SpraywallIntensity,
+  { grade: keyof typeof boulderRopeGradeByV; attemptIntervalMinutes: number }
+>;
 
-export const stimulusAlgorithmVersion = 1;
+export const stimulusAlgorithmVersion = 3;
 
 const surfaceHourlyCoin: Record<TrainingSurface | "general", number> = {
   lina: 0.012,
@@ -109,200 +127,174 @@ const surfaceHourlyCoin: Record<TrainingSurface | "general", number> = {
   general: 0.01,
 };
 
-const spraywallHourlyCoinByIntensity = {
-  soft: 0.006,
-  medium: 0.04,
-  hard: 0.3,
-} satisfies Record<SpraywallIntensity, number>;
-
 const surfaceDimensionSplits: Record<
   TrainingSurface | "general",
   FatigueDimensions
 > = {
   lina: {
-    fitness: 0.35,
-    structural: 0.15,
-    strength: 0.1,
-    fingers: 0.15,
-    skill: 0.25,
+    aerobicEndurance: 0.45,
+    strengthEndurance: 0.35,
+    strengthPower: 0.1,
+    contactStrength: 0.1,
   },
   baldy: {
-    fitness: 0.1,
-    structural: 0.2,
-    strength: 0.35,
-    fingers: 0.2,
-    skill: 0.15,
+    aerobicEndurance: 0.15,
+    strengthEndurance: 0.2,
+    strengthPower: 0.45,
+    contactStrength: 0.2,
   },
   moon: {
-    fitness: 0,
-    structural: 0.2,
-    strength: 0.4,
-    fingers: 0.35,
-    skill: 0.05,
+    aerobicEndurance: 0.05,
+    strengthEndurance: 0.15,
+    strengthPower: 0.55,
+    contactStrength: 0.25,
   },
   kilter: {
-    fitness: 0,
-    structural: 0.2,
-    strength: 0.4,
-    fingers: 0.35,
-    skill: 0.05,
+    aerobicEndurance: 0.05,
+    strengthEndurance: 0.15,
+    strengthPower: 0.55,
+    contactStrength: 0.25,
   },
   spraywall: {
-    fitness: 0.3,
-    structural: 0.15,
-    strength: 0.15,
-    fingers: 0.2,
-    skill: 0.2,
+    aerobicEndurance: 0.2,
+    strengthEndurance: 0.25,
+    strengthPower: 0.35,
+    contactStrength: 0.2,
   },
   chwytotablica: {
-    fitness: 0,
-    structural: 0.3,
-    strength: 0.15,
-    fingers: 0.55,
-    skill: 0,
+    aerobicEndurance: 0.05,
+    strengthEndurance: 0.1,
+    strengthPower: 0.2,
+    contactStrength: 0.65,
   },
   campus: {
-    fitness: 0.1,
-    structural: 0.3,
-    strength: 0.3,
-    fingers: 0.25,
-    skill: 0.05,
+    aerobicEndurance: 0,
+    strengthEndurance: 0.1,
+    strengthPower: 0.4,
+    contactStrength: 0.5,
   },
   drazek: {
-    fitness: 0.15,
-    structural: 0.25,
-    strength: 0.5,
-    fingers: 0.05,
-    skill: 0.05,
+    aerobicEndurance: 0.1,
+    strengthEndurance: 0.15,
+    strengthPower: 0.65,
+    contactStrength: 0.1,
   },
   silownia: {
-    fitness: 0.2,
-    structural: 0.3,
-    strength: 0.4,
-    fingers: 0.05,
-    skill: 0.05,
+    aerobicEndurance: 0.1,
+    strengthEndurance: 0.1,
+    strengthPower: 0.7,
+    contactStrength: 0.1,
   },
   bieznia: {
-    fitness: 0.8,
-    structural: 0.1,
-    strength: 0.05,
-    fingers: 0,
-    skill: 0.05,
+    aerobicEndurance: 0.85,
+    strengthEndurance: 0.1,
+    strengthPower: 0.05,
+    contactStrength: 0,
   },
   rower: {
-    fitness: 0.8,
-    structural: 0.05,
-    strength: 0.1,
-    fingers: 0,
-    skill: 0.05,
+    aerobicEndurance: 0.85,
+    strengthEndurance: 0.1,
+    strengthPower: 0.05,
+    contactStrength: 0,
   },
   bieg: {
-    fitness: 0.7,
-    structural: 0.2,
-    strength: 0.05,
-    fingers: 0,
-    skill: 0.05,
+    aerobicEndurance: 0.8,
+    strengthEndurance: 0.1,
+    strengthPower: 0.1,
+    contactStrength: 0,
   },
   treking: {
-    fitness: 0.65,
-    structural: 0.2,
-    strength: 0.1,
-    fingers: 0,
-    skill: 0.05,
+    aerobicEndurance: 0.75,
+    strengthEndurance: 0.15,
+    strengthPower: 0.1,
+    contactStrength: 0,
   },
   general: {
-    fitness: 0.35,
-    structural: 0.25,
-    strength: 0.25,
-    fingers: 0.05,
-    skill: 0.1,
+    aerobicEndurance: 0.4,
+    strengthEndurance: 0.25,
+    strengthPower: 0.25,
+    contactStrength: 0.1,
   },
 };
 
 const spraywallDimensionSplits = {
   soft: {
-    fitness: 1,
-    structural: 0,
-    strength: 0,
-    fingers: 0,
-    skill: 0,
+    aerobicEndurance: 0.8,
+    strengthEndurance: 0.2,
+    strengthPower: 0,
+    contactStrength: 0,
   },
   medium: {
-    fitness: 0.35,
-    structural: 0.2,
-    strength: 0.2,
-    fingers: 0.15,
-    skill: 0.1,
+    aerobicEndurance: 0.2,
+    strengthEndurance: 0.45,
+    strengthPower: 0.25,
+    contactStrength: 0.1,
   },
   hard: {
-    fitness: 0.05,
-    structural: 0.25,
-    strength: 0.35,
-    fingers: 0.3,
-    skill: 0.05,
+    aerobicEndurance: 0.05,
+    strengthEndurance: 0.2,
+    strengthPower: 0.5,
+    contactStrength: 0.25,
   },
 } satisfies Record<SpraywallIntensity, FatigueDimensions>;
 
 const ropeDimensionSplits = {
   low: {
-    fitness: 0.4,
-    structural: 0.1,
-    strength: 0.05,
-    fingers: 0.05,
-    skill: 0.4,
+    aerobicEndurance: 0.7,
+    strengthEndurance: 0.25,
+    strengthPower: 0.03,
+    contactStrength: 0.02,
   },
   medium: {
-    fitness: 0.35,
-    structural: 0.15,
-    strength: 0.1,
-    fingers: 0.15,
-    skill: 0.25,
+    aerobicEndurance: 0.4,
+    strengthEndurance: 0.4,
+    strengthPower: 0.12,
+    contactStrength: 0.08,
   },
   high: {
-    fitness: 0.3,
-    structural: 0.2,
-    strength: 0.15,
-    fingers: 0.25,
-    skill: 0.1,
+    aerobicEndurance: 0.2,
+    strengthEndurance: 0.4,
+    strengthPower: 0.25,
+    contactStrength: 0.15,
   },
   elite: {
-    fitness: 0.25,
-    structural: 0.25,
-    strength: 0.2,
-    fingers: 0.25,
-    skill: 0.05,
+    aerobicEndurance: 0.1,
+    strengthEndurance: 0.25,
+    strengthPower: 0.45,
+    contactStrength: 0.2,
   },
 } satisfies Record<string, FatigueDimensions>;
 
 const inclinationDimensionMultipliers = {
   slab: {
-    fitness: 1.05,
-    structural: 0.8,
-    strength: 0.7,
-    fingers: 0.8,
-    skill: 1.3,
+    aerobicEndurance: 1.05,
+    strengthEndurance: 0.9,
+    strengthPower: 0.7,
+    contactStrength: 0.8,
   },
-  vertical: { fitness: 1, structural: 1, strength: 1, fingers: 1, skill: 1 },
+  vertical: {
+    aerobicEndurance: 1,
+    strengthEndurance: 1,
+    strengthPower: 1,
+    contactStrength: 1,
+  },
   slight_overhang: {
-    fitness: 1,
-    structural: 1.1,
-    strength: 1.1,
-    fingers: 1.15,
-    skill: 0.95,
+    aerobicEndurance: 1,
+    strengthEndurance: 1.1,
+    strengthPower: 1.1,
+    contactStrength: 1.15,
   },
   overhang: {
-    fitness: 0.9,
-    structural: 1.2,
-    strength: 1.25,
-    fingers: 1.25,
-    skill: 0.85,
+    aerobicEndurance: 0.9,
+    strengthEndurance: 1.15,
+    strengthPower: 1.25,
+    contactStrength: 1.25,
   },
   steep: {
-    fitness: 0.85,
-    structural: 1.3,
-    strength: 1.35,
-    fingers: 1.35,
-    skill: 0.75,
+    aerobicEndurance: 0.85,
+    strengthEndurance: 1.15,
+    strengthPower: 1.35,
+    contactStrength: 1.35,
   },
 } satisfies Record<
   NonNullable<
@@ -318,11 +310,10 @@ function normalizeDimensions(dimensions: FatigueDimensions): FatigueDimensions {
   );
   if (total === 0) return surfaceDimensionSplits.general;
   return {
-    fitness: dimensions.fitness / total,
-    structural: dimensions.structural / total,
-    strength: dimensions.strength / total,
-    fingers: dimensions.fingers / total,
-    skill: dimensions.skill / total,
+    aerobicEndurance: dimensions.aerobicEndurance / total,
+    strengthEndurance: dimensions.strengthEndurance / total,
+    strengthPower: dimensions.strengthPower / total,
+    contactStrength: dimensions.contactStrength / total,
   };
 }
 
@@ -333,15 +324,101 @@ function parseGrades(value: string | undefined) {
     .filter(Boolean);
 }
 
+type GradeReference = {
+  average: number;
+  maximum: number;
+};
+
+function getGradeRank(surface: TrainingSurface, grade: string) {
+  if (surface === "lina") return ropePriceGrades.indexOf(grade);
+
+  if (surface === "baldy" || surface === "moon" || surface === "kilter") {
+    const match = /^V(\d+)$/i.exec(grade.trim());
+    return match ? Number(match[1]) : -1;
+  }
+
+  return -1;
+}
+
+function getGradeReference(
+  training: Pick<TrainingRecord, "id" | "athleteId" | "date">,
+  surface: TrainingSurface,
+  referenceTrainings: TrainingRecord[],
+): GradeReference | null {
+  const since = new Date(`${training.date}T00:00:00`);
+  since.setDate(since.getDate() - 60);
+  const sinceDate = since.toISOString().slice(0, 10);
+  const ranks = referenceTrainings
+    .filter(
+      (candidate) =>
+        candidate.id !== training.id &&
+        candidate.athleteId === training.athleteId &&
+        candidate.date >= sinceDate &&
+        candidate.date < training.date,
+    )
+    .flatMap((candidate) =>
+      parseGrades(candidate.difficultyBySurface?.[surface]).map((grade) =>
+        getGradeRank(surface, grade),
+      ),
+    )
+    .filter((rank) => rank >= 0);
+
+  if (ranks.length < 3) return null;
+
+  return {
+    average: ranks.reduce((total, rank) => total + rank, 0) / ranks.length,
+    maximum: Math.max(...ranks),
+  };
+}
+
+function getBoulderDimensionSplit(
+  surface: "baldy" | "moon" | "kilter",
+  grades: string[],
+  reference: GradeReference | null,
+) {
+  const highestRank = Math.max(
+    ...grades.map((grade) => getGradeRank(surface, grade)),
+  );
+
+  if (!reference || highestRank < 0) return surfaceDimensionSplits[surface];
+  if (
+    highestRank <= reference.average - 2 ||
+    highestRank <= reference.maximum - 3
+  ) {
+    return {
+      aerobicEndurance: 0.6,
+      strengthEndurance: 0.25,
+      strengthPower: 0.1,
+      contactStrength: 0.05,
+    } satisfies FatigueDimensions;
+  }
+  if (highestRank <= reference.maximum) {
+    return {
+      aerobicEndurance: 0.15,
+      strengthEndurance: 0.45,
+      strengthPower: 0.25,
+      contactStrength: 0.15,
+    } satisfies FatigueDimensions;
+  }
+
+  return surfaceDimensionSplits[surface];
+}
+
 function getRopeDimensionSplit(
   grade: string,
   inclination?: FacilityRecord["capabilities"]["ropeWalls"][number]["inclination"],
+  reference?: GradeReference | null,
 ): FatigueDimensions {
   const gradeIndex = [...ropeLinearGrades, ...ropeExponentialGrades].indexOf(
     grade,
   );
-  const base =
-    gradeIndex <= 8
+  const base = reference
+    ? gradeIndex <= reference.average - 2 || gradeIndex <= reference.maximum - 3
+      ? ropeDimensionSplits.low
+      : gradeIndex <= reference.maximum
+        ? ropeDimensionSplits.medium
+        : ropeDimensionSplits.high
+    : gradeIndex <= 8
       ? ropeDimensionSplits.low
       : gradeIndex <= 14
         ? ropeDimensionSplits.medium
@@ -352,11 +429,10 @@ function getRopeDimensionSplit(
     ? inclinationDimensionMultipliers[inclination]
     : inclinationDimensionMultipliers.vertical;
   return normalizeDimensions({
-    fitness: base.fitness * multipliers.fitness,
-    structural: base.structural * multipliers.structural,
-    strength: base.strength * multipliers.strength,
-    fingers: base.fingers * multipliers.fingers,
-    skill: base.skill * multipliers.skill,
+    aerobicEndurance: base.aerobicEndurance * multipliers.aerobicEndurance,
+    strengthEndurance: base.strengthEndurance * multipliers.strengthEndurance,
+    strengthPower: base.strengthPower * multipliers.strengthPower,
+    contactStrength: base.contactStrength * multipliers.contactStrength,
   });
 }
 
@@ -418,14 +494,18 @@ function getProtocolCoin(
 
 function getGradeCoin(surface: TrainingSurface, grades: string[]) {
   if (surface === "baldy" || surface === "moon" || surface === "kilter") {
-    const multiplier = boulderSurfaceCoinMultiplier[surface];
     return grades.reduce(
-      (sum, grade) =>
-        sum + (boulderCoinByGrade[grade] ?? minimumCoin) * multiplier,
+      (sum, grade) => sum + (boulderCoinByGrade[grade] ?? minimumCoin),
       0,
     );
   }
   return 0;
+}
+
+function getSpraywallCoin(minutes: number, intensity: SpraywallIntensity) {
+  const profile = spraywallAttemptProfile[intensity];
+  const attempts = minutes / profile.attemptIntervalMinutes;
+  return attempts * (boulderCoinByGrade[profile.grade] ?? minimumCoin);
 }
 
 export function getStimulusCatalog() {
@@ -447,29 +527,24 @@ export function getStimulusCatalog() {
     },
     dimensions: [
       {
-        key: "fitness",
-        label: "Wydolność",
-        description: "Bodziec układu tlenowego i tolerancji objętości.",
+        key: "aerobicEndurance",
+        label: "Wytrzymałość tlenowa",
+        description: "Praca tlenowa i tolerancja dużej objętości ruchu.",
       },
       {
-        key: "structural",
-        label: "Strukturalne",
-        description: "Obciążenie tkanek, ścięgien i struktur wspierających.",
+        key: "strengthEndurance",
+        label: "Wytrzymałość siłowa",
+        description: "Powtarzalna praca blisko własnego poziomu trudności.",
       },
       {
-        key: "strength",
-        label: "Siła",
-        description: "Bodziec siły ogólnej i specyficznej.",
+        key: "strengthPower",
+        label: "Siła / moc",
+        description: "Krótka praca o wysokiej trudności lub intensywności.",
       },
       {
-        key: "fingers",
-        label: "Palce",
-        description: "Bodziec chwytu i struktur palców.",
-      },
-      {
-        key: "skill",
-        label: "Technika",
-        description: "Bodziec koordynacji i umiejętności ruchowych.",
+        key: "contactStrength",
+        label: "Siła kontaktowa",
+        description: "Eksplozywny chwyt i dynamiczne obciążenie kontaktu.",
       },
     ],
     activities: [
@@ -482,40 +557,37 @@ export function getStimulusCatalog() {
       activity(
         "baldy",
         "Baldy",
-        "Każda zadeklarowana pozycja wyceny jest jednostką bodźca; cena V jest mnożona przez współczynnik powierzchni.",
+        "Każdy zadeklarowany problem V kosztuje 1/3 ceny 10 m liny o porównywalnej wycenie.",
         {
           priceByGrade: boulderCoinByGrade,
-          surfaceMultiplier: boulderSurfaceCoinMultiplier.baldy,
           fallbackPerHour: surfaceHourlyCoin.baldy,
         },
       ),
       activity(
         "moon",
         "Moon",
-        "Wyceny V mają ceny wspólne z tabelą boulderową; brak wyceny używa stawki godzinowej.",
+        "Każdy zadeklarowany problem V kosztuje 1/3 ceny 10 m liny o porównywalnej wycenie.",
         {
           unit: "wycena",
           priceByGrade: boulderCoinByGrade,
-          surfaceMultiplier: boulderSurfaceCoinMultiplier.moon,
           fallbackPerHour: surfaceHourlyCoin.moon,
         },
       ),
       activity(
         "kilter",
         "Kilter",
-        "Wyceny V mają ceny wspólne z tabelą boulderową; brak wyceny używa stawki godzinowej.",
+        "Każdy zadeklarowany problem V kosztuje 1/3 ceny 10 m liny o porównywalnej wycenie.",
         {
           unit: "wycena",
           priceByGrade: boulderCoinByGrade,
-          surfaceMultiplier: boulderSurfaceCoinMultiplier.kilter,
           fallbackPerHour: surfaceHourlyCoin.kilter,
         },
       ),
       activity(
         "spraywall",
         "Spray",
-        "Cena godzinowa zależy od trybu: regeneracja tlenowa, obwody lub projekty.",
-        { unit: "godzina", coinByIntensity: spraywallHourlyCoinByIntensity },
+        "Cena wynika z realistycznej liczby wstawek: V2 co 2 min, V4 co 4 min albo V7 co 5,5 min.",
+        { unit: "wstawka", attemptProfile: spraywallAttemptProfile },
       ),
       activity(
         "chwytotablica",
@@ -578,6 +650,9 @@ export function getStimulusCatalog() {
 export function getObjectiveStimulusActivities(
   training: Pick<
     TrainingRecord,
+    | "id"
+    | "athleteId"
+    | "date"
     | "surfaces"
     | "durationMinutes"
     | "difficultyBySurface"
@@ -586,6 +661,7 @@ export function getObjectiveStimulusActivities(
     | "ropeRoutes"
   >,
   facilities: FacilityRecord[] = [],
+  referenceTrainings: TrainingRecord[] = [],
 ): ObjectiveStimulusActivity[] {
   const surfaces: Array<TrainingSurface | "general"> = training.surfaces.length
     ? training.surfaces
@@ -597,6 +673,11 @@ export function getObjectiveStimulusActivities(
 
   return surfaces.map((surface) => {
     if (surface === "lina") {
+      const reference = getGradeReference(
+        training,
+        surface,
+        referenceTrainings,
+      );
       const routes = getRopeRoutes(training);
       if (!routes.length) {
         return {
@@ -619,22 +700,36 @@ export function getObjectiveStimulusActivities(
           (lengthMeters / 10);
         return {
           coin,
-          dimensionSplit: getRopeDimensionSplit(route.grade, wall?.inclination),
+          dimensionSplit: getRopeDimensionSplit(
+            route.grade,
+            wall?.inclination,
+            reference,
+          ),
         };
       });
       const coin = routeStimuli.reduce((sum, route) => sum + route.coin, 0);
       const dimensionSplit = normalizeDimensions(
         routeStimuli.reduce<FatigueDimensions>(
           (total, route) => ({
-            fitness: total.fitness + route.coin * route.dimensionSplit.fitness,
-            structural:
-              total.structural + route.coin * route.dimensionSplit.structural,
-            strength:
-              total.strength + route.coin * route.dimensionSplit.strength,
-            fingers: total.fingers + route.coin * route.dimensionSplit.fingers,
-            skill: total.skill + route.coin * route.dimensionSplit.skill,
+            aerobicEndurance:
+              total.aerobicEndurance +
+              route.coin * route.dimensionSplit.aerobicEndurance,
+            strengthEndurance:
+              total.strengthEndurance +
+              route.coin * route.dimensionSplit.strengthEndurance,
+            strengthPower:
+              total.strengthPower +
+              route.coin * route.dimensionSplit.strengthPower,
+            contactStrength:
+              total.contactStrength +
+              route.coin * route.dimensionSplit.contactStrength,
           }),
-          { fitness: 0, structural: 0, strength: 0, fingers: 0, skill: 0 },
+          {
+            aerobicEndurance: 0,
+            strengthEndurance: 0,
+            strengthPower: 0,
+            contactStrength: 0,
+          },
         ),
       );
       return { surface, coin: Math.max(minimumCoin, coin), dimensionSplit };
@@ -656,30 +751,36 @@ export function getObjectiveStimulusActivities(
       parseGrades(training.difficultyBySurface?.[surface]),
     );
     const protocolCoin = getProtocolCoin(training, surface);
-    const timeCoin =
-      (minutesPerSurface / 60) *
-      (surface === "spraywall"
-        ? spraywallHourlyCoinByIntensity[
-            training.protocol?.spraywallIntensity ?? "medium"
-          ]
-        : surfaceHourlyCoin[surface]);
+    const timeCoin = (minutesPerSurface / 60) * surfaceHourlyCoin[surface];
+    const spraywallCoin =
+      surface === "spraywall"
+        ? getSpraywallCoin(
+            training.durationMinutes,
+            training.protocol?.spraywallIntensity ?? "medium",
+          )
+        : 0;
     return {
       surface,
       coin: Math.max(
         minimumCoin,
-        gradeCoin || protocolCoin ? gradeCoin + protocolCoin : timeCoin,
+        surface === "spraywall"
+          ? spraywallCoin
+          : gradeCoin || protocolCoin
+            ? gradeCoin + protocolCoin
+            : timeCoin,
       ),
       dimensionSplit:
         surface === "spraywall"
           ? spraywallDimensionSplits[
               training.protocol?.spraywallIntensity ?? "medium"
             ]
-          : surfaceDimensionSplits[surface],
-      ...(surface === "spraywall" && {
-        dimensionCoin: {
-          fitness: (minutesPerSurface / 60) * surfaceHourlyCoin.spraywall,
-        },
-      }),
+          : surface === "baldy" || surface === "moon" || surface === "kilter"
+            ? getBoulderDimensionSplit(
+                surface,
+                parseGrades(training.difficultyBySurface?.[surface]),
+                getGradeReference(training, surface, referenceTrainings),
+              )
+            : surfaceDimensionSplits[surface],
     };
   });
 }

@@ -16,61 +16,81 @@ import {
   analyticsChartAxisTickStyle,
   analyticsChartGridStyle,
 } from "@/components/climberbook/common/charts/AnalyticsChartPrimitives";
-import type { TrainingRecord, TrainingSurface } from "@/lib/climbs-db";
+import type { TrainingFocus, TrainingRecord } from "@/lib/climbs-db";
 
-type SurfaceVolumeGroup = {
+type FocusVolumeGroup = {
+  focus: TrainingFocus | "none";
   label: string;
   color: string;
-  surfaces: TrainingSurface[];
 };
 
-const surfaceVolumeGroups: SurfaceVolumeGroup[] = [
-  { label: "Lina", color: "#176f86", surfaces: ["lina"] },
-  { label: "Baldy", color: "#e19a24", surfaces: ["baldy"] },
-  { label: "Boardy", color: "#8b6fc8", surfaces: ["moon", "kilter"] },
-  { label: "Spray", color: "#d16d3f", surfaces: ["spraywall"] },
+const focusVolumeGroups: FocusVolumeGroup[] = [
   {
+    focus: "strength",
     label: "Siła",
-    color: "#5c8d6d",
-    surfaces: ["drazek", "chwytotablica", "campus", "silownia"],
+    color: "var(--component-chart-focus-strength)",
   },
   {
-    label: "Kondycja",
-    color: "#3b82a0",
-    surfaces: ["bieznia", "rower", "bieg", "treking"],
+    focus: "specific_endurance",
+    label: "Wytrz. spec.",
+    color: "var(--component-chart-focus-specific-endurance)",
+  },
+  {
+    focus: "strength_endurance",
+    label: "Wytrz. siłowa",
+    color: "var(--component-chart-focus-strength-endurance)",
+  },
+  {
+    focus: "finger_strength",
+    label: "Palce",
+    color: "var(--component-chart-focus-finger-strength)",
+  },
+  {
+    focus: "contact_strength",
+    label: "Kontakt",
+    color: "var(--component-chart-focus-contact-strength)",
+  },
+  {
+    focus: "volume",
+    label: "Objętość",
+    color: "var(--component-chart-focus-volume)",
+  },
+  {
+    focus: "intervals",
+    label: "Interwały",
+    color: "var(--component-chart-focus-intervals)",
+  },
+  {
+    focus: "general_conditioning",
+    label: "Ogólny",
+    color: "var(--component-chart-focus-general-conditioning)",
+  },
+  {
+    focus: "none",
+    label: "Bez celu",
+    color: "var(--component-chart-focus-none)",
   },
 ];
 
-function formatSurfaceVolumeData(trainings: TrainingRecord[]) {
-  const minutesByLabel = new Map(
-    surfaceVolumeGroups.map((group) => [group.label, 0]),
+function formatFocusVolumeData(trainings: TrainingRecord[]) {
+  const minutesByFocus = new Map(
+    focusVolumeGroups.map((group) => [group.focus, 0]),
   );
 
   trainings.forEach((training) => {
-    const matchingGroups = surfaceVolumeGroups.filter((group) =>
-      training.surfaces.some((surface) => group.surfaces.includes(surface)),
+    const focus = training.loadProfile?.focus ?? "none";
+    minutesByFocus.set(
+      focus,
+      (minutesByFocus.get(focus) ?? 0) + training.durationMinutes,
     );
-
-    if (matchingGroups.length === 0) {
-      return;
-    }
-
-    const minutesPerGroup = training.durationMinutes / matchingGroups.length;
-
-    matchingGroups.forEach((group) => {
-      minutesByLabel.set(
-        group.label,
-        (minutesByLabel.get(group.label) ?? 0) + minutesPerGroup,
-      );
-    });
   });
 
-  return surfaceVolumeGroups
+  return focusVolumeGroups
     .map((group) => ({
       label: group.label,
       color: group.color,
       hours:
-        Math.round(((minutesByLabel.get(group.label) ?? 0) / 60) * 10) / 10,
+        Math.round(((minutesByFocus.get(group.focus) ?? 0) / 60) * 10) / 10,
     }))
     .filter((group) => group.hours > 0);
 }
@@ -82,16 +102,16 @@ export function SurfaceVolumeChartWidget({
   trainings: TrainingRecord[];
   chartRangeLabel: string;
 }) {
-  const data = formatSurfaceVolumeData(trainings);
+  const data = formatFocusVolumeData(trainings);
 
   return (
     <AnalyticsChartPanel
-      eyebrow="Objętość"
-      title="Czas według rodzaju treningu"
+      eyebrow="Cel sesji"
+      title="Czas według celu treningu"
       badge={chartRangeLabel}
     >
       {data.length === 0 ? (
-        <EmptyState message="Dodaj treningi z wybraną powierzchnią, aby porównać objętość." />
+        <EmptyState message="Dodaj treningi z określonym celem, aby porównać rozkład czasu." />
       ) : (
         <ResponsiveContainer width="100%" height="100%">
           <BarChart

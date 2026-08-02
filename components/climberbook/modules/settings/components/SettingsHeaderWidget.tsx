@@ -17,7 +17,8 @@ export function SettingsHeaderWidget({
         <p style={mutedParagraphStyle}>{meta.description}</p>
         {accountEmail ? (
           <p style={{ ...mutedParagraphStyle, marginBottom: 0 }}>
-            Zalogowano jako: <strong>{accountEmail}</strong>
+            Zalogowano jako:{" "}
+            <strong style={{ color: "var(--accent)" }}>{accountEmail}</strong>
           </p>
         ) : null}
       </div>

@@ -872,23 +872,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   ) {
     event.preventDefault();
     const weightKg = parseWeightInput(weightEntryDraft.weightKg);
-    if (
-      !activeAthleteId ||
-      !weightEntryDraft.date ||
-      weightKg === null ||
-      weightKg <= 0
-    )
-      return false;
-    const measurementTimestamp = Date.parse(
-      `${weightEntryDraft.date}T${weightEntryDraft.time}`,
-    );
-    if (
-      Number.isNaN(measurementTimestamp) ||
-      measurementTimestamp > Date.now()
-    ) {
-      setStatus("Data i godzina pomiaru nie mogą być późniejsze niż teraz.");
-      return false;
-    }
+    if (!activeAthleteId || weightKg === null || weightKg <= 0) return false;
     if (entryToUpdate?.id !== undefined) {
       const input: WeightEntryRecord = {
         ...entryToUpdate,

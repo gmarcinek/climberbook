@@ -10,6 +10,7 @@ import {
   type SetStateAction,
 } from "react";
 import { Modal } from "@/components/climberbook/common/Modal";
+import { Panel } from "@/components/climberbook/common/Panel";
 import {
   moduleEyebrowStyle,
   moduleContainerStyle,
@@ -42,6 +43,7 @@ import { SectionManagementWidget } from "./SectionManagementWidget";
 import { SettingsHeaderWidget } from "./SettingsHeaderWidget";
 import { SettingsTabsWidget } from "./SettingsTabsWidget";
 import { TeamRosterSettingsWidget } from "./TeamRosterSettingsWidget";
+import { ThemeSelector } from "@/components/climberbook/providers/ThemeSelector";
 import styles from "./SettingsAssembly.module.css";
 import type {
   AthleteFormDraft,
@@ -302,6 +304,13 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
         {settingsTab === "profil" && (
           <div style={settingsMainColumnStyle}>
             <div style={settingsMainColumnStyle}>
+              <Panel gap="sm">
+                <div>
+                  <p style={moduleEyebrowStyle}>WYGLĄD</p>
+                  <h2 style={sectionTitleStyle}>Motyw aplikacji</h2>
+                </div>
+                <ThemeSelector />
+              </Panel>
               <div className={styles.profileMetrics}>
                 <ProfileMetricsWidget
                   profileDraft={profileDraft}

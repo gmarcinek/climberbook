@@ -42,7 +42,11 @@ export function TrainingPreviewModal({
     training.surfaces.includes("spraywall") ||
     getTrainingGradeGroups(training).length > 0 ||
     splitDifficultyGrades(training.difficultyNotes).length > 0;
-  const stimulusImpact = getTrainingStimulusImpact(training, facilities);
+  const stimulusImpact = getTrainingStimulusImpact(
+    training,
+    facilities,
+    trainings,
+  );
   const stimulusScale = getTrainingStimulusScale(
     training,
     trainings,
@@ -54,11 +58,10 @@ export function TrainingPreviewModal({
       ]
     : "Brak skali z ostatnich 4 tygodni";
   const stimulusDimensions = [
-    ["Wydolność", stimulusImpact.dimensions.fitness],
-    ["Strukturalne", stimulusImpact.dimensions.structural],
-    ["Siła", stimulusImpact.dimensions.strength],
-    ["Palce", stimulusImpact.dimensions.fingers],
-    ["Technika", stimulusImpact.dimensions.skill],
+    ["Wytrzymałość tlenowa", stimulusImpact.dimensions.aerobicEndurance],
+    ["Wytrzymałość siłowa", stimulusImpact.dimensions.strengthEndurance],
+    ["Siła / moc", stimulusImpact.dimensions.strengthPower],
+    ["Siła kontaktowa", stimulusImpact.dimensions.contactStrength],
   ] as const;
   const totalStimulusDimensions = stimulusDimensions.reduce(
     (total, [, value]) => total + value,
@@ -76,8 +79,8 @@ export function TrainingPreviewModal({
         maxHeight: "100dvh",
         padding: 0,
         overflow: "hidden",
-        background: "#fffdfa",
-        boxShadow: "-18px 0 40px rgba(21, 34, 45, 0.2)",
+        background: "var(--component-training-preview-drawer-background)",
+        boxShadow: "var(--component-training-preview-drawer-shadow)",
       }}
     >
       <ScrollPane

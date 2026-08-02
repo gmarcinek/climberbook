@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { moduleConfig } from "@/components/climberbook/common/modules";
 import { useClimberbookStats } from "@/components/climberbook/hooks/useClimberbookStats";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
@@ -25,7 +25,7 @@ export function AnalyticsModule() {
   const [period, setPeriod] = useState<AnalyticsPeriod | null>(null);
   const [activePeriodPreset, setActivePeriodPreset] = useState<
     AnalyticsPeriodPreset | "custom"
-  >("month");
+  >("custom");
 
   useEffect(() => {
     if (width === 0 || period) {
@@ -57,21 +57,10 @@ export function AnalyticsModule() {
     [activePeriod.end, activePeriod.start, app.weightEntries],
   );
 
-  function setStart(start: string) {
+  const setCalendarRange = useCallback((range: AnalyticsPeriod) => {
     setActivePeriodPreset("custom");
-    setPeriod((current) => {
-      const end = current?.end ?? app.today;
-      return { start, end: start > end ? start : end };
-    });
-  }
-
-  function setEnd(end: string) {
-    setActivePeriodPreset("custom");
-    setPeriod((current) => {
-      const start = current?.start ?? app.today;
-      return { start: end < start ? end : start, end };
-    });
-  }
+    setPeriod(range);
+  }, []);
 
   function shiftPeriod(direction: -1 | 1) {
     setActivePeriodPreset((preset) => (preset === "all" ? "custom" : preset));
@@ -131,12 +120,12 @@ export function AnalyticsModule() {
       activePeriodPreset={activePeriodPreset}
       onPreviousPeriod={() => shiftPeriod(-1)}
       onNextPeriod={() => shiftPeriod(1)}
-      onPeriodStartChange={setStart}
-      onPeriodEndChange={setEnd}
+      onCalendarRangeChange={setCalendarRange}
       onPeriodPreset={setPreset}
       facilities={app.facilities}
       allTrainings={app.trainings}
       trainings={periodTrainings}
+      today={app.today}
       trainingsCount={periodTrainings.length}
       averageWeight={stats.averageWeight}
       totalCalories={stats.totalCalories}

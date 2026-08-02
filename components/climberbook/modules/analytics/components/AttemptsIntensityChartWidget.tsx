@@ -26,7 +26,10 @@ function formatAttemptsIntensityData(
   const totalsByDate = new Map<string, { attempts: number; minutes: number }>();
 
   trainings.forEach((training) => {
-    const current = totalsByDate.get(training.date) ?? { attempts: 0, minutes: 0 };
+    const current = totalsByDate.get(training.date) ?? {
+      attempts: 0,
+      minutes: 0,
+    };
 
     current.attempts += training.attemptsCount;
     current.minutes += training.durationMinutes;
@@ -70,7 +73,10 @@ export function AttemptsIntensityChartWidget({
         <EmptyState message="Dodaj treningi z liczbą prób, aby porównać intensywność." />
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 12, right: 8, bottom: 4, left: -10 }}>
+          <BarChart
+            data={data}
+            margin={{ top: 12, right: 8, bottom: 4, left: -10 }}
+          >
             <CartesianGrid vertical={false} {...analyticsChartGridStyle} />
             <XAxis
               dataKey="date"
@@ -87,7 +93,7 @@ export function AttemptsIntensityChartWidget({
             />
             <Bar
               dataKey="attemptsPerHour"
-              fill="#d16d3f"
+              fill="var(--component-chart-series-baseline)"
               radius={[3, 3, 0, 0]}
             />
           </BarChart>

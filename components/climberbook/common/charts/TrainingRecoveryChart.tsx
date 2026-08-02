@@ -52,6 +52,10 @@ function getDayEndTimestamp(date: string) {
   return new Date(`${addDays(date, 1)}T00:00:00`).getTime();
 }
 
+function getDayStartTimestamp(date: string) {
+  return new Date(`${date}T00:00:00`).getTime();
+}
+
 function getDateKey(timestamp: number) {
   const date = new Date(timestamp);
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -107,10 +111,10 @@ function getAxisTicks(range: { start: string; end: string }, end: string) {
   const ticks: number[] = [];
 
   for (let date = range.start; date <= end; date = addDays(date, interval)) {
-    ticks.push(getDayEndTimestamp(date));
+    ticks.push(getDayStartTimestamp(date));
   }
 
-  const finalTick = getDayEndTimestamp(end);
+  const finalTick = getDayStartTimestamp(end);
   if (ticks.at(-1) !== finalTick) ticks.push(finalTick);
   return ticks;
 }
@@ -358,7 +362,7 @@ function getStimulusChartData(
       (left, right) => getSessionTimestamp(left) - getSessionTimestamp(right),
     )
     .map((training) => {
-      const impact = getTrainingStimulusImpact(training, facilities);
+      const impact = getTrainingStimulusImpact(training, facilities, trainings);
       const scale = getTrainingStimulusScale(training, trainings, facilities);
       return {
         timestamp: getSessionTimestamp(training),
@@ -373,11 +377,21 @@ function ChartLegend() {
   return (
     <div style={legendStyle}>
       <span style={legendItemStyle}>
-        <i style={{ ...legendDotStyle, background: "#0d6b7c" }} />
+        <i
+          style={{
+            ...legendDotStyle,
+            background: "var(--component-chart-series-recovery)",
+          }}
+        />
         Impakt sesji
       </span>
       <span style={legendItemStyle}>
-        <i style={{ ...legendDotStyle, background: "#d16d3f" }} />
+        <i
+          style={{
+            ...legendDotStyle,
+            background: "var(--component-chart-series-baseline)",
+          }}
+        />
         Średnia z 4 tygodni
       </span>
     </div>
@@ -432,7 +446,7 @@ export function TrainingRecoveryChart({
           >
             <CartesianGrid
               vertical={false}
-              stroke="rgba(100, 87, 77, 0.14)"
+              stroke="var(--component-chart-grid)"
               strokeDasharray="3 5"
             />
             <XAxis
@@ -441,34 +455,34 @@ export function TrainingRecoveryChart({
               scale="time"
               domain={["dataMin", "dataMax"]}
               ticks={xAxisTicks}
-              tick={{ fontSize: 9.6 }}
+              tick={{ fontSize: 9.6, fill: "var(--component-chart-axis)" }}
               tickFormatter={formatDate}
             />
             <YAxis
               domain={[0, scaleAxisMax]}
               width={34}
-              tick={{ fontSize: 9.6 }}
+              tick={{ fontSize: 9.6, fill: "var(--component-chart-axis)" }}
               tickFormatter={(value) => `${value}%`}
             />
             <ReferenceLine
               x={todayTimestamp}
-              stroke="#d34b46"
+              stroke="var(--component-chart-marker-today)"
               strokeDasharray="5 5"
               label={{
                 value: "Dzisiaj",
                 position: "insideTopRight",
-                fill: "#d34b46",
+                fill: "var(--component-chart-marker-today)",
                 fontSize: 9.6,
               }}
             />
             <ReferenceLine
               y={100}
-              stroke="rgba(209, 109, 63, 0.7)"
+              stroke="var(--component-chart-series-baseline)"
               strokeDasharray="4 5"
               label={{
                 value: "Średnia 4 tyg. · 100%",
                 position: "insideLeft",
-                fill: "#d16d3f",
+                fill: "var(--component-chart-series-baseline)",
                 fontSize: 9.6,
               }}
             />
@@ -487,14 +501,19 @@ export function TrainingRecoveryChart({
               type="monotoneX"
               dataKey="scalePercent"
               name="Impakt sesji"
-              stroke="#0d6b7c"
+              stroke="var(--component-chart-series-recovery)"
               strokeWidth={2.5}
               strokeLinecap="round"
-              dot={{ r: 3, fill: "#0d6b7c", stroke: "white", strokeWidth: 1.5 }}
+              dot={{
+                r: 3,
+                fill: "var(--component-chart-series-recovery)",
+                stroke: "var(--component-chart-marker-outline)",
+                strokeWidth: 1.5,
+              }}
               activeDot={{
                 r: 4.5,
-                fill: "#0d6b7c",
-                stroke: "white",
+                fill: "var(--component-chart-series-recovery)",
+                stroke: "var(--component-chart-marker-outline)",
                 strokeWidth: 1.5,
               }}
               connectNulls
@@ -504,7 +523,7 @@ export function TrainingRecoveryChart({
               type="monotoneX"
               dataKey="baselineCoin"
               name="Średnia z 4 tygodni"
-              stroke="#d16d3f"
+              stroke="var(--component-chart-series-baseline)"
               strokeWidth={0}
               strokeLinecap="round"
               dot={false}

@@ -52,6 +52,7 @@ export function FacilitiesModule() {
   const [editingFacility, setEditingFacility] = useState<FacilityRecord | null>(
     null,
   );
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [capabilities, setCapabilities] =
     useState<FacilityCapabilities>(emptyCapabilities);
@@ -60,18 +61,21 @@ export function FacilitiesModule() {
     setEditingFacility(null);
     setName("");
     setCapabilities(emptyCapabilities());
+    setIsFormOpen(true);
   }
 
   function openEdit(facility: FacilityRecord) {
     setEditingFacility(facility);
     setName(facility.name);
     setCapabilities(facility.capabilities);
+    setIsFormOpen(true);
   }
 
   function closeForm() {
     setEditingFacility(null);
     setName("");
     setCapabilities(emptyCapabilities());
+    setIsFormOpen(false);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -120,8 +124,6 @@ export function FacilitiesModule() {
       ),
     }));
   }
-
-  const isFormOpen = editingFacility !== null || name !== "";
 
   return (
     <div

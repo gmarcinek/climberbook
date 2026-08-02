@@ -49,6 +49,7 @@ type TrainingCalendarProps = {
   visibleColumns?: number;
   useScrollPane?: boolean;
   fillHeight?: boolean;
+  showMonthHeader?: boolean;
   trainingsByDate: Map<string, TrainingRecord[]>;
   selectedDate: string | null;
   today: string;
@@ -62,6 +63,7 @@ export function TrainingCalendar(props: TrainingCalendarProps) {
     visibleColumns = monthCount,
     useScrollPane = true,
     fillHeight = true,
+    showMonthHeader = true,
     trainingsByDate,
     selectedDate,
     today,
@@ -125,6 +127,7 @@ export function TrainingCalendar(props: TrainingCalendarProps) {
         <TrainingCalendarMonth
           key={`${month.year}-${month.monthIndex}`}
           month={month}
+          showHeader={showMonthHeader}
           selectedDate={selectedDate}
           today={today}
           trainingMap={trainingsByDate}

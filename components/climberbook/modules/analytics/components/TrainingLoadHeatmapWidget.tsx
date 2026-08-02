@@ -11,10 +11,10 @@ import { getTrainingLoad } from "./TrainingLoadModel";
 import type { FacilityRecord, TrainingRecord } from "@/lib/climbs-db";
 
 const dailyRecoveryMultiplier = 0.72;
-const baseLoadColor = "rgba(100, 87, 77, 0.12)";
-const yellowLoadColor = "#f2cc4d";
-const redLoadColor = "#c83d29";
-const blackLoadColor = "#000000";
+const baseLoadColor = "var(--component-chart-load-base)";
+const mediumLoadColor = "var(--component-chart-load-medium)";
+const highLoadColor = "var(--component-chart-load-high)";
+const extremeLoadColor = "var(--component-chart-load-extreme)";
 
 function formatLoadCalendarData(
   trainings: TrainingRecord[],
@@ -80,13 +80,13 @@ function mixLoadColors(start: string, end: string, progress: number) {
 function getLoadColor(load: number, _isOutsideRange: boolean) {
   if (load <= 0) return baseLoadColor;
   if (load < 50)
-    return mixLoadColors(baseLoadColor, yellowLoadColor, load / 50);
+    return mixLoadColors(baseLoadColor, mediumLoadColor, load / 50);
   if (load < 100)
-    return mixLoadColors(yellowLoadColor, redLoadColor, (load - 50) / 50);
+    return mixLoadColors(mediumLoadColor, highLoadColor, (load - 50) / 50);
   if (load < 200)
-    return mixLoadColors(redLoadColor, blackLoadColor, (load - 100) / 100);
+    return mixLoadColors(highLoadColor, extremeLoadColor, (load - 100) / 100);
 
-  return blackLoadColor;
+  return extremeLoadColor;
 }
 
 export function TrainingLoadHeatmapWidget({
@@ -123,7 +123,9 @@ export function TrainingLoadHeatmapWidget({
             style={{
               background: getLoadColor(load, isOutsideRange),
               border:
-                date === today ? "1px solid #c83d29" : "1px solid transparent",
+                date === today
+                  ? "1px solid var(--component-chart-regularity-today)"
+                  : "1px solid transparent",
               opacity: isOutsideRange ? 0.5 : 1,
             }}
           />

@@ -109,16 +109,16 @@ export function TrainingAnalyticsPanel(props: {
   const showsTrainingCharts = section !== "weight";
   const showsWeightDetails = section === "all" || section === "weight";
   const showsWeightChart = section !== "charts";
-  const weightChartRange = isMobileLayout
-    ? chartRange
-    : {
-        start: addDays(chartRange.end, -20),
-        end: chartRange.end,
-      };
-  const now = new Date();
-  const currentWeightDate = formatDateIso(now);
-  const currentWeightTime = now.toTimeString().slice(0, 5);
-
+  const firstVisibleTrainingDate = trainings
+    .filter(
+      (training) =>
+        training.date >= chartRange.start && training.date <= chartRange.end,
+    )
+    .sort((left, right) => left.date.localeCompare(right.date))[0]?.date;
+  const sharedChartRange = {
+    ...chartRange,
+    start: firstVisibleTrainingDate ?? chartRange.start,
+  };
   async function handleWeightEntryModalSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -137,6 +137,17 @@ export function TrainingAnalyticsPanel(props: {
       time: entry.time,
       weightKg: formatWeightInput(entry.weightKg),
     });
+    setIsWeightEntryModalOpen(true);
+  }
+
+  function openNewWeightEntry() {
+    const now = new Date();
+    onWeightEntryDraftChange({
+      ...weightEntryDraft,
+      date: formatDateIso(now),
+      time: now.toTimeString().slice(0, 5),
+    });
+    setEditingWeightEntry(null);
     setIsWeightEntryModalOpen(true);
   }
 
@@ -241,7 +252,7 @@ export function TrainingAnalyticsPanel(props: {
             </div>
             <RopeTrainingGradesChart
               trainings={trainings}
-              chartRange={chartRange}
+              chartRange={sharedChartRange}
             />
           </section>
           <section
@@ -260,7 +271,7 @@ export function TrainingAnalyticsPanel(props: {
             </div>
             <TrainingStimulusChart
               trainings={trainings}
-              chartRange={chartRange}
+              chartRange={sharedChartRange}
             />
           </section>
         </>
@@ -296,8 +307,6 @@ export function TrainingAnalyticsPanel(props: {
                     })
                   }
                   type="date"
-                  max={currentWeightDate}
-                  required
                   style={inputStyle}
                 />
               </label>
@@ -312,12 +321,6 @@ export function TrainingAnalyticsPanel(props: {
                     })
                   }
                   type="time"
-                  max={
-                    weightEntryDraft.date === currentWeightDate
-                      ? currentWeightTime
-                      : undefined
-                  }
-                  required
                   style={inputStyle}
                 />
               </label>
@@ -359,7 +362,7 @@ export function TrainingAnalyticsPanel(props: {
               >
                 <Button
                   type="submit"
-                  variant="tertiary"
+                  variant="primary"
                   style={{ width: "auto" }}
                 >
                   Zapisz pomiar
@@ -437,17 +440,14 @@ export function TrainingAnalyticsPanel(props: {
                   <h3 style={sectionTitleStyle}>Ostatnie pomiary</h3>
                 </div>
                 {showsWeightDetails ? (
-                  <Button
-                    variant="tertiary"
-                    onClick={() => setIsWeightEntryModalOpen(true)}
-                  >
+                  <Button variant="primary" onClick={openNewWeightEntry}>
                     + Dodaj pomiar
                   </Button>
                 ) : null}
               </div>
               <WeightTrendChart
                 entries={weightChartEntries}
-                chartRange={weightChartRange}
+                chartRange={sharedChartRange}
               />
             </section>
           </>
@@ -486,11 +486,11 @@ export function TrainingAnalyticsPanel(props: {
                         border: 0,
                         background:
                           entry.date === selectedDate
-                            ? "rgba(23, 111, 134, 0.14)"
+                            ? "var(--component-weight-entry-selected-background)"
                             : responsiveWeightEntryCardStyle.background,
                         boxShadow:
                           entry.date === selectedDate
-                            ? "inset 3px 0 0 #176f86"
+                            ? "var(--component-weight-entry-selected-shadow)"
                             : undefined,
                         cursor: "pointer",
                         textAlign: "left",
@@ -498,7 +498,13 @@ export function TrainingAnalyticsPanel(props: {
                       }}
                     >
                       <div style={listCardHeaderStyle}>
-                        <strong>{entry.weightKg.toFixed(1)} kg</strong>
+                        <strong
+                          style={{
+                            color: "var(--component-weight-entry-value-text)",
+                          }}
+                        >
+                          {entry.weightKg.toFixed(1)} kg
+                        </strong>
                         <div
                           style={{
                             display: "flex",

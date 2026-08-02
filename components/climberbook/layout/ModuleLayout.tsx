@@ -2,18 +2,10 @@
 
 import type { ReactNode } from "react";
 import type { ModuleKey } from "@/components/climberbook/common/modules";
-import {
-  moduleContainerStyle,
-  moduleShellStyles,
-  pageStyle,
-  shellStyle,
-} from "@/components/climberbook/common/styles";
+import { moduleContainerStyle } from "@/components/climberbook/common/styles";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { MainHeader } from "./MainHeader";
-
-const moduleContentStyle = {
-  padding: "24px 8px 24px",
-};
+import styles from "./LayoutShell.module.scss";
 
 export function ModuleLayout({
   activeModule,
@@ -33,10 +25,10 @@ export function ModuleLayout({
   }
 
   return (
-    <main style={pageStyle}>
-      <section style={{ ...shellStyle, ...moduleShellStyles[activeModule] }}>
+    <main className={styles.page}>
+      <section className={styles.shell}>
         <MainHeader activeModule={activeModule} />
-        <div style={moduleContentStyle}>
+        <div className={styles.moduleContent}>
           <div style={moduleContainer}>{children}</div>
         </div>
       </section>

@@ -14,9 +14,11 @@ type BaseControlProps = {
   grow?: boolean;
 };
 
+type ControlSize = "medium" | "small";
+
 type TextInputProps = InputHTMLAttributes<HTMLInputElement> & BaseControlProps;
-type SelectInputProps = SelectHTMLAttributes<HTMLSelectElement> &
-  BaseControlProps;
+type SelectInputProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> &
+  BaseControlProps & { size?: ControlSize };
 type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> &
   BaseControlProps;
 
@@ -76,12 +78,18 @@ export const Input = forwardRef(function Input(
 export function Select({
   className,
   grow = false,
+  size = "medium",
   ...props
 }: SelectInputProps) {
   return (
     <select
       {...props}
-      className={joinClassNames(styles.control, grow && styles.grow, className)}
+      className={joinClassNames(
+        styles.control,
+        styles[`size--${size}`],
+        grow && styles.grow,
+        className,
+      )}
     />
   );
 }

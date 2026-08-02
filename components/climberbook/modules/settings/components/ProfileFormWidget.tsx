@@ -51,9 +51,7 @@ export function ProfileFormWidget({
     >
       <div style={fieldStyle}>
         <span>Dane zawodnika</span>
-        <strong>
-          {activeAthlete?.name || "Nie wybrano zawodnika"}
-        </strong>
+        <strong>{activeAthlete?.name || "Nie wybrano zawodnika"}</strong>
         {activeAthlete ? (
           <span>
             {[
@@ -67,14 +65,14 @@ export function ProfileFormWidget({
         ) : null}
         {accountEmail ? (
           <span>
-            E-mail logowania Google: {accountEmail}. Aby go zmienić, zaloguj
-            się innym kontem Google.
+            E-mail logowania Google:{" "}
+            <strong style={{ color: "var(--accent)" }}>{accountEmail}</strong>.
           </span>
         ) : null}
         {activeAthlete ? (
           <Button
             type="button"
-            variant="secondary"
+            variant="primary"
             onClick={() => void onStartAthleteEdit(activeAthlete)}
           >
             Edytuj dane zawodnika
@@ -155,7 +153,10 @@ export function ProfileFormWidget({
                 setProfileDraft((current) => ({
                   ...current,
                   weightKg: formatWeightInput(
-                    Math.max(0, (parseWeightInput(current.weightKg) ?? 0) - 0.1),
+                    Math.max(
+                      0,
+                      (parseWeightInput(current.weightKg) ?? 0) - 0.1,
+                    ),
                   ),
                 }))
               }

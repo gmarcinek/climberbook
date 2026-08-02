@@ -115,7 +115,8 @@ export function TrainingSessionDetails({
           <Button
             type="button"
             size="small"
-            variant="secondary"
+            variant="primary"
+            className={styles.trainingSidebar__defaultFacilityButton}
             onClick={() => {
               window.localStorage.setItem(
                 "climberbook:defaultFacilityName",

@@ -61,11 +61,10 @@ export type TrainingProtocol = {
   spraywallIntensity?: SpraywallIntensity;
 };
 export type FatigueDimension =
-  | "fitness"
-  | "structural"
-  | "strength"
-  | "fingers"
-  | "skill";
+  | "aerobicEndurance"
+  | "strengthEndurance"
+  | "strengthPower"
+  | "contactStrength";
 export type FatigueDimensions = Record<FatigueDimension, number>;
 export type TrainingLoadActivity = {
   surface: TrainingSurface | "general";
