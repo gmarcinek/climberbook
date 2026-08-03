@@ -23,10 +23,14 @@
     position: absolute;
     top: 4px;
     right: 4px;
-    z-index: 2;
+    z-index: 1;
     color: white;
     font-size: 0.72rem;
     font-weight: 700;
+}
+
+:global(body.theme-old-money) .eventCounter {
+    color: var(--theme-ink);
 }
 
 .calendarItemBodyWeek {

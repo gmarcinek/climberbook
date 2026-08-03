@@ -1,3 +1,9 @@
+.selectorGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--common-space-2);
+}
+
 .selector {
   display: flex;
   align-items: center;
@@ -19,4 +25,44 @@
 
 .compact .select {
   min-width: 112px;
+}
+
+.filtersButton {
+  flex: 0 0 auto;
+}
+
+.filtersDialog {
+  width: min(32rem, calc(100vw - 2rem));
+}
+
+.filtersOverlay {
+  background: transparent !important;
+}
+
+.filtersContent {
+  display: grid;
+  gap: var(--common-space-6);
+}
+
+.filtersContent h2 {
+  margin: 0;
+  font-size: var(--common-font-size-xl);
+}
+
+.filtersList {
+  display: grid;
+  gap: var(--common-space-5);
+}
+
+.filterRow {
+  display: grid;
+  gap: var(--common-space-2);
+  color: var(--theme-text);
+  font-size: var(--common-font-size-sm);
+  font-weight: var(--common-font-weight-semibold);
+}
+
+.filtersActions {
+  display: flex;
+  justify-content: flex-end;
 }

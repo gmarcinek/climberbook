@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type FormEvent, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
+import authStyles from "../AuthPage.module.css";
 import styles from "./Registration.module.css";
 
 export default function RegistrationPage() {
@@ -55,7 +56,9 @@ export default function RegistrationPage() {
         redirect: false,
       });
       if (loginResult?.error) {
-        setError("Konto utworzone, ale nie udało się zalogować. Zaloguj się ponownie.");
+        setError(
+          "Konto utworzone, ale nie udało się zalogować. Zaloguj się ponownie.",
+        );
         return;
       }
       window.location.assign(loginResult?.url ?? "/trening");
@@ -68,7 +71,7 @@ export default function RegistrationPage() {
   }
 
   return (
-    <main style={pageStyle}>
+    <main className={authStyles.authPage} style={pageStyle}>
       <section style={panelStyle} aria-busy={isSubmitting}>
         <p style={{ margin: 0, color: "#6b665e", fontSize: "0.8rem" }}>
           CLIMBERBOOK
@@ -124,7 +127,9 @@ export default function RegistrationPage() {
             {error}
           </p>
         ) : null}
-        <p style={{ margin: "18px 0 0", color: "#4e5954", textAlign: "center" }}>
+        <p
+          style={{ margin: "18px 0 0", color: "#4e5954", textAlign: "center" }}
+        >
           Masz już konto?{" "}
           <Link href="/login" style={{ color: "#19362d", fontWeight: 700 }}>
             Zaloguj się
@@ -132,7 +137,11 @@ export default function RegistrationPage() {
         </p>
       </section>
       {isSubmitting ? (
-        <div className={styles.loadingOverlay} role="status" aria-live="assertive">
+        <div
+          className={styles.loadingOverlay}
+          role="status"
+          aria-live="assertive"
+        >
           <div className={styles.loadingPanel}>
             <div className={styles.spinner} aria-hidden="true" />
             <strong>Tworzymy Twoje konto</strong>

@@ -139,7 +139,7 @@ export const weightChartCardStyle = {
 
 export const weightChartCanvasStyle = {
   width: "100%",
-  height: 180,
+  height: 300,
   minWidth: 0,
 };
 
@@ -178,7 +178,7 @@ export const weightEntryModalStyle = {
   gap: 14,
   width: "min(100%, 420px)",
   maxHeight: "calc(100dvh - 32px)",
-  padding: 16,
+  padding: "1.5rem",
   overflowY: "auto" as const,
   overscrollBehavior: "contain" as const,
   background: "var(--component-modal-background)",

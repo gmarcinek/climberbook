@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
 import { getProviders, signIn, type ClientSafeProvider } from "next-auth/react";
+import styles from "../AuthPage.module.css";
 
 const providerLabels: Record<string, string> = {
   google: "Kontynuuj z Google",
@@ -53,6 +54,7 @@ export default function LoginPage() {
 
   return (
     <main
+      className={styles.authPage}
       style={{
         minHeight: "100vh",
         display: "grid",
@@ -102,7 +104,11 @@ export default function LoginPage() {
               required
               style={inputStyle}
             />
-            <button type="submit" disabled={isSubmitting} style={primaryButtonStyle}>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={primaryButtonStyle}
+            >
               {isSubmitting ? "Logowanie..." : "Zaloguj się e-mailem"}
             </button>
           </form>
@@ -112,7 +118,9 @@ export default function LoginPage() {
             <button
               key={provider.id}
               type="button"
-              onClick={() => void signIn(provider.id, { callbackUrl: "/trening" })}
+              onClick={() =>
+                void signIn(provider.id, { callbackUrl: "/trening" })
+              }
               style={{
                 minHeight: "44px",
                 border: "1px solid #aab6ae",
@@ -136,7 +144,10 @@ export default function LoginPage() {
             }}
           >
             Nie masz konta?{" "}
-            <Link href="/rejestracja" style={{ color: "#19362d", fontWeight: 700 }}>
+            <Link
+              href="/rejestracja"
+              style={{ color: "#19362d", fontWeight: 700 }}
+            >
               Zarejestruj się
             </Link>
           </p>

@@ -101,11 +101,8 @@ export function WeightTrendChart({
   const todayTimestamp = now.getTime();
   const todayDateTimestamp = getDayStartTimestamp(now);
   const chartStartTimestamp = getDayStartTimestamp(chartRange.start);
-  const chartEndDate = [
-    chartRange.end,
-    addDays(formatDateIso(now), 1),
-  ].sort()[0];
-  const chartEndTimestamp = getDayStartTimestamp(addDays(chartEndDate, 1));
+  const chartEndDate = [chartRange.end, formatDateIso(now)].sort()[0];
+  const chartEndTimestamp = getDayStartTimestamp(addDays(chartEndDate, 1)) - 1;
   const dailyTicks: number[] = [];
   for (
     let date = chartRange.start;
@@ -117,7 +114,7 @@ export function WeightTrendChart({
   const selectedChartDate =
     selectedDate &&
     selectedDate >= chartRange.start &&
-    selectedDate <= chartRange.end
+    selectedDate <= chartEndDate
       ? formatDateIso(selectedDate)
       : null;
   const selectedChartPoint = selectedChartDate

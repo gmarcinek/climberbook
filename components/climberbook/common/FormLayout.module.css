@@ -57,6 +57,8 @@
 }
 
 .formActions {
+  --form-actions-margin-bottom-desktop: 1rem;
+
   display: flex;
   flex-direction: column;
   gap: var(--form-actions-gap-mobile, 0.75rem);
@@ -113,7 +115,7 @@
   --form-actions-margin-top-mobile: 1.5rem;
   --form-actions-margin-bottom-mobile: 3rem;
   --form-actions-margin-top-desktop: 1.5rem;
-  --form-actions-margin-bottom-desktop: 3rem;
+  --form-actions-margin-bottom-desktop: 1rem;
 }
 
 .formActions > * {

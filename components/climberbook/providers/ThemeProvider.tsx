@@ -21,6 +21,7 @@ export type ThemeDefinition = {
 export const builtInThemes: readonly ThemeDefinition[] = [
   { id: "default", label: "Default", colorScheme: "light" },
   { id: "old-money", label: "Old money", colorScheme: "dark" },
+  { id: "old-money-toned", label: "Old money toned", colorScheme: "dark" },
   { id: "monokai", label: "Monokai", colorScheme: "dark" },
   { id: "text", label: "Text", colorScheme: "dark" },
   { id: "dark", label: "Dark", colorScheme: "dark" },
@@ -46,6 +47,7 @@ function isThemeId(value: string | null): value is string {
 function getStoredTheme() {
   if (typeof window === "undefined") return DEFAULT_THEME;
   const storedTheme = window.localStorage.getItem(STORAGE_KEY);
+  if (storedTheme === "toned") return "old-money-toned";
   return isThemeId(storedTheme) ? storedTheme : DEFAULT_THEME;
 }
 

@@ -1,0 +1,11 @@
+@use "old-money";
+
+body.theme-old-money-toned {
+  @extend .theme-old-money;
+
+  --component-calendar-viewport-background: linear-gradient(231deg, #55493b, #20263d);
+  --component-chart-grid: rgba(79, 89, 118, 0.5);
+  --component-chart-grid-subtle: rgba(63, 73, 100, 0.5);
+  --component-chart-stimulus-aerobic: #94461950;
+  --component-chart-stimulus-area-opacity: 0.82;
+}
