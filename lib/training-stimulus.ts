@@ -461,6 +461,7 @@ function getRopeRoutes(
   return parseGrades(training.difficultyBySurface?.lina).map((grade) => ({
     grade,
     ropeWallName: "",
+    completed: 1.0,
   }));
 }
 

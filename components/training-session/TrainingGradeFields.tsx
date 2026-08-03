@@ -123,7 +123,7 @@ export function TrainingGradeFields({
                           onClick={() =>
                             updateRopeRoutes([
                               ...draft.ropeRoutes,
-                              { grade, ropeWallName: "" },
+                              { grade, ropeWallName: "", completed: 1.0 },
                             ])
                           }
                           className={[
@@ -184,6 +184,39 @@ export function TrainingGradeFields({
                           </option>
                         ))}
                       </Select>
+                      <div
+                        className={styles.trainingSidebar__ropeRouteCompletion}
+                        aria-label={`Ukończenie drogi ${index + 1}`}
+                      >
+                        {[0.25, 0.5, 0.75, 1.0].map((completed) => (
+                          <button
+                            key={completed}
+                            type="button"
+                            aria-pressed={route.completed === completed}
+                            className={[
+                              styles.trainingSidebar__ropeRouteCompletionButton,
+                              route.completed === completed
+                                ? styles[
+                                    "trainingSidebar__ropeRouteCompletionButton--active"
+                                  ]
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            onClick={() =>
+                              updateRopeRoutes(
+                                draft.ropeRoutes.map((item, itemIndex) =>
+                                  itemIndex === index
+                                    ? { ...item, completed }
+                                    : item,
+                                ),
+                              )
+                            }
+                          >
+                            {Math.round(completed * 100)}%
+                          </button>
+                        ))}
+                      </div>
                       <Button
                         type="button"
                         size="small"

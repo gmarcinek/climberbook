@@ -7,7 +7,10 @@ import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { TrainingPreviewModal as TrainingPreviewDrawer } from "@/components/training-session/TrainingPreviewModal";
 import { TrainingSessionForm } from "@/components/training-session/TrainingSessionForm";
 import { TrainingSessionList } from "@/components/training-session/TrainingSessionCards";
-import type { SurfaceOption, TrainingDraftValues } from "@/components/training-session/types";
+import type {
+  SurfaceOption,
+  TrainingDraftValues,
+} from "@/components/training-session/types";
 import { formatDateLabel } from "./training-calendar.helpers";
 import type { TrainingRecord, TrainingSurface } from "@/lib/climbs-db";
 import styles from "./TrainingSidebar.module.css";
@@ -15,6 +18,7 @@ import styles from "./TrainingSidebar.module.css";
 export type { TrainingDraftValues } from "@/components/training-session/types";
 
 type TrainingSidebarProps = {
+  inline?: boolean;
   selectedDate: string | null;
   selectedDayTrainings: TrainingRecord[];
   visibleRangeTrainings: TrainingRecord[];
@@ -35,6 +39,7 @@ type TrainingSidebarProps = {
 };
 
 export function TrainingSidebar({
+  inline = false,
   selectedDate,
   selectedDayTrainings,
   visibleRangeTrainings,
@@ -60,7 +65,85 @@ export function TrainingSidebar({
     (training) => training.id === editingTrainingId,
   );
 
+  useEffect(() => {
+    if (selectedDayTrainings.length === 0) {
+      setSelectedDayTab("form");
+    }
+  }, [selectedDayTrainings.length]);
+
   useEffect(() => setSelectedDayTab("form"), [selectedDate]);
+
+  const selectedDayContent =
+    isSelectionActive && selectedDate ? (
+      <>
+        <section className={styles.trainingSidebar__panel}>
+          <div className={styles.trainingSidebar__panelHeader}>
+            <div>
+              <p className={styles.trainingSidebar__eyebrow}>Wybrany dzień</p>
+              <h1
+                id="training-form-modal-title"
+                className={styles.trainingSidebar__title}
+              >
+                {formatDateLabel(selectedDate)}
+              </h1>
+            </div>
+          </div>
+          <div
+            role="tablist"
+            aria-label="Widok wybranego dnia"
+            className={styles.trainingSidebar__dayTabs}
+          >
+            <DayTab
+              active={selectedDayTab === "form"}
+              onClick={() => setSelectedDayTab("form")}
+            >
+              {editingTrainingId ? "Edytuj trening" : "Dodaj trening"}
+            </DayTab>
+            {selectedDayTrainings.length > 0 && (
+              <DayTab
+                active={selectedDayTab === "trainings"}
+                onClick={() => setSelectedDayTab("trainings")}
+              >
+                Treningi ({selectedDayTrainings.length})
+              </DayTab>
+            )}
+          </div>
+          {selectedDayTab === "trainings" && (
+            <TrainingSessionList
+              trainings={selectedDayTrainings}
+              emptyMessage="Brak treningów dla tego dnia. Dodaj pierwszy wpis."
+              onEditTraining={(training) => {
+                onEditTraining(training);
+                setSelectedDayTab("form");
+              }}
+              onPreviewTraining={onPreviewTraining}
+            />
+          )}
+        </section>
+        {selectedDayTab === "form" && (
+          <section className={styles.trainingSidebar__panel}>
+            <TrainingSessionForm
+              draft={trainingDraft}
+              editingTraining={editingTraining}
+              editingTrainingId={editingTrainingId}
+              validationMessage={validationMessage}
+              surfaceOptions={surfaceOptions}
+              onDraftChange={onTrainingDraftChange}
+              onToggleSurface={onToggleSurface}
+              onSubmit={onSubmit}
+              onResetSelection={onResetSelection}
+              onDeleteTraining={onDeleteTraining}
+            />
+          </section>
+        )}
+      </>
+    ) : null;
+
+  if (inline) {
+    return selectedDayContent ? (
+      <div className={styles.trainingSidebar__inline}>{selectedDayContent}</div>
+    ) : null;
+  }
 
   return (
     <aside style={{ height: "100%", minHeight: 0 }}>
@@ -73,64 +156,26 @@ export function TrainingSidebar({
             : styles["trainingSidebar--default"],
         ].join(" ")}
       >
-        {isSelectionActive && selectedDate && (
-          <>
-            <section className={styles.trainingSidebar__panel}>
-              <div className={styles.trainingSidebar__panelHeader}>
-                <div>
-                  <p className={styles.trainingSidebar__eyebrow}>Wybrany dzień</p>
-                  <h1 id="training-form-modal-title" className={styles.trainingSidebar__title}>
-                    {formatDateLabel(selectedDate)}
-                  </h1>
-                </div>
-              </div>
-              <div role="tablist" aria-label="Widok wybranego dnia" className={styles.trainingSidebar__dayTabs}>
-                <DayTab active={selectedDayTab === "form"} onClick={() => setSelectedDayTab("form")}>
-                  {editingTrainingId ? "Edytuj trening" : "Dodaj trening"}
-                </DayTab>
-                <DayTab active={selectedDayTab === "trainings"} onClick={() => setSelectedDayTab("trainings")}>
-                  Treningi ({selectedDayTrainings.length})
-                </DayTab>
-              </div>
-              {selectedDayTab === "trainings" && (
-                <TrainingSessionList
-                  trainings={selectedDayTrainings}
-                  emptyMessage="Brak treningów dla tego dnia. Dodaj pierwszy wpis."
-                  onEditTraining={(training) => {
-                    onEditTraining(training);
-                    setSelectedDayTab("form");
-                  }}
-                  onPreviewTraining={onPreviewTraining}
-                />
-              )}
-            </section>
-            {selectedDayTab === "form" && (
-              <section className={styles.trainingSidebar__panel}>
-                <TrainingSessionForm
-                  draft={trainingDraft}
-                  editingTraining={editingTraining}
-                  editingTrainingId={editingTrainingId}
-                  validationMessage={validationMessage}
-                  surfaceOptions={surfaceOptions}
-                  onDraftChange={onTrainingDraftChange}
-                  onToggleSurface={onToggleSurface}
-                  onSubmit={onSubmit}
-                  onResetSelection={onResetSelection}
-                  onDeleteTraining={onDeleteTraining}
-                />
-              </section>
-            )}
-          </>
-        )}
+        {selectedDayContent}
         {!isSelectionActive && (
-          <section className={`${styles.trainingSidebar__panel} ${styles["trainingSidebar__panel--filling"]}`}>
+          <section
+            className={`${styles.trainingSidebar__panel} ${styles["trainingSidebar__panel--filling"]}`}
+          >
             <div className={styles.trainingSidebar__panelHeader}>
               <div>
-                <p className={styles.trainingSidebar__eyebrow}>Widoczny okres</p>
-                <h1 className={styles.trainingSidebar__title}>Lista treningów w kalendarzu</h1>
+                <p className={styles.trainingSidebar__eyebrow}>
+                  Widoczny okres
+                </p>
+                <h1 className={styles.trainingSidebar__title}>
+                  Lista treningów w kalendarzu
+                </h1>
               </div>
               <div className={styles.trainingSidebar__headerActions}>
-                <Button variant="primary" onClick={() => onSelectDate(today)} className={styles.trainingSidebar__submitButton}>
+                <Button
+                  variant="primary"
+                  onClick={() => onSelectDate(today)}
+                  className={styles.trainingSidebar__submitButton}
+                >
                   + Trening
                 </Button>
               </div>
@@ -169,7 +214,9 @@ function DayTab({
       className={[
         styles.trainingSidebar__dayTab,
         active ? styles["trainingSidebar__dayTab--active"] : "",
-      ].filter(Boolean).join(" ")}
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       {children}
     </button>

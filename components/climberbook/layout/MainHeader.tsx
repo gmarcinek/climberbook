@@ -138,7 +138,7 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                 ))}
               </Select>
             </label>
-            {!isMobileHeader ? <ThemeSelector compact /> : null}
+            {width >= 1200 ? <ThemeSelector compact /> : null}
           </div>
 
           {!isMobileHeader ? (

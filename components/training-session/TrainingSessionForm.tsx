@@ -83,7 +83,11 @@ export function TrainingSessionForm({
           <Button type="submit">
             {editingTrainingId ? "Zapisz zmiany" : "Zapisz trening"}
           </Button>
-          <Button variant="secondary" onClick={onResetSelection}>
+          <Button
+            variant="secondary"
+            onClick={onResetSelection}
+            className={styles.trainingSidebar__cancelAction}
+          >
             Anuluj
           </Button>
         </div>

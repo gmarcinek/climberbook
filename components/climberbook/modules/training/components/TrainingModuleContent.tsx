@@ -152,6 +152,7 @@ export function TrainingModuleContent({
   };
   const sidebar = (
     <TrainingSidebarWidget
+      inline={showMediumInlineDrawer}
       selectedDate={selectedDate}
       selectedDayTrainings={selectedDayTrainings}
       visibleRangeTrainings={visibleRangeTrainings}
@@ -227,22 +228,7 @@ export function TrainingModuleContent({
             ))}
           </div>
         ) : null}
-        {showMediumInlineDrawer ? (
-          <div
-            style={{
-              ...mobileDrawerSheetStyle,
-              gridColumn: isMobileTrainingLayout ? undefined : 1,
-              minHeight: 0,
-              height: "100%",
-              borderTop: 0,
-              borderLeft: 0,
-              padding: 8,
-              boxShadow: "var(--component-drawer-shadow)",
-            }}
-          >
-            {sidebar}
-          </div>
-        ) : !isMobileTrainingLayout || mobileTab === "metrics" ? (
+        {!isMobileTrainingLayout || mobileTab === "metrics" ? (
           <div
             style={{
               gridColumn: isMobileTrainingLayout ? undefined : 1,
@@ -290,6 +276,7 @@ export function TrainingModuleContent({
               showVisibleTrainingList={
                 !showTrainingSidebarColumn && !isMobileTrainingLayout
               }
+              selectedDayContent={showMediumInlineDrawer ? sidebar : undefined}
               onPreviousMonth={onPreviousMonth}
               onNextMonth={onNextMonth}
               trainingRangeStart={trainingRangeStart}
@@ -298,6 +285,7 @@ export function TrainingModuleContent({
               selectedDate={selectedDate}
               today={today}
               onSelectDate={onSelectDate}
+              onResetSelection={onResetSelection}
               onEditTraining={onEditTraining}
               onPreviewTraining={openTrainingPreview}
             />

@@ -38,8 +38,10 @@ body.theme-old-money {
 
   --component-header-background: #121724;
   --component-header-border: none;
-  --component-header-shadow: none;
-  --component-layout-background: var(--theme-page-background);
+  --component-header-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+  --component-layout-background:
+    url("data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E"),
+    var(--theme-page-background);
   --component-layout-shadow: none;
   --component-layout-backdrop-filter: none;
   --component-drawer-background: var(--theme-surface);
@@ -58,12 +60,12 @@ body.theme-old-money {
   --component-weight-entry-selected-shadow: inset 3px 0 0 #eaae5b;
   --component-metric-card-background: var(--component-card-background);
   --component-calendar-panel-background: var(--component-panel-background);
-  --component-calendar-viewport-background: linear-gradient(231deg, #896334, #20263d);
+  --component-calendar-viewport-background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"), linear-gradient(231deg, #896334, #20263d);
   --component-calendar-week-body-background: #ffffff1f;
   --component-training-card-background: #1c23384f;
   --component-training-pill-background: #393939;
   --component-training-link-text: var(--theme-text);
-  --component-training-timeline-track: #121724;
+  --component-training-timeline-track: #12172466;
   --component-training-timeline-fill: linear-gradient(90deg, #eaae5b, #7f3544);
   --component-soft-tag-background: #ffe6c7;
   --component-soft-tag-border: 1px solid rgba(255, 255, 255, 0.38);
@@ -77,6 +79,7 @@ body.theme-old-money {
   --component-upload-action-text: var(--theme-text);
   --component-navigation-button-background: #f3eadb0d;
   --component-navigation-button-border: none;
+  --component-backup-dropzone-background: rgba(243, 234, 219, 0.2);
   --component-input-background: var(--theme-surface-strong);
   --component-input-border: var(--theme-border-input);
   --component-input-text: var(--theme-text);

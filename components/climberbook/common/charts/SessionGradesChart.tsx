@@ -1369,6 +1369,7 @@ function ExperimentalStimulusTab({
             strokeWidth={1.5}
             fillOpacity="var(--component-chart-stimulus-area-opacity)"
             fill={
+              dimension === "aerobicEndurance" ||
               dimension === "strengthEndurance" ||
               dimension === "strengthPower" ||
               dimension === "contactStrength"
@@ -1413,6 +1414,20 @@ function StackedStimulusTab() {
 function StimulusTextureDefs() {
   return (
     <>
+      <pattern
+        id="experimental-aerobicEndurance-texture"
+        width="6"
+        height="6"
+        patternUnits="userSpaceOnUse"
+      >
+        <rect
+          width="6"
+          height="6"
+          fill="var(--component-chart-stimulus-aerobic)"
+        />
+        <circle cx="1.5" cy="1.5" r="0.45" fill="#000" opacity="0.2" />
+        <circle cx="4.5" cy="4.5" r="0.45" fill="#000" opacity="0.2" />
+      </pattern>
       <pattern
         id="experimental-strengthEndurance-texture"
         width="8"
