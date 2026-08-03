@@ -24,9 +24,12 @@ import { Input, Select } from "@/components/climberbook/common/FormControls";
 import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
 import type { UserProfileDraft } from "@/components/climberbook/common/training";
 import type {
+  AthleteExportOptions,
   AthleteRecord,
   FacilityCapabilities,
   FacilityRecord,
+  FullDatabaseExportOptions,
+  FullDatabaseImportOptions,
   RopeWallInclination,
   SectionRecord,
   TrainingSurface,
@@ -61,13 +64,13 @@ type SettingsAssemblyProps = {
   weightEntries: WeightEntryRecord[];
   settingsTab: SettingsTab;
   onSettingsSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onDatabaseExport: () => void;
+  onDatabaseExport: (options: FullDatabaseExportOptions) => Promise<void>;
   backupImportInputRef: RefObject<HTMLInputElement | null>;
   onDatabaseImport: (event: ChangeEvent<HTMLInputElement>) => void;
   importPreview: DatabaseImportPreview | null;
   isImportPreviewOpen: boolean;
   isImportingBackup: boolean;
-  onConfirmImportPreview: () => Promise<void>;
+  onConfirmImportPreview: (options: FullDatabaseImportOptions) => Promise<void>;
   onCloseImportPreview: () => void;
   isBackupDropActive: boolean;
   setIsBackupDropActive: Dispatch<SetStateAction<boolean>>;
@@ -94,7 +97,10 @@ type SettingsAssemblyProps = {
     athlete: AthleteRecord,
     sectionId: string,
   ) => Promise<void>;
-  onAthleteExport: (athlete: AthleteRecord) => Promise<void>;
+  onAthleteExport: (
+    athlete: AthleteRecord,
+    options: AthleteExportOptions,
+  ) => Promise<void>;
   onStartAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
   onDeleteAthlete: (athlete: AthleteRecord) => Promise<void>;
   athleteFormMode: "add" | "edit";
@@ -355,6 +361,8 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
           <div style={settingsMainColumnStyle}>
             <DatabaseBackupWidget
               backupImportInputRef={backupImportInputRef}
+              athletes={athletes}
+              profileAthleteId={activeAthleteId}
               onDatabaseExport={onDatabaseExport}
               onDatabaseImport={onDatabaseImport}
               isBackupDropActive={isBackupDropActive}

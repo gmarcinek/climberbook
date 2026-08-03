@@ -1,15 +1,19 @@
 import type {
   AscentRecord,
+  AthleteExportOptions,
   AthleteInput,
   AthleteRecord,
   ClimberbookFullDatabaseBackup,
   ClimbRecord,
   FacilityRecord,
+  FullDatabaseImportOptions,
+  FullDatabaseExportOptions,
   SectionRecord,
   TrainingRecord,
   UserProfileRecord,
   WeightEntryRecord,
 } from "@/lib/climbs-db";
+import { createTrainingExportMetadata } from "@/lib/climbs-db";
 
 type PostgresSnapshot = {
   athletes: AthleteRecord[];
@@ -99,13 +103,176 @@ export function deleteExperimentalAccount() {
   return request("/api/v1/account", { method: "DELETE" });
 }
 
-export function exportExperimentalPostgresBackup() {
-  return request<ClimberbookFullDatabaseBackup>("/api/v1/backups/export");
+export async function exportExperimentalPostgresBackup(
+  options?: FullDatabaseExportOptions,
+) {
+  const backup = await request<ClimberbookFullDatabaseBackup>(
+    "/api/v1/backups/export",
+  );
+
+  if (!options) return backup;
+
+  const athleteIds = new Set(options.athleteIds);
+  athleteIds.add(backup.ownerAthleteId);
+  const athletes = backup.athletes
+    .filter((athlete) => athleteIds.has(athlete.id))
+    .map((athlete) =>
+      options.sections ? athlete : { ...athlete, sectionId: null },
+    );
+  const sectionIds = new Set(
+    athletes.flatMap((athlete) =>
+      athlete.sectionId ? [athlete.sectionId] : [],
+    ),
+  );
+  const sections = options.sections
+    ? backup.sections.filter((section) => sectionIds.has(section.id))
+    : [];
+  const facilityIds = new Set(
+    sections.flatMap((section) =>
+      section.facilityId ? [section.facilityId] : [],
+    ),
+  );
+  const trainings = options.trainings
+    ? backup.trainings.filter((training) => athleteIds.has(training.athleteId))
+    : [];
+
+  return {
+    ...backup,
+    ...createTrainingExportMetadata(trainings),
+    athletes,
+    sections: options.sections
+      ? sections.map((section) =>
+          options.facilities ? section : { ...section, facilityId: null },
+        )
+      : [],
+    facilities: options.facilities
+      ? backup.facilities.filter((facility) => facilityIds.has(facility.id))
+      : [],
+    climbs: options.climbs
+      ? backup.climbs.filter((climb) => athleteIds.has(climb.athleteId))
+      : [],
+    trainings,
+    ascents: options.ascents
+      ? backup.ascents.filter((ascent) => athleteIds.has(ascent.athleteId))
+      : [],
+    profiles: options.profiles
+      ? backup.profiles.filter((profile) => athleteIds.has(profile.athleteId))
+      : [],
+    weightEntries: options.weightEntries
+      ? backup.weightEntries.filter((entry) => athleteIds.has(entry.athleteId))
+      : [],
+  };
+}
+
+export async function exportExperimentalAthleteBackup(
+  athleteId: string,
+  options: AthleteExportOptions,
+) {
+  const backup = await exportExperimentalPostgresBackup();
+  const athlete = backup.athletes.find(
+    (candidate) => candidate.id === athleteId,
+  );
+
+  if (!athlete) {
+    throw new Error("Nie znaleziono zawodnika do eksportu.");
+  }
+
+  const trainings = options.trainings
+    ? backup.trainings.filter((training) => training.athleteId === athleteId)
+    : [];
+  const exportedAthlete = options.sections
+    ? athlete
+    : { ...athlete, sectionId: null };
+
+  return {
+    ...backup,
+    ...createTrainingExportMetadata(trainings),
+    ownerAthleteId: athleteId,
+    athletes: [exportedAthlete],
+    sections:
+      options.sections && athlete.sectionId
+        ? backup.sections.filter((section) => section.id === athlete.sectionId)
+        : [],
+    facilities: options.facilities ? backup.facilities : [],
+    climbs: options.climbs
+      ? backup.climbs.filter((climb) => climb.athleteId === athleteId)
+      : [],
+    trainings,
+    ascents: options.ascents
+      ? backup.ascents.filter((ascent) => ascent.athleteId === athleteId)
+      : [],
+    profiles: options.profile
+      ? backup.profiles.filter((profile) => profile.athleteId === athleteId)
+      : [],
+    weightEntries: options.weightEntries
+      ? backup.weightEntries.filter(
+          (weightEntry) => weightEntry.athleteId === athleteId,
+        )
+      : [],
+  };
+}
+
+export function prepareExperimentalPostgresBackupImport(
+  backup: ClimberbookFullDatabaseBackup,
+  options: FullDatabaseImportOptions,
+) {
+  const athleteIds = new Set(options.athleteIds);
+  const athletes = backup.athletes
+    .filter((athlete) => athleteIds.has(athlete.id))
+    .map((athlete) =>
+      options.sections ? athlete : { ...athlete, sectionId: null },
+    );
+  const sectionIds = new Set(
+    athletes.flatMap((athlete) =>
+      athlete.sectionId ? [athlete.sectionId] : [],
+    ),
+  );
+  const sections = options.sections
+    ? backup.sections.filter((section) => sectionIds.has(section.id))
+    : [];
+  const facilityIds = new Set(
+    sections.flatMap((section) =>
+      section.facilityId ? [section.facilityId] : [],
+    ),
+  );
+  const facilities = options.facilities
+    ? backup.facilities.filter((facility) => facilityIds.has(facility.id))
+    : [];
+  const trainings = options.trainings
+    ? backup.trainings.filter((training) => athleteIds.has(training.athleteId))
+    : [];
+
+  return {
+    ...backup,
+    ...createTrainingExportMetadata(trainings),
+    ownerAthleteId: athleteIds.has(backup.ownerAthleteId)
+      ? backup.ownerAthleteId
+      : (athletes[0]?.id ?? backup.ownerAthleteId),
+    athletes,
+    sections: options.facilities
+      ? sections
+      : sections.map((section) => ({ ...section, facilityId: null })),
+    facilities,
+    climbs: options.climbs
+      ? backup.climbs.filter((climb) => athleteIds.has(climb.athleteId))
+      : [],
+    trainings,
+    ascents: options.ascents
+      ? backup.ascents.filter((ascent) => athleteIds.has(ascent.athleteId))
+      : [],
+    profiles: options.profiles
+      ? backup.profiles.filter((profile) => athleteIds.has(profile.athleteId))
+      : [],
+    weightEntries: options.weightEntries
+      ? backup.weightEntries.filter((entry) => athleteIds.has(entry.athleteId))
+      : [],
+  };
 }
 
 export function importExperimentalPostgresBackup(
   backup: ClimberbookFullDatabaseBackup,
   allowDifferentOwnerEmail = false,
+  duplicateStrategy: "skip" | "overwrite" = "skip",
 ) {
   return request("/api/v1/backups/import", {
     method: "POST",
@@ -114,6 +281,7 @@ export function importExperimentalPostgresBackup(
       ...(allowDifferentOwnerEmail
         ? { "X-Climberbook-Confirm-Different-Owner-Email": "true" }
         : {}),
+      "X-Climberbook-Duplicate-Strategy": duplicateStrategy,
     },
     body: JSON.stringify(backup),
   });
@@ -268,6 +436,14 @@ export async function createExperimentalSection(
   const response = await request<{ section: SectionRecord }>(
     "/api/v1/sections",
     { method: "POST", body: JSON.stringify({ name, facilityId }) },
+  );
+  return response.section;
+}
+
+export async function updateExperimentalSection(id: string, name: string) {
+  const response = await request<{ section: SectionRecord }>(
+    "/api/v1/sections",
+    { method: "PATCH", body: JSON.stringify({ id, name }) },
   );
   return response.section;
 }

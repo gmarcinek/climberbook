@@ -1818,6 +1818,7 @@ export async function importFullBackupToPostgres(
   idempotencyKey: string,
   ownerUserId: string,
   allowDifferentOwnerEmail = false,
+  duplicateStrategy: "skip" | "overwrite" = "skip",
 ): Promise<BackupImportSummary> {
   if (!idempotencyKey.trim()) {
     throw new Error("Import wymaga klucza idempotencji.");
@@ -1839,6 +1840,7 @@ export async function importFullBackupToPostgres(
 
   return withPostgresTransaction(async (client) => {
     const existingImport = await insertIdempotencyKey(client, idempotencyKey);
+    const skipDuplicates = duplicateStrategy === "skip";
 
     if (existingImport) return existingImport;
 
@@ -1936,8 +1938,11 @@ export async function importFullBackupToPostgres(
         `
           insert into facilities (id, name, capabilities, created_at, owner_user_id)
           values ($1, $2, $3, $4, $5)
-          on conflict (id) do update
-          set name = excluded.name, capabilities = excluded.capabilities, created_at = excluded.created_at
+          on conflict (id) do ${
+            skipDuplicates
+              ? "nothing"
+              : "update set name = excluded.name, capabilities = excluded.capabilities, created_at = excluded.created_at"
+          }
         `,
         [
           facilityId,
@@ -1961,10 +1966,11 @@ export async function importFullBackupToPostgres(
             id, source_id, name, facility_id, created_at, owner_user_id
           )
           values ($1, $1, $2, $3, $4, $5)
-          on conflict (id) do update
-          set name = excluded.name,
-            facility_id = excluded.facility_id,
-            created_at = excluded.created_at
+          on conflict (id) do ${
+            skipDuplicates
+              ? "nothing"
+              : "update set name = excluded.name, facility_id = excluded.facility_id, created_at = excluded.created_at"
+          }
         `,
         [sectionId, section.name, facilityId, section.createdAt, ownerUserId],
       );
@@ -1976,6 +1982,18 @@ export async function importFullBackupToPostgres(
       const sectionId = athlete.sectionId
         ? (sectionIds.get(String(athlete.sectionId)) ?? null)
         : null;
+      const athleteImportValues = [
+        athleteId,
+        athleteName,
+        athlete.firstName ?? "",
+        athlete.lastName ?? "",
+        athlete.nick ?? "",
+        normalizeOptionalEmail(athlete.email),
+        sectionId,
+        athlete.createdAt,
+        ownerUserId,
+        ...(skipDuplicates ? [] : [protectedAthleteId]),
+      ];
 
       await client.query(
         `
@@ -1984,28 +2002,13 @@ export async function importFullBackupToPostgres(
             owner_user_id
           )
           values ($1, $1, $2, $3, $4, $5, $6, $7, $8, $9)
-          on conflict (id) do update
-          set name = excluded.name,
-            first_name = excluded.first_name,
-            last_name = excluded.last_name,
-            nick = excluded.nick,
-            email = excluded.email,
-            section_id = excluded.section_id,
-            created_at = excluded.created_at
-          where $10::uuid is null or athletes.id <> $10
+          on conflict (id) do ${
+            skipDuplicates
+              ? "nothing"
+              : "update set name = excluded.name, first_name = excluded.first_name, last_name = excluded.last_name, nick = excluded.nick, email = excluded.email, section_id = excluded.section_id, created_at = excluded.created_at where $10::uuid is null or athletes.id <> $10"
+          }
         `,
-        [
-          athleteId,
-          athleteName,
-          athlete.firstName ?? "",
-          athlete.lastName ?? "",
-          athlete.nick ?? "",
-          normalizeOptionalEmail(athlete.email),
-          sectionId,
-          athlete.createdAt,
-          ownerUserId,
-          protectedAthleteId,
-        ],
+        athleteImportValues,
       );
     }
 
@@ -2050,26 +2053,11 @@ export async function importFullBackupToPostgres(
               and notes = $19
               and created_at = $20
           )
-          on conflict (id) do update
-          set athlete_id = excluded.athlete_id,
-            date = excluded.date,
-            time = excluded.time,
-            duration_minutes = excluded.duration_minutes,
-            age_years = excluded.age_years,
-            calories_burned = excluded.calories_burned,
-            attempts_count = excluded.attempts_count,
-            difficulty_notes = excluded.difficulty_notes,
-            difficulty_by_surface = excluded.difficulty_by_surface,
-            protocol = excluded.protocol,
-            load_profile = excluded.load_profile,
-            wellbeing = excluded.wellbeing,
-            surfaces = excluded.surfaces,
-            facility_name = excluded.facility_name,
-            rope_wall_name = excluded.rope_wall_name,
-            rope_routes = excluded.rope_routes,
-            custom_session_type = excluded.custom_session_type,
-            notes = excluded.notes,
-            created_at = excluded.created_at
+          on conflict (id) do ${
+            skipDuplicates
+              ? "nothing"
+              : "update set athlete_id = excluded.athlete_id, date = excluded.date, time = excluded.time, duration_minutes = excluded.duration_minutes, age_years = excluded.age_years, calories_burned = excluded.calories_burned, attempts_count = excluded.attempts_count, difficulty_notes = excluded.difficulty_notes, difficulty_by_surface = excluded.difficulty_by_surface, protocol = excluded.protocol, load_profile = excluded.load_profile, wellbeing = excluded.wellbeing, surfaces = excluded.surfaces, facility_name = excluded.facility_name, rope_wall_name = excluded.rope_wall_name, rope_routes = excluded.rope_routes, custom_session_type = excluded.custom_session_type, notes = excluded.notes, created_at = excluded.created_at"
+          }
         `,
         [
           trainingId,
@@ -2105,12 +2093,11 @@ export async function importFullBackupToPostgres(
             key, athlete_id, birth_date, sex, height_cm, weight_kg, updated_at
           )
           values ($1, $2, $3, $4, $5, $6, $7)
-          on conflict (athlete_id) do update
-          set birth_date = excluded.birth_date,
-            sex = excluded.sex,
-            height_cm = excluded.height_cm,
-            weight_kg = excluded.weight_kg,
-            updated_at = excluded.updated_at
+          on conflict (athlete_id) do ${
+            skipDuplicates
+              ? "nothing"
+              : "update set birth_date = excluded.birth_date, sex = excluded.sex, height_cm = excluded.height_cm, weight_kg = excluded.weight_kg, updated_at = excluded.updated_at"
+          }
         `,
         [
           `athlete:${athleteId}`,

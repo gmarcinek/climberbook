@@ -91,6 +91,7 @@ export type TrainingLoadProfile = {
 export type RopeRoute = {
   grade: string;
   ropeWallName: string;
+  completed: number;
 };
 export type TrainingRecord = {
   id: string;
@@ -140,6 +141,55 @@ export type AthleteRecord = {
   email?: string;
   sectionId?: string | null;
   createdAt: string;
+};
+export type AthleteExportOptions = {
+  sections: boolean;
+  facilities: boolean;
+  climbs: boolean;
+  trainings: boolean;
+  ascents: boolean;
+  profile: boolean;
+  weightEntries: boolean;
+};
+export const defaultAthleteExportOptions: AthleteExportOptions = {
+  sections: true,
+  facilities: true,
+  climbs: true,
+  trainings: true,
+  ascents: true,
+  profile: true,
+  weightEntries: true,
+};
+export type FullDatabaseExportOptions = {
+  athleteIds: string[];
+  sections: boolean;
+  facilities: boolean;
+  climbs: boolean;
+  trainings: boolean;
+  ascents: boolean;
+  profiles: boolean;
+  weightEntries: boolean;
+};
+export const defaultFullDatabaseExportOptions: FullDatabaseExportOptions = {
+  athleteIds: [],
+  sections: true,
+  facilities: true,
+  climbs: true,
+  trainings: true,
+  ascents: true,
+  profiles: true,
+  weightEntries: true,
+};
+export type FullDatabaseImportOptions = {
+  athleteIds: string[];
+  sections: boolean;
+  facilities: boolean;
+  climbs: boolean;
+  trainings: boolean;
+  ascents: boolean;
+  profiles: boolean;
+  weightEntries: boolean;
+  duplicateStrategy: "skip" | "overwrite";
 };
 export type SectionRecord = {
   id: string;
@@ -257,6 +307,7 @@ export type DatabaseImportPreview = {
   summary: string;
   actionLabel: string;
   athleteName?: string;
+  athletes?: Array<{ id: string; name: string }>;
   counts: {
     athletes: number;
     sections: number;
@@ -392,6 +443,10 @@ export async function inspectDatabaseBackup(
     title: "Import backupu PostgreSQL",
     summary: "Dane zostaną zaimportowane do bieżącego konta.",
     actionLabel: "Importuj dane",
+    athletes: (backup.athletes ?? []).map((athlete) => ({
+      id: athlete.id,
+      name: athlete.name,
+    })),
     counts: {
       athletes: count(backup.athletes),
       sections: count(backup.sections),

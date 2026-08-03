@@ -8,8 +8,11 @@ import type {
 } from "react";
 import type { UserProfileDraft } from "@/components/climberbook/common/training";
 import type {
+  AthleteExportOptions,
   AthleteRecord,
   DatabaseImportPreview,
+  FullDatabaseImportOptions,
+  FullDatabaseExportOptions,
   SectionRecord,
   UserSex,
 } from "@/lib/climbs-db";
@@ -52,7 +55,9 @@ export type ProfileFormWidgetProps = {
 };
 export type DatabaseBackupWidgetProps = {
   backupImportInputRef: RefObject<HTMLInputElement | null>;
-  onDatabaseExport: () => void;
+  athletes: AthleteRecord[];
+  profileAthleteId: string | null;
+  onDatabaseExport: (options: FullDatabaseExportOptions) => Promise<void>;
   onDatabaseImport: (event: ChangeEvent<HTMLInputElement>) => void;
   isBackupDropActive: boolean;
   setIsBackupDropActive: Dispatch<SetStateAction<boolean>>;
@@ -61,7 +66,7 @@ export type DatabaseBackupWidgetProps = {
 export type ImportPreviewModalWidgetProps = {
   preview: DatabaseImportPreview;
   isImporting: boolean;
-  onConfirmImport: () => Promise<void>;
+  onConfirmImport: (options: FullDatabaseImportOptions) => Promise<void>;
   onCloseImportPreview: () => void;
 };
 export type TeamRosterSettingsWidgetProps = {
@@ -73,7 +78,10 @@ export type TeamRosterSettingsWidgetProps = {
     athlete: AthleteRecord,
     sectionId: string,
   ) => Promise<void>;
-  onAthleteExport: (athlete: AthleteRecord) => Promise<void>;
+  onAthleteExport: (
+    athlete: AthleteRecord,
+    options: AthleteExportOptions,
+  ) => Promise<void>;
   onStartAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
   onDeleteAthlete: (athlete: AthleteRecord) => Promise<void>;
 };
@@ -81,6 +89,7 @@ export type SectionManagementWidgetProps = {
   sections: SectionRecord[];
   facilities: import("@/lib/climbs-db").FacilityRecord[];
   onAddSection: () => void;
+  onUpdateSection?: (section: SectionRecord, name: string) => Promise<void>;
   onDeleteSection: (section: SectionRecord) => Promise<void>;
 };
 export type AthleteFormWidgetProps = {
@@ -95,6 +104,8 @@ export type AthleteFormWidgetProps = {
     event: FormEvent<HTMLFormElement>,
   ) => void | Promise<boolean>;
   onResetAthleteForm: () => void;
+  panelPadding?: import("@/components/climberbook/common/Panel").PanelPadding;
+  panelStyle?: CSSProperties;
 };
 export type DangerZoneWidgetProps = {
   setIsDatabaseDeleteModalOpen: Dispatch<SetStateAction<boolean>>;

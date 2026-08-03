@@ -1,23 +1,52 @@
 .sectionList {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
 .sectionChip {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
-  padding: 4px 8px;
-  border: 1px solid var(--border-strong);
-  background: rgba(255, 255, 255, 0.4);
+  width: 100%;
+  padding: 7px;
+  border: var(--component-input-border);
+  background: var(--component-weight-entry-selected-background);
+}
+
+.sectionName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: var(--common-font-weight-bold);
+}
+
+.sectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--common-space-2);
 }
 
 .deleteButton {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--common-button-icon-size);
+  border: 1px solid var(--component-button-danger-border);
+  padding: 0;
+  background: var(--component-button-danger-background);
+  color: var(--component-button-danger-text);
+}
+
+@media (min-width: 720px) {
+  .sectionChip,
+  .sectionActions {
+    flex-wrap: nowrap;
+  }
+
+  .sectionName {
+    flex: 1;
+  }
 }

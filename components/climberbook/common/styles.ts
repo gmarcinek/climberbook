@@ -242,7 +242,8 @@ export const backupDropzoneStyle = {
   placeItems: "center",
   padding: 12,
   border: "1px dashed var(--border-strong)",
-  background: "rgba(255,255,255,0.38)",
+  background:
+    "var(--component-backup-dropzone-background, rgba(255,255,255,0.38))",
   color: "var(--muted)",
   cursor: "pointer",
   textAlign: "center" as const,

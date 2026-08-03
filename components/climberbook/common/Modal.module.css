@@ -54,6 +54,13 @@
   box-shadow: var(--component-modal-close-shadow);
 }
 
+@media (min-width: 720px) {
+  .content > section {
+    padding: 0 !important;
+    background: transparent !important;
+  }
+}
+
 @media (max-width: 767px) {
   .overlay {
     inset: 0 !important;
@@ -86,7 +93,7 @@
 
     grid-template-rows: auto minmax(0, 1fr) !important;
 
-    padding: 1rem !important;
+    padding: 0.5rem !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     border-radius: 0 !important;

@@ -17,11 +17,28 @@ export function TeamModule() {
     <TeamAssembly
       moduleMeta={moduleMeta}
       athletes={app.athletes}
+      sections={app.sections}
       teamTrainingsCount={app.teamTrainings.length}
       teamSummaryGroups={summaries.teamSummaryGroups}
       activeAthleteId={app.activeAthleteId}
       onSelectAthlete={app.setActiveAthleteId}
       teamWeightChartData={summaries.teamWeightChartData}
+      facilities={app.facilities}
+      athleteFormMode={app.athleteFormMode}
+      athleteForm={app.athleteForm}
+      status={app.status}
+      newSectionName={app.newSectionName}
+      setAthleteForm={app.setAthleteForm}
+      setNewSectionName={app.setNewSectionName}
+      onAddSection={app.addSection}
+      onUpdateSection={app.updateSection}
+      onDeleteSection={app.deleteSection}
+      onAssignAthleteSection={app.assignAthleteSection}
+      onAthleteExport={app.exportAthlete}
+      onStartAthleteEdit={app.startAthleteEdit}
+      onDeleteAthlete={app.deleteAthlete}
+      onAthleteFormSubmit={app.submitAthlete}
+      onResetAthleteForm={app.resetAthleteForm}
     />
   );
 }

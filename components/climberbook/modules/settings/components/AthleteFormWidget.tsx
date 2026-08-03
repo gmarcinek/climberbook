@@ -21,6 +21,8 @@ export function AthleteFormWidget({
   sections,
   showSectionField = true,
   panelClassName,
+  panelPadding,
+  panelStyle,
   validationMessage,
   onAthleteFormSubmit,
   onResetAthleteForm,
@@ -29,6 +31,8 @@ export function AthleteFormWidget({
     <Form
       onSubmit={onAthleteFormSubmit}
       panelClassName={panelClassName}
+      panelPadding={panelPadding}
+      panelStyle={panelStyle}
       header={
         <div style={panelHeadingStyle}>
           <div>

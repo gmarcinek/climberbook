@@ -75,11 +75,14 @@ import {
   updateTraining,
   updateWeightEntry,
   type AscentRecord,
+  type AthleteExportOptions,
   type AthleteRecord,
   type DatabaseImportPreview,
   type ClimberbookFullDatabaseBackup,
   type FacilityCapabilities,
   type FacilityRecord,
+  type FullDatabaseExportOptions,
+  type FullDatabaseImportOptions,
   type SectionRecord,
   type TrainingRecord,
   type TrainingSurface,
@@ -106,15 +109,18 @@ import {
   deleteExperimentalWeightEntry,
   EXPERIMENTAL_API_PENDING_EVENT,
   ExperimentalApiError,
+  exportExperimentalAthleteBackup,
   exportExperimentalPostgresBackup,
   getExperimentalPostgresSnapshot,
   importExperimentalAscents,
   importExperimentalPostgresBackup,
   isExperimentalPostgresUiEnabled,
+  prepareExperimentalPostgresBackupImport,
   saveExperimentalProfile,
   updateExperimentalAscent,
   updateExperimentalAthlete,
   updateExperimentalFacility,
+  updateExperimentalSection,
   updateExperimentalTraining,
   updateExperimentalWeightEntryRecord,
 } from "@/lib/experimental-postgres-ui";
@@ -310,7 +316,7 @@ const mapTrainingToDraft = (
       surfaces: training.surfaces,
       facilityName: training.facilityName ?? "",
       ropeWallName: training.ropeWallName ?? "",
-      ropeRoutes:
+      ropeRoutes: (
         training.ropeRoutes ??
         (training.difficultyBySurface?.lina ?? "")
           .split(",")
@@ -319,7 +325,9 @@ const mapTrainingToDraft = (
           .map((grade) => ({
             grade,
             ropeWallName: training.ropeWallName ?? "",
-          })),
+            completed: 1.0,
+          }))
+      ).map((route) => ({ ...route, completed: route.completed ?? 1.0 })),
       customSessionType: training.customSessionType ?? "",
       notes: training.notes,
     },
@@ -407,6 +415,7 @@ type ClimberbookContextValue = {
     event: FormEvent<HTMLFormElement>,
     facilityId?: string,
   ) => Promise<void>;
+  updateSection: (section: SectionRecord, name: string) => Promise<void>;
   deleteSection: (section: SectionRecord) => Promise<void>;
   addFacility: (
     event: FormEvent<HTMLFormElement>,
@@ -1137,7 +1146,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       URL.revokeObjectURL(url);
     }, 100);
   }
-  async function exportDatabase() {
+  async function exportDatabase(options: FullDatabaseExportOptions) {
     const exportTime = new Date()
       .toTimeString()
       .slice(0, 8)
@@ -1145,7 +1154,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
 
     if (isExperimentalPostgresUiEnabled()) {
       await download(
-        await exportExperimentalPostgresBackup(),
+        await exportExperimentalPostgresBackup(options),
         `climberbook-calosciowy-${today}-${exportTime}.json`,
       );
       showSuccessToast("Eksport bazy zakończony sukcesem.");
@@ -1158,10 +1167,17 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     );
     showSuccessToast("Eksport bazy zakończony sukcesem.");
   }
-  async function exportAthlete(athlete: AthleteRecord) {
+  async function exportAthlete(
+    athlete: AthleteRecord,
+    options: AthleteExportOptions,
+  ) {
     if (isExperimentalPostgresUiEnabled()) {
-      setStatus(
-        "Eksport backupu nie jest jeszcze dostępny w eksperymentalnym trybie PostgreSQL.",
+      await download(
+        await exportExperimentalAthleteBackup(athlete.id, options),
+        `climberbook-${athlete.name || "zawodnik"}-${today}.json`,
+      );
+      showSuccessToast(
+        `Eksport zawodnika ${athlete.name} zakończony sukcesem.`,
       );
       return;
     }
@@ -1171,7 +1187,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     );
     showSuccessToast(`Eksport zawodnika ${athlete.name} zakończony sukcesem.`);
   }
-  async function importFile(file: File) {
+  async function importFile(file: File, options: FullDatabaseImportOptions) {
     if (isExperimentalPostgresUiEnabled()) {
       const backup: unknown = JSON.parse(await file.text());
       if (
@@ -1184,9 +1200,19 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         );
         return;
       }
-      const fullBackup = backup as ClimberbookFullDatabaseBackup;
+      const fullBackup = prepareExperimentalPostgresBackupImport(
+        backup as ClimberbookFullDatabaseBackup,
+        options,
+      );
+      if (fullBackup.athletes.length === 0) {
+        throw new Error("Wybierz co najmniej jednego zawodnika do importu.");
+      }
       try {
-        await importExperimentalPostgresBackup(fullBackup);
+        await importExperimentalPostgresBackup(
+          fullBackup,
+          false,
+          options.duplicateStrategy,
+        );
       } catch (error) {
         if (
           !(error instanceof ExperimentalApiError) ||
@@ -1202,7 +1228,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         );
         if (!shouldImport) return;
 
-        await importExperimentalPostgresBackup(fullBackup, true);
+        await importExperimentalPostgresBackup(
+          fullBackup,
+          true,
+          options.duplicateStrategy,
+        );
       }
       await refreshData();
       showSuccessToast("Import backupu do PostgreSQL zakończony sukcesem.");
@@ -1253,12 +1283,12 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     const file = event.dataTransfer.files[0];
     if (file) void prepareImportFile(file);
   }
-  async function confirmImportPreview() {
+  async function confirmImportPreview(options: FullDatabaseImportOptions) {
     const file = pendingImportFileRef.current;
     if (!file) return;
     setIsImportingBackup(true);
     try {
-      await importFile(file);
+      await importFile(file, options);
       pendingImportFileRef.current = null;
       setImportPreview(null);
       setIsImportPreviewOpen(false);
@@ -1299,6 +1329,14 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       else await deleteSection(section.id);
       await refreshData();
     }
+  }
+  async function updateSectionAction(section: SectionRecord, name: string) {
+    const sectionName = name.trim();
+    if (!sectionName || sectionName === section.name) return;
+    if (isExperimentalPostgresUiEnabled())
+      await updateExperimentalSection(section.id, sectionName);
+    else await updateSection(section.id, sectionName);
+    await refreshData();
   }
   async function addFacilityAction(
     event: FormEvent<HTMLFormElement>,
@@ -1557,6 +1595,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     confirmImportPreview,
     closeImportPreview,
     addSection: addSectionAction,
+    updateSection: updateSectionAction,
     deleteSection: deleteSectionAction,
     addFacility: addFacilityAction,
     updateFacility: updateFacilityAction,
@@ -1771,19 +1810,51 @@ export function useAnalyticsModule() {
 export function useTeamModule() {
   const {
     activeAthleteId,
+    addSection,
+    assignAthleteSection,
+    athleteForm,
+    athleteFormMode,
     athletes,
+    deleteAthlete,
+    deleteSection,
+    exportAthlete,
+    facilities,
+    newSectionName,
+    resetAthleteForm,
     sections,
     setActiveAthleteId,
+    setAthleteForm,
+    setNewSectionName,
+    startAthleteEdit,
+    status,
+    submitAthlete,
     teamTrainings,
     teamWeightEntries,
+    updateSection,
   } = useClimberbook();
   return {
     activeAthleteId,
+    addSection,
+    assignAthleteSection,
+    athleteForm,
+    athleteFormMode,
     athletes,
+    deleteAthlete,
+    deleteSection,
+    exportAthlete,
+    facilities,
+    newSectionName,
+    resetAthleteForm,
     sections,
     setActiveAthleteId,
+    setAthleteForm,
+    setNewSectionName,
+    startAthleteEdit,
+    status,
+    submitAthlete,
     teamTrainings,
     teamWeightEntries,
+    updateSection,
   };
 }
 export function useSettingsModule() {

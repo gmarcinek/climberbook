@@ -49,7 +49,7 @@ export function ProfileFormWidget({
         </div>
       }
     >
-      <div style={fieldStyle}>
+      <div style={{ ...fieldStyle, gap: "1rem" }}>
         <span>Dane zawodnika</span>
         <strong>{activeAthlete?.name || "Nie wybrano zawodnika"}</strong>
         {activeAthlete ? (

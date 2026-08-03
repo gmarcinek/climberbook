@@ -13,8 +13,8 @@ export default async function SettingsTabPage({
   await requireAuthenticatedUser();
   const { module, tab } = await params;
 
-  if (module === "ustawienia" && tab === "obiekty") {
-    redirect("/ustawienia/zespol");
+  if (module === "ustawienia" && (tab === "obiekty" || tab === "zespol")) {
+    redirect(tab === "zespol" ? "/team" : "/ustawienia/profil");
   }
 
   if (module !== "ustawienia" || !settingsTabs.has(tab)) {

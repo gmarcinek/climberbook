@@ -123,6 +123,7 @@
 }
 
 .formActionsInline {
+  width: 100%;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
@@ -162,5 +163,9 @@
 
   .formActions > * {
     width: auto;
+  }
+
+  .formActionsInline {
+    justify-content: space-between;
   }
 }
