@@ -9,7 +9,6 @@ import { formatDurationMinutes } from "@/components/climberbook/common/training"
 import {
   infoGridStyle,
   listCardHeaderStyle,
-  listCardStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
   scrollListStyle,
@@ -73,19 +72,22 @@ export function TrainingHistoryWidget({
     );
   const responsiveTrainingCardStyle = isMobileLayout
     ? {
-        ...listCardStyle,
         padding: 0,
         paddingBottom: 12,
         marginBottom: 12,
         background: "transparent",
-        border: 0,
+        borderTop: 0,
+        borderRight: 0,
         borderBottom: "1px solid rgb(215 212 212)",
+        borderLeft: 0,
       }
     : {
-        ...listCardStyle,
         padding: "8px 0 16px",
         background: "transparent",
+        borderTop: 0,
+        borderRight: 0,
         borderBottom: "1px solid rgb(215 212 212)",
+        borderLeft: 0,
       };
 
   return (

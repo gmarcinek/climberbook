@@ -66,6 +66,9 @@ type ChartQuarter = {
   quarter: number;
 };
 
+const overviewBrushFill =
+  "color-mix(in srgb, var(--component-chart-activity-rope) 25%, transparent)";
+
 export function WeeklyAscentChartWidget({
   chartRangeLabel,
   ascentTimelineStats,
@@ -280,25 +283,48 @@ export function WeeklyAscentChartWidget({
           minWidth: 220,
           padding: "10px 12px",
           borderRadius: 12,
-          border: "1px solid rgba(28, 61, 89, 0.16)",
-          background: "rgba(255, 250, 240, 0.96)",
-          boxShadow: "0 14px 30px rgba(17, 24, 39, 0.12)",
+          border: "var(--component-chart-tooltip-border)",
+          background: "var(--component-chart-tooltip-background)",
+          boxShadow: "var(--component-chart-tooltip-shadow)",
+          color: "var(--component-chart-tooltip-text)",
         }}
       >
-        <div style={{ fontSize: 12, color: "var(--muted)" }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: "var(--component-chart-tooltip-muted-text)",
+          }}
+        >
           {entry.date} · {entry.routeName}
         </div>
         <div style={{ display: "grid", gap: 2 }}>
-          <span style={{ fontSize: 10, color: "var(--muted)" }}>WYCENA</span>
+          <span
+            style={{
+              fontSize: 10,
+              color: "var(--component-chart-tooltip-muted-text)",
+            }}
+          >
+            WYCENA
+          </span>
           <strong>{entry.suggestedGrade || "-"}</strong>
         </div>
         <div style={{ display: "grid", gap: 2 }}>
-          <span style={{ fontSize: 10, color: "var(--muted)" }}>
+          <span
+            style={{
+              fontSize: 10,
+              color: "var(--component-chart-tooltip-muted-text)",
+            }}
+          >
             WYCENA SUBIEKTYWNA
           </span>
           <strong>{entry.subjectiveGrade || "-"}</strong>
         </div>
-        <div style={{ fontSize: 11, color: "var(--muted)" }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--component-chart-tooltip-muted-text)",
+          }}
+        >
           Opis po kliknięciu
         </div>
       </div>
@@ -338,7 +364,9 @@ export function WeeklyAscentChartWidget({
                   type="checkbox"
                   checked={isPanelVisible}
                   onChange={(event) => setIsPanelVisible(event.target.checked)}
-                  style={{ accentColor: "#168f91" }}
+                  style={{
+                    accentColor: "var(--component-chart-activity-rope)",
+                  }}
                 />
                 Panel
               </label>
@@ -356,7 +384,9 @@ export function WeeklyAscentChartWidget({
                   type="checkbox"
                   checked={isRockVisible}
                   onChange={(event) => setIsRockVisible(event.target.checked)}
-                  style={{ accentColor: "#e19a24" }}
+                  style={{
+                    accentColor: "var(--component-chart-activity-boulder)",
+                  }}
                 />
                 Skała
               </label>
@@ -376,7 +406,9 @@ export function WeeklyAscentChartWidget({
                   onChange={(event) =>
                     setAreProjectsVisible(event.target.checked)
                   }
-                  style={{ accentColor: "#8d5ca8" }}
+                  style={{
+                    accentColor: "var(--component-chart-activity-board)",
+                  }}
                 />
                 Projekty
               </label>
@@ -401,7 +433,7 @@ export function WeeklyAscentChartWidget({
               disabled={activeQuarterIndex === 0}
               style={{
                 border: "1px solid var(--border-strong)",
-                background: "rgba(255,255,255,0.6)",
+                background: "var(--component-soft-pill-background)",
                 color: "var(--text)",
                 width: 32,
                 height: 32,
@@ -426,7 +458,7 @@ export function WeeklyAscentChartWidget({
               disabled={activeQuarterIndex === quarters.length - 1}
               style={{
                 border: "1px solid var(--border-strong)",
-                background: "rgba(255,255,255,0.6)",
+                background: "var(--component-soft-pill-background)",
                 color: "var(--text)",
                 width: 32,
                 height: 32,
@@ -465,7 +497,7 @@ export function WeeklyAscentChartWidget({
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="rgba(28, 61, 89, 0.12)"
+                  stroke="var(--component-chart-grid)"
                 />
                 <XAxis
                   dataKey="chartKey"
@@ -516,7 +548,7 @@ export function WeeklyAscentChartWidget({
                       y={entry.subjectiveValue ?? undefined}
                       r={5}
                       fill={entry.subjectiveColor}
-                      stroke="rgba(255,255,255,0.9)"
+                      stroke="var(--component-chart-marker-outline)"
                       strokeWidth={1.5}
                       style={{ cursor: "crosshair" }}
                       onClick={() => setSelectedEntry(entry)}
@@ -535,15 +567,15 @@ export function WeeklyAscentChartWidget({
                 <YAxis hide />
                 <Bar
                   dataKey="suggestedValue"
-                  fill="rgba(22, 143, 145, 0.34)"
+                  fill={overviewBrushFill}
                   isAnimationActive={false}
                 />
                 <Brush
                   key={committedBrushKey}
                   dataKey="chartKey"
                   height={52}
-                  stroke="rgba(22, 143, 145, 0.72)"
-                  fill="rgba(22, 143, 145, 0.08)"
+                  stroke="var(--component-chart-activity-rope)"
+                  fill={overviewBrushFill}
                   travellerWidth={10}
                   startIndex={activeBrushRange.startIndex}
                   endIndex={activeBrushRange.endIndex}

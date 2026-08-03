@@ -61,6 +61,9 @@ export async function POST(request: Request) {
       actorId,
       request.headers.get("X-Climberbook-Confirm-Different-Owner-Email") ===
         "true",
+      request.headers.get("X-Climberbook-Duplicate-Strategy") === "overwrite"
+        ? "overwrite"
+        : "skip",
     );
     return Response.json(result, { status: 201 });
   } catch (error) {

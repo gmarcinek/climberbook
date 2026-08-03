@@ -19,16 +19,23 @@ import {
 } from "@/components/climberbook/common/FormLayout";
 import {
   formatWeightInput,
+  getLatestWeightEntry,
   parseHeightInput,
   parseWeightInput,
 } from "@/components/climberbook/common/training";
 import type { UserSex } from "@/lib/climbs-db";
 import type { ProfileFormWidgetProps } from "./SettingsWidgetTypes";
 export function ProfileFormWidget({
+  activeAthlete,
+  accountEmail,
   profileDraft,
+  weightEntries,
   setProfileDraft,
   onSettingsSubmit,
+  onStartAthleteEdit,
 }: ProfileFormWidgetProps) {
+  const latestWeightEntry = getLatestWeightEntry(weightEntries);
+
   return (
     <Form
       onSubmit={onSettingsSubmit}
@@ -38,10 +45,40 @@ export function ProfileFormWidget({
             <span style={moduleEyebrowStyle}>Profil</span>
             <h2 style={sectionTitleStyle}>Settings użytkownika</h2>
           </div>
-          <span style={softTagStyle}>Data urodzenia, płeć, wzrost, waga</span>
+          <span style={softTagStyle}>Dane konta i parametry treningowe</span>
         </div>
       }
     >
+      <div style={{ ...fieldStyle, gap: "1rem" }}>
+        <span>Dane zawodnika</span>
+        <strong>{activeAthlete?.name || "Nie wybrano zawodnika"}</strong>
+        {activeAthlete ? (
+          <span>
+            {[
+              activeAthlete.firstName,
+              activeAthlete.lastName,
+              activeAthlete.nick && `nick: ${activeAthlete.nick}`,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Brak dodatkowych danych"}
+          </span>
+        ) : null}
+        {accountEmail ? (
+          <span>
+            E-mail logowania Google:{" "}
+            <strong style={{ color: "var(--accent)" }}>{accountEmail}</strong>.
+          </span>
+        ) : null}
+        {activeAthlete ? (
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => void onStartAthleteEdit(activeAthlete)}
+          >
+            Edytuj dane zawodnika
+          </Button>
+        ) : null}
+      </div>
       <FormGrid>
         <label style={fieldStyle}>
           Data urodzenia
@@ -96,43 +133,55 @@ export function ProfileFormWidget({
         </label>
         <label style={fieldStyle} className={formLayoutClassNames.fullSpan}>
           Waga (kg)
-          <NumericStepperControl
-            value={profileDraft.weightKg}
-            onChange={(event) =>
-              setProfileDraft((current) => ({
-                ...current,
-                weightKg: event.target.value.replaceAll(",", "."),
-              }))
-            }
-            onDecrement={() =>
-              setProfileDraft((current) => ({
-                ...current,
-                weightKg: formatWeightInput(
-                  Math.max(0, (parseWeightInput(current.weightKg) ?? 0) - 0.1),
-                ),
-              }))
-            }
-            onIncrement={() =>
-              setProfileDraft((current) => ({
-                ...current,
-                weightKg: formatWeightInput(
-                  (parseWeightInput(current.weightKg) ?? 0) + 0.1,
-                ),
-              }))
-            }
-            inputProps={{
-              onBlur: () =>
+          {latestWeightEntry ? (
+            <Input
+              value={formatWeightInput(latestWeightEntry.weightKg)}
+              type="number"
+              readOnly
+              aria-label="Aktualna waga z historii pomiarów"
+            />
+          ) : (
+            <NumericStepperControl
+              value={profileDraft.weightKg}
+              onChange={(event) =>
+                setProfileDraft((current) => ({
+                  ...current,
+                  weightKg: event.target.value.replaceAll(",", "."),
+                }))
+              }
+              onDecrement={() =>
                 setProfileDraft((current) => ({
                   ...current,
                   weightKg: formatWeightInput(
-                    parseWeightInput(current.weightKg),
+                    Math.max(
+                      0,
+                      (parseWeightInput(current.weightKg) ?? 0) - 0.1,
+                    ),
                   ),
-                })),
-              type: "number",
-              min: "0",
-              step: "0.1",
-            }}
-          />
+                }))
+              }
+              onIncrement={() =>
+                setProfileDraft((current) => ({
+                  ...current,
+                  weightKg: formatWeightInput(
+                    (parseWeightInput(current.weightKg) ?? 0) + 0.1,
+                  ),
+                }))
+              }
+              inputProps={{
+                onBlur: () =>
+                  setProfileDraft((current) => ({
+                    ...current,
+                    weightKg: formatWeightInput(
+                      parseWeightInput(current.weightKg),
+                    ),
+                  })),
+                type: "number",
+                min: "0",
+                step: "0.1",
+              }}
+            />
+          )}
         </label>
       </FormGrid>
       <FormActions>

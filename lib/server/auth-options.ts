@@ -1,8 +1,11 @@
 import type { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 import FacebookProvider from "next-auth/providers/facebook";
 import GoogleProvider from "next-auth/providers/google";
-import AzureADProvider from "next-auth/providers/azure-ad";
-import { findOrCreateSocialUser } from "@/lib/server/climberbook-repository";
+import {
+  authenticateEmailPasswordUser,
+  findOrCreateSocialUser,
+} from "@/lib/server/climberbook-repository";
 
 const googleConfigured = Boolean(
   process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET,
@@ -10,20 +13,38 @@ const googleConfigured = Boolean(
 const facebookConfigured = Boolean(
   process.env.AUTH_FACEBOOK_ID && process.env.AUTH_FACEBOOK_SECRET,
 );
-const entraConfigured = Boolean(
-  process.env.AUTH_ENTRA_CLIENT_ID &&
-    process.env.AUTH_ENTRA_CLIENT_SECRET &&
-    process.env.AUTH_ENTRA_TENANT_ID,
-);
 
 export function isSocialLoginConfigured() {
-  return Boolean(
-    process.env.AUTH_SECRET &&
-      (googleConfigured || facebookConfigured || entraConfigured),
-  );
+  return Boolean(process.env.AUTH_SECRET);
 }
 
-const providers: NextAuthOptions["providers"] = [];
+const providers: NextAuthOptions["providers"] = [
+  CredentialsProvider({
+    id: "credentials",
+    name: "E-mail i hasło",
+    credentials: {
+      email: { label: "E-mail", type: "email" },
+      password: { label: "Hasło", type: "password" },
+    },
+    async authorize(credentials) {
+      const email =
+        typeof credentials?.email === "string" ? credentials.email : "";
+      const password =
+        typeof credentials?.password === "string" ? credentials.password : "";
+      if (!email || !password) return null;
+
+      const user = await authenticateEmailPasswordUser(email, password);
+      if (!user) return null;
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.displayName,
+        appUserId: user.id,
+      };
+    },
+  }),
+];
 
 if (googleConfigured) {
   providers.push(
@@ -43,16 +64,6 @@ if (facebookConfigured) {
   );
 }
 
-if (entraConfigured) {
-  providers.push(
-    AzureADProvider({
-      clientId: process.env.AUTH_ENTRA_CLIENT_ID!,
-      clientSecret: process.env.AUTH_ENTRA_CLIENT_SECRET!,
-      tenantId: process.env.AUTH_ENTRA_TENANT_ID!,
-    }),
-  );
-}
-
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET,
   providers,
@@ -60,6 +71,7 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   callbacks: {
     async signIn({ user, account, profile }) {
+      if (user.appUserId) return true;
       if (!account?.providerAccountId || !user.email?.trim()) return false;
 
       const providerProfile = profile as {

@@ -8,7 +8,7 @@
 .dialog {
   position: relative;
   display: grid;
-  grid-template-rows: 32px minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr);
   align-content: start;
 
   min-width: 0;
@@ -23,9 +23,10 @@
   align-items: center;
   position: relative;
   z-index: 1;
-  height: 32px;
-  min-height: 32px;
-  max-height: 32px;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 6px 6px 6px 0;
   align-self: start;
 }
 
@@ -35,20 +36,29 @@
   max-width: 100%;
 }
 
-.closeButton {
+.closeButton.closeButton {
   position: relative;
   z-index: 1;
   width: 32px;
+  min-width: 32px;
   height: 32px;
-  border: 1px solid var(--border-strong);
-  border-radius: 50%;
+  min-height: 32px;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 0;
   padding: 0;
-  background: rgba(255, 250, 243, 0.96);
-  color: var(--text);
+  background: var(--component-modal-close-background);
+  color: var(--theme-text);
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 4px 12px rgba(72, 49, 33, 0.18);
+  box-shadow: var(--component-modal-close-shadow);
+}
+
+@media (min-width: 720px) {
+  .content > section {
+    padding: 0 !important;
+    background: transparent !important;
+  }
 }
 
 @media (max-width: 767px) {
@@ -65,6 +75,7 @@
   }
 
   .dialog {
+    display: block !important;
     width: 100% !important;
     max-width: none !important;
 
@@ -82,8 +93,17 @@
 
     grid-template-rows: auto minmax(0, 1fr) !important;
 
-    overflow: hidden !important;
+    padding: 0.5rem !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     border-radius: 0 !important;
+  }
+
+  .dialogFullBleed {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
 
   .content {
@@ -91,12 +111,14 @@
     min-width: 0;
     min-height: 0;
 
+    overflow: visible;
+  }
+
+  .dialogFullBleed .content {
     overflow-x: hidden;
     overflow-y: auto;
-
     overscroll-behavior-x: none;
     overscroll-behavior-y: contain;
-
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
   }

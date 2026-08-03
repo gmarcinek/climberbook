@@ -1,0 +1,23 @@
+.authPage {
+  --component-input-color-scheme: light;
+  --component-input-placeholder: #6b665e;
+  --theme-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #19362d;
+
+  color: #19362d;
+  color-scheme: light;
+  text-shadow: none;
+}
+
+.authPage input,
+.authPage textarea,
+.authPage select {
+  background: #ffffff;
+  color: #19362d;
+  font-weight: 400;
+}
+
+.authPage input::placeholder,
+.authPage textarea::placeholder {
+  color: #6b665e;
+  opacity: 1;
+}

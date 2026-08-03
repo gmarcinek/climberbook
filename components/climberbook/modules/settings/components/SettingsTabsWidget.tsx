@@ -5,7 +5,7 @@ const settingsTabNavStyle = {
   display: "flex",
   gap: 4,
   flexWrap: "wrap" as const,
-  borderBottom: "1px solid var(--border-strong)",
+  borderBottom: "1px solid var(--component-settings-tab-border)",
 };
 const settingsTabButtonStyle = {
   border: 0,

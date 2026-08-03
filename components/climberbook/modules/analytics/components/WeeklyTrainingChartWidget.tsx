@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import {
   Bar,
   BarChart,
-  Brush,
   CartesianGrid,
   Legend,
   ReferenceLine,
@@ -27,6 +25,7 @@ import { useSelectedDates } from "@/contexts/SelectedDatesContext";
 type WeeklyTrainingChartWidgetProps = {
   isMobileLayout: boolean;
   chartRangeLabel: string;
+  contentOnly?: boolean;
   weeklyTrainingStats: Array<{
     week: string;
     totalHours: number;
@@ -34,27 +33,311 @@ type WeeklyTrainingChartWidgetProps = {
     boulderHours: number;
     boardHours: number;
     sprayCircuitHours: number;
+    hangboardHours: number;
+    pullupBarHours: number;
+    campusHours: number;
   }>;
 };
+
+const weeklyLegendItems = [
+  { label: "Baldy", fill: "var(--component-chart-activity-boulder)" },
+  { label: "Campus", fill: "var(--component-chart-activity-campus)" },
+  { label: "Chwytotablica", fill: "url(#hangboard-stripes)" },
+  { label: "Drążek", fill: "var(--component-chart-activity-campus)" },
+  { label: "Kilter/Moon", fill: "var(--component-chart-activity-board)" },
+  { label: "Lina", fill: "var(--component-chart-activity-rope)" },
+  { label: "Spray/obwody", fill: "var(--component-chart-activity-spray)" },
+];
+
+function WeeklyTrainingLegend() {
+  return (
+    <ul style={{ margin: 0, padding: 0, textAlign: "center" }}>
+      {weeklyLegendItems.map((item) => (
+        <li
+          key={item.label}
+          style={{ display: "inline-block", marginRight: 10 }}
+        >
+          <svg
+            aria-label={`${item.label} legend icon`}
+            height="14"
+            style={{
+              display: "inline-block",
+              marginRight: 4,
+              verticalAlign: "middle",
+            }}
+            viewBox="0 0 14 14"
+            width="14"
+          >
+            {item.label === "Campus" ? (
+              <>
+                <defs>
+                  <pattern
+                    id="legend-campus-dots"
+                    width="8"
+                    height="8"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <rect
+                      width="8"
+                      height="8"
+                      fill="var(--component-chart-activity-campus)"
+                    />
+                    <circle
+                      cx="4"
+                      cy="4"
+                      r="1.4"
+                      fill="var(--component-chart-marker-outline)"
+                    />
+                  </pattern>
+                </defs>
+                <rect fill="url(#legend-campus-dots)" height="14" width="14" />
+              </>
+            ) : (
+              <rect fill={item.fill} height="14" width="14" />
+            )}
+          </svg>
+          <span
+            style={{
+              color: item.fill.startsWith("url(")
+                ? "var(--theme-text)"
+                : item.fill,
+            }}
+          >
+            {item.label}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function WeeklyTrainingChartWidget({
   isMobileLayout,
   chartRangeLabel,
   weeklyTrainingStats,
+  contentOnly = false,
 }: WeeklyTrainingChartWidgetProps) {
-  const defaultSelectedRange = getDefaultSelectedRange(
-    weeklyTrainingStats.length,
-  );
   const { selectedDate } = useSelectedDates();
-  const [selectedRange, setSelectedRange] = useState<{
-    startIndex: number;
-    endIndex: number;
-  } | null>(null);
-  const visibleRange = selectedRange ?? defaultSelectedRange;
   const selectedWeek = selectedDate ? getWeekStartIso(selectedDate) : null;
   const hasSelectedWeek =
     selectedWeek !== null &&
     weeklyTrainingStats.some((week) => week.week === selectedWeek);
+  const content =
+    weeklyTrainingStats.length === 0 ? (
+      <EmptyState message="Dodaj treningi, aby zobaczyć tygodniowy rytm." />
+    ) : (
+      <div style={{ height: 300 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={weeklyTrainingStats}
+            margin={
+              isMobileLayout
+                ? { top: 0, right: 0, bottom: 0, left: -10 }
+                : { bottom: 12 }
+            }
+          >
+            <defs>
+              <linearGradient id="rope-gradient" x1="0" x2="0" y1="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--component-chart-activity-rope)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--component-chart-activity-rope)"
+                />
+              </linearGradient>
+              <linearGradient id="boulder-gradient" x1="0" x2="0" y1="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--component-chart-activity-boulder)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--component-chart-activity-boulder)"
+                />
+              </linearGradient>
+              <linearGradient id="board-gradient" x1="0" x2="0" y1="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--component-chart-activity-board)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--component-chart-activity-board)"
+                />
+              </linearGradient>
+              <linearGradient id="spray-gradient" x1="0" x2="0" y1="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--component-chart-activity-spray)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--component-chart-activity-spray)"
+                />
+              </linearGradient>
+              <linearGradient
+                id="pullup-bar-gradient"
+                x1="0"
+                x2="0"
+                y1="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stopColor="var(--component-chart-activity-campus)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--component-chart-activity-campus)"
+                />
+              </linearGradient>
+              <linearGradient id="campus-gradient" x1="0" x2="0" y1="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--component-chart-activity-campus)"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--component-chart-activity-campus)"
+                />
+              </linearGradient>
+              <pattern
+                id="hangboard-stripes"
+                width="10"
+                height="20"
+                patternUnits="userSpaceOnUse"
+                patternTransform="rotate(45)"
+              >
+                <rect
+                  width="10"
+                  height="10"
+                  fill="var(--component-chart-activity-hangboard-start)"
+                />
+                <rect
+                  y="10"
+                  width="10"
+                  height="10"
+                  fill="var(--component-chart-activity-hangboard-end)"
+                />
+              </pattern>
+              <pattern
+                id="campus-dots"
+                width="8"
+                height="8"
+                patternUnits="userSpaceOnUse"
+              >
+                <rect width="8" height="8" fill="url(#campus-gradient)" />
+                <circle
+                  cx="4"
+                  cy="4"
+                  r="1.4"
+                  fill="var(--component-chart-marker-outline)"
+                />
+              </pattern>
+              <pattern
+                id="campus-dots-dense"
+                width="4"
+                height="4"
+                patternUnits="userSpaceOnUse"
+              >
+                <rect width="4" height="4" fill="url(#campus-gradient)" />
+                <circle
+                  cx="2"
+                  cy="2"
+                  r="1"
+                  fill="var(--component-chart-marker-outline)"
+                />
+              </pattern>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="var(--component-chart-grid)"
+            />
+            <XAxis
+              dataKey="week"
+              height={isMobileLayout ? 24 : undefined}
+              tick={isMobileLayout ? { fontSize: "0.7rem" } : undefined}
+              tickFormatter={(value) => value.slice(5)}
+            />
+            <YAxis
+              width={isMobileLayout ? 34 : undefined}
+              tick={isMobileLayout ? { fontSize: "0.7rem" } : undefined}
+              tickFormatter={(value) => `${value} h`}
+            />
+            {hasSelectedWeek && (
+              <ReferenceLine
+                x={selectedWeek!}
+                stroke="var(--component-chart-marker-selected)"
+                strokeWidth={2}
+                strokeDasharray="4 4"
+              />
+            )}
+            <Tooltip
+              formatter={(value, name) => [
+                `${Number(value).toLocaleString("pl-PL", {
+                  maximumFractionDigits: 1,
+                })} h`,
+                name,
+              ]}
+            />
+            <Legend content={<WeeklyTrainingLegend />} />
+            <Bar
+              dataKey="hangboardHours"
+              name="Chwytotablica"
+              stackId="hours"
+              fill="url(#hangboard-stripes)"
+              isAnimationActive={false}
+            />
+            <Bar
+              dataKey="pullupBarHours"
+              name="Drążek"
+              stackId="hours"
+              fill="url(#pullup-bar-gradient)"
+              isAnimationActive={false}
+            />
+            <Bar
+              dataKey="campusHours"
+              name="Campus"
+              stackId="hours"
+              fill="url(#campus-dots-dense)"
+              isAnimationActive={false}
+            />
+            <Bar
+              dataKey="ropeHours"
+              name="Lina"
+              stackId="hours"
+              fill="url(#rope-gradient)"
+              isAnimationActive={false}
+            />
+            <Bar
+              dataKey="boulderHours"
+              name="Baldy"
+              stackId="hours"
+              fill="url(#boulder-gradient)"
+              isAnimationActive={false}
+            />
+            <Bar
+              dataKey="boardHours"
+              name="Kilter/Moon"
+              stackId="hours"
+              fill="url(#board-gradient)"
+              isAnimationActive={false}
+            />
+            <Bar
+              dataKey="sprayCircuitHours"
+              name="Spray/obwody"
+              stackId="hours"
+              fill="url(#spray-gradient)"
+              isAnimationActive={false}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+
+  if (contentOnly) return content;
 
   return (
     <Panel>
@@ -65,111 +348,7 @@ export function WeeklyTrainingChartWidget({
         </div>
         <span style={softTagStyle}>{chartRangeLabel}</span>
       </div>
-      {weeklyTrainingStats.length === 0 ? (
-        <EmptyState message="Dodaj treningi, aby zobaczyć tygodniowy rytm." />
-      ) : (
-        <div style={{ height: 300 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={weeklyTrainingStats}
-              margin={
-                isMobileLayout
-                  ? { top: 0, right: 0, bottom: 0, left: -10 }
-                  : { bottom: 12 }
-              }
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="rgba(28, 61, 89, 0.12)"
-              />
-              <XAxis
-                dataKey="week"
-                height={isMobileLayout ? 24 : undefined}
-                tick={isMobileLayout ? { fontSize: "0.7rem" } : undefined}
-                tickFormatter={(value) => value.slice(5)}
-              />
-              <YAxis
-                width={isMobileLayout ? 34 : undefined}
-                tick={isMobileLayout ? { fontSize: "0.7rem" } : undefined}
-                tickFormatter={(value) => `${value} h`}
-              />
-              {hasSelectedWeek && (
-                <ReferenceLine
-                  x={selectedWeek!}
-                  stroke="#176f86"
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
-                />
-              )}
-              <Tooltip
-                formatter={(value, name) => [
-                  `${Number(value).toLocaleString("pl-PL", {
-                    maximumFractionDigits: 1,
-                  })} h`,
-                  name,
-                ]}
-              />
-              <Legend />
-              <Bar
-                dataKey="ropeHours"
-                name="Lina"
-                stackId="hours"
-                fill="#168f91"
-                isAnimationActive={false}
-              />
-              <Bar
-                dataKey="boulderHours"
-                name="Baldy"
-                stackId="hours"
-                fill="#e19a24"
-                isAnimationActive={false}
-              />
-              <Bar
-                dataKey="boardHours"
-                name="Kilter/Moon"
-                stackId="hours"
-                fill="#8b6fc8"
-                isAnimationActive={false}
-              />
-              <Bar
-                dataKey="sprayCircuitHours"
-                name="Spray/obwody"
-                stackId="hours"
-                fill="#d16d3f"
-                isAnimationActive={false}
-              />
-              <Brush
-                dataKey="week"
-                height={isMobileLayout ? 28 : 32}
-                stroke="rgba(22, 143, 145, 0.72)"
-                fill="rgba(22, 143, 145, 0.08)"
-                travellerWidth={10}
-                startIndex={visibleRange.startIndex}
-                endIndex={visibleRange.endIndex}
-                tickFormatter={(value) => String(value).slice(5)}
-                onChange={(range) => {
-                  if (
-                    range.startIndex !== undefined &&
-                    range.endIndex !== undefined
-                  ) {
-                    setSelectedRange({
-                      startIndex: range.startIndex,
-                      endIndex: range.endIndex,
-                    });
-                  }
-                }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      {content}
     </Panel>
   );
-}
-
-function getDefaultSelectedRange(length: number) {
-  return {
-    startIndex: Math.max(0, length - 12),
-    endIndex: Math.max(0, length - 1),
-  };
 }

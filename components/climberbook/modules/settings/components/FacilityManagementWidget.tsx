@@ -1,5 +1,4 @@
 import {
-  inputStyle,
   moduleEyebrowStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
@@ -7,49 +6,36 @@ import {
   softTagStyle,
 } from "@/components/climberbook/common/styles";
 import { Button, EmotButton } from "@/components/climberbook/common/Button";
-import { Form, FormActions } from "@/components/climberbook/common/FormLayout";
+import { Panel } from "@/components/climberbook/common/Panel";
+import { Stack } from "@/components/climberbook/common/Stack";
 import type { FacilityRecord } from "@/lib/climbs-db";
 import styles from "./SectionManagementWidget.module.css";
 
 type Props = {
   facilities: FacilityRecord[];
-  newFacilityName: string;
-  setNewFacilityName: (name: string) => void;
-  onAddFacility: (event: React.FormEvent<HTMLFormElement>) => void;
+  onAddFacility: () => void;
   onDeleteFacility: (facility: FacilityRecord) => Promise<void>;
 };
 
 export function FacilityManagementWidget({
   facilities,
-  newFacilityName,
-  setNewFacilityName,
   onAddFacility,
   onDeleteFacility,
 }: Props) {
   return (
-    <Form
-      onSubmit={onAddFacility}
-      header={
-        <div style={panelHeadingStyle}>
-          <div>
-            <span style={moduleEyebrowStyle}>Obiekty</span>
-            <h2 style={sectionTitleStyle}>Miejsca treningu</h2>
-          </div>
-          <span style={softTagStyle}>{facilities.length}</span>
+    <Panel gap="md">
+      <div style={panelHeadingStyle}>
+        <div>
+          <span style={moduleEyebrowStyle}>Obiekty</span>
+          <h2 style={sectionTitleStyle}>Lista obiektów</h2>
         </div>
-      }
-    >
-      <input
-        value={newFacilityName}
-        onChange={(event) => setNewFacilityName(event.target.value)}
-        placeholder="Np. Crux, Centrum Wspinaczkowe"
-        style={inputStyle}
-      />
-      <FormActions>
-        <Button type="submit" variant="tertiary">
-          Dodaj obiekt
-        </Button>
-      </FormActions>
+        <Stack direction="row" gap="sm" align="center">
+          <span style={softTagStyle}>{facilities.length}</span>
+          <Button variant="primary" onClick={onAddFacility}>
+            + Obiekt
+          </Button>
+        </Stack>
+      </div>
       {facilities.length === 0 ? (
         <p style={mutedParagraphStyle}>Nie ma jeszcze żadnych obiektów.</p>
       ) : (
@@ -69,6 +55,6 @@ export function FacilityManagementWidget({
           ))}
         </div>
       )}
-    </Form>
+    </Panel>
   );
 }

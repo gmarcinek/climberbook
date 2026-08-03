@@ -1,4 +1,5 @@
 import type {
+  ForwardedRef,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
@@ -6,15 +7,18 @@ import type {
 } from "react";
 import { Button } from "@/components/climberbook/common/Button";
 import styles from "./FormControls.module.css";
+import { forwardRef } from "react";
 
 type BaseControlProps = {
   className?: string;
   grow?: boolean;
 };
 
+type ControlSize = "medium" | "small";
+
 type TextInputProps = InputHTMLAttributes<HTMLInputElement> & BaseControlProps;
-type SelectInputProps = SelectHTMLAttributes<HTMLSelectElement> &
-  BaseControlProps;
+type SelectInputProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "size"> &
+  BaseControlProps & { size?: ControlSize };
 type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> &
   BaseControlProps;
 
@@ -58,24 +62,34 @@ function joinClassNames(...classNames: Array<string | false | undefined>) {
   return classNames.filter(Boolean).join(" ");
 }
 
-export function Input({ className, grow = false, ...props }: TextInputProps) {
+export const Input = forwardRef(function Input(
+  { className, grow = false, ...props }: TextInputProps,
+  ref: ForwardedRef<HTMLInputElement>,
+) {
   return (
     <input
       {...props}
+      ref={ref}
       className={joinClassNames(styles.control, grow && styles.grow, className)}
     />
   );
-}
+});
 
 export function Select({
   className,
   grow = false,
+  size = "medium",
   ...props
 }: SelectInputProps) {
   return (
     <select
       {...props}
-      className={joinClassNames(styles.control, grow && styles.grow, className)}
+      className={joinClassNames(
+        styles.control,
+        styles[`size--${size}`],
+        grow && styles.grow,
+        className,
+      )}
     />
   );
 }

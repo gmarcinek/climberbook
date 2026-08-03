@@ -1,0 +1,17 @@
+.page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+}
+
+.shell {
+  position: relative;
+  min-height: 100vh;
+  background: var(--component-layout-background);
+  box-shadow: var(--component-layout-shadow);
+  backdrop-filter: var(--component-layout-backdrop-filter);
+}
+
+.moduleContent {
+  padding: 24px 8px;
+}

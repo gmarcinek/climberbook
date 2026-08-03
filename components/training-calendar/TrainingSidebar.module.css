@@ -30,6 +30,264 @@
   min-height: 0;
 }
 
+.trainingSidebar__inline {
+  display: grid;
+  gap: 8px;
+  border: var(--component-panel-border);
+  background: var(--component-card-background);
+  container-type: inline-size;
+}
+
+:global(body.theme-old-money) .trainingSidebar__inline {
+  background-color: color-mix(
+    in srgb,
+    #ffffff26 82%,
+    #c98c5524
+  );
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  :is(input:not([type="range"]), select, textarea) {
+  border: 1px solid color-mix(in srgb, var(--theme-beige) 20%, transparent);
+  background-color: color-mix(in srgb, var(--theme-beige) 30%, transparent);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  :is(input:not([type="range"]), select, textarea):focus {
+  border-color: var(--theme-beige);
+  box-shadow:
+    0 0 0 1px var(--theme-beige),
+    0 0 0 4px color-mix(in srgb, var(--theme-beige) 35%, transparent);
+}
+
+:global(body.theme-old-money) .trainingSidebar__inline input[type="number"] {
+  appearance: textfield;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  input[type="number"]::-webkit-inner-spin-button,
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  input[type="number"]::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+:global(body.theme-old-money) .trainingSidebar__inline select {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%231e1916' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(
+      color-mix(in srgb, var(--theme-beige) 30%, transparent),
+      color-mix(in srgb, var(--theme-beige) 30%, transparent)
+    );
+}
+
+:global(body.theme-old-money) .trainingSidebar__inline select option {
+  background: var(--theme-beige);
+  color: var(--theme-ink);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__sessionChip {
+  border-color: #ffffff40;
+  background: #ffffff1a;
+  color: #fff;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__sessionChip.trainingSidebar__chip--active {
+  border: 1px solid var(--theme-beige);
+  background: #ffffff33;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__controlGroup
+  :global(.FormControls_stepButton__qeJCX) {
+  border-color: #ffffff40;
+  background: #ffffff1a;
+  color: #fff;
+}
+
+:global(body.theme-default)
+  .trainingSidebar__inline
+  .trainingSidebar__controlGroup
+  :global(.FormControls_stepButton__qeJCX) {
+  background: var(--component-button-primary-background);
+  color: var(--component-button-primary-text);
+}
+
+:global(body.theme-text)
+  .trainingSidebar__inline
+  .trainingSidebar__controlGroup
+  :global(.FormControls_stepButton__qeJCX) {
+  background: #000;
+  color: #fff;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__spraywallOption {
+  border-color: #ffffff40;
+  background: #ffffff1a;
+  color: #fff;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__spraywallOption.trainingSidebar__spraywallOption--active {
+  border: var(--component-spraywall-option-active-border);
+  background-color: var(--component-spraywall-option-active-background);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  color: var(--component-spraywall-option-active-text);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__ropeRouteDelete {
+  background: #ffffff1a;
+  color: #fff;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__ropeRouteGrade {
+  width: 52px;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__protocolHeading {
+  color: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__eyebrow {
+  color: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__protocolSeries {
+  background: #0808081a;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__hangboardModeTab--active {
+  color: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__hangboardModeTab--active::after {
+  background: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  :is(
+    .trainingSidebar__gradeChip--boulder-1,
+    .trainingSidebar__gradeChip--boulder-2,
+    .trainingSidebar__gradeChip--boulder-3,
+    .trainingSidebar__gradeChip--boulder-4,
+    .trainingSidebar__gradeChip--boulder-5,
+    .trainingSidebar__gradeChip--moon-1,
+    .trainingSidebar__gradeChip--moon-2,
+    .trainingSidebar__gradeChip--moon-3,
+    .trainingSidebar__gradeChip--moon-4,
+    .trainingSidebar__gradeChip--moon-5,
+    .trainingSidebar__gradeChip--kilter-1,
+    .trainingSidebar__gradeChip--kilter-2,
+    .trainingSidebar__gradeChip--kilter-3,
+    .trainingSidebar__gradeChip--kilter-4,
+    .trainingSidebar__gradeChip--kilter-5
+  ) {
+  color: #151923;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  :is(
+    .trainingSidebar__gradeChip--boulder-6,
+    .trainingSidebar__gradeChip--boulder-7,
+    .trainingSidebar__gradeChip--boulder-8,
+    .trainingSidebar__gradeChip--boulder-9,
+    .trainingSidebar__gradeChip--moon-6,
+    .trainingSidebar__gradeChip--moon-7,
+    .trainingSidebar__gradeChip--moon-8,
+    .trainingSidebar__gradeChip--moon-9,
+    .trainingSidebar__gradeChip--kilter-6,
+    .trainingSidebar__gradeChip--kilter-7,
+    .trainingSidebar__gradeChip--kilter-8,
+    .trainingSidebar__gradeChip--kilter-9
+  ) {
+  color: #fff;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__protocolRemoveButton {
+  color: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  :global(.Button_variant--secondary) {
+  background: #ffffff1a;
+  color: #fff;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__protocolAddButton,
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__formPrimaryActions
+  :global(.Button_variant--secondary) {
+  border-color: #ffffff40;
+  background: #ffffff1a !important;
+  color: #fff;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__cancelAction {
+  background: var(--component-button-quadrary-background) !important;
+  color: var(--component-button-quadrary-text);
+}
+
+:global(body.theme-old-money) .trainingSidebar__pill {
+  background: #ffffff12;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__defaultFacilityButton {
+  background: #ffffff12;
+  color: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__formDeleteAction {
+  background: var(--component-button-secondary-background);
+  color: var(--component-button-secondary-text);
+}
+
+.trainingSidebar__defaultFacilityButton {
+  justify-self: start;
+  width: fit-content;
+  min-height: 32px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+}
+
 .trainingSidebar__panelHeader {
   display: flex;
   justify-content: space-between;
@@ -62,6 +320,12 @@
   border-bottom: 1px solid var(--border-strong);
 }
 
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__dayTabs {
+  border-bottom-color: #ffffff40;
+}
+
 .trainingSidebar__dayTab {
   position: relative;
   border: 0;
@@ -86,11 +350,23 @@
   content: "";
 }
 
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__dayTab--active {
+  color: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__dayTab--active::after {
+  background: var(--theme-beige);
+}
+
 .trainingSidebar__pill {
   padding: 4px 6px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(246, 250, 255, 0.84));
-  border: 1px solid rgba(26, 72, 122, 0.12);
+  background: var(--component-training-pill-background);
+  border: var(--component-card-border);
   color: var(--muted);
   font-size: 0.82rem;
   white-space: nowrap;
@@ -120,8 +396,8 @@
   display: grid;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid rgba(28, 61, 89, 0.12);
-  background: rgba(255, 255, 255, 0.84);
+  border: var(--component-card-border);
+  background: var(--component-card-background);
   cursor: pointer;
   text-align: left;
 }
@@ -130,8 +406,8 @@
   display: grid;
   gap: 4px;
   padding: 1rem;
-  border: 1px solid rgba(28, 61, 89, 0.12);
-  background: rgba(255, 255, 255, 0.84);
+  border: var(--component-card-border);
+  background: var(--component-training-card-background);
 }
 
 .trainingSidebar__trainingButtonHeader {
@@ -212,9 +488,9 @@
   gap: 4px;
   min-height: 88px;
   padding: 10px;
-  border: 1px solid rgba(28, 61, 89, 0.18);
+  border: var(--component-card-border);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.68);
+  background: var(--component-card-background);
   color: var(--text);
   cursor: pointer;
   text-align: left;
@@ -231,8 +507,13 @@
 }
 
 .trainingSidebar__spraywallOption--active {
-  border-color: var(--accent);
-  background: rgba(209, 109, 63, 0.12);
+  border: var(--component-spraywall-option-active-border);
+  background: var(--component-spraywall-option-active-background);
+  color: var(--component-spraywall-option-active-text);
+}
+
+.trainingSidebar__spraywallOption--active small {
+  color: var(--component-spraywall-option-active-muted-text);
 }
 
 .trainingSidebar__protocolSeries {
@@ -241,8 +522,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   padding: 12px;
-  border: 1px solid rgba(28, 61, 89, 0.12);
-  background: rgba(255, 255, 255, 0.46);
+  border: var(--component-card-border);
 }
 
 .trainingSidebar__hangboardModeTabs {
@@ -250,6 +530,12 @@
   display: flex;
   gap: 18px;
   border-bottom: 1px solid var(--border-strong);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__hangboardModeTabs {
+  border-bottom-color: #ffffff40;
 }
 
 .trainingSidebar__hangboardModeTab {
@@ -322,8 +608,16 @@
 .trainingSidebar__field {
   display: grid;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.trainingSidebar__field input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .trainingSidebar__protocolHeading {
@@ -353,9 +647,36 @@
   }
 }
 
+@container (max-width: 560px) {
+  .trainingSidebar__formGrid,
+  .trainingSidebar__protocolSeries,
+  .trainingSidebar__spraywallOptions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trainingSidebar__panel {
+    padding: 0;
+    background: transparent;
+  }
+
+
+  @container (max-width: 560px) {
+    .trainingSidebar__boulderGradeChipGrid,
+    .trainingSidebar__boardGradeChipGrid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}
+
 .trainingSidebar__chipGrid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.trainingSidebar__sessionChipGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 58px));
   gap: 4px;
 }
 
@@ -371,12 +692,49 @@
   grid-template-columns: repeat(9, minmax(0, 1fr));
 }
 
+.trainingSidebar__selectedGradeSection {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.trainingSidebar__selectedGradeLabel {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.trainingSidebar__selectedGradeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.trainingSidebar__selectedGradeChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 40px;
+  border-radius: 4px;
+  border-color: color-mix(in srgb, var(--grade-color) 72%, #172330);
+  background: var(--grade-color);
+  color: var(--grade-text, #172330);
+  font-weight: 700;
+}
+
+.trainingSidebar__selectedGradeRemove {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
 .trainingSidebar__chip {
-  border: 1px solid var(--border-strong);
+  border: var(--component-card-border);
   border-radius: 999px;
   padding: 5px 6px;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--component-card-background);
+  color: var(--theme-text);
 }
 
 .trainingSidebar__sessionChip {
@@ -387,6 +745,10 @@
   gap: 2px;
   min-height: 52px;
   border-radius: 4px;
+}
+
+:global(body.theme-text) .trainingSidebar__sessionChip {
+  filter: saturate(0);
 }
 
 .trainingSidebar__sessionChipIcon {
@@ -404,6 +766,10 @@
   background: var(--grade-color, rgba(255, 255, 255, 0.72));
   border-color: color-mix(in srgb, var(--grade-color, var(--border-strong)) 72%, #172330);
   color: var(--grade-text, #172330);
+}
+
+:global(body.theme-text) .trainingSidebar__gradeChip {
+  border: 1px solid var(--theme-border-input);
 }
 
 .trainingSidebar__selectedGrades {
@@ -433,102 +799,241 @@
   letter-spacing: normal;
 }
 
+.trainingSidebar__ropeRoutes {
+  display: grid;
+  gap: 8px;
+}
+
+.trainingSidebar__ropeRoutesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trainingSidebar__ropeRouteLabels,
+.trainingSidebar__ropeRouteRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) 48px;
+  gap: 8px;
+}
+
+.trainingSidebar__ropeRouteLabels {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.trainingSidebar__ropeRouteDelete {
+  width: 48px;
+  min-width: 48px;
+  padding: 0;
+  font-size: 18px;
+}
+
+.trainingSidebar__ropeRouteCompletion {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .trainingSidebar__ropeRouteLabels,
+  .trainingSidebar__ropeRouteRow {
+    grid-template-columns: 52px minmax(0, 1fr) auto 48px;
+  }
+
+  .trainingSidebar__ropeRouteCompletion {
+    display: flex;
+    gap: 4px;
+  }
+
+  .trainingSidebar__ropeRouteCompletionButton {
+    min-width: 44px;
+    min-height: 48px;
+    border: 1px solid transparent;
+    padding: 0 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+  }
+
+  .trainingSidebar__ropeRouteCompletionButton--active {
+    border-color: var(--border-strong);
+    color: var(--text);
+  }
+}
+
+@container (max-width: 560px) {
+  .trainingSidebar__ropeRouteLabels,
+  .trainingSidebar__ropeRouteRow {
+    grid-template-columns: 52px minmax(0, 1fr) 48px;
+  }
+
+  .trainingSidebar__ropeRouteCompletion {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .trainingSidebar__ropeRouteCompletionButton {
+    width: 100%;
+  }
+
+  .trainingSidebar__ropeRouteDelete {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+.trainingSidebar__ropeRouteGrade {
+  display: grid;
+  min-height: 48px;
+  place-items: center;
+  border: var(--component-training-route-grade-border);
+  border-radius: 4px;
+  background: var(--component-training-route-grade-background);
+  color: var(--component-training-route-grade-text);
+  font-weight: 700;
+}
+
 .trainingSidebar__gradeChip--4 { --grade-color: #a9afb7; }
-.trainingSidebar__gradeChip--5 { --grade-color: #a8dd9a; }
-.trainingSidebar__gradeChip--6 { --grade-color: #e8d353; }
-.trainingSidebar__gradeChip--7 { --grade-color: #83cde7; }
-.trainingSidebar__gradeChip--8 { --grade-color: #ec8dc2; }
-.trainingSidebar__gradeChip--9 { --grade-color: #d94b4b; --grade-text: white; }
+.trainingSidebar__gradeChip--5 { --grade-color: var(--grade-rope-5a); }
+.trainingSidebar__gradeChip--6 { --grade-color: var(--grade-rope-6a); }
+.trainingSidebar__gradeChip--7 { --grade-color: var(--grade-rope-7a); }
+.trainingSidebar__gradeChip--8 { --grade-color: var(--grade-rope-8a); }
+.trainingSidebar__gradeChip--9 { --grade-color: var(--grade-rope-9a); --grade-text: white; }
 
-.trainingSidebar__gradeChip--boulder-1 { --grade-color: #b9c2cc; }
-.trainingSidebar__gradeChip--boulder-2 { --grade-color: #7ccb9b; }
-.trainingSidebar__gradeChip--boulder-3 { --grade-color: #48b8a0; }
-.trainingSidebar__gradeChip--boulder-4 { --grade-color: #3b9edb; }
-.trainingSidebar__gradeChip--boulder-5 { --grade-color: #f2c14e; }
-.trainingSidebar__gradeChip--boulder-6 { --grade-color: #f39a3d; }
-.trainingSidebar__gradeChip--boulder-7 { --grade-color: #e76f51; }
-.trainingSidebar__gradeChip--boulder-8 { --grade-color: #c54560; --grade-text: white; }
-.trainingSidebar__gradeChip--boulder-9 { --grade-color: #343a40; --grade-text: white; }
+:global(body.theme-text) .trainingSidebar__gradeChip--4 {
+  --grade-color: var(--grade-rope-4a);
+}
 
-.trainingSidebar__gradeChip--moon-0 { --grade-color: #b9c2cc; }
-.trainingSidebar__gradeChip--moon-1 { --grade-color: #b4b5c5; }
-.trainingSidebar__gradeChip--moon-2 { --grade-color: #bea3c8; }
-.trainingSidebar__gradeChip--moon-3 { --grade-color: #c98fca; }
-.trainingSidebar__gradeChip--moon-4 { --grade-color: #d27bcb; }
-.trainingSidebar__gradeChip--moon-5 { --grade-color: #d967ca; }
-.trainingSidebar__gradeChip--moon-6 { --grade-color: #e053c7; }
-.trainingSidebar__gradeChip--moon-7 { --grade-color: #e63fc3; }
-.trainingSidebar__gradeChip--moon-8 { --grade-color: #eb2abd; }
-.trainingSidebar__gradeChip--moon-9 { --grade-color: #dd1aa9; }
-.trainingSidebar__gradeChip--moon-10 { --grade-color: #d75ca2; }
-.trainingSidebar__gradeChip--moon-11 { --grade-color: #b76589; }
-.trainingSidebar__gradeChip--moon-12 { --grade-color: #935d76; }
-.trainingSidebar__gradeChip--moon-13 { --grade-color: #735264; --grade-text: white; }
-.trainingSidebar__gradeChip--moon-14 { --grade-color: #5c4757; --grade-text: white; }
-.trainingSidebar__gradeChip--moon-15 { --grade-color: #4b404a; --grade-text: white; }
-.trainingSidebar__gradeChip--moon-16 { --grade-color: #403b42; --grade-text: white; }
-.trainingSidebar__gradeChip--moon-17 { --grade-color: #343a40; --grade-text: white; }
+.trainingSidebar__gradeChip--boulder-1 { --grade-color: var(--grade-boulder-v1); }
+.trainingSidebar__gradeChip--boulder-2 { --grade-color: var(--grade-boulder-v2); }
+.trainingSidebar__gradeChip--boulder-3 { --grade-color: var(--grade-boulder-v3); }
+.trainingSidebar__gradeChip--boulder-4 { --grade-color: var(--grade-boulder-v4); }
+.trainingSidebar__gradeChip--boulder-5 { --grade-color: var(--grade-boulder-v5); }
+.trainingSidebar__gradeChip--boulder-6 { --grade-color: var(--grade-boulder-v6); }
+.trainingSidebar__gradeChip--boulder-7 { --grade-color: var(--grade-boulder-v7); }
+.trainingSidebar__gradeChip--boulder-8 { --grade-color: var(--grade-boulder-v8); --grade-text: white; }
+.trainingSidebar__gradeChip--boulder-9 { --grade-color: var(--grade-boulder-v9); --grade-text: white; }
 
-.trainingSidebar__gradeChip--kilter-0 { --grade-color: #b9c2cc; }
-.trainingSidebar__gradeChip--kilter-1 { --grade-color: #c3c8bd; }
-.trainingSidebar__gradeChip--kilter-2 { --grade-color: #ccd0ad; }
-.trainingSidebar__gradeChip--kilter-3 { --grade-color: #d5d89d; }
-.trainingSidebar__gradeChip--kilter-4 { --grade-color: #dde08d; }
-.trainingSidebar__gradeChip--kilter-5 { --grade-color: #e5e77d; }
-.trainingSidebar__gradeChip--kilter-6 { --grade-color: #ebed6d; }
-.trainingSidebar__gradeChip--kilter-7 { --grade-color: #f0ef5d; }
-.trainingSidebar__gradeChip--kilter-8 { --grade-color: #f3ec4f; }
-.trainingSidebar__gradeChip--kilter-9 { --grade-color: #f5e643; }
-.trainingSidebar__gradeChip--kilter-10 { --grade-color: #f6df37; }
-.trainingSidebar__gradeChip--kilter-11 { --grade-color: #f7d72c; }
-.trainingSidebar__gradeChip--kilter-12 { --grade-color: #f8ce22; }
-.trainingSidebar__gradeChip--kilter-13 { --grade-color: #f9c518; }
-.trainingSidebar__gradeChip--kilter-14 { --grade-color: #fac00f; }
-.trainingSidebar__gradeChip--kilter-15 { --grade-color: #fbc00b; }
-.trainingSidebar__gradeChip--kilter-16 { --grade-color: #fbc609; }
-.trainingSidebar__gradeChip--kilter-17 { --grade-color: #fccc08; }
+:global(body.theme-text) .trainingSidebar__gradeChip--boulder-5,
+:global(body.theme-text) .trainingSidebar__gradeChip--boulder-6,
+:global(body.theme-text) .trainingSidebar__gradeChip--boulder-7,
+:global(body.theme-text) .trainingSidebar__gradeChip--boulder-8,
+:global(body.theme-text) .trainingSidebar__gradeChip--boulder-9 {
+  --grade-text: var(--theme-text-inverse);
+}
 
-.trainingSidebar__gradeChip--a { --grade-color: #a8dd9a; }
-.trainingSidebar__gradeChip--a\+ { --grade-color: #aceb96; }
-.trainingSidebar__gradeChip--b { --grade-color: #79d66a; }
-.trainingSidebar__gradeChip--b\+ { --grade-color: #4ab34d; }
-.trainingSidebar__gradeChip--c { --grade-color: #288e38; --grade-text: white; }
-.trainingSidebar__gradeChip--c\+ { --grade-color: #176729; --grade-text: white; }
+:global(body.theme-text) .trainingSidebar__gradeChip--moon-5,
+:global(body.theme-text) .trainingSidebar__gradeChip--moon-6,
+:global(body.theme-text) .trainingSidebar__gradeChip--moon-7,
+:global(body.theme-text) .trainingSidebar__gradeChip--moon-8,
+:global(body.theme-text) .trainingSidebar__gradeChip--moon-9 {
+  --grade-text: var(--theme-text-inverse);
+}
 
-.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--a { --grade-color: #d9dde1; }
-.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--a\+ { --grade-color: #c5cbd1; }
-.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--b { --grade-color: #a9afb7; }
-.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--b\+ { --grade-color: #8e969f; }
-.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--c { --grade-color: #707984; --grade-text: white; }
-.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--c\+ { --grade-color: #565e68; --grade-text: white; }
+:global(body.theme-text) .trainingSidebar__gradeChip--kilter-5,
+:global(body.theme-text) .trainingSidebar__gradeChip--kilter-6,
+:global(body.theme-text) .trainingSidebar__gradeChip--kilter-7,
+:global(body.theme-text) .trainingSidebar__gradeChip--kilter-8,
+:global(body.theme-text) .trainingSidebar__gradeChip--kilter-9 {
+  --grade-text: var(--theme-text-inverse);
+}
 
-.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--a { --grade-color: #f49b9b; }
-.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--a\+ { --grade-color: #ee7b7b; }
-.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--b { --grade-color: #e85d5d; }
-.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--b\+ { --grade-color: #d94b4b; --grade-text: white; }
-.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--c { --grade-color: #b83232; --grade-text: white; }
-.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--c\+ { --grade-color: #922525; --grade-text: white; }
+:global(body.theme-text) .trainingSidebar__gradeChip--6 {
+  --grade-text: var(--theme-text);
+}
 
-.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a { --grade-color: #e8d353; }
-.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a\+ { --grade-color: #ffe46f; }
-.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--b { --grade-color: #ffcf3f; }
-.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--b\+ { --grade-color: #ffaf1f; }
-.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--c { --grade-color: #ee8914; }
-.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--c\+ { --grade-color: #cb5f0d; --grade-text: white; }
+:global(body.theme-text) .trainingSidebar__gradeChip--7,
+:global(body.theme-text) .trainingSidebar__gradeChip--8,
+:global(body.theme-text) .trainingSidebar__gradeChip--9 {
+  --grade-text: var(--theme-text-inverse);
+}
 
-.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--a { --grade-color: #83cde7; }
-.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--a\+ { --grade-color: #86d8f6; }
-.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--b { --grade-color: #4abce7; }
-.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--b\+ { --grade-color: #218fce; --grade-text: white; }
-.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--c { --grade-color: #1765ac; --grade-text: white; }
-.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--c\+ { --grade-color: #103d78; --grade-text: white; }
+.trainingSidebar__gradeChip--moon-0 { --grade-color: var(--grade-moon-v0); }
+.trainingSidebar__gradeChip--moon-1 { --grade-color: var(--grade-moon-v1); }
+.trainingSidebar__gradeChip--moon-2 { --grade-color: var(--grade-moon-v2); }
+.trainingSidebar__gradeChip--moon-3 { --grade-color: var(--grade-moon-v3); }
+.trainingSidebar__gradeChip--moon-4 { --grade-color: var(--grade-moon-v4); }
+.trainingSidebar__gradeChip--moon-5 { --grade-color: var(--grade-moon-v5); }
+.trainingSidebar__gradeChip--moon-6 { --grade-color: var(--grade-moon-v6); }
+.trainingSidebar__gradeChip--moon-7 { --grade-color: var(--grade-moon-v7); }
+.trainingSidebar__gradeChip--moon-8 { --grade-color: var(--grade-moon-v8); }
+.trainingSidebar__gradeChip--moon-9 { --grade-color: var(--grade-moon-v9); }
+.trainingSidebar__gradeChip--moon-10 { --grade-color: var(--grade-moon-v10); }
+.trainingSidebar__gradeChip--moon-11 { --grade-color: var(--grade-moon-v11); }
+.trainingSidebar__gradeChip--moon-12 { --grade-color: var(--grade-moon-v12); }
+.trainingSidebar__gradeChip--moon-13 { --grade-color: var(--grade-moon-v13); --grade-text: white; }
+.trainingSidebar__gradeChip--moon-14 { --grade-color: var(--grade-moon-v14); --grade-text: white; }
+.trainingSidebar__gradeChip--moon-15 { --grade-color: var(--grade-moon-v15); --grade-text: white; }
+.trainingSidebar__gradeChip--moon-16 { --grade-color: var(--grade-moon-v16); --grade-text: white; }
+.trainingSidebar__gradeChip--moon-17 { --grade-color: var(--grade-moon-v17); --grade-text: white; }
 
-.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--a { --grade-color: #ec8dc2; }
-.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--a\+ { --grade-color: #f59acc; }
-.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--b { --grade-color: #df6eb8; }
-.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--b\+ { --grade-color: #bd499e; --grade-text: white; }
-.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--c { --grade-color: #913181; --grade-text: white; }
-.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--c\+ { --grade-color: #642060; --grade-text: white; }
+.trainingSidebar__gradeChip--kilter-0 { --grade-color: var(--grade-kilter-v0); }
+.trainingSidebar__gradeChip--kilter-1 { --grade-color: var(--grade-kilter-v1); }
+.trainingSidebar__gradeChip--kilter-2 { --grade-color: var(--grade-kilter-v2); }
+.trainingSidebar__gradeChip--kilter-3 { --grade-color: var(--grade-kilter-v3); }
+.trainingSidebar__gradeChip--kilter-4 { --grade-color: var(--grade-kilter-v4); }
+.trainingSidebar__gradeChip--kilter-5 { --grade-color: var(--grade-kilter-v5); }
+.trainingSidebar__gradeChip--kilter-6 { --grade-color: var(--grade-kilter-v6); }
+.trainingSidebar__gradeChip--kilter-7 { --grade-color: var(--grade-kilter-v7); }
+.trainingSidebar__gradeChip--kilter-8 { --grade-color: var(--grade-kilter-v8); }
+.trainingSidebar__gradeChip--kilter-9 { --grade-color: var(--grade-kilter-v9); }
+.trainingSidebar__gradeChip--kilter-10 { --grade-color: var(--grade-kilter-v10); }
+.trainingSidebar__gradeChip--kilter-11 { --grade-color: var(--grade-kilter-v11); }
+.trainingSidebar__gradeChip--kilter-12 { --grade-color: var(--grade-kilter-v12); }
+.trainingSidebar__gradeChip--kilter-13 { --grade-color: var(--grade-kilter-v13); }
+.trainingSidebar__gradeChip--kilter-14 { --grade-color: var(--grade-kilter-v14); }
+.trainingSidebar__gradeChip--kilter-15 { --grade-color: var(--grade-kilter-v15); }
+.trainingSidebar__gradeChip--kilter-16 { --grade-color: var(--grade-kilter-v16); }
+.trainingSidebar__gradeChip--kilter-17 { --grade-color: var(--grade-kilter-v17); }
+
+.trainingSidebar__gradeChip--a { --grade-color: var(--grade-rope-5a); }
+.trainingSidebar__gradeChip--a\+ { --grade-color: var(--grade-rope-5a-plus); }
+.trainingSidebar__gradeChip--b { --grade-color: var(--grade-rope-5b); }
+.trainingSidebar__gradeChip--b\+ { --grade-color: var(--grade-rope-5b-plus); }
+.trainingSidebar__gradeChip--c { --grade-color: var(--grade-rope-5c); --grade-text: white; }
+.trainingSidebar__gradeChip--c\+ { --grade-color: var(--grade-rope-5c-plus); --grade-text: white; }
+
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--a { --grade-color: var(--grade-rope-4a, #d9dde1); }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--a\+ { --grade-color: var(--grade-rope-4a-plus, #c5cbd1); }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--b { --grade-color: var(--grade-rope-4b, #a9afb7); }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--b\+ { --grade-color: var(--grade-rope-4b-plus, #8e969f); }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--c { --grade-color: var(--grade-rope-4c, #707984); --grade-text: var(--grade-rope-4-text, white); }
+.trainingSidebar__gradeChip--4.trainingSidebar__gradeChip--c\+ { --grade-color: var(--grade-rope-4c-plus, #565e68); --grade-text: var(--grade-rope-4-text, white); }
+
+.trainingSidebar__gradeChip--5.trainingSidebar__gradeChip--c,
+.trainingSidebar__gradeChip--5.trainingSidebar__gradeChip--c\+ { --grade-text: var(--grade-rope-5-text, white); }
+
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--a { --grade-color: var(--grade-rope-9a); }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--a\+ { --grade-color: var(--grade-rope-9a-plus); }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--b { --grade-color: var(--grade-rope-9b); }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--b\+ { --grade-color: var(--grade-rope-9b-plus); --grade-text: white; }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--c { --grade-color: var(--grade-rope-9c); --grade-text: white; }
+.trainingSidebar__gradeChip--9.trainingSidebar__gradeChip--c\+ { --grade-color: var(--grade-rope-9c-plus); --grade-text: white; }
+
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a { --grade-color: var(--grade-rope-6a); }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--a\+ { --grade-color: var(--grade-rope-6a-plus); }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--b { --grade-color: var(--grade-rope-6b); }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--b\+ { --grade-color: var(--grade-rope-6b-plus); }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--c { --grade-color: var(--grade-rope-6c); }
+.trainingSidebar__gradeChip--6.trainingSidebar__gradeChip--c\+ { --grade-color: var(--grade-rope-6c-plus); --grade-text: white; }
+
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--a { --grade-color: var(--grade-rope-7a); }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--a\+ { --grade-color: var(--grade-rope-7a-plus); }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--b { --grade-color: var(--grade-rope-7b); }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--b\+ { --grade-color: var(--grade-rope-7b-plus); --grade-text: white; }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--c { --grade-color: var(--grade-rope-7c); --grade-text: white; }
+.trainingSidebar__gradeChip--7.trainingSidebar__gradeChip--c\+ { --grade-color: var(--grade-rope-7c-plus); --grade-text: white; }
+
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--a { --grade-color: var(--grade-rope-8a); }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--a\+ { --grade-color: var(--grade-rope-8a-plus); }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--b { --grade-color: var(--grade-rope-8b); }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--b\+ { --grade-color: var(--grade-rope-8b-plus); --grade-text: white; }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--c { --grade-color: var(--grade-rope-8c); --grade-text: white; }
+.trainingSidebar__gradeChip--8.trainingSidebar__gradeChip--c\+ { --grade-color: var(--grade-rope-8c-plus); --grade-text: white; }
 
 .trainingSidebar__chip--active {
   background: rgba(26, 120, 112, 0.16);
@@ -541,31 +1046,28 @@
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
 }
 
+.trainingSidebar__chip.trainingSidebar__selectedGradeChip {
+  border-color: color-mix(in srgb, var(--grade-color) 72%, #172330);
+  background: var(--grade-color);
+  color: var(--grade-text, #172330);
+}
+
 .trainingSidebar__submitButton {
   border: 0;
   width: min(100%, 160px);
   justify-self: start;
   display: block;
   margin-top: 0;
-  padding: 7px 9px;
-  background: linear-gradient(135deg, #0f6d82, #2595a1);
-  color: white;
+  background: var(--component-button-primary-background);
+  color: var(--component-button-primary-text);
   cursor: pointer;
-  box-shadow: 0 18px 30px rgba(18, 113, 126, 0.24);
-}
-
-.trainingSidebar__formActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  box-shadow: var(--theme-shadow-button);
 }
 
 .trainingSidebar__formPrimaryActions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 2rem;
 }
 
 .trainingSidebar__formDeleteAction {
@@ -575,14 +1077,26 @@
 .trainingSidebar__visibleList {
   display: grid;
   gap: 6px;
+  container-type: inline-size;
+}
+
+@container (max-width: 560px) {
+  .trainingSidebar__inline {
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+}
+
+.trainingSidebar__visibleList--standalone {
+  padding: 0 11px;
 }
 
 .trainingSidebar__visibleItem {
   display: grid;
   gap: 4px;
   padding: 1rem;
-  border: 1px solid rgba(28, 61, 89, 0.12);
-  background: rgba(255, 255, 255, 0.78);
+  border: var(--component-card-border);
+  background: var(--component-card-background);
 }
 
 .trainingSidebar__minorText {
@@ -594,7 +1108,7 @@
   border: 0;
   padding: 0;
   background: transparent;
-  color: #0d6b7c;
+  color: var(--component-training-link-text);
   text-align: left;
   cursor: pointer;
   font-weight: 600;
@@ -624,8 +1138,8 @@
   height: 100%;
   max-height: 100%;
   overflow: hidden;
-  background: #fffdfa;
-  box-shadow: -18px 0 40px rgba(21, 34, 45, 0.2);
+  background: var(--component-training-preview-drawer-background);
+  box-shadow: var(--component-training-preview-drawer-shadow);
 }
 
 .trainingSidebar__drawerScroll,
@@ -747,14 +1261,18 @@
   height: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(28, 61, 89, 0.12);
+  background: var(--component-training-calories-progress-background);
 }
 
 .trainingSidebar__caloriesProgressFill {
   height: 100%;
   min-width: 2px;
   border-radius: inherit;
-  background: linear-gradient(90deg, #e97b3f, #dc5a45);
+  background: linear-gradient(
+    90deg,
+    var(--component-training-calories-progress-start),
+    var(--component-training-calories-progress-end)
+  );
 }
 
 .trainingSidebar__previewCharts {
@@ -792,7 +1310,7 @@
 
 @media (max-width: 767px) {
   .trainingSidebar__panel {
-    padding: 0.75rem;
+    padding: 0.5rem;
   }
 
   .trainingSidebar__formGrid {
@@ -814,16 +1332,6 @@
   .trainingSidebar__submitButton {
     width: 100%;
     justify-self: stretch;
-  }
-
-  .trainingSidebar__formActions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .trainingSidebar__formPrimaryActions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .trainingSidebar__formDeleteAction {

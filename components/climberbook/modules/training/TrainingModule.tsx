@@ -11,6 +11,7 @@ export function TrainingModule() {
   const app = useTrainingModule();
   const viewport = useViewport();
   const router = useRouter();
+  const visibleTrainingMonthCount = viewport.width >= 1725 ? 2 : 1;
   const usesDedicatedTrainingEditor =
     viewport.width > 0 && viewport.width < 1024;
   const stats = useClimberbookStats({
@@ -20,17 +21,18 @@ export function TrainingModule() {
     selectedDate: app.selectedDate,
     today: app.today,
     trainingRangeStart: app.trainingRangeStart,
+    visibleTrainingMonthCount,
     trainings: app.trainings,
     weightEntries: app.weightEntries,
   });
+  const currentAge = stats.currentAge ? Number(stats.currentAge) : null;
 
   return (
     <TrainingModuleContent
       isMobileTrainingLayout={viewport.isMobileTrainingLayout}
-      isMediumTrainingDrawerLayout={
-        viewport.width >= 931 && viewport.width < 1640
-      }
-      showTrainingSidebarColumn={viewport.showTrainingSidebarColumn}
+      isMediumTrainingDrawerLayout={viewport.width >= 931}
+      isWideTrainingCalendarLayout={viewport.width >= 1725}
+      showTrainingSidebarColumn={false}
       latestWeightKg={
         stats.latestRecordedWeight?.weightKg ?? stats.defaultTrainingWeightKg
       }
@@ -48,6 +50,7 @@ export function TrainingModule() {
       onWeightEntrySubmit={app.submitWeightEntry}
       onDeleteWeightEntry={app.deleteWeightEntry}
       recentWeightEntries={stats.recentWeightEntries}
+      currentAge={currentAge}
       onPreviousMonth={app.previousTrainingMonth}
       onNextMonth={app.nextTrainingMonth}
       trainingRangeStart={app.trainingRangeStart}

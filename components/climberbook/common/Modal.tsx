@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   weightEntryModalOverlayStyle,
@@ -108,16 +103,22 @@ type ModalProps = {
   children: ReactNode;
   labelledBy: string;
   onClose: () => void;
+  className?: string;
+  overlayClassName?: string;
   overlayStyle?: CSSProperties;
   style?: CSSProperties;
+  fullBleedMobile?: boolean;
 };
 
 export function Modal({
   children,
   labelledBy,
   onClose,
+  className,
+  overlayClassName,
   overlayStyle,
   style,
+  fullBleedMobile = false,
 }: ModalProps) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -145,7 +146,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className={styles.overlay}
+      className={[styles.overlay, overlayClassName].filter(Boolean).join(" ")}
       style={{
         ...weightEntryModalOverlayStyle,
         ...overlayStyle,
@@ -158,7 +159,13 @@ export function Modal({
       }}
     >
       <section
-        className={styles.dialog}
+        className={[
+          styles.dialog,
+          fullBleedMobile ? styles.dialogFullBleed : null,
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}

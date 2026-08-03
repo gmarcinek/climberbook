@@ -1,6 +1,9 @@
 import type {
   HangboardMode,
+  RopeRoute,
   SpraywallIntensity,
+  TrainingConditions,
+  TrainingFocus,
   TrainingSurface,
 } from "@/lib/climbs-db";
 
@@ -14,6 +17,8 @@ export type TrainingDraftValues = {
   ageYears: string;
   caloriesBurned: string;
   caloriesMode: "auto" | "manual";
+  focus: TrainingFocus;
+  conditions: TrainingConditions;
   difficultyNotes: string;
   difficultyBySurface: Partial<Record<TrainingSurface, string>>;
   protocol: {
@@ -38,6 +43,8 @@ export type TrainingDraftValues = {
   wellbeing: string;
   surfaces: TrainingSurface[];
   facilityName: string;
+  ropeWallName: string;
+  ropeRoutes: RopeRoute[];
   customSessionType: string;
   notes: string;
 };

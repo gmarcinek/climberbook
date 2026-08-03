@@ -1,10 +1,16 @@
 import { MetricCard } from "@/components/climberbook/common/charts";
 import { statsGridStyle } from "@/components/climberbook/common/styles";
+import {
+  formatWeightInput,
+  getLatestWeightEntry,
+} from "@/components/climberbook/common/training";
 import type { ProfileMetricsWidgetProps } from "./SettingsWidgetTypes";
 export function ProfileMetricsWidget({
   profileDraft,
   weightEntries,
 }: ProfileMetricsWidgetProps) {
+  const latestWeightEntry = getLatestWeightEntry(weightEntries);
+
   return (
     <div style={statsGridStyle}>
       <MetricCard
@@ -24,8 +30,8 @@ export function ProfileMetricsWidget({
       />
       <MetricCard
         label="Aktualna waga"
-        value={profileDraft.weightKg ? `${profileDraft.weightKg} kg` : "-"}
-        detail="Ustawienie bazowe"
+        value={latestWeightEntry ? `${formatWeightInput(latestWeightEntry.weightKg)} kg` : profileDraft.weightKg ? `${profileDraft.weightKg} kg` : "-"}
+        detail={latestWeightEntry ? `Pomiar z ${latestWeightEntry.date}` : "Ustawienie bazowe"}
       />
       <MetricCard
         label="Zmiany wagi"

@@ -1,7 +1,7 @@
-import nextPlugin from "eslint-config-next";
+import nextPlugin from "@next/eslint-plugin-next";
 
 export default [
-  ...nextPlugin,
+  nextPlugin.flatConfig.recommended,
   {
     ignores: [".next/**", "node_modules/**"],
   },

@@ -16,6 +16,7 @@ type AscentInput = {
   athleteId: string;
   date: string;
   source: "panel" | "skala";
+  discipline?: "lina" | "baldy" | "moon" | "kilter";
   importSource?: "8a.nu";
   routeName: string;
   suggestedGrade: string;
@@ -33,6 +34,11 @@ function isAscentInput(value: unknown): value is AscentInput {
     typeof input.athleteId === "string" &&
     typeof input.date === "string" &&
     (input.source === "panel" || input.source === "skala") &&
+    (input.discipline === undefined ||
+      input.discipline === "lina" ||
+      input.discipline === "baldy" ||
+      input.discipline === "moon" ||
+      input.discipline === "kilter") &&
     typeof input.routeName === "string" &&
     typeof input.suggestedGrade === "string" &&
     typeof input.subjectiveGrade === "string" &&
@@ -40,12 +46,18 @@ function isAscentInput(value: unknown): value is AscentInput {
   );
 }
 
-function hasNumericId(value: unknown): value is { id: number } {
-  return (
-    Boolean(value) &&
-    typeof value === "object" &&
-    Number.isInteger((value as { id?: unknown }).id)
-  );
+function getNumericId(value: unknown): number | null {
+  if (!value || typeof value !== "object") return null;
+
+  const id = (value as { id?: unknown }).id;
+  const numericId =
+    typeof id === "number"
+      ? id
+      : typeof id === "string" && /^\d+$/.test(id)
+        ? Number(id)
+        : Number.NaN;
+
+  return Number.isInteger(numericId) && numericId > 0 ? numericId : null;
 }
 
 function invalidAscentResponse() {
@@ -91,12 +103,13 @@ export async function PATCH(request: Request) {
   if (typeof actorId !== "string") return actorId;
 
   const input: unknown = await request.json();
-  if (!isAscentInput(input) || !hasNumericId(input))
+  const ascentId = getNumericId(input);
+  if (!isAscentInput(input) || ascentId === null)
     return invalidAscentResponse();
 
   const ascent = await updateAscentInPostgres(actorId, {
     ...input,
-    id: input.id,
+    id: ascentId,
   });
   return Response.json({ ascent });
 }
@@ -110,7 +123,10 @@ export async function DELETE(request: Request) {
 
   const ascentId = Number(new URL(request.url).searchParams.get("id"));
   if (!Number.isInteger(ascentId) || ascentId < 1)
-    return Response.json({ error: "id przejścia jest wymagane." }, { status: 400 });
+    return Response.json(
+      { error: "id przejścia jest wymagane." },
+      { status: 400 },
+    );
 
   await deleteAscentFromPostgres(actorId, ascentId);
   return Response.json({ deleted: true });

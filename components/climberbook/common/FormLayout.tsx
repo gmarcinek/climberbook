@@ -33,7 +33,8 @@ type FormGridProps = FormLayoutProps & {
 
 type FormActionsProps = FormLayoutProps & {
   gap?: "sm" | "md" | "lg";
-  marginTop?: "none" | "sm" | "md" | "lg";
+  marginTop?: "none" | "sm" | "md" | "lg" | "roomy";
+  layout?: "stacked" | "inline";
 };
 
 export function Form({
@@ -104,7 +105,8 @@ export function FormActions({
   className,
   style,
   gap = "md",
-  marginTop = "md",
+  marginTop = "roomy",
+  layout = "inline",
 }: FormActionsProps) {
   return (
     <div
@@ -112,6 +114,7 @@ export function FormActions({
         styles.formActions,
         styles[`formActionsGap--${gap}`],
         styles[`formActionsMargin--${marginTop}`],
+        layout === "inline" ? styles.formActionsInline : null,
         className,
       ]
         .filter(Boolean)

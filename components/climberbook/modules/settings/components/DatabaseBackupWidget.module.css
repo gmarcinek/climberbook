@@ -2,6 +2,74 @@
   display: none !important;
 }
 
+.exportDialog {
+  width: min(100%, 480px) !important;
+}
+
+.exportDialogBody {
+  display: grid;
+  gap: var(--common-space-4);
+}
+
+.exportDescription {
+  margin: 0;
+  color: var(--theme-text-muted);
+}
+
+.exportGroup {
+  display: grid;
+  gap: var(--common-space-2);
+}
+
+.exportGroupTitle {
+  margin: 0;
+  color: var(--theme-text-muted);
+  font-size: 0.875rem;
+  font-weight: var(--common-font-weight-bold);
+}
+
+.exportOptions {
+  overflow: hidden;
+  border: var(--component-input-border);
+}
+
+.exportOption {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--common-space-3);
+  align-items: center;
+  min-height: 44px;
+  padding: var(--common-space-3) var(--common-space-4);
+  cursor: pointer;
+}
+
+.exportOption + .exportOption {
+  border-top: var(--component-input-border);
+}
+
+.exportOption input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--theme-success);
+}
+
+.exportOption small {
+  color: var(--theme-text-muted);
+}
+
+.exportActions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--common-space-3);
+}
+
+.exportActions button:last-child {
+  display: inline-flex;
+  gap: var(--common-space-2);
+  align-items: center;
+}
+
 @media (min-width: 720px) {
   .dropzone {
     display: grid !important;

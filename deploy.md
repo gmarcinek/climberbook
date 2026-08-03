@@ -6,7 +6,7 @@ Instrukcja dla Bash / Git Bash.
 ## Konfiguracja
 
 ```bash
-VERSION="0.1.2"
+VERSION="0.2.7"
 
 LOCAL_IMAGE="climberbook-app"
 ACR="acrgmarcinek"
@@ -15,11 +15,21 @@ IMAGE="climberbook"
 
 RESOURCE_GROUP="rm_gmarcinek"
 APP_SERVICE="climberbook"
+```
 ````
 
 Przy każdym wdrożeniu zmień tylko `VERSION`.
 
-## 1. Zbuduj obraz lokalnie
+## 1. Sprawdź TypeScript i TSX
+
+Przed zbudowaniem obrazu uruchom jawne sprawdzenie typów. Nie kontynuuj
+wdrożenia, jeżeli polecenie zwróci błąd:
+
+```bash
+npx tsc --noEmit
+```
+
+## 2. Zbuduj obraz lokalnie
 
 Uruchom w głównym katalogu projektu, obok `Dockerfile`:
 
@@ -35,7 +45,7 @@ Sprawdź obraz:
 docker image ls | grep -i climberbook
 ```
 
-## 2. Oznacz obraz tagami
+## 3. Oznacz obraz tagami
 
 Tag konkretnej wersji:
 
@@ -59,7 +69,7 @@ Sprawdź tagi:
 docker image ls | grep -i climberbook
 ```
 
-## 3. Zaloguj się do Azure Container Registry
+## 4. Zaloguj się do Azure Container Registry
 
 ```bash
 az login
@@ -71,7 +81,7 @@ Jeżeli jesteś już zalogowany, wystarczy:
 az acr login --name "$ACR"
 ```
 
-## 4. Wypchnij obrazy do ACR
+## 5. Wypchnij obrazy do ACR
 
 ```bash
 docker push "$ACR_HOST/$IMAGE:$VERSION"
@@ -88,7 +98,35 @@ az acr repository show-tags \
   --output table
 ```
 
-## 5. Ustaw nową wersję w App Service
+## 6. Zmigruj produkcyjną bazę danych
+
+Wykonaj migrację **przed** przełączeniem App Service na nowy obraz. Liquibase
+musi uruchamiać się z Azure albo z hosta dopuszczonego przez firewall serwera
+PostgreSQL. Nie używaj lokalnego `.env` ani lokalnej bazy Docker.
+
+Najpierw sprawdź oczekujące zmiany:
+
+```bash
+docker compose --env-file .env.azure run --no-deps --rm liquibase status --verbose
+```
+
+Następnie zastosuj migracje:
+
+```bash
+docker compose --env-file .env.azure run --no-deps --rm liquibase update
+```
+
+Po migracji status nie powinien wskazywać zmian oczekujących:
+
+```bash
+docker compose --env-file .env.azure run --no-deps --rm liquibase status --verbose
+```
+
+Jeżeli tymczasowo dodasz adres do firewalla Azure PostgreSQL, usuń tę regułę po
+zakończeniu migracji. Hasła pozostają w `.env.azure` lub w sekretach Azure i
+nie mogą trafić do obrazu ani do logów wdrożenia.
+
+## 7. Ustaw nową wersję w App Service
 
 ```bash
 az webapp config container set \
@@ -100,7 +138,9 @@ az webapp config container set \
 
 App Service jest przypinany do konkretnej wersji, na przykład `0.1.2`. Tag `latest` jest pomocniczy.
 
-## 6. Uruchom aplikację ponownie
+Jeżeli App Service używa skonfigurowanej tożsamości zarządzanej z rolą `AcrPull`, Azure CLI może wyświetlić ostrzeżenie o braku poświadczeń ACR. Nie blokuje to wdrożenia; potwierdź pobranie obrazu przez kontrolę wersji i endpoint zdrowia.
+
+## 8. Uruchom aplikację ponownie
 
 ```bash
 az webapp restart \
@@ -108,7 +148,7 @@ az webapp restart \
   --name "$APP_SERVICE"
 ```
 
-## 7. Sprawdź wdrożoną wersję
+## 9. Sprawdź wdrożoną wersję
 
 ```bash
 az webapp config show \
@@ -121,7 +161,20 @@ az webapp config show \
 Oczekiwany wynik:
 
 ```text
-DOCKER|acrgmarcinek.azurecr.io/climberbook:0.1.2
+DOCKER|acrgmarcinek.azurecr.io/climberbook:0.2.7
+```
+
+Kontrola zdrowia aplikacji:
+
+```bash
+APP_HOST="$(az webapp show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_SERVICE" \
+  --query defaultHostName \
+  --output tsv)"
+
+curl --fail --silent --show-error \
+  "https://$APP_HOST/api/health"
 ```
 
 Logi aplikacji:
@@ -135,7 +188,7 @@ az webapp log tail \
 ## Pełny proces
 
 ```bash
-VERSION="0.1.2"
+VERSION="0.2.7"
 
 LOCAL_IMAGE="climberbook-app"
 ACR="acrgmarcinek"
@@ -144,6 +197,8 @@ IMAGE="climberbook"
 
 RESOURCE_GROUP="rm_gmarcinek"
 APP_SERVICE="climberbook"
+
+npx tsc --noEmit
 
 docker build \
   -t "$LOCAL_IMAGE:latest" \
@@ -162,6 +217,10 @@ az acr login --name "$ACR"
 docker push "$ACR_HOST/$IMAGE:$VERSION"
 docker push "$ACR_HOST/$IMAGE:latest"
 
+docker compose --env-file .env.azure run --no-deps --rm liquibase status --verbose
+docker compose --env-file .env.azure run --no-deps --rm liquibase update
+docker compose --env-file .env.azure run --no-deps --rm liquibase status --verbose
+
 az webapp config container set \
   --resource-group "$RESOURCE_GROUP" \
   --name "$APP_SERVICE" \
@@ -177,6 +236,15 @@ az webapp config show \
   --name "$APP_SERVICE" \
   --query linuxFxVersion \
   --output tsv
+
+APP_HOST="$(az webapp show \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_SERVICE" \
+  --query defaultHostName \
+  --output tsv)"
+
+curl --fail --silent --show-error \
+  "https://$APP_HOST/api/health"
 ```
 
 ## Rollback
@@ -184,7 +252,7 @@ az webapp config show \
 Aby wrócić do poprzedniej wersji, wskaż wcześniejszy tag:
 
 ```bash
-VERSION="0.1.1"
+VERSION="0.2.6"
 
 az webapp config container set \
   --resource-group "$RESOURCE_GROUP" \
@@ -201,11 +269,12 @@ az webapp restart \
 
 App Service ma już:
 
-* włączoną systemową tożsamość zarządzaną,
-* rolę `AcrPull` na rejestrze `acrgmarcinek`,
-* włączone `acrUseManagedIdentityCreds`.
+- włączoną systemową tożsamość zarządzaną,
+- rolę `AcrPull` na rejestrze `acrgmarcinek`,
+- włączone `acrUseManagedIdentityCreds`.
 
 Tych ustawień nie trzeba powtarzać przy kolejnych wdrożeniach.
 
 ```
+
 ```

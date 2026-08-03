@@ -90,19 +90,19 @@ export function AscentGradeDistributionWidget({
                   label: "Panel",
                   checked: isPanelVisible,
                   onChange: setIsPanelVisible,
-                  color: "#168f91",
+                  color: "var(--component-report-distribution-panel)",
                 },
                 {
                   label: "Skała",
                   checked: isRockVisible,
                   onChange: setIsRockVisible,
-                  color: "#e19a24",
+                  color: "var(--component-report-distribution-rock)",
                 },
                 {
                   label: "Projekty",
                   checked: areProjectsVisible,
                   onChange: setAreProjectsVisible,
-                  color: "#8d5ca8",
+                  color: "var(--component-report-distribution-projects)",
                 },
               ].map((filter) => (
                 <label
@@ -159,7 +159,7 @@ export function AscentGradeDistributionWidget({
                   height: 8,
                   overflow: "hidden",
                   borderRadius: 999,
-                  background: "rgba(28, 61, 89, 0.08)",
+                  background: "var(--component-grade-distribution-track)",
                 }}
               >
                 <div
@@ -168,7 +168,7 @@ export function AscentGradeDistributionWidget({
                     height: "100%",
                     borderRadius: 999,
                     background:
-                      "linear-gradient(90deg, #168f91 0%, #4abce7 52%, #e19a24 100%)",
+                      "linear-gradient(90deg, var(--component-report-distribution-panel) 0%, var(--component-report-distribution-middle) 52%, var(--component-report-distribution-rock) 100%)",
                   }}
                 />
               </div>

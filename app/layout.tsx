@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import "./theme.scss";
 import { ClimberbookProvider } from "@/components/climberbook/providers/ClimberbookProvider";
+import { ThemeProvider } from "@/components/climberbook/providers/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Climberbook",
@@ -15,8 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
-      <body>
-        <ClimberbookProvider>{children}</ClimberbookProvider>
+      <body className="theme-default">
+        <ThemeProvider>
+          <ClimberbookProvider>{children}</ClimberbookProvider>
+        </ThemeProvider>
       </body>
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-F348SCSM9Y"

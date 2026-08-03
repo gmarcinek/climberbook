@@ -11,6 +11,7 @@ import {
 import type { TrainingRecord, TrainingSurface } from "@/lib/climbs-db";
 
 type TrainingSidebarWidgetProps = {
+  inline?: boolean;
   selectedDate: string | null;
   selectedDayTrainings: TrainingRecord[];
   visibleRangeTrainings: TrainingRecord[];

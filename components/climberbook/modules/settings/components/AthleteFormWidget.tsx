@@ -1,11 +1,11 @@
 import {
   fieldStyle,
-  inputStyle,
   moduleEyebrowStyle,
   panelHeadingStyle,
   sectionTitleStyle,
 } from "@/components/climberbook/common/styles";
 import { Button } from "@/components/climberbook/common/Button";
+import { Input, Select } from "@/components/climberbook/common/FormControls";
 import {
   Form,
   FormActions,
@@ -21,6 +21,8 @@ export function AthleteFormWidget({
   sections,
   showSectionField = true,
   panelClassName,
+  panelPadding,
+  panelStyle,
   validationMessage,
   onAthleteFormSubmit,
   onResetAthleteForm,
@@ -29,13 +31,15 @@ export function AthleteFormWidget({
     <Form
       onSubmit={onAthleteFormSubmit}
       panelClassName={panelClassName}
+      panelPadding={panelPadding}
+      panelStyle={panelStyle}
       header={
         <div style={panelHeadingStyle}>
           <div>
             <span style={moduleEyebrowStyle}>
               {athleteFormMode === "edit" ? "Edycja" : "Nowy"}
             </span>
-            <h2 style={sectionTitleStyle}>
+            <h2 id="athlete-form-title" style={sectionTitleStyle}>
               {athleteFormMode === "edit"
                 ? "Edytuj zawodnika"
                 : "Dodaj zawodnika"}
@@ -46,34 +50,8 @@ export function AthleteFormWidget({
     >
       <FormGrid>
         <label style={fieldStyle}>
-          Imię
-          <input
-            value={athleteForm.firstName}
-            onChange={(event) =>
-              setAthleteForm((current) => ({
-                ...current,
-                firstName: event.target.value,
-              }))
-            }
-            style={inputStyle}
-          />
-        </label>
-        <label style={fieldStyle}>
-          Nazwisko
-          <input
-            value={athleteForm.lastName}
-            onChange={(event) =>
-              setAthleteForm((current) => ({
-                ...current,
-                lastName: event.target.value,
-              }))
-            }
-            style={inputStyle}
-          />
-        </label>
-        <label style={fieldStyle}>
           Nick
-          <input
+          <Input
             value={athleteForm.nick}
             onChange={(event) =>
               setAthleteForm((current) => ({
@@ -82,13 +60,51 @@ export function AthleteFormWidget({
               }))
             }
             placeholder="Wyświetlana nazwa"
-            style={inputStyle}
+            required
+          />
+        </label>
+        <label style={fieldStyle}>
+          E-mail
+          <Input
+            value={athleteForm.email}
+            onChange={(event) =>
+              setAthleteForm((current) => ({
+                ...current,
+                email: event.target.value,
+              }))
+            }
+            type="email"
+            placeholder="Opcjonalny adres e-mail"
+          />
+        </label>
+        <label style={fieldStyle}>
+          Imię
+          <Input
+            value={athleteForm.firstName}
+            onChange={(event) =>
+              setAthleteForm((current) => ({
+                ...current,
+                firstName: event.target.value,
+              }))
+            }
+          />
+        </label>
+        <label style={fieldStyle}>
+          Nazwisko
+          <Input
+            value={athleteForm.lastName}
+            onChange={(event) =>
+              setAthleteForm((current) => ({
+                ...current,
+                lastName: event.target.value,
+              }))
+            }
           />
         </label>
         {showSectionField ? (
           <label style={fieldStyle}>
             Sekcja / Team
-            <select
+            <Select
               value={athleteForm.sectionId}
               onChange={(event) =>
                 setAthleteForm((current) => ({
@@ -96,7 +112,6 @@ export function AthleteFormWidget({
                   sectionId: event.target.value,
                 }))
               }
-              style={inputStyle}
             >
               <option value="">Bez sekcji</option>
               {sections.map((section) => (
@@ -104,12 +119,12 @@ export function AthleteFormWidget({
                   {section.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         ) : null}
         <label style={fieldStyle}>
           Data urodzenia
-          <input
+          <Input
             value={athleteForm.birthDate}
             onChange={(event) =>
               setAthleteForm((current) => ({
@@ -118,12 +133,11 @@ export function AthleteFormWidget({
               }))
             }
             type="date"
-            style={inputStyle}
           />
         </label>
         <label style={fieldStyle}>
           Płeć
-          <select
+          <Select
             value={athleteForm.sex}
             onChange={(event) =>
               setAthleteForm((current) => ({
@@ -131,17 +145,16 @@ export function AthleteFormWidget({
                 sex: event.target.value as UserSex,
               }))
             }
-            style={inputStyle}
           >
             <option value="">Nie podano</option>
             <option value="kobieta">Kobieta</option>
             <option value="mezczyzna">Mężczyzna</option>
             <option value="inna">Inna</option>
-          </select>
+          </Select>
         </label>
         <label style={fieldStyle}>
           Wzrost (cm)
-          <input
+          <Input
             value={athleteForm.heightCm}
             onChange={(event) =>
               setAthleteForm((current) => ({
@@ -152,12 +165,11 @@ export function AthleteFormWidget({
             type="number"
             min="1"
             step="1"
-            style={inputStyle}
           />
         </label>
         <label style={fieldStyle}>
           Waga (kg)
-          <input
+          <Input
             value={athleteForm.weightKg}
             onChange={(event) =>
               setAthleteForm((current) => ({
@@ -168,7 +180,6 @@ export function AthleteFormWidget({
             type="number"
             min="0"
             step="0.1"
-            style={inputStyle}
           />
         </label>
       </FormGrid>
@@ -183,15 +194,13 @@ export function AthleteFormWidget({
           {validationMessage}
         </p>
       ) : null}
-      <FormActions>
+      <FormActions layout="inline">
         <Button type="submit" variant="tertiary">
           {athleteFormMode === "edit" ? "Zapisz zmiany" : "Dodaj zawodnika"}
         </Button>
-        {athleteFormMode === "edit" && (
-          <Button variant="secondary" onClick={onResetAthleteForm}>
-            Anuluj
-          </Button>
-        )}
+        <Button variant="secondary" onClick={onResetAthleteForm}>
+          Anuluj
+        </Button>
       </FormActions>
     </Form>
   );

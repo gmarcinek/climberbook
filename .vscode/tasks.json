@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Climberbook ACR image 0.1.3",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"build",
+				"-t",
+				"climberbook-app:latest",
+				"-t",
+				"acrgmarcinek.azurecr.io/climberbook:0.1.3",
+				"-t",
+				"acrgmarcinek.azurecr.io/climberbook:latest",
+				"."
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Verify Climberbook production build",
+			"type": "shell",
+			"command": "C:\\nvm4w\\nodejs\\npm.cmd",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

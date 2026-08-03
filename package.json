@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:local": "npm run db:migrate && cross-env POSTGRES_HOST=localhost next dev",
     "build": "next build",
-    "prestart": "npm run db:migrate",
     "start": "next start",
     "lint": "next lint",
     "test:postgres:experimental": "node --test tests/experimental-postgres-api.test.mjs",
@@ -16,7 +14,7 @@
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",
-    "idb": "^8.0.0",
+    "lucide-react": "^1.28.0",
     "next": "^15.0.0",
     "next-auth": "^4.24.15",
     "pg": "^8.22.0",
@@ -32,6 +30,7 @@
     "cross-env": "^10.1.0",
     "eslint": "^9.17.0",
     "eslint-config-next": "^15.0.0",
+    "sass": "^1.80.7",
     "typescript": "^5.7.2"
   }
 }

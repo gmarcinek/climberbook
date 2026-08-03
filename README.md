@@ -1,12 +1,39 @@
 # Climberbook
 
-Aplikacja Next.js do prowadzenia dziennika wspinaczkowego. Aktualnym źródłem danych aplikacji jest IndexedDB. PostgreSQL i API są eksperymentalną ścieżką testową, która nie jest jeszcze podłączona do UI.
+Aplikacja Next.js do prowadzenia dziennika wspinaczkowego. Wszystkie dane UI są obsługiwane przez API PostgreSQL.
 
 ## Start
 
 1. `npm install`
-2. `npm run dev`
-3. otwórz `http://localhost:3000`
+2. Uruchom bazę: `docker compose up db -d`.
+3. Uruchom migracje: `npm run db:migrate`.
+4. Uruchom `npm run dev`.
+5. Otwórz `http://localhost:3000`.
+
+`npm run dev` uruchamia Next.js bezpośrednio na komputerze. `.env.local` wskazuje wtedy `POSTGRES_HOST=localhost`, czyli PostgreSQL wystawiony przez lokalny Docker. Produkcja nie używa tego skryptu: kontener uruchamia `node server.js` z własnymi Environment variables oraz Secrets.
+
+Lokalny UI używa API PostgreSQL i bazy Docker na `localhost:5432`. Dane Google OAuth są w `.env`; Google Cloud musi dopuszczać redirect URI `http://localhost:3000/api/auth/callback/google`. Docker Compose używa `.env` oraz hosta `db` wewnątrz swojej sieci, natomiast `.env.local` nadpisuje ten host na `localhost` wyłącznie dla aplikacji uruchomionej bezpośrednio przez `npm run dev`.
+
+`npm run db:migrate`, `npm run db:status` i `npm run db:rollback:last` zawsze dotyczą lokalnego Dockera. Produkcję migruje osobny job wdrożeniowy uruchamiany w Azure z sekretem bazy produkcyjnej; projekt nie udostępnia skryptu, który uruchamia migracje produkcyjne z lokalnego komputera.
+
+## Produkcja: Azure Container Apps
+
+Pliki `.env.*` nie są kopiowane do obrazu Docker. Produkcyjny kontener otrzymuje konfigurację w **Environment variables** Container App. Ustaw co najmniej:
+
+```env
+POSTGRES_HOST=<server-name>.postgres.database.azure.com
+POSTGRES_PORT=5432
+POSTGRES_DB=climberbook
+POSTGRES_USER=<admin-login>
+POSTGRES_AUTH_MODE=password
+POSTGRES_SSLMODE=require
+```
+
+Dodaj `POSTGRES_PASSWORD` jako sekret Container App, a następnie przekaż go do kontenera jako zmienną środowiskową o tej nazwie. Nie umieszczaj hasła w obrazie ani w repozytorium.
+
+`CLIMBERBOOK_ENV` nie jest zmienną dostarczaną przez Azure. Produkcja nie wymaga jej do połączenia z bazą; można ją opcjonalnie dodać jako własną zmienną Container App z wartością `production`.
+
+`NEXT_PUBLIC_*` jest wbudowywane podczas `docker build`, nie przy starcie kontenera. Produkcyjny obraz buduje UI korzystający z API PostgreSQL.
 
 ## Docker Compose + PostgreSQL
 
@@ -90,8 +117,8 @@ Changelogi są w `db/changelog`. Nowe zmiany dopisuj jako kolejne pliki w `db/ch
 
 ## Dane i migracja
 
-- IndexedDB przez `idb` jest obecnym źródłem prawdy dla UI i działa niezależnie od PostgreSQL.
-- PostgreSQL służy wyłącznie do eksperymentalnych testów backendu za flagą `ENABLE_POSTGRES_EXPERIMENTAL_API=true`.
+- UI zapisuje dane wyłącznie przez API PostgreSQL.
+- PostgreSQL jest wspólnym źródłem danych dla lokalnego Dockera i produkcji.
 - Eksperymentalne tabele zawierają `app_users` oraz właściciela zawodników, sekcji i obiektów. Treningi, profile, wagi, przejścia i katalog wspinaczek są filtrowane przez właściciela zawodnika.
 - Nie importuj produkcyjnych danych ani nie przełączaj `ClimberbookProvider` na PostgreSQL przed dodaniem brakujących encji użytkownika, pełnych ścieżek zapisu oraz testów integracyjnych.
 - plik `WSPINY PANEL.xlsx` jest w repo i może być kolejnym krokiem do importu historycznych danych

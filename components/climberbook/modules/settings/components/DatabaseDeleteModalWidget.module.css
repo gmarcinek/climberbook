@@ -1,0 +1,74 @@
+.dialog {
+  width: min(100%, 480px) !important;
+}
+
+.heading {
+  align-items: flex-start !important;
+}
+
+.body {
+  display: grid;
+  gap: var(--common-space-5);
+}
+
+.warning {
+  display: flex;
+  gap: var(--common-space-3);
+  align-items: flex-start;
+  padding: var(--common-space-4);
+  border: 1px solid var(--component-button-danger-border);
+  background: var(--component-button-danger-background);
+  color: var(--component-button-danger-text);
+}
+
+.warning svg {
+  align-self: center;
+  flex: 0 0 32px;
+}
+
+.warning p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.exportPrompt {
+  margin: 0;
+  display: flex;
+  gap: var(--common-space-3);
+  align-items: center;
+  padding: var(--common-space-3) var(--common-space-4);
+  border: 1px solid #4d8c68;
+  border-radius: var(--component-border-radius);
+  background: #2f6b4f;
+  color: #ffffff;
+  line-height: 1.45;
+}
+
+.exportPrompt svg {
+  flex: 0 0 28px;
+}
+
+.confirmationValue {
+  padding: 0 0.25rem;
+  background: var(--component-input-background);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-weight: var(--common-font-weight-bold);
+}
+
+.confirmationInstruction {
+  display: block;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid color-mix(in srgb, #83838380 26%, transparent);
+}
+
+.actions {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.actions > * {
+  width: auto;
+}

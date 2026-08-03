@@ -8,22 +8,26 @@ import type {
 } from "react";
 import type { UserProfileDraft } from "@/components/climberbook/common/training";
 import type {
+  AthleteExportOptions,
   AthleteRecord,
   DatabaseImportPreview,
+  FullDatabaseImportOptions,
+  FullDatabaseExportOptions,
   SectionRecord,
   UserSex,
 } from "@/lib/climbs-db";
 export type AthleteFormDraft = {
+  nick: string;
+  email: string;
   firstName: string;
   lastName: string;
-  nick: string;
   sectionId: string;
   birthDate: string;
   sex: UserSex;
   heightCm: string;
   weightKg: string;
 };
-export type SettingsTab = "profil" | "zespol" | "obiekty" | "zaawansowane";
+export type SettingsTab = "profil" | "zespol" | "zaawansowane";
 export type ModuleMeta = {
   title: string;
   eyebrow: string;
@@ -41,13 +45,19 @@ export type ProfileMetricsWidgetProps = {
   weightEntries: import("@/lib/climbs-db").WeightEntryRecord[];
 };
 export type ProfileFormWidgetProps = {
+  activeAthlete: AthleteRecord | null;
+  accountEmail: string | null;
   profileDraft: UserProfileDraft;
+  weightEntries: import("@/lib/climbs-db").WeightEntryRecord[];
   setProfileDraft: Dispatch<SetStateAction<UserProfileDraft>>;
   onSettingsSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onStartAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
 };
 export type DatabaseBackupWidgetProps = {
   backupImportInputRef: RefObject<HTMLInputElement | null>;
-  onDatabaseExport: () => void;
+  athletes: AthleteRecord[];
+  profileAthleteId: string | null;
+  onDatabaseExport: (options: FullDatabaseExportOptions) => Promise<void>;
   onDatabaseImport: (event: ChangeEvent<HTMLInputElement>) => void;
   isBackupDropActive: boolean;
   setIsBackupDropActive: Dispatch<SetStateAction<boolean>>;
@@ -56,26 +66,30 @@ export type DatabaseBackupWidgetProps = {
 export type ImportPreviewModalWidgetProps = {
   preview: DatabaseImportPreview;
   isImporting: boolean;
-  onConfirmImport: () => Promise<void>;
+  onConfirmImport: (options: FullDatabaseImportOptions) => Promise<void>;
   onCloseImportPreview: () => void;
 };
 export type TeamRosterSettingsWidgetProps = {
   athletes: AthleteRecord[];
   activeAthleteId: string | null;
   sections: SectionRecord[];
+  onAddAthlete: () => void;
   onAssignAthleteSection: (
     athlete: AthleteRecord,
     sectionId: string,
   ) => Promise<void>;
-  onAthleteExport: (athlete: AthleteRecord) => Promise<void>;
+  onAthleteExport: (
+    athlete: AthleteRecord,
+    options: AthleteExportOptions,
+  ) => Promise<void>;
   onStartAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
   onDeleteAthlete: (athlete: AthleteRecord) => Promise<void>;
 };
 export type SectionManagementWidgetProps = {
   sections: SectionRecord[];
-  newSectionName: string;
-  setNewSectionName: Dispatch<SetStateAction<string>>;
-  onAddSection: (event: FormEvent<HTMLFormElement>) => void;
+  facilities: import("@/lib/climbs-db").FacilityRecord[];
+  onAddSection: () => void;
+  onUpdateSection?: (section: SectionRecord, name: string) => Promise<void>;
   onDeleteSection: (section: SectionRecord) => Promise<void>;
 };
 export type AthleteFormWidgetProps = {
@@ -90,6 +104,8 @@ export type AthleteFormWidgetProps = {
     event: FormEvent<HTMLFormElement>,
   ) => void | Promise<boolean>;
   onResetAthleteForm: () => void;
+  panelPadding?: import("@/components/climberbook/common/Panel").PanelPadding;
+  panelStyle?: CSSProperties;
 };
 export type DangerZoneWidgetProps = {
   setIsDatabaseDeleteModalOpen: Dispatch<SetStateAction<boolean>>;

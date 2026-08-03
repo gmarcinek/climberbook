@@ -52,30 +52,30 @@ export const ROPE_GRADE_SCALE = [
 ];
 
 const ropeGradeColors = [
-  "#a8dd9a",
-  "#aceb96",
-  "#79d66a",
-  "#4ab34d",
-  "#288e38",
-  "#176729",
-  "#e8d353",
-  "#ffe46f",
-  "#ffcf3f",
-  "#ffaf1f",
-  "#ee8914",
-  "#cb5f0d",
-  "#83cde7",
-  "#86d8f6",
-  "#4abce7",
-  "#218fce",
-  "#1765ac",
-  "#103d78",
-  "#ec8dc2",
-  "#f59acc",
-  "#df6eb8",
-  "#bd499e",
-  "#913181",
-  "#642060",
+  "var(--grade-rope-5a)",
+  "var(--grade-rope-5a-plus)",
+  "var(--grade-rope-5b)",
+  "var(--grade-rope-5b-plus)",
+  "var(--grade-rope-5c)",
+  "var(--grade-rope-5c-plus)",
+  "var(--grade-rope-6a)",
+  "var(--grade-rope-6a-plus)",
+  "var(--grade-rope-6b)",
+  "var(--grade-rope-6b-plus)",
+  "var(--grade-rope-6c)",
+  "var(--grade-rope-6c-plus)",
+  "var(--grade-rope-7a)",
+  "var(--grade-rope-7a-plus)",
+  "var(--grade-rope-7b)",
+  "var(--grade-rope-7b-plus)",
+  "var(--grade-rope-7c)",
+  "var(--grade-rope-7c-plus)",
+  "var(--grade-rope-8a)",
+  "var(--grade-rope-8a-plus)",
+  "var(--grade-rope-8b)",
+  "var(--grade-rope-8b-plus)",
+  "var(--grade-rope-8c)",
+  "var(--grade-rope-8c-plus)",
 ];
 
 export function estimateTrainingCalories(input: {
@@ -120,6 +120,22 @@ export function formatDurationMinutes(value: number | string) {
   const minutes = durationMinutes % 60;
 
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")} h`;
+}
+
+export function formatCompactAxisNumber(
+  value: number | string,
+  alwaysUseThousands = false,
+) {
+  const numericValue = Number(value);
+
+  if (
+    !Number.isFinite(numericValue) ||
+    (!alwaysUseThousands && Math.abs(numericValue) < 1000)
+  ) {
+    return String(value);
+  }
+
+  return `${Math.round((numericValue / 1000) * 10) / 10}k`;
 }
 
 export function roundToSingleDecimal(value: number) {
@@ -268,7 +284,10 @@ export function getRopeGradeIndex(grade: string) {
 }
 
 export function getRopeGradeColor(grade: string) {
-  return ropeGradeColors[getRopeGradeIndex(grade)] ?? "#e19a24";
+  return (
+    ropeGradeColors[getRopeGradeIndex(grade)] ??
+    "var(--component-grade-distribution-fallback)"
+  );
 }
 
 export function getRollingChartRange(daysBack = 28, daysForward = 3) {
@@ -311,9 +330,7 @@ export function getGradeRank(grade: string) {
     /^\d/.test(secondGrade) ? secondGrade : `${inheritedBase}${secondGrade}`,
   );
 
-  return firstRank >= 0 && secondRank >= 0
-    ? (firstRank + secondRank) / 2
-    : -1;
+  return firstRank >= 0 && secondRank >= 0 ? (firstRank + secondRank) / 2 : -1;
 }
 
 function getSimpleGradeRank(grade: string) {

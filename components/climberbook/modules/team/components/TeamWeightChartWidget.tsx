@@ -21,11 +21,11 @@ import {
 } from "@/components/climberbook/common/styles";
 import type { AthleteRecord } from "@/lib/climbs-db";
 const TEAM_CHART_COLORS = [
-  "#c3663a",
-  "#2f7d6c",
-  "#3f6099",
-  "#a2465b",
-  "#8b6b2d",
+  "var(--component-chart-series-average)",
+  "var(--component-chart-activity-rope)",
+  "var(--component-chart-series-projection)",
+  "var(--component-chart-stimulus-strength-power)",
+  "var(--component-chart-stimulus-strength-endurance)",
 ];
 type TeamWeightChartWidgetProps = {
   athletes: AthleteRecord[];
@@ -61,7 +61,7 @@ export function TeamWeightChartWidget({
             >
               <CartesianGrid
                 vertical={false}
-                stroke="rgba(100, 87, 77, 0.14)"
+                stroke="var(--component-chart-grid)"
               />
               <XAxis
                 dataKey="date"

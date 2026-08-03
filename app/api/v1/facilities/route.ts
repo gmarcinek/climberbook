@@ -9,11 +9,82 @@ import {
   isPostgresExperimentalApiEnabled,
   postgresExperimentalApiDisabledResponse,
 } from "@/lib/server/feature-flags";
+import type { FacilityCapabilities, TrainingSurface } from "@/lib/climbs-db";
 
 export const runtime = "nodejs";
 
 function getName(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+const trainingSurfaces: TrainingSurface[] = [
+  "lina",
+  "baldy",
+  "moon",
+  "drazek",
+  "spraywall",
+  "kilter",
+  "silownia",
+  "chwytotablica",
+  "campus",
+  "bieznia",
+  "rower",
+  "bieg",
+  "treking",
+];
+const ropeWallInclinations = [
+  "slab",
+  "vertical",
+  "slight_overhang",
+  "overhang",
+  "steep",
+];
+
+function getCapabilities(value: unknown): FacilityCapabilities | null {
+  if (!value || typeof value !== "object") return null;
+  const input = value as { activities?: unknown; ropeWalls?: unknown };
+  if (!Array.isArray(input.activities) || !Array.isArray(input.ropeWalls))
+    return null;
+  if (
+    !input.activities.every(
+      (activity): activity is TrainingSurface =>
+        typeof activity === "string" &&
+        trainingSurfaces.includes(activity as TrainingSurface),
+    )
+  )
+    return null;
+  if (
+    !input.ropeWalls.every(
+      (wall) =>
+        wall &&
+        typeof wall === "object" &&
+        typeof (wall as { lengthMeters?: unknown }).lengthMeters === "number" &&
+        Number.isFinite((wall as { lengthMeters: number }).lengthMeters) &&
+        (wall as { lengthMeters: number }).lengthMeters > 0 &&
+        ropeWallInclinations.includes(
+          (wall as { inclination?: string }).inclination ?? "",
+        ),
+    )
+  )
+    return null;
+  return {
+    activities: input.activities as TrainingSurface[],
+    ropeWalls: input.ropeWalls.map((wall, index) => {
+      const profile = wall as {
+        name?: unknown;
+        lengthMeters: number;
+        inclination: FacilityCapabilities["ropeWalls"][number]["inclination"];
+      };
+      return {
+        name:
+          typeof profile.name === "string" && profile.name.trim()
+            ? profile.name.trim()
+            : `Ściana ${index + 1}`,
+        lengthMeters: profile.lengthMeters,
+        inclination: profile.inclination,
+      };
+    }),
+  };
 }
 
 async function getActor(request: Request) {
@@ -27,18 +98,28 @@ export async function GET(request: Request) {
   const actorId = await getActor(request);
   if (typeof actorId !== "string") return actorId;
 
-  return Response.json({ facilities: await listFacilitiesFromPostgres(actorId) });
+  return Response.json({
+    facilities: await listFacilitiesFromPostgres(actorId),
+  });
 }
 
 export async function POST(request: Request) {
   const actorId = await getActor(request);
   if (typeof actorId !== "string") return actorId;
 
-  const name = getName((await request.json()).name);
-  if (!name) return Response.json({ error: "name jest wymagane." }, { status: 400 });
+  const input = await request.json();
+  const name = getName(input.name);
+  const capabilities = getCapabilities(input.capabilities);
+  if (!name || !capabilities)
+    return Response.json(
+      { error: "name i capabilities są wymagane." },
+      { status: 400 },
+    );
 
   return Response.json(
-    { facility: await createFacilityInPostgres(actorId, name) },
+    {
+      facility: await createFacilityInPostgres(actorId, { name, capabilities }),
+    },
     { status: 201 },
   );
 }
@@ -50,11 +131,18 @@ export async function PATCH(request: Request) {
   const input = await request.json();
   const facilityId = typeof input.id === "string" ? input.id : "";
   const name = getName(input.name);
-  if (!facilityId || !name)
-    return Response.json({ error: "id i name są wymagane." }, { status: 400 });
+  const capabilities = getCapabilities(input.capabilities);
+  if (!facilityId || !name || !capabilities)
+    return Response.json(
+      { error: "id, name i capabilities są wymagane." },
+      { status: 400 },
+    );
 
   return Response.json({
-    facility: await updateFacilityInPostgres(actorId, facilityId, name),
+    facility: await updateFacilityInPostgres(actorId, facilityId, {
+      name,
+      capabilities,
+    }),
   });
 }
 
@@ -63,7 +151,8 @@ export async function DELETE(request: Request) {
   if (typeof actorId !== "string") return actorId;
 
   const facilityId = new URL(request.url).searchParams.get("id");
-  if (!facilityId) return Response.json({ error: "id jest wymagane." }, { status: 400 });
+  if (!facilityId)
+    return Response.json({ error: "id jest wymagane." }, { status: 400 });
 
   await deleteFacilityFromPostgres(actorId, facilityId);
   return Response.json({ deleted: true });

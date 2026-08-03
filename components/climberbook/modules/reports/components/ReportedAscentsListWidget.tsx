@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
 import {
   inputStyle,
@@ -233,22 +234,12 @@ export function ReportedAscentsListWidget({
                       : ascent.routeName}
                   </h3>
                 </div>
-                <button
-                  type="button"
-                  style={{
-                    border: isEditing
-                      ? "1px solid rgba(195, 102, 58, 0.38)"
-                      : "1px solid rgba(24, 33, 43, 0.14)",
-                    padding: "7px 9px",
-                    background: "rgba(255,255,255,0.92)",
-                    color: "var(--text)",
-                    cursor: "pointer",
-                    boxShadow: "0 12px 24px rgba(24, 33, 43, 0.08)",
-                  }}
+                <Button
+                  variant="quadrary"
                   onClick={() => onEdit(ascent)}
                 >
                   {isEditing ? "Edytujesz" : "Edytuj"}
-                </button>
+                </Button>
               </div>
               <div
                 style={{

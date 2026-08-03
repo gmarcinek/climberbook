@@ -15,6 +15,7 @@ type ReportHeaderWidgetProps = {
   panelAscents: number;
   rockAscents: number;
   mobileAction?: ReactNode;
+  desktopAction?: ReactNode;
 };
 export function ReportHeaderWidget({
   meta,
@@ -22,6 +23,7 @@ export function ReportHeaderWidget({
   panelAscents,
   rockAscents,
   mobileAction,
+  desktopAction,
 }: ReportHeaderWidgetProps) {
   const { isMobileHeader } = useViewport();
 
@@ -56,6 +58,7 @@ export function ReportHeaderWidget({
         <span style={headerBadgeStyle}>Przejścia: {ascentsCount}</span>
         <span style={headerBadgeStyle}>Panel: {panelAscents}</span>
         <span style={headerBadgeStyle}>Skała: {rockAscents}</span>
+        {desktopAction}
       </Stack>
     </Stack>
   );

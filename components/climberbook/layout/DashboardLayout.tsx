@@ -3,18 +3,22 @@
 import type { ReactNode } from "react";
 import {
   contentBodyStyle,
-  moduleShellStyles,
   pageStyle,
-  shellStyle,
 } from "@/components/climberbook/common/styles";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { MainHeader } from "./MainHeader";
+import styles from "./LayoutShell.module.scss";
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const { isMobileTrainingLayout } = useViewport();
+  const { isMobileTrainingLayout, isReady } = useViewport();
+
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <main
+      className={styles.page}
       style={{
         ...pageStyle,
         height: isMobileTrainingLayout ? "auto" : "100vh",
@@ -22,9 +26,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       }}
     >
       <section
+        className={styles.shell}
         style={{
-          ...shellStyle,
-          ...moduleShellStyles.treningowy,
           minHeight: "100vh",
           height: isMobileTrainingLayout ? "auto" : "100vh",
           overflow: isMobileTrainingLayout ? "visible" : "hidden",

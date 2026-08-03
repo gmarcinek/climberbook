@@ -15,6 +15,7 @@ import {
   formatDateIso,
   toDate,
 } from "@/components/training-calendar/training-calendar.helpers";
+import { formatCompactAxisNumber } from "@/components/climberbook/common/training";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { weightChartCanvasStyle } from "@/components/climberbook/common/styles";
 import type { TrainingRecord } from "@/lib/climbs-db";
@@ -65,12 +66,13 @@ export function TrainingCaloriesChart({
           margin={{ top: 12, right: 8, bottom: 4, left: -20 }}
         >
           <CartesianGrid
-            stroke="rgba(100, 87, 77, 0.14)"
+            stroke="var(--component-chart-grid)"
             strokeDasharray="3 5"
           />
           <XAxis
             dataKey="date"
             minTickGap={28}
+            tick={{ fontSize: 9.6, fill: "var(--component-chart-axis)" }}
             tickFormatter={(date) =>
               new Intl.DateTimeFormat("pl-PL", {
                 day: "numeric",
@@ -79,13 +81,20 @@ export function TrainingCaloriesChart({
             }
           />
           <YAxis
-            tickFormatter={(value) => `${value}`}
-            label={{ value: "kcal", angle: -90, position: "insideLeft" }}
+            width={45}
+            tick={{ fontSize: 9.6, fill: "var(--component-chart-axis)" }}
+            tickFormatter={(value) => formatCompactAxisNumber(value, true)}
+            label={{
+              value: "kcal",
+              angle: -90,
+              position: "insideLeft",
+              style: { fontSize: 9.6 },
+            }}
           />
           {selectedChartDate && (
             <ReferenceLine
               x={selectedChartDate}
-              stroke="#176f86"
+              stroke="var(--component-chart-marker-selected)"
               strokeWidth={2}
               strokeDasharray="4 4"
             />
@@ -103,10 +112,15 @@ export function TrainingCaloriesChart({
             type="monotone"
             dataKey="calories"
             name="Kalorie"
-            stroke="#dc5a45"
+            stroke="var(--component-chart-series-calories)"
             strokeDasharray="6 4"
             strokeWidth={2}
-            dot={{ r: 3, fill: "#dc5a45", stroke: "white", strokeWidth: 1 }}
+            dot={{
+              r: 3,
+              fill: "var(--component-chart-series-calories)",
+              stroke: "var(--component-chart-marker-outline)",
+              strokeWidth: 1,
+            }}
             activeDot={{ r: 5 }}
           />
         </ComposedChart>

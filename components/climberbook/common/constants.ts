@@ -70,13 +70,11 @@ const legacyFrenchGradeOptions = [
 import type { TrainingSurface } from "@/lib/climbs-db";
 
 export const settingsTabs: {
-  key: "profil" | "zespol" | "obiekty" | "zaawansowane";
+  key: "profil" | "zaawansowane";
   label: string;
   route: string;
 }[] = [
   { key: "profil", label: "Profil", route: "/ustawienia/profil" },
-  { key: "zespol", label: "Zespół", route: "/ustawienia/zespol" },
-  { key: "obiekty", label: "Obiekty", route: "/ustawienia/obiekty" },
   {
     key: "zaawansowane",
     label: "Zaawansowane",
@@ -92,13 +90,12 @@ export const surfaceOptions: Array<{ value: TrainingSurface; label: string }> =
     { value: "drazek", label: "Drążek" },
     { value: "chwytotablica", label: "Tablica" },
     { value: "campus", label: "Campus" },
-    { value: "spraywall", label: "Spraywall" },
+    { value: "spraywall", label: "Spray" },
     { value: "kilter", label: "Kilter" },
-    { value: "silownia", label: "Siłownia" },
-    { value: "bieznia", label: "Bieżnia" },
+    { value: "silownia", label: "Siłka" },
     { value: "rower", label: "Rower" },
     { value: "bieg", label: "Bieg" },
-    { value: "treking", label: "Treking" },
+    { value: "treking", label: "Treck" },
   ];
 
 export const frenchGradeOptions = [
