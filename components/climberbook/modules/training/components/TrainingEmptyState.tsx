@@ -19,7 +19,11 @@ import { ImportPreviewModalWidget } from "@/components/climberbook/modules/setti
 import styles from "./TrainingEmptyState.module.css";
 import { useRouter } from "next/navigation";
 import type { AthleteFormDraft } from "@/components/climberbook/providers/ClimberbookProvider";
-import type { DatabaseImportPreview, SectionRecord } from "@/lib/climbs-db";
+import type {
+  DatabaseImportPreview,
+  FullDatabaseImportOptions,
+  SectionRecord,
+} from "@/lib/climbs-db";
 import type {
   ChangeEvent,
   Dispatch,
@@ -42,7 +46,7 @@ type TrainingEmptyStateProps = {
   importPreview: DatabaseImportPreview | null;
   isImportPreviewOpen: boolean;
   isImportingBackup: boolean;
-  onConfirmImportPreview: () => Promise<void>;
+  onConfirmImportPreview: (options: FullDatabaseImportOptions) => Promise<void>;
   onCloseImportPreview: () => void;
 };
 

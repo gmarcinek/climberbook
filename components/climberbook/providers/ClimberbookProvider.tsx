@@ -72,6 +72,7 @@ import {
   saveUserProfile,
   updateAscent,
   updateAthlete,
+  updateSection,
   updateTraining,
   updateWeightEntry,
   type AscentRecord,
@@ -405,11 +406,11 @@ type ClimberbookContextValue = {
   editAscent: (ascent: AscentRecord) => void;
   cancelAscentEdit: () => void;
   submitSettings: (event: FormEvent<HTMLFormElement>) => Promise<void>;
-  exportDatabase: () => Promise<void>;
+  exportDatabase: (options: FullDatabaseExportOptions) => Promise<void>;
   importDatabase: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   loadSampleData: () => Promise<void>;
   dropBackup: (event: DragEvent<HTMLDivElement>) => void;
-  confirmImportPreview: () => Promise<void>;
+  confirmImportPreview: (options: FullDatabaseImportOptions) => Promise<void>;
   closeImportPreview: () => void;
   addSection: (
     event: FormEvent<HTMLFormElement>,
@@ -432,7 +433,10 @@ type ClimberbookContextValue = {
     athlete: AthleteRecord,
     sectionId: string,
   ) => Promise<void>;
-  exportAthlete: (athlete: AthleteRecord) => Promise<void>;
+  exportAthlete: (
+    athlete: AthleteRecord,
+    options: AthleteExportOptions,
+  ) => Promise<void>;
   startAthleteEdit: (athlete: AthleteRecord) => Promise<void>;
   submitAthlete: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   resetAthleteForm: () => void;

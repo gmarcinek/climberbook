@@ -21,7 +21,7 @@ import styles from "./DatabaseBackupWidget.module.css";
 import type { DatabaseBackupWidgetProps } from "./SettingsWidgetTypes";
 
 const fullExportOptionLabels: Array<{
-  key: keyof FullDatabaseExportOptions;
+  key: Exclude<keyof FullDatabaseExportOptions, "athleteIds">;
   label: string;
 }> = [
   { key: "sections", label: "Sekcje" },

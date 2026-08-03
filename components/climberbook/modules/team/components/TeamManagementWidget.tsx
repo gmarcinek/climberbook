@@ -99,6 +99,7 @@ export function TeamManagementWidget({
       setIsAthleteFormOpen(false);
       onResetAthleteForm();
     }
+    return saved;
   }
 
   function closeAthleteForm() {
