@@ -53,6 +53,10 @@ const filterControls: Array<{
   },
 ];
 
+function getFiniteNumber(value: unknown, fallback: number) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
 function getStoredVisualFilters(): VisualFilters {
   if (typeof window === "undefined") return defaultVisualFilters;
 
@@ -62,21 +66,20 @@ function getStoredVisualFilters(): VisualFilters {
     const parsed = JSON.parse(stored) as Partial<VisualFilters>;
 
     return {
-      saturation: Number.isFinite(parsed.saturation)
-        ? parsed.saturation
-        : defaultVisualFilters.saturation,
-      contrast: Number.isFinite(parsed.contrast)
-        ? parsed.contrast
-        : defaultVisualFilters.contrast,
-      invert: Number.isFinite(parsed.invert)
-        ? parsed.invert
-        : defaultVisualFilters.invert,
-      grayscale: Number.isFinite(parsed.grayscale)
-        ? parsed.grayscale
-        : defaultVisualFilters.grayscale,
-      hueRotate: Number.isFinite(parsed.hueRotate)
-        ? parsed.hueRotate
-        : defaultVisualFilters.hueRotate,
+      saturation: getFiniteNumber(
+        parsed.saturation,
+        defaultVisualFilters.saturation,
+      ),
+      contrast: getFiniteNumber(parsed.contrast, defaultVisualFilters.contrast),
+      invert: getFiniteNumber(parsed.invert, defaultVisualFilters.invert),
+      grayscale: getFiniteNumber(
+        parsed.grayscale,
+        defaultVisualFilters.grayscale,
+      ),
+      hueRotate: getFiniteNumber(
+        parsed.hueRotate,
+        defaultVisualFilters.hueRotate,
+      ),
     };
   } catch {
     return defaultVisualFilters;
