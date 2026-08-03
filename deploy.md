@@ -1,3 +1,16 @@
+W skrócie
+
+1. spradzź tsx czy sie kompilije no emit i posprzątaj jego output
+2. zbuduj image
+3. sprawdz tagi ostanie
+4. wypchnij na acr.
+5. otaguj latest i nowa wersje
+6. wypchnij na acr.
+7. sprawdz czy poszło
+8. sprawdź czy baza ma migracje do zrobienia zmigruj
+9. deploy
+10. wywal z acr stare images
+
 ````md
 # Climberbook: build i deploy obrazu do Azure
 
