@@ -9,3 +9,6 @@ Dockerfile*
 README.md
 tsconfig.tsbuildinfo
 *.xlsx
+*logs
+log
+climberbook-logs

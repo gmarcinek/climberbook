@@ -107,6 +107,35 @@ Schemat bazy jest zarządzany przez Liquibase. Backend nie tworzy tabel automaty
 npm run db:migrate
 ```
 
+## Entra ID i MCP
+
+Endpoint MCP jest dostępny przez Streamable HTTP pod `POST /api/mcp`. Wymaga access tokenu Entra w nagłówku `Authorization: Bearer <token>` i delegowanego zakresu `climberbook.access`. Metadane OAuth dla klientów MCP są dostępne pod `/.well-known/oauth-protected-resource`.
+
+W ustawieniach aplikacji Azure App Service ustaw następujące zmienne środowiskowe, używając wartości z rejestracji **Climberbook MCP API**:
+
+```env
+ENTRA_TENANT_ID=<Directory-tenant-ID>
+ENTRA_API_CLIENT_ID=<Application-client-ID-API>
+ENTRA_REQUIRED_SCOPE=climberbook.access
+```
+
+Domyślny issuer jest przeznaczony dla Microsoft Entra ID: `https://login.microsoftonline.com/<tenant-id>/v2.0`. Dla tenant'a External ID ustaw dodatkowo `ENTRA_ISSUER` na issuer podany w jego dokumencie OpenID Connect oraz `ENTRA_OPENID_CONFIGURATION_URL` na pełny adres tego dokumentu. API pobiera z niego `jwks_uri` do weryfikacji podpisu tokenu.
+
+MCP udostępnia obecnie tylko narzędzie odczytu `get_climbing_snapshot`. Token jest mapowany na istniejące konto Climberbook przez `auth_identities`. Dla ręcznie utworzonego użytkownika dodaj jednorazowo powiązanie w bazie:
+
+```sql
+insert into auth_identities (id, user_id, provider, provider_subject, email_at_login)
+values (
+	gen_random_uuid(),
+	'<UUID-z-app_users>',
+	'entra:<Directory-tenant-ID>',
+	'<oid-z-access-tokenu>',
+	'<adres-email-uzytkownika>'
+);
+```
+
+`oid` odczytaj z access tokenu dla API. Nie mapuj kont po adresie e-mail, ponieważ może się on zmienić.
+
 Changelogi są w `db/changelog`. Nowe zmiany dopisuj jako kolejne pliki w `db/changelog/changes` i dołączaj je w `db/changelog/db.changelog-master.yaml`. Dla Azure można użyć tego samego mechanizmu; przy `POSTGRES_AUTH_MODE=entra` migracje uruchamiaj użytkownikiem migracyjnym/adminem albo przekaż token Entra jako hasło dla połączenia JDBC.
 
 ## Główne moduły

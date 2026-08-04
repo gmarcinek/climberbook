@@ -141,6 +141,20 @@ nie mogą trafić do obrazu ani do logów wdrożenia.
 
 ## 7. Ustaw nową wersję w App Service
 
+Przed pierwszym wdrożeniem API/MCP zabezpieczonego przez Entra ustaw konfigurację aplikacji. Wartości identyfikatorów nie są sekretami, ale nie zapisuj ich w obrazie:
+
+```bash
+az webapp config appsettings set \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_SERVICE" \
+  --settings \
+    ENTRA_TENANT_ID="<Directory-tenant-ID>" \
+    ENTRA_API_CLIENT_ID="<Application-client-ID-Climberbook-MCP-API>" \
+    ENTRA_REQUIRED_SCOPE="climberbook.access"
+```
+
+Jeśli API jest zarejestrowane w tenant'cie External ID, dodaj też `ENTRA_ISSUER` oraz `ENTRA_OPENID_CONFIGURATION_URL` z dokumentu OpenID Connect tego tenant'a.
+
 ```bash
 az webapp config container set \
   --resource-group "$RESOURCE_GROUP" \

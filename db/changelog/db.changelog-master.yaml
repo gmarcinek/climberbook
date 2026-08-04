@@ -31,3 +31,5 @@ databaseChangeLog:
       file: changelog/changes/015-add-training-rope-wall.sql
   - include:
       file: changelog/changes/016-add-training-rope-routes.sql
+  - include:
+      file: changelog/changes/017-grant-password-credential-access.sql

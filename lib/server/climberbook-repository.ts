@@ -588,6 +588,63 @@ export async function requireExperimentalUser(userId: string) {
   return mapExperimentalUser(user);
 }
 
+export async function findUserIdByAuthIdentity(input: {
+  provider: string;
+  subject: string;
+}) {
+  const result = await queryPostgres<SocialIdentityRow>(
+    `
+      select id, user_id
+      from auth_identities
+      where provider = $1 and provider_subject = $2
+    `,
+    [input.provider, input.subject],
+  );
+
+  return result.rows[0]?.user_id ?? null;
+}
+
+export async function linkExistingUserToAuthIdentity(input: {
+  provider: string;
+  subject: string;
+  email: string;
+}) {
+  return withPostgresTransaction(async (client) => {
+    const matchingUsers = await client.query<SocialIdentityRow>(
+      `
+        select id, id as user_id
+        from app_users
+        where lower(email) = $1
+        limit 2
+      `,
+      [input.email.trim().toLowerCase()],
+    );
+
+    const matchingUser =
+      matchingUsers.rows.length === 1 ? matchingUsers.rows[0] : null;
+    if (!matchingUser) return null;
+
+    const identity = await client.query<SocialIdentityRow>(
+      `
+        insert into auth_identities (id, user_id, provider, provider_subject, email_at_login)
+        values ($1, $2, $3, $4, $5)
+        on conflict (provider, provider_subject) do update
+        set email_at_login = excluded.email_at_login
+        returning id, user_id
+      `,
+      [
+        crypto.randomUUID(),
+        matchingUser.user_id,
+        input.provider,
+        input.subject,
+        input.email.trim().toLowerCase(),
+      ],
+    );
+
+    return identity.rows[0]?.user_id ?? null;
+  });
+}
+
 export async function deleteExperimentalUser(userId: string) {
   const result = await queryPostgres<{ id: string }>(
     "delete from app_users where id = $1 returning id",
