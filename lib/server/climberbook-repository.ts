@@ -62,6 +62,7 @@ type TrainingRow = {
   wellbeing: string;
   surfaces: TrainingRecord["surfaces"];
   facility_name: string | null;
+  weather_snapshot: TrainingRecord["weatherSnapshot"] | null;
   rope_wall_name: string | null;
   rope_routes: TrainingRecord["ropeRoutes"] | null;
   custom_session_type: string | null;
@@ -212,6 +213,7 @@ function mapTraining(row: TrainingRow): TrainingRecord {
     wellbeing: row.wellbeing,
     surfaces: row.surfaces,
     facilityName: row.facility_name ?? undefined,
+    weatherSnapshot: row.weather_snapshot ?? undefined,
     ropeWallName: row.rope_wall_name ?? undefined,
     ropeRoutes: row.rope_routes ?? undefined,
     customSessionType: row.custom_session_type ?? undefined,
@@ -984,7 +986,7 @@ export async function listTrainingsFromPostgres(
       trainings.age_years, trainings.calories_burned, trainings.attempts_count,
       trainings.difficulty_notes, trainings.difficulty_by_surface,
       trainings.protocol, trainings.load_profile, trainings.wellbeing, trainings.surfaces,
-      trainings.custom_session_type, trainings.facility_name, trainings.rope_wall_name,
+      trainings.custom_session_type, trainings.facility_name, trainings.weather_snapshot, trainings.rope_wall_name,
       trainings.rope_routes, trainings.notes,
       trainings.created_at
     from trainings
@@ -1015,13 +1017,13 @@ export async function createTrainingInPostgres(
       id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, facility_name,
-      rope_wall_name, rope_routes, custom_session_type, notes
+      weather_snapshot, rope_wall_name, rope_routes, custom_session_type, notes
     )
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
-      facility_name, rope_wall_name, rope_routes, notes, created_at
+      facility_name, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
   `,
     [
       trainingId,
@@ -1040,6 +1042,7 @@ export async function createTrainingInPostgres(
       input.wellbeing,
       input.surfaces,
       input.facilityName ?? null,
+      input.weatherSnapshot ?? null,
       input.ropeWallName ?? null,
       input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
       input.customSessionType ?? null,
@@ -1072,21 +1075,22 @@ export async function updateTrainingInPostgres(
       wellbeing = $13,
       surfaces = $14,
       facility_name = $15,
-      rope_wall_name = $16,
-      rope_routes = $17,
-      custom_session_type = $18,
-      notes = $19
+      weather_snapshot = $16,
+      rope_wall_name = $17,
+      rope_routes = $18,
+      custom_session_type = $19,
+      notes = $20
     where id = $1
       and exists (
         select 1
         from athletes
         where athletes.id = trainings.athlete_id
-          and athletes.owner_user_id = $20
+          and athletes.owner_user_id = $21
       )
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
-      facility_name, rope_wall_name, rope_routes, notes, created_at
+      facility_name, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
   `,
     [
       input.id,
@@ -1104,6 +1108,7 @@ export async function updateTrainingInPostgres(
       input.wellbeing,
       input.surfaces,
       input.facilityName ?? null,
+      input.weatherSnapshot ?? null,
       input.ropeWallName ?? null,
       input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
       input.customSessionType ?? null,
@@ -2132,11 +2137,11 @@ export async function importFullBackupToPostgres(
             id, source_id, athlete_id, date, time, duration_minutes,
             age_years, calories_burned, attempts_count, difficulty_notes,
             difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, facility_name,
-            rope_wall_name, rope_routes, custom_session_type, notes, created_at
+            weather_snapshot, rope_wall_name, rope_routes, custom_session_type, notes, created_at
           )
           select
             $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-            $15, $16, $17, $18, $19, $20
+            $15, $16, $17, $18, $19, $20, $21
           where not exists (
             select 1
             from trainings
@@ -2154,16 +2159,17 @@ export async function importFullBackupToPostgres(
               and wellbeing = $13
               and surfaces = $14
               and facility_name is not distinct from $15
-              and rope_wall_name is not distinct from $16
-              and rope_routes is not distinct from $17::jsonb
-              and custom_session_type is not distinct from $18
-              and notes = $19
-              and created_at = $20
+              and weather_snapshot is not distinct from $16::jsonb
+              and rope_wall_name is not distinct from $17
+              and rope_routes is not distinct from $18::jsonb
+              and custom_session_type is not distinct from $19
+              and notes = $20
+              and created_at = $21
           )
           on conflict (id) do ${
             skipDuplicates
               ? "nothing"
-              : "update set athlete_id = excluded.athlete_id, date = excluded.date, time = excluded.time, duration_minutes = excluded.duration_minutes, age_years = excluded.age_years, calories_burned = excluded.calories_burned, attempts_count = excluded.attempts_count, difficulty_notes = excluded.difficulty_notes, difficulty_by_surface = excluded.difficulty_by_surface, protocol = excluded.protocol, load_profile = excluded.load_profile, wellbeing = excluded.wellbeing, surfaces = excluded.surfaces, facility_name = excluded.facility_name, rope_wall_name = excluded.rope_wall_name, rope_routes = excluded.rope_routes, custom_session_type = excluded.custom_session_type, notes = excluded.notes, created_at = excluded.created_at"
+              : "update set athlete_id = excluded.athlete_id, date = excluded.date, time = excluded.time, duration_minutes = excluded.duration_minutes, age_years = excluded.age_years, calories_burned = excluded.calories_burned, attempts_count = excluded.attempts_count, difficulty_notes = excluded.difficulty_notes, difficulty_by_surface = excluded.difficulty_by_surface, protocol = excluded.protocol, load_profile = excluded.load_profile, wellbeing = excluded.wellbeing, surfaces = excluded.surfaces, facility_name = excluded.facility_name, weather_snapshot = excluded.weather_snapshot, rope_wall_name = excluded.rope_wall_name, rope_routes = excluded.rope_routes, custom_session_type = excluded.custom_session_type, notes = excluded.notes, created_at = excluded.created_at"
           }
         `,
         [
@@ -2182,6 +2188,7 @@ export async function importFullBackupToPostgres(
           training.wellbeing,
           training.surfaces,
           training.facilityName ?? null,
+          training.weatherSnapshot ?? null,
           training.ropeWallName ?? null,
           training.ropeRoutes ? JSON.stringify(training.ropeRoutes) : null,
           training.customSessionType ?? null,

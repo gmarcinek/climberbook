@@ -48,6 +48,7 @@ const inclinationOptions: Array<{ value: RopeWallInclination; label: string }> =
 const emptyCapabilities = (): FacilityCapabilities => ({
   activities: [],
   ropeWalls: [],
+  hasAirConditioning: false,
 });
 
 const facilityKindOptions: Array<{ value: FacilityKind; label: string }> = [
@@ -98,6 +99,8 @@ export function FacilitiesModule() {
   const [locationResults, setLocationResults] = useState<GeocodingResult[]>([]);
   const [activeLocationIndex, setActiveLocationIndex] = useState(-1);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [isLocationSearchFocused, setIsLocationSearchFocused] = useState(false);
+  const [isLocationSearchDirty, setIsLocationSearchDirty] = useState(false);
   const formPanelRef = useRef<HTMLElement>(null);
   const shouldSkipNextLocationSearch = useRef(false);
   const [formPanelWidth, setFormPanelWidth] = useState(0);
@@ -120,13 +123,18 @@ export function FacilitiesModule() {
     const query = locationLabel.trim();
     setActiveLocationIndex(-1);
     setLocationResults([]);
+    setIsSearchingLocation(false);
 
     if (shouldSkipNextLocationSearch.current) {
       shouldSkipNextLocationSearch.current = false;
       return;
     }
 
-    if (query.length < 3) {
+    if (
+      !isLocationSearchFocused ||
+      !isLocationSearchDirty ||
+      query.length < 3
+    ) {
       return;
     }
 
@@ -151,7 +159,7 @@ export function FacilitiesModule() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [locationLabel]);
+  }, [isLocationSearchDirty, isLocationSearchFocused, locationLabel]);
 
   function selectLocation(result: GeocodingResult) {
     shouldSkipNextLocationSearch.current = true;
@@ -160,6 +168,7 @@ export function FacilitiesModule() {
     setLongitude(result.lon);
     setActiveLocationIndex(-1);
     setLocationResults([]);
+    setIsLocationSearchDirty(false);
   }
 
   function openCreate() {
@@ -170,6 +179,7 @@ export function FacilitiesModule() {
     setLocationLabel("");
     setLatitude("");
     setLongitude("");
+    setIsLocationSearchDirty(false);
     setIsFormOpen(true);
   }
 
@@ -181,6 +191,7 @@ export function FacilitiesModule() {
     setLocationLabel(facility.locationLabel);
     setLatitude(facility.latitude?.toString() ?? "");
     setLongitude(facility.longitude?.toString() ?? "");
+    setIsLocationSearchDirty(false);
     setIsFormOpen(true);
   }
 
@@ -192,6 +203,7 @@ export function FacilitiesModule() {
     setLocationLabel("");
     setLatitude("");
     setLongitude("");
+    setIsLocationSearchDirty(false);
     setIsFormOpen(false);
   }
 
@@ -322,6 +334,7 @@ export function FacilitiesModule() {
         setLatitude(coordinates.latitude.toFixed(6));
         setLongitude(coordinates.longitude.toFixed(6));
         setLocationResults([]);
+        setIsLocationSearchDirty(false);
       }}
     />
   );
@@ -343,7 +356,12 @@ export function FacilitiesModule() {
         id="facility-location-search"
         type="search"
         value={locationLabel}
-        onChange={(event) => setLocationLabel(event.target.value)}
+        onChange={(event) => {
+          setIsLocationSearchDirty(true);
+          setLocationLabel(event.target.value);
+        }}
+        onFocus={() => setIsLocationSearchFocused(true)}
+        onBlur={() => setIsLocationSearchFocused(false)}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             setActiveLocationIndex(-1);
@@ -374,7 +392,7 @@ export function FacilitiesModule() {
         role="combobox"
         aria-autocomplete="list"
         aria-controls="facility-location-results"
-        aria-expanded={locationResults.length > 0}
+        aria-expanded={isLocationSearchFocused && locationResults.length > 0}
         aria-activedescendant={
           activeLocationIndex >= 0
             ? `facility-location-result-${activeLocationIndex}`
@@ -407,7 +425,7 @@ export function FacilitiesModule() {
           />
         </>
       )}
-      {isSearchingLocation && (
+      {isLocationSearchFocused && isSearchingLocation && (
         <span
           style={{
             position: "absolute",
@@ -420,7 +438,7 @@ export function FacilitiesModule() {
           Szukam lokalizacji...
         </span>
       )}
-      {locationResults.length > 0 && (
+      {isLocationSearchFocused && locationResults.length > 0 && (
         <div
           id="facility-location-results"
           role="listbox"
@@ -446,6 +464,7 @@ export function FacilitiesModule() {
               type="button"
               role="option"
               aria-selected={index === activeLocationIndex}
+              onPointerDown={(event) => event.preventDefault()}
               onClick={() => selectLocation(result)}
               style={{
                 border: 0,
@@ -544,8 +563,29 @@ export function FacilitiesModule() {
           ))}
         </div>
       </div>
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          order: 4,
+          cursor: "pointer",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={capabilities.hasAirConditioning === true}
+          onChange={(event) =>
+            setCapabilities((current) => ({
+              ...current,
+              hasAirConditioning: event.target.checked,
+            }))
+          }
+        />
+        <span>Klimatyzacja</span>
+      </label>
       {capabilities.activities.includes("lina") && (
-        <div style={{ display: "grid", gap: "8px", order: 4 }}>
+        <div style={{ display: "grid", gap: "8px", order: 5 }}>
           <div
             style={{
               display: "flex",

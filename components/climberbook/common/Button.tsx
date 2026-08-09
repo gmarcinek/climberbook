@@ -6,6 +6,7 @@ type ButtonVariant =
   | "secondary"
   | "tertiary"
   | "quadrary"
+  | "danger"
   | "ghost";
 type ButtonSize = "medium" | "small";
 

@@ -22,6 +22,7 @@ import {
   splitDifficultyGrades,
 } from "./training-session.utils";
 import { TrainingGradeSummary } from "./TrainingSessionCards";
+import { TrainingWeatherConditionMap } from "./TrainingSessionDetails";
 
 type Props = {
   training: TrainingRecord;
@@ -242,6 +243,46 @@ export function TrainingPreviewModal({
             </PreviewDetail>
           )}
         </dl>
+        {training.weatherSnapshot ? (
+          <section className={styles.trainingSidebar__previewCharts}>
+            <div className={styles.trainingSidebar__previewChartsHeader}>
+              <p className={styles.trainingSidebar__eyebrow}>Pogoda</p>
+              <h3 className={styles.trainingSidebar__previewChartsTitle}>
+                Warunki zewnętrzne
+              </h3>
+            </div>
+            <dl className={styles.trainingSidebar__previewWeatherDetails}>
+              {[
+                [
+                  "Temperatura",
+                  `${training.weatherSnapshot.temperatureC.toFixed(1)}°C`,
+                ],
+                [
+                  "Odczuwalna",
+                  `${training.weatherSnapshot.apparentTemperatureC.toFixed(1)}°C`,
+                ],
+                [
+                  "Wilgotność",
+                  `${Math.round(training.weatherSnapshot.relativeHumidity)}%`,
+                ],
+                [
+                  "Wiatr",
+                  `${training.weatherSnapshot.windSpeedKmh.toFixed(1)} km/h`,
+                ],
+                [
+                  "Opad",
+                  `${training.weatherSnapshot.precipitationMm.toFixed(1)} mm`,
+                ],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <TrainingWeatherConditionMap weather={training.weatherSnapshot} />
+          </section>
+        ) : null}
         {hasChart && (
           <section className={styles.trainingSidebar__previewCharts}>
             <div className={styles.trainingSidebar__previewChartsHeader}>

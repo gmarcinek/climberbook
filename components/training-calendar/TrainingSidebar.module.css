@@ -17,6 +17,7 @@
 
 .trainingSidebar__panel {
   display: grid;
+  grid-gap: 8px;
   gap: 8px;
   padding: 1rem;
 }
@@ -239,18 +240,7 @@
 
 :global(body.theme-old-money)
   .trainingSidebar__inline
-  :global(.Button_variant--secondary) {
-  background: #ffffff1a;
-  color: #fff;
-}
-
-:global(body.theme-old-money)
-  .trainingSidebar__inline
-  .trainingSidebar__protocolAddButton,
-:global(body.theme-old-money)
-  .trainingSidebar__inline
-  .trainingSidebar__formPrimaryActions
-  :global(.Button_variant--secondary) {
+  .trainingSidebar__protocolAddButton {
   border-color: #ffffff40;
   background: #ffffff1a !important;
   color: #fff;
@@ -273,19 +263,247 @@
   color: var(--theme-beige);
 }
 
-:global(body.theme-old-money)
-  .trainingSidebar__inline
-  .trainingSidebar__formDeleteAction {
-  background: var(--component-button-secondary-background);
-  color: var(--component-button-secondary-text);
-}
-
 .trainingSidebar__defaultFacilityButton {
   justify-self: start;
   width: fit-content;
   min-height: 32px;
   padding: 0.35rem 0.65rem;
   font-size: 0.82rem;
+}
+
+.trainingSidebar__weatherFetch {
+  min-height: 2rem;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.trainingSidebar__weatherSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.trainingSidebar__weatherTile {
+  display: grid;
+  gap: 2px;
+  border: var(--component-input-border);
+  padding: 0.6rem 0.75rem;
+  background: var(--component-input-background);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.trainingSidebar__weatherTile strong {
+  display: grid;
+  gap: 1px;
+  color: var(--theme-text);
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.trainingSidebar__weatherTile strong small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.trainingSidebar__weatherTileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trainingSidebar__weatherIcons {
+  display: inline-flex;
+  gap: 4px;
+  color: var(--theme-text);
+}
+
+.trainingSidebar__conditionField {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.trainingSidebar__conditionControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trainingSidebar__conditionControl > select {
+  min-width: 0;
+  flex: 1;
+}
+
+.trainingSidebar__conditionDetailsButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: var(--component-input-border);
+  background: var(--component-input-background);
+  color: var(--muted);
+}
+
+.trainingSidebar__conditionDetailsButton:hover {
+  color: var(--theme-text);
+}
+
+.trainingSidebar__conditionMapPanel {
+  border: var(--component-input-border);
+  background: var(--component-input-background);
+  padding: 8px;
+}
+
+.trainingSidebar__conditionMap {
+  width: 100%;
+}
+
+.trainingSidebar__conditionMap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 7px;
+}
+
+.trainingSidebar__conditionMapGrid {
+  stroke: color-mix(in srgb, var(--muted) 28%, transparent);
+  stroke-width: 0.75;
+}
+
+.trainingSidebar__conditionMapFrosty { fill: color-mix(in srgb, #7199d5 30%, transparent); }
+.trainingSidebar__conditionMapCool { fill: color-mix(in srgb, #73b4e3 22%, transparent); }
+.trainingSidebar__conditionMapMild { fill: color-mix(in srgb, #91bfa0 20%, transparent); }
+.trainingSidebar__conditionMapOptimal { fill: color-mix(in srgb, #9abf7b 30%, transparent); }
+.trainingSidebar__conditionMapWarm { fill: color-mix(in srgb, #e5ae6d 28%, transparent); }
+.trainingSidebar__conditionMapStuffy { fill: color-mix(in srgb, #c89572 28%, transparent); }
+.trainingSidebar__conditionMapBurdensome { fill: color-mix(in srgb, #b26969 34%, transparent); }
+.trainingSidebar__conditionMapPoint { fill: var(--theme-text); stroke: var(--component-input-background); stroke-width: 2; }
+.trainingSidebar__conditionMapPointCore { fill: var(--accent); }
+.trainingSidebar__conditionMapFieldOptimal { fill: color-mix(in srgb, #83b96a 66%, transparent); }
+.trainingSidebar__conditionMapFieldGood { fill: color-mix(in srgb, #a5bf79 46%, transparent); }
+.trainingSidebar__conditionMapFieldNeutral { fill: color-mix(in srgb, #d7a65d 40%, transparent); }
+.trainingSidebar__conditionMapFieldPoor { fill: color-mix(in srgb, #b66568 38%, transparent); }
+.trainingSidebar__conditionMapTarget { fill: var(--accent); stroke: var(--theme-text); stroke-width: 1.5; }
+.trainingSidebar__conditionMapVector { fill: var(--accent); stroke: var(--accent); stroke-width: 1.25; stroke-dasharray: 3 2; }
+.trainingSidebar__conditionMapWind { fill: var(--theme-text); font-size: 7px; font-weight: 700; }
+.trainingSidebar__conditionMapYAxisTick { font-size: 6px; }
+.trainingSidebar__conditionMapCurrentLabel,
+.trainingSidebar__conditionMapTargetLabel { fill: var(--theme-text); font-size: 7px; font-weight: 700; }
+
+.trainingSidebar__weatherRadar {
+  width: 100%;
+}
+
+.trainingSidebar__weatherRadarHeading {
+  display: block;
+  margin: 0 0 4px;
+  color: var(--theme-text);
+  font-size: 0.82rem;
+}
+
+.trainingSidebar__weatherRadar svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--muted);
+  font-family: inherit;
+}
+
+.trainingSidebar__weatherRadarGrid,
+.trainingSidebar__weatherRadarAxis {
+  fill: transparent;
+  stroke: color-mix(in srgb, var(--muted) 28%, transparent);
+  stroke-width: 0.75;
+}
+
+.trainingSidebar__weatherRadarProfile {
+  fill: color-mix(in srgb, var(--accent) 24%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.trainingSidebar__weatherRadarPoint {
+  fill: var(--theme-text);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.trainingSidebar__weatherCurveTemperature,
+.trainingSidebar__weatherCurveHumidity,
+.trainingSidebar__weatherCurveWind {
+  fill: none;
+  stroke-width: 2;
+}
+
+.trainingSidebar__weatherCurveTemperature { stroke: #d67645; }
+.trainingSidebar__weatherCurveHumidity { stroke: #4c94a5; }
+.trainingSidebar__weatherCurveWind { stroke: #779a61; }
+
+.trainingSidebar__weatherCurveAggregate {
+  stroke: var(--accent);
+  stroke-dasharray: 4 3;
+  stroke-width: 1.25;
+}
+
+.trainingSidebar__weatherCurveAggregatePoint {
+  fill: var(--accent);
+  stroke: var(--component-input-background);
+  stroke-width: 1.5;
+}
+
+.trainingSidebar__weatherCurveAggregateLabel {
+  fill: var(--theme-text);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.trainingSidebar__weatherCurveAxisLabel,
+.trainingSidebar__weatherCurveTick {
+  fill: var(--muted);
+  font-size: 7px;
+}
+
+.trainingSidebar__weatherRadarLabel {
+  fill: var(--theme-text);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.trainingSidebar__weatherRadarValue {
+  fill: var(--muted);
+  font-size: 7px;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__weatherFetch {
+  background: transparent;
+  color: var(--theme-beige);
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__weatherTile {
+  border-color: #ffffff40;
+  background: #ffffff1a;
+}
+
+:global(body.theme-old-money)
+  .trainingSidebar__inline
+  .trainingSidebar__conditionMapPanel {
+  background: color-mix(in srgb, var(--theme-beige) 12%, transparent);
 }
 
 .trainingSidebar__panelHeader {
@@ -364,7 +582,7 @@
 
 .trainingSidebar__pill {
   padding: 4px 6px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--component-training-pill-background);
   border: var(--component-card-border);
   color: var(--muted);
@@ -440,6 +658,13 @@
   font-size: 0.88rem;
 }
 
+.trainingSidebar__metaItem {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  align-items: center;
+}
+
 .trainingSidebar__details {
   display: grid;
   gap: 2px;
@@ -460,8 +685,8 @@
 
 .trainingSidebar__form {
   display: grid;
+  grid-gap: 1rem;
   gap: 1rem;
-  margin-top: 8px;
 }
 
 .trainingSidebar__formGrid {
@@ -617,6 +842,11 @@
   max-width: 100%;
   color: var(--muted);
   font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.trainingSidebar__field > :is(input, select, textarea, div, button, output) {
+  font-weight: 400;
 }
 
 .trainingSidebar__field input[type="date"] {
@@ -735,7 +965,7 @@
 
 .trainingSidebar__chip {
   border: var(--component-card-border);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 5px 6px;
   cursor: pointer;
   background: var(--component-card-background);
@@ -1273,7 +1503,7 @@
   width: fit-content;
   align-items: center;
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: 4px;
   padding: 4px 8px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--text);
@@ -1324,6 +1554,31 @@
 .trainingSidebar__previewChartsTitle {
   margin: 0;
   font-size: 1.05rem;
+}
+
+.trainingSidebar__previewWeatherDetails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+  margin: 0;
+}
+
+.trainingSidebar__previewWeatherDetails > div {
+  display: grid;
+  gap: 3px;
+}
+
+.trainingSidebar__previewWeatherDetails dt {
+  margin: 0;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.trainingSidebar__previewWeatherDetails dd {
+  margin: 0;
 }
 
 .trainingSidebar__previewChart {

@@ -1,4 +1,5 @@
 import { Button } from "@/components/climberbook/common/Button";
+import { Clock, Droplets, Flame, Thermometer } from "lucide-react";
 import { formatDurationMinutes } from "@/components/climberbook/common/training";
 import { TrainingTimelineBar } from "@/components/training-calendar/TrainingTimelineBar";
 import {
@@ -87,10 +88,26 @@ export function TrainingSessionCard({
         </span>
       </div>
       <div className={styles.trainingSidebar__metaLine}>
-        <span>
-          {formatDurationMinutes(training.durationMinutes)} · Kalorie:{" "}
-          {training.caloriesBurned}
+        <span className={styles.trainingSidebar__metaItem}>
+          <Clock size={14} aria-hidden="true" />
+          {formatDurationMinutes(training.durationMinutes)}
         </span>
+        <span className={styles.trainingSidebar__metaItem}>
+          <Flame size={14} aria-hidden="true" />
+          {training.caloriesBurned} kcal
+        </span>
+        {training.weatherSnapshot ? (
+          <>
+            <span className={styles.trainingSidebar__metaItem}>
+              <Thermometer size={14} aria-hidden="true" />
+              {training.weatherSnapshot.apparentTemperatureC.toFixed(1)}°C
+            </span>
+            <span className={styles.trainingSidebar__metaItem}>
+              <Droplets size={14} aria-hidden="true" />
+              {Math.round(training.weatherSnapshot.relativeHumidity)}%
+            </span>
+          </>
+        ) : null}
       </div>
       <TrainingTimelineBar
         time={training.time}

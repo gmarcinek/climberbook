@@ -19,6 +19,7 @@ export type TrainingDraftValues = {
   caloriesMode: "auto" | "manual";
   focus: TrainingFocus;
   conditions: TrainingConditions;
+  conditionsWasSetManually: boolean;
   difficultyNotes: string;
   difficultyBySurface: Partial<Record<TrainingSurface, string>>;
   protocol: {
@@ -43,6 +44,7 @@ export type TrainingDraftValues = {
   wellbeing: string;
   surfaces: TrainingSurface[];
   facilityName: string;
+  weatherSnapshot?: import("@/lib/climbs-db").TrainingWeatherSnapshot;
   ropeWallName: string;
   ropeRoutes: RopeRoute[];
   customSessionType: string;

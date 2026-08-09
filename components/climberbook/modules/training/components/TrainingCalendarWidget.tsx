@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode, type UIEvent } from "react";
+import { Clock, Droplets, Flame, Thermometer } from "lucide-react";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Button } from "@/components/climberbook/common/Button";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
@@ -332,10 +333,26 @@ export function VisibleTrainingList({
               </span>
             </div>
             <div className={sidebarStyles.trainingSidebar__metaLine}>
-              <span>
-                {formatDurationMinutes(training.durationMinutes)} ·{" "}
+              <span className={sidebarStyles.trainingSidebar__metaItem}>
+                <Clock size={14} aria-hidden="true" />
+                {formatDurationMinutes(training.durationMinutes)}
+              </span>
+              <span className={sidebarStyles.trainingSidebar__metaItem}>
+                <Flame size={14} aria-hidden="true" />
                 {training.caloriesBurned} kcal
               </span>
+              {training.weatherSnapshot ? (
+                <>
+                  <span className={sidebarStyles.trainingSidebar__metaItem}>
+                    <Thermometer size={14} aria-hidden="true" />
+                    {training.weatherSnapshot.apparentTemperatureC.toFixed(1)}°C
+                  </span>
+                  <span className={sidebarStyles.trainingSidebar__metaItem}>
+                    <Droplets size={14} aria-hidden="true" />
+                    {Math.round(training.weatherSnapshot.relativeHumidity)}%
+                  </span>
+                </>
+              ) : null}
             </div>
             <TrainingTimelineBar
               time={training.time}

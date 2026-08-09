@@ -378,6 +378,18 @@ export function RopeTrainingGradesChart({
             : 0,
       })),
   );
+  const weatherPoints = trainingsInRange.flatMap((training) => {
+    if (!training.weatherSnapshot) return [];
+
+    return [
+      {
+        trainingTimestamp: getTrainingTimestamp(training),
+        plotX: 1,
+        weatherLevel: 1,
+        label: `${Math.round(training.weatherSnapshot.temperatureC)}/${Math.round(training.weatherSnapshot.relativeHumidity)}%`,
+      },
+    ];
+  });
   const boardAxisAnchors = [
     {
       trainingTimestamp: xAxisStartTimestamp,
@@ -699,6 +711,15 @@ export function RopeTrainingGradesChart({
                   hide
                 />
               )}
+              {weatherPoints.length > 0 && (
+                <YAxis
+                  yAxisId="weather"
+                  type="number"
+                  dataKey="weatherLevel"
+                  domain={[0, 1]}
+                  hide
+                />
+              )}
               <Tooltip
                 shared={false}
                 isAnimationActive={false}
@@ -792,6 +813,14 @@ export function RopeTrainingGradesChart({
                   );
                 }}
               />
+              {weatherPoints.length > 0 && (
+                <Scatter
+                  data={weatherPoints}
+                  yAxisId="weather"
+                  shape={WeatherSnapshotMarker}
+                  isAnimationActive={false}
+                />
+              )}
               {displayedGradeTab === "all" && (
                 <CombinedSessionGradeView
                   boardAxisAnchors={boardAxisAnchors}
@@ -1638,6 +1667,13 @@ type TotalStimulusPoint = {
   coin: number;
 };
 
+type WeatherSnapshotPoint = {
+  trainingTimestamp: number;
+  plotX: number;
+  weatherLevel: number;
+  label: string;
+};
+
 type StimulusTab = (typeof stimulusTabs)[number]["key"];
 
 const weightedStimulusDataKeys: Record<
@@ -2059,6 +2095,31 @@ function TrainingTimelineBlock({
       />
       <line x1={x} y1={y} x2={x + 25} y2={y} stroke="#000000" />
     </g>
+  );
+}
+
+function WeatherSnapshotMarker({
+  cx,
+  cy,
+  payload,
+}: {
+  cx?: number;
+  cy?: number;
+  payload?: WeatherSnapshotPoint;
+}) {
+  if (cx === undefined || cy === undefined || !payload) return null;
+
+  return (
+    <text
+      x={cx}
+      y={cy + 10}
+      fill="var(--component-chart-axis)"
+      fontSize={9}
+      fontWeight={600}
+      textAnchor="middle"
+    >
+      {payload.label}
+    </text>
   );
 }
 

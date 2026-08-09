@@ -252,6 +252,7 @@ const createTrainingDraft = (
       caloriesMode: "auto",
       focus: "none",
       conditions: "optimal",
+      conditionsWasSetManually: false,
       difficultyNotes: "",
       difficultyBySurface: {},
       protocol: {
@@ -266,6 +267,7 @@ const createTrainingDraft = (
           ? ""
           : (window.localStorage.getItem("climberbook:defaultFacilityName") ??
             ""),
+      weatherSnapshot: undefined,
       ropeWallName: "",
       ropeRoutes: [],
       customSessionType: "",
@@ -288,6 +290,7 @@ const mapTrainingToDraft = (
       caloriesMode: "manual",
       focus: training.loadProfile?.focus ?? "none",
       conditions: training.loadProfile?.conditions ?? "optimal",
+      conditionsWasSetManually: true,
       difficultyNotes: training.difficultyNotes,
       difficultyBySurface: training.difficultyBySurface ?? {},
       protocol: {
@@ -316,6 +319,7 @@ const mapTrainingToDraft = (
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
       facilityName: training.facilityName ?? "",
+      weatherSnapshot: training.weatherSnapshot,
       ropeWallName: training.ropeWallName ?? "",
       ropeRoutes: (
         training.ropeRoutes ??
@@ -830,6 +834,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       wellbeing: trainingDraft.wellbeing,
       surfaces: trainingDraft.surfaces,
       facilityName: trainingDraft.facilityName.trim() || undefined,
+      weatherSnapshot: trainingDraft.weatherSnapshot,
       ropeWallName: trainingDraft.surfaces.includes("lina")
         ? trainingDraft.ropeWallName.trim() || undefined
         : undefined,

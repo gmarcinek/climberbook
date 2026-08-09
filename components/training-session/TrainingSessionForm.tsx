@@ -93,7 +93,7 @@ export function TrainingSessionForm({
         </div>
         {editingTraining && (
           <Button
-            variant="quadrary"
+            variant="danger"
             onClick={() => onDeleteTraining(editingTraining)}
             className={styles.trainingSidebar__formDeleteAction}
           >

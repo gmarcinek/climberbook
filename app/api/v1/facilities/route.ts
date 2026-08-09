@@ -83,8 +83,17 @@ const ropeWallInclinations = [
 
 function getCapabilities(value: unknown): FacilityCapabilities | null {
   if (!value || typeof value !== "object") return null;
-  const input = value as { activities?: unknown; ropeWalls?: unknown };
+  const input = value as {
+    activities?: unknown;
+    ropeWalls?: unknown;
+    hasAirConditioning?: unknown;
+  };
   if (!Array.isArray(input.activities) || !Array.isArray(input.ropeWalls))
+    return null;
+  if (
+    input.hasAirConditioning !== undefined &&
+    typeof input.hasAirConditioning !== "boolean"
+  )
     return null;
   if (
     !input.activities.every(
@@ -110,6 +119,7 @@ function getCapabilities(value: unknown): FacilityCapabilities | null {
     return null;
   return {
     activities: input.activities as TrainingSurface[],
+    hasAirConditioning: input.hasAirConditioning === true,
     ropeWalls: input.ropeWalls.map((wall, index) => {
       const profile = wall as {
         name?: unknown;

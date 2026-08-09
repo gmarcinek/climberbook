@@ -81,7 +81,15 @@ export type TrainingFocus =
   | "volume"
   | "intervals"
   | "general_conditioning";
-export type TrainingConditions = "optimal" | "cold" | "stuffy" | "too_warm";
+export type KnownTrainingConditions =
+  | "frosty"
+  | "cold"
+  | "cool"
+  | "optimal"
+  | "stuffy"
+  | "too_warm"
+  | "burdensome";
+export type TrainingConditions = KnownTrainingConditions | (string & {});
 export type TrainingLoadProfile = {
   algorithmVersion: 1;
   focus: TrainingFocus;
@@ -92,6 +100,17 @@ export type RopeRoute = {
   grade: string;
   ropeWallName: string;
   completed: number;
+};
+export type TrainingWeatherSnapshot = {
+  source: "open-meteo";
+  capturedAt: string;
+  temperatureC: number;
+  apparentTemperatureC: number;
+  precipitationMm: number;
+  windSpeedKmh: number;
+  relativeHumidity: number;
+  wmo_code_wether: number;
+  weatherCode?: number;
 };
 export type TrainingRecord = {
   id: string;
@@ -111,6 +130,7 @@ export type TrainingRecord = {
   wellbeing: string;
   surfaces: TrainingSurface[];
   facilityName?: string;
+  weatherSnapshot?: TrainingWeatherSnapshot;
   ropeWallName?: string;
   ropeRoutes?: RopeRoute[];
   customSessionType?: string;
@@ -212,6 +232,7 @@ export type RopeWallProfile = {
 export type FacilityCapabilities = {
   activities: TrainingSurface[];
   ropeWalls: RopeWallProfile[];
+  hasAirConditioning?: boolean;
 };
 export type FacilityVisibility = "private" | "global";
 export type FacilityKind = "indoor_wall" | "crag" | "crag_sector";
