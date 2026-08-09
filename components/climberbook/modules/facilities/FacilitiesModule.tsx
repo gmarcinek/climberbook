@@ -887,13 +887,15 @@ export function FacilitiesModule() {
                     >
                       Edytuj
                     </Button>
-                    <Button
-                      variant="quadrary"
-                      size="small"
-                      onClick={() => void app.deleteFacility(facility)}
-                    >
-                      Usuń
-                    </Button>
+                    {facility.visibility === "private" && (
+                      <Button
+                        variant="quadrary"
+                        size="small"
+                        onClick={() => void app.deleteFacility(facility)}
+                      >
+                        Usuń
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

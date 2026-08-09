@@ -1738,7 +1738,7 @@ export async function listFacilitiesFromPostgres(ownerUserId: string) {
     `
     select facilities.id, facility_versions.version as current_version,
            facility_versions.name, facility_versions.capabilities, facilities.visibility,
-           app_users.display_name as created_by,
+          facilities.owner_user_id as created_by,
            facilities.owner_user_id = $1 as is_owned_by_current_user,
            facility_versions.kind, facility_versions.location_label,
            facility_versions.latitude, facility_versions.longitude, facilities.created_at
@@ -1920,14 +1920,16 @@ export async function deleteFacilityFromPostgres(
   const result = await queryPostgres<{ id: string }>(
     `
     delete from facilities
-    where id = $1 and owner_user_id = $2
+    where id = $1 and owner_user_id = $2 and visibility = 'private'
     returning id
   `,
     [facilityId, ownerUserId],
   );
 
   if (!result.rows[0]) {
-    throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
+    throw new Error(
+      "Nie znaleziono prywatnego obiektu należącego do użytkownika.",
+    );
   }
 }
 

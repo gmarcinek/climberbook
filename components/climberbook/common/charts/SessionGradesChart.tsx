@@ -500,7 +500,15 @@ export function RopeTrainingGradesChart({
           }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart margin={{ top: 12, right: 0, bottom: 4, left: -16 }}>
+            <ComposedChart
+              margin={{
+                top: 12,
+                right:
+                  displayedGradeTab === "all" && showTemperatureLine ? 48 : 0,
+                bottom: 4,
+                left: -16,
+              }}
+            >
               <defs>
                 <linearGradient
                   id="sessionGradeStimulusFill"
@@ -655,13 +663,24 @@ export function RopeTrainingGradesChart({
               />
               {displayedGradeTab === "all" && weatherPoints.length > 0 && (
                 <>
-                  <YAxis
-                    yAxisId="temperature"
-                    type="number"
-                    dataKey="temperatureC"
-                    domain={["auto", "auto"]}
-                    hide
-                  />
+                  {showTemperatureLine && (
+                    <YAxis
+                      yAxisId="temperature"
+                      orientation="right"
+                      type="number"
+                      dataKey="temperatureC"
+                      width={40}
+                      domain={["auto", "auto"]}
+                      tickFormatter={(value) => `${value}°C`}
+                      label={{
+                        value: "temperatura",
+                        angle: 90,
+                        position: "insideRight",
+                        style: { fontSize: 9.6 },
+                      }}
+                      tick={{ fontSize: 9.6 }}
+                    />
+                  )}
                   <YAxis
                     yAxisId="humidity"
                     type="number"
@@ -1220,13 +1239,24 @@ export function TrainingStimulusChart({
             />
             {(showTemperatureLine || showHumidityLine) && (
               <>
-                <YAxis
-                  yAxisId="temperature"
-                  type="number"
-                  dataKey="temperatureC"
-                  domain={["auto", "auto"]}
-                  hide
-                />
+                {showTemperatureLine && (
+                  <YAxis
+                    yAxisId="temperature"
+                    orientation="right"
+                    type="number"
+                    dataKey="temperatureC"
+                    width={40}
+                    domain={["auto", "auto"]}
+                    tickFormatter={(value) => `${value}°C`}
+                    label={{
+                      value: "temperatura",
+                      angle: 90,
+                      position: "insideRight",
+                      style: { fontSize: 9.6 },
+                    }}
+                    tick={{ fontSize: 9.6 }}
+                  />
+                )}
                 <YAxis
                   yAxisId="humidity"
                   type="number"

@@ -142,6 +142,9 @@ export async function exportExperimentalPostgresBackup(
   const trainings = options.trainings
     ? backup.trainings.filter((training) => athleteIds.has(training.athleteId))
     : [];
+  trainings.forEach((training) => {
+    if (training.facilityId) facilityIds.add(training.facilityId);
+  });
 
   return {
     ...backup,
@@ -153,7 +156,12 @@ export async function exportExperimentalPostgresBackup(
         )
       : [],
     facilities: options.facilities
-      ? backup.facilities.filter((facility) => facilityIds.has(facility.id))
+      ? backup.facilities.filter(
+          (facility) =>
+            facility.visibility === "global" ||
+            facility.isOwnedByCurrentUser ||
+            facilityIds.has(facility.id),
+        )
       : [],
     climbs: options.climbs
       ? backup.climbs.filter((climb) => athleteIds.has(climb.athleteId))
