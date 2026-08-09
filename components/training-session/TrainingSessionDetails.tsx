@@ -10,6 +10,7 @@ import {
   Sun,
 } from "lucide-react";
 import { Button } from "@/components/climberbook/common/Button";
+import { InformationModalTrigger } from "@/components/climberbook/common/InformationModal";
 import { Typeahead } from "@/components/climberbook/common/Typeahead";
 import {
   formControlClassNames,
@@ -1012,7 +1013,10 @@ export function TrainingSessionDetails({
           />
         </label>
         <label className={styles.trainingSidebar__field}>
-          Główny cel
+          <span className={styles.trainingSidebar__labelWithInfo}>
+            Główny cel
+            <InformationModalTrigger topic="trainingFocus" />
+          </span>
           <Select
             value={draft.focus}
             onChange={(event) =>
@@ -1074,7 +1078,8 @@ export function TrainingSessionDetails({
             className={`${styles.trainingSidebar__conditionMapPanel} ${styles["trainingSidebar__field--full"]}`}
           >
             <strong className={styles.trainingSidebar__weatherRadarHeading}>
-              Warunki zewnętrzne
+              <span>Warunki zewnętrzne</span>
+              <InformationModalTrigger topic="outdoorConditions" />
             </strong>
             <TrainingWeatherConditionMap weather={draft.weatherSnapshot} />
           </div>

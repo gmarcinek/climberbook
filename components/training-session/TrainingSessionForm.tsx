@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/climberbook/common/Button";
 import { TextArea } from "@/components/climberbook/common/FormControls";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
+import { InformationModalTrigger } from "@/components/climberbook/common/InformationModal";
 import type { TrainingRecord, TrainingSurface } from "@/lib/climbs-db";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
@@ -62,8 +63,11 @@ export function TrainingSessionForm({
         onDraftChange={onDraftChange}
       />
       <label className={styles.trainingSidebar__field}>
-        <strong className={styles.trainingSidebar__protocolHeading}>
-          Samopoczucie i notatki
+        <strong
+          className={`${styles.trainingSidebar__protocolHeading} ${styles.trainingSidebar__headingWithInfo}`}
+        >
+          <span>Samopoczucie i notatki</span>
+          <InformationModalTrigger topic="wellbeingAndNotes" />
         </strong>
         <TextArea
           value={combinedNotes}

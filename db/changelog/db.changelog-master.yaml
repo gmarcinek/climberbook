@@ -45,3 +45,15 @@ databaseChangeLog:
       file: changelog/changes/022-add-app-user-roles.sql
   - include:
       file: changelog/changes/023-grant-facility-version-access.sql
+  - include:
+      file: changelog/changes/024-add-climbing-conditions-study.sql
+  - include:
+      file: changelog/changes/025-remove-conditions-study-reasoning.sql
+  - include:
+      file: changelog/changes/026-simplify-climbing-conditions-study.sql
+  - include:
+      file: changelog/changes/027-focus-climbing-conditions-study.sql
+  - include:
+      file: changelog/changes/028-remove-conditions-study-hour.sql
+  - include:
+      file: changelog/changes/029-remove-conditions-study-date.sql

@@ -705,7 +705,14 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (
       isExperimentalPostgresUiEnabled() &&
-      (pathname === "/login" || pathname === "/rejestracja")
+      [
+        "/login",
+        "/rejestracja",
+        "/privacy",
+        "/support",
+        "/terms",
+        "/warunki-wspin",
+      ].includes(pathname)
     )
       return;
 

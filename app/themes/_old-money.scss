@@ -85,6 +85,7 @@ body.theme-old-money {
   --component-input-text: var(--theme-text);
   --component-input-placeholder: #d8cab6;
   --component-input-color-scheme: dark;
+  --component-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23f3eadb' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --component-button-primary-background: linear-gradient(135deg, #ffc986, #eaae5b);
   --component-button-primary-text: var(--theme-ink);
   --component-button-secondary-background: #ffffff1a;
@@ -108,13 +109,15 @@ body.theme-old-money {
   --component-training-route-grade-text: var(--theme-ink);
   --component-modal-backdrop: #252422;
   --component-weight-entry-modal-backdrop: rgba(30, 25, 22, 0.34);
-  --component-modal-background: var(--theme-surface-raised);
-  --component-modal-border: 1px solid #2e3855;
+  --component-modal-background: #594b3a;
+  --component-modal-border: 1px solid rgba(255, 242, 220, 0.22);
   --component-modal-shadow: none;
+  --component-modal-text: var(--theme-text-inverse);
+  --component-modal-muted-text: var(--theme-text);
   --component-training-preview-drawer-background: var(--theme-surface);
   --component-training-preview-drawer-shadow: none;
-  --component-modal-close-background: #242d47;
-  --component-modal-close-shadow: 0 4px 12px #2a2826;
+  --component-modal-close-background: rgba(255, 250, 240, 0.48);
+  --component-modal-close-shadow: none;
   --component-toast-background: var(--theme-backdrop);
   --component-toast-text: #fffdf8;
   --component-chart-grid: #4f5976;
