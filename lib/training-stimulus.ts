@@ -696,9 +696,11 @@ export function getObjectiveStimulusActivities(
           (candidate) => candidate.name === route.ropeWallName,
         );
         const lengthMeters = wall?.lengthMeters ?? fallbackRopeLength;
+        const completion = Math.min(Math.max(route.completed ?? 1, 0), 1);
         const coin =
           (ropeCoinPer10mByGrade[route.grade] ?? minimumCoin) *
-          (lengthMeters / 10);
+          (lengthMeters / 10) *
+          completion;
         return {
           coin,
           dimensionSplit: getRopeDimensionSplit(

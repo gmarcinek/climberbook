@@ -15,6 +15,7 @@ import { TrainingCalendar } from "@/components/training-calendar/TrainingCalenda
 import { TrainingTimelineBar } from "@/components/training-calendar/TrainingTimelineBar";
 import {
   addMonths,
+  formatTrainingCardDateTime,
   getMonthLabel,
   summarizeTrainingType,
   toDate,
@@ -318,9 +319,16 @@ export function VisibleTrainingList({
             <div
               className={sidebarStyles.trainingSidebar__trainingButtonHeader}
             >
-              <strong>{summarizeTrainingType(training)}</strong>
+              <strong>{training.facilityName || "Nie wskazano"}</strong>
               <span className={sidebarStyles.trainingSidebar__pill}>
-                {training.date}
+                {formatTrainingCardDateTime(training.date, training.time)}
+              </span>
+            </div>
+            <div
+              className={sidebarStyles.trainingSidebar__trainingButtonHeader}
+            >
+              <span className={sidebarStyles.trainingSidebar__trainingType}>
+                {summarizeTrainingType(training)}
               </span>
             </div>
             <div className={sidebarStyles.trainingSidebar__metaLine}>

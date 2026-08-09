@@ -103,6 +103,7 @@ type ModalProps = {
   children: ReactNode;
   labelledBy: string;
   onClose: () => void;
+  headerContent?: ReactNode;
   className?: string;
   overlayClassName?: string;
   overlayStyle?: CSSProperties;
@@ -114,6 +115,7 @@ export function Modal({
   children,
   labelledBy,
   onClose,
+  headerContent,
   className,
   overlayClassName,
   overlayStyle,
@@ -175,6 +177,9 @@ export function Modal({
         }}
       >
         <div className={styles.header}>
+          {headerContent ? (
+            <div className={styles.headerContent}>{headerContent}</div>
+          ) : null}
           <EmotButton
             size="small"
             variant="secondary"

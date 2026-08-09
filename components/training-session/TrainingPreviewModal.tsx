@@ -52,16 +52,27 @@ export function TrainingPreviewModal({
     trainings,
     facilities,
   );
-  const scaleLabel = stimulusScale
-    ? { below: "Poniżej skali", within: "W skali", above: "Ponad skalą" }[
-        stimulusScale.level
-      ]
-    : "Brak skali z ostatnich 4 tygodni";
   const stimulusDimensions = [
-    ["Wytrzymałość tlenowa", stimulusImpact.dimensions.aerobicEndurance],
-    ["Wytrzymałość siłowa", stimulusImpact.dimensions.strengthEndurance],
-    ["Siła / moc", stimulusImpact.dimensions.strengthPower],
-    ["Siła kontaktowa", stimulusImpact.dimensions.contactStrength],
+    [
+      "Wytrzymałość tlenowa",
+      stimulusImpact.dimensions.aerobicEndurance,
+      "var(--component-chart-stimulus-aerobic)",
+    ],
+    [
+      "Wytrzymałość siłowa",
+      stimulusImpact.dimensions.strengthEndurance,
+      "var(--component-chart-stimulus-strength-endurance)",
+    ],
+    [
+      "Siła / moc",
+      stimulusImpact.dimensions.strengthPower,
+      "var(--component-chart-stimulus-strength-power)",
+    ],
+    [
+      "Siła kontaktowa",
+      stimulusImpact.dimensions.contactStrength,
+      "var(--component-chart-stimulus-contact-strength)",
+    ],
   ] as const;
   const totalStimulusDimensions = stimulusDimensions.reduce(
     (total, [, value]) => total + value,
@@ -72,7 +83,20 @@ export function TrainingPreviewModal({
       labelledBy="training-preview-title"
       onClose={onClose}
       fullBleedMobile
-      overlayStyle={{ display: "flex", justifyContent: "flex-end", padding: 0 }}
+      headerContent={
+        <h2
+          id="training-preview-title"
+          className={styles.trainingSidebar__drawerTitle}
+        >
+          {formatDateLabel(training.date)} - {training.time}
+        </h2>
+      }
+      overlayStyle={{
+        display: "flex",
+        justifyContent: "flex-end",
+        padding: 0,
+        background: "transparent",
+      }}
       style={{
         width: "min(100%, 520px)",
         height: "100dvh",
@@ -93,19 +117,15 @@ export function TrainingPreviewModal({
         <div className={styles.trainingSidebar__drawerHeader}>
           <div>
             <p className={styles.trainingSidebar__eyebrow}>Podgląd treningu</p>
-            <h2
-              id="training-preview-title"
-              className={styles.trainingSidebar__drawerTitle}
-            >
+            <h3 className={styles.trainingSidebar__drawerFacilityTitle}>
+              {training.facilityName || "Nie wskazano"}
+            </h3>
+            <h4 className={styles.trainingSidebar__drawerTrainingType}>
               {summarizeTrainingType(training)}
-            </h2>
+            </h4>
           </div>
         </div>
         <dl className={styles.trainingSidebar__previewDetails}>
-          <PreviewDetail label="Data">
-            {formatDateLabel(training.date)}
-          </PreviewDetail>
-          <PreviewDetail label="Godzina">{training.time}</PreviewDetail>
           <PreviewDetail label="Czas">
             {formatDurationMinutes(training.durationMinutes)}
           </PreviewDetail>
@@ -132,31 +152,27 @@ export function TrainingPreviewModal({
           <PreviewDetail label="Wstawki">
             {formatReportedAttempts(training)}
           </PreviewDetail>
-          <PreviewDetail label="Rodzaj">
-            {formatSurfaces(training, surfaceOptions) || "Brak"}
-          </PreviewDetail>
-          <div className={styles.trainingSidebar__previewDetailsFull}>
-            <dt>Aktywności</dt>
-            <dd>
-              <TrainingGradeSummary training={training} />
-            </dd>
-          </div>
           <PreviewDetail label="Impakt bodźca" full>
             <div style={{ display: "grid", gap: "4px" }}>
-              <strong>
-                {stimulusImpact.coin.toFixed(4)} coin · {scaleLabel}
-              </strong>
               {stimulusScale ? (
-                <span>
+                <span
+                  style={{
+                    color: "var(--theme-beige, var(--theme-text-muted))",
+                    fontSize: "12px",
+                  }}
+                >
                   {Math.round(stimulusScale.ratio * 100)}% średniej z{" "}
                   {stimulusScale.sessionsCount} sesji / 4 tyg.
                 </span>
               ) : null}
-              <div style={{ display: "grid", gap: "7px", marginTop: "4px" }}>
-                {stimulusDimensions.map(([label, value]) => {
+              <div style={{ display: "grid", gap: "1rem", marginTop: "4px" }}>
+                {stimulusDimensions.map(([label, value, color]) => {
                   const percent = totalStimulusDimensions
                     ? (value / totalStimulusDimensions) * 100
                     : 0;
+                  const baselinePercent = stimulusScale
+                    ? percent * stimulusScale.ratio
+                    : null;
                   return (
                     <div key={label} style={{ display: "grid", gap: "3px" }}>
                       <div
@@ -168,7 +184,18 @@ export function TrainingPreviewModal({
                       >
                         <span>{label}</span>
                         <span>
-                          {value.toFixed(4)} coin · {Math.round(percent)}%
+                          {Math.round(percent)}% /{" "}
+                          <span
+                            style={{
+                              color:
+                                "var(--theme-beige, var(--theme-text-muted))",
+                              fontSize: "12px",
+                            }}
+                          >
+                            {baselinePercent === null
+                              ? "-"
+                              : `${Math.round(baselinePercent)}%`}
+                          </span>
                         </span>
                       </div>
                       <div
@@ -178,16 +205,17 @@ export function TrainingPreviewModal({
                         aria-valuemax={100}
                         aria-valuenow={Math.round(percent)}
                         style={{
-                          height: "6px",
+                          height: "10px",
                           overflow: "hidden",
-                          background: "var(--border-strong)",
+                          background:
+                            "var(--component-training-preview-stimulus-track, var(--theme-border-input))",
                         }}
                       >
                         <div
                           style={{
                             width: `${percent}%`,
                             height: "100%",
-                            background: "var(--accent)",
+                            background: color,
                           }}
                         />
                       </div>
@@ -197,6 +225,12 @@ export function TrainingPreviewModal({
               </div>
             </div>
           </PreviewDetail>
+          <div className={styles.trainingSidebar__previewDetailsFull}>
+            <dt>Aktywności</dt>
+            <dd>
+              <TrainingGradeSummary training={training} />
+            </dd>
+          </div>
           {training.wellbeing && (
             <PreviewDetail label="Samopoczucie" full>
               {training.wellbeing}

@@ -180,7 +180,6 @@ export function TrainingAnalyticsPanel(props: {
               <span style={moduleEyebrowStyle}>Analityka</span>
               <h2 style={sectionTitleStyle}>Waga i trend</h2>
             </div>
-            <span style={softTagStyle}>Bieżący miesiąc</span>
           </div>
 
           <div style={analyticsStatsGridStyle}>

@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 * {
   box-sizing: border-box;
 }
@@ -25,6 +27,44 @@ body {
   text-shadow: var(--theme-text-glow, none);
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  color: inherit;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 1.8rem;
+}
+
+h2 {
+  font-size: 1.4rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+}
+
+h4 {
+  font-size: 1rem;
+}
+
+h5 {
+  font-size: 0.9rem;
+}
+
+h6 {
+  font-size: 0.8rem;
 }
 
 input[type="date"] {

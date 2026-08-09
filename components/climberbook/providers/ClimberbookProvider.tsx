@@ -422,11 +422,19 @@ type ClimberbookContextValue = {
     event: FormEvent<HTMLFormElement>,
     capabilities: FacilityCapabilities,
     name?: string,
+    details?: Pick<
+      FacilityRecord,
+      "kind" | "locationLabel" | "latitude" | "longitude"
+    >,
   ) => Promise<void>;
   updateFacility: (
     facility: FacilityRecord,
     name: string,
     capabilities: FacilityCapabilities,
+    details: Pick<
+      FacilityRecord,
+      "kind" | "locationLabel" | "latitude" | "longitude"
+    >,
   ) => Promise<void>;
   deleteFacility: (facility: FacilityRecord) => Promise<void>;
   assignAthleteSection: (
@@ -450,6 +458,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const today = formatDateIso(new Date());
+  const chartDataRange = useRef({
+    start: addMonths(getMonthStart(today), -1),
+    end: today,
+  });
   const [athletes, setAthletes] = useState<AthleteRecord[]>([]);
   const [activeAthleteId, setActiveAthleteId] = useState<string | null>(() =>
     typeof window === "undefined"
@@ -547,7 +559,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
 
   async function refreshData() {
     if (isExperimentalPostgresUiEnabled()) {
-      const snapshot = await getExperimentalPostgresSnapshot();
+      const snapshot = await getExperimentalPostgresSnapshot(
+        chartDataRange.current,
+      );
       const athleteId = snapshot.athletes.some(
         (athlete) => athlete.id === activeAthleteId,
       )
@@ -1346,6 +1360,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     event: FormEvent<HTMLFormElement>,
     capabilities: FacilityCapabilities,
     name?: string,
+    details?: Pick<
+      FacilityRecord,
+      "kind" | "locationLabel" | "latitude" | "longitude"
+    >,
   ) {
     event.preventDefault();
     const facilityName = name?.trim() || newFacilityName.trim();
@@ -1354,6 +1372,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         await createExperimentalFacility({
           name: facilityName,
           capabilities,
+          kind: details?.kind ?? "indoor_wall",
+          locationLabel: details?.locationLabel ?? "",
+          latitude: details?.latitude ?? null,
+          longitude: details?.longitude ?? null,
         });
       else await addFacility({ name: facilityName, capabilities });
       setNewFacilityName("");
@@ -1372,6 +1394,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     facility: FacilityRecord,
     name: string,
     capabilities: FacilityCapabilities,
+    details: Pick<
+      FacilityRecord,
+      "kind" | "locationLabel" | "latitude" | "longitude"
+    >,
   ) {
     if (!name.trim()) return;
     if (!isExperimentalPostgresUiEnabled()) {
@@ -1381,6 +1407,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     await updateExperimentalFacility(facility.id, {
       name: name.trim(),
       capabilities,
+      ...details,
     });
     await refreshData();
   }

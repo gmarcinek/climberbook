@@ -213,10 +213,17 @@ export type FacilityCapabilities = {
   activities: TrainingSurface[];
   ropeWalls: RopeWallProfile[];
 };
+export type FacilityVisibility = "private" | "global";
+export type FacilityKind = "indoor_wall" | "crag" | "crag_sector";
 export type FacilityRecord = {
   id: string;
   name: string;
   capabilities: FacilityCapabilities;
+  visibility: FacilityVisibility;
+  kind: FacilityKind;
+  locationLabel: string;
+  latitude: number | null;
+  longitude: number | null;
   createdAt: string;
 };
 export type AthleteInput = {

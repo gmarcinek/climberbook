@@ -14,6 +14,16 @@ export async function GET(request: Request) {
   const actorId = await getExperimentalActorId(request);
   if (typeof actorId !== "string") return actorId;
 
-  const snapshot = await getPostgresDatabaseSnapshot(actorId);
+  const url = new URL(request.url);
+  const start = url.searchParams.get("start");
+  const end = url.searchParams.get("end");
+  const chartRange =
+    start &&
+    end &&
+    /^\d{4}-\d{2}-\d{2}$/.test(start) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(end)
+      ? { start, end }
+      : undefined;
+  const snapshot = await getPostgresDatabaseSnapshot(actorId, chartRange);
   return Response.json(snapshot);
 }

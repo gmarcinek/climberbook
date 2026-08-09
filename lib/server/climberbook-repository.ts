@@ -81,6 +81,11 @@ type FacilityRow = {
   id: string;
   name: string;
   capabilities: FacilityRecord["capabilities"] | null;
+  visibility: FacilityRecord["visibility"];
+  kind: FacilityRecord["kind"];
+  location_label: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: Date;
 };
 
@@ -230,6 +235,11 @@ function mapFacility(row: FacilityRow): FacilityRecord {
   return {
     id: row.id,
     name: row.name,
+    visibility: row.visibility,
+    kind: row.kind,
+    locationLabel: row.location_label ?? "",
+    latitude: row.latitude,
+    longitude: row.longitude,
     capabilities: {
       ...capabilities,
       ropeWalls: capabilities.ropeWalls.map((wall, index) => ({
@@ -746,6 +756,7 @@ export async function listAthletesFromPostgres(ownerUserId: string) {
 
 export async function getPostgresDatabaseSnapshot(
   ownerUserId: string,
+  chartRange?: { start: string; end: string },
 ): Promise<PostgresDatabaseSnapshot> {
   const [
     athletes,
@@ -762,10 +773,7 @@ export async function getPostgresDatabaseSnapshot(
       "select id, source_id, name, facility_id, created_at from sections where owner_user_id = $1 order by created_at asc",
       [ownerUserId],
     ),
-    queryPostgres<FacilityRow>(
-      "select id, name, capabilities, created_at from facilities where owner_user_id = $1 order by created_at asc",
-      [ownerUserId],
-    ),
+    listFacilitiesFromPostgres(ownerUserId),
     queryPostgres<ClimbRow>(
       `
       select climbs.id, climbs.athlete_id, climbs.name, climbs.grade, climbs.created_at
@@ -776,7 +784,7 @@ export async function getPostgresDatabaseSnapshot(
     `,
       [ownerUserId],
     ),
-    listTrainingsFromPostgres(ownerUserId),
+    listTrainingsFromPostgres(ownerUserId, undefined, chartRange),
     queryPostgres<AscentRow>(
       `
       select ascents.id, ascents.athlete_id, ascents.date, ascents.source,
@@ -808,16 +816,18 @@ export async function getPostgresDatabaseSnapshot(
       from weight_entries
       join athletes on athletes.id = weight_entries.athlete_id
       where athletes.owner_user_id = $1
+        and ($2::text is null or weight_entries.date >= $2::text)
+        and ($3::text is null or weight_entries.date <= $3::text)
       order by weight_entries.created_at desc
     `,
-      [ownerUserId],
+      [ownerUserId, chartRange?.start ?? null, chartRange?.end ?? null],
     ),
   ]);
 
   return {
     athletes,
     sections: sections.rows.map(mapSection),
-    facilities: facilities.rows.map(mapFacility),
+    facilities,
     climbs: climbs.rows.map(mapClimb),
     trainings,
     ascents: ascents.rows.map(mapAscent),
@@ -965,6 +975,7 @@ export async function deleteAthleteFromPostgres(
 export async function listTrainingsFromPostgres(
   ownerUserId: string,
   athleteId?: string,
+  range?: { start: string; end: string },
 ) {
   const result = await queryPostgres<TrainingRow>(
     `
@@ -980,9 +991,11 @@ export async function listTrainingsFromPostgres(
     join athletes on athletes.id = trainings.athlete_id
     where athletes.owner_user_id = $1
       and ($2::uuid is null or trainings.athlete_id = $2::uuid)
+      and ($3::text is null or trainings.date >= $3::text)
+      and ($4::text is null or trainings.date <= $4::text)
     order by trainings.date desc, trainings.time desc, trainings.created_at desc
   `,
-    [ownerUserId, athleteId ?? null],
+    [ownerUserId, athleteId ?? null, range?.start ?? null, range?.end ?? null],
   );
 
   return result.rows.map(mapTraining);
@@ -1288,6 +1301,7 @@ export async function saveUserProfileToPostgres(
 export async function listWeightEntriesFromPostgres(
   ownerUserId: string,
   athleteId: string,
+  range?: { start: string; end: string },
 ) {
   await requireOwnedAthlete(ownerUserId, athleteId);
   const result = await queryPostgres<WeightEntryRow>(
@@ -1295,9 +1309,11 @@ export async function listWeightEntriesFromPostgres(
     select id, athlete_id, date, time, weight_kg, created_at
     from weight_entries
     where athlete_id = $1
+      and ($2::text is null or date >= $2::text)
+      and ($3::text is null or date <= $3::text)
     order by date desc, time desc, created_at desc
   `,
-    [athleteId],
+    [athleteId, range?.start ?? null, range?.end ?? null],
   );
 
   return result.rows.map(mapWeightEntry);
@@ -1698,9 +1714,9 @@ export async function deleteSectionFromPostgres(
 export async function listFacilitiesFromPostgres(ownerUserId: string) {
   const result = await queryPostgres<FacilityRow>(
     `
-    select id, name, capabilities, created_at
+    select id, name, capabilities, visibility, kind, location_label, latitude, longitude, created_at
     from facilities
-    where owner_user_id = $1
+    where owner_user_id = $1 or visibility = 'global'
     order by created_at asc
   `,
     [ownerUserId],
@@ -1711,16 +1727,33 @@ export async function listFacilitiesFromPostgres(ownerUserId: string) {
 
 export async function createFacilityInPostgres(
   ownerUserId: string,
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const facilityId = crypto.randomUUID();
   const result = await queryPostgres<FacilityRow>(
     `
-    insert into facilities (id, name, capabilities, owner_user_id)
-    values ($1, $2, $3, $4)
-    returning id, name, capabilities, created_at
+    insert into facilities (id, name, capabilities, kind, location_label, latitude, longitude, owner_user_id)
+    values ($1, $2, $3, $4, $5, $6, $7, $8)
+    returning id, name, capabilities, visibility, kind, location_label, latitude, longitude, created_at
   `,
-    [facilityId, input.name.trim(), input.capabilities, ownerUserId],
+    [
+      facilityId,
+      input.name.trim(),
+      input.capabilities,
+      input.kind,
+      input.locationLabel.trim() || null,
+      input.latitude,
+      input.longitude,
+      ownerUserId,
+    ],
   );
 
   return mapFacility(result.rows[0]);
@@ -1729,16 +1762,33 @@ export async function createFacilityInPostgres(
 export async function updateFacilityInPostgres(
   ownerUserId: string,
   facilityId: string,
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const result = await queryPostgres<FacilityRow>(
     `
     update facilities
-    set name = $3, capabilities = $4
-    where id = $1 and owner_user_id = $2
-    returning id, name, capabilities, created_at
+    set name = $3, capabilities = $4, kind = $5, location_label = $6, latitude = $7, longitude = $8
+    where id = $1 and owner_user_id = $2 and visibility = 'private'
+    returning id, name, capabilities, visibility, kind, location_label, latitude, longitude, created_at
   `,
-    [facilityId, ownerUserId, input.name.trim(), input.capabilities],
+    [
+      facilityId,
+      ownerUserId,
+      input.name.trim(),
+      input.capabilities,
+      input.kind,
+      input.locationLabel.trim() || null,
+      input.latitude,
+      input.longitude,
+    ],
   );
 
   const facility = result.rows[0];
@@ -1755,7 +1805,7 @@ export async function deleteFacilityFromPostgres(
   const result = await queryPostgres<{ id: string }>(
     `
     delete from facilities
-    where id = $1 and owner_user_id = $2
+    where id = $1 and owner_user_id = $2 and visibility = 'private'
     returning id
   `,
     [facilityId, ownerUserId],

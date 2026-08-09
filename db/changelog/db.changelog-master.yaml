@@ -33,3 +33,7 @@ databaseChangeLog:
       file: changelog/changes/016-add-training-rope-routes.sql
   - include:
       file: changelog/changes/017-grant-password-credential-access.sql
+  - include:
+      file: changelog/changes/018-add-facility-visibility.sql
+  - include:
+      file: changelog/changes/019-add-facility-location.sql

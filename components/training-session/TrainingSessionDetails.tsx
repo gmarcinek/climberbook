@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/climberbook/common/Button";
+import { Typeahead } from "@/components/climberbook/common/Typeahead";
 import {
   formControlClassNames,
   Input,
@@ -57,6 +58,11 @@ export function TrainingSessionDetails({
       : (window.localStorage.getItem("climberbook:defaultFacilityName") ?? ""),
   );
   const groups = getSurfaceOptionGroups(surfaceOptions);
+  const facilityOptions = Array.from(
+    new Map(
+      facilities.map((facility) => [facility.name, { value: facility.name }]),
+    ).values(),
+  ).sort((left, right) => left.value.localeCompare(right.value, "pl"));
   const update = (changes: Partial<TrainingDraftValues>) =>
     onDraftChange({ ...draft, ...changes });
   const renderSurfaceOptions = (options: SurfaceOption[]) =>
@@ -93,23 +99,19 @@ export function TrainingSessionDetails({
       <div className={styles.trainingSidebar__stack}>
         <label className={styles.trainingSidebar__field}>
           Obiekt
-          <Select
+          <Typeahead
+            ariaLabel="Szukaj obiektu"
             value={draft.facilityName}
-            onChange={(event) =>
+            options={facilityOptions}
+            onChange={(facilityName) =>
               update({
-                facilityName: event.target.value,
+                facilityName,
                 ropeWallName: "",
               })
             }
-            className={styles.trainingSidebar__input}
-          >
-            <option value="">Bez obiektu</option>
-            {facilities.map((facility) => (
-              <option key={facility.id} value={facility.name}>
-                {facility.name}
-              </option>
-            ))}
-          </Select>
+            placeholder="Szukaj obiektu"
+            inputClassName={styles.trainingSidebar__input}
+          />
         </label>
         {draft.facilityName ? (
           <Button

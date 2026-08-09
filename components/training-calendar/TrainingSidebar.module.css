@@ -414,7 +414,12 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  align-items: center;
+  align-items: baseline;
+}
+
+.trainingSidebar__trainingType {
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 .trainingSidebar__metaGrid {
@@ -1091,6 +1096,17 @@
   padding: 0 11px;
 }
 
+@media (max-width: 767px) {
+  .trainingSidebar__visibleList--standalone {
+    padding: 0;
+  }
+
+  .trainingSidebar__visibleList--standalone
+    .trainingSidebar__panelHeader {
+    padding-left: 16px;
+  }
+}
+
 .trainingSidebar__visibleItem {
   display: grid;
   gap: 4px;
@@ -1168,7 +1184,20 @@
 
 .trainingSidebar__drawerTitle {
   margin: 6px 0 0;
-  font-size: 1.45rem;
+}
+
+.trainingSidebar__drawerTitle + .trainingSidebar__eyebrow {
+  margin-top: 12px;
+}
+
+.trainingSidebar__drawerFacilityTitle {
+  margin: 8px 0 0;
+}
+
+.trainingSidebar__drawerTrainingType {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .trainingSidebar__previewDetails {
@@ -1184,8 +1213,12 @@
 }
 
 .trainingSidebar__previewDetails dt {
-  color: var(--muted);
-  font-size: 0.78rem;
+  margin: 0;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .trainingSidebar__previewDetails dd {

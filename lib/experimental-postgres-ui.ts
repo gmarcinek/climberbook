@@ -95,8 +95,15 @@ async function request<T>(path: string, options: RequestInit = {}) {
   }
 }
 
-export function getExperimentalPostgresSnapshot() {
-  return request<PostgresSnapshot>("/api/v1/snapshot");
+export function getExperimentalPostgresSnapshot(chartRange?: {
+  start: string;
+  end: string;
+}) {
+  const search = chartRange
+    ? `?${new URLSearchParams(chartRange).toString()}`
+    : "";
+
+  return request<PostgresSnapshot>(`/api/v1/snapshot${search}`);
 }
 
 export function deleteExperimentalAccount() {
@@ -455,7 +462,15 @@ export function deleteExperimentalSection(id: string) {
 }
 
 export async function createExperimentalFacility(
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const response = await request<{ facility: FacilityRecord }>(
     "/api/v1/facilities",
@@ -466,7 +481,15 @@ export async function createExperimentalFacility(
 
 export async function updateExperimentalFacility(
   id: string,
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const response = await request<{ facility: FacilityRecord }>(
     "/api/v1/facilities",

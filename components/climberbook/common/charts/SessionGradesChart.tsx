@@ -169,15 +169,23 @@ export function RopeTrainingGradesChart({
   const ropeTrainings = trainingsInRange
     .map((training) => ({
       ...training,
-      grades: getSurfaceGradeValues(training.difficultyBySurface?.lina)
-        .concat(
-          training.difficultyBySurface?.lina ||
-            !training.surfaces.includes("lina")
-            ? []
-            : getSurfaceGradeValues(training.difficultyNotes),
-        )
-        .map((grade) => ({
+      grades: (training.ropeRoutes?.length
+        ? training.ropeRoutes.map((route) => ({
+            grade: route.grade,
+            completed: route.completed,
+          }))
+        : getSurfaceGradeValues(training.difficultyBySurface?.lina)
+            .concat(
+              training.difficultyBySurface?.lina ||
+                !training.surfaces.includes("lina")
+                ? []
+                : getSurfaceGradeValues(training.difficultyNotes),
+            )
+            .map((grade) => ({ grade, completed: 1 }))
+      )
+        .map(({ grade, completed }) => ({
           grade,
+          completed: Math.min(Math.max(completed ?? 1, 0), 1),
           gradeIndex: getRopeGradeIndex(grade),
           plotX: getPreviewPlotX("lina"),
         }))
@@ -224,6 +232,7 @@ export function RopeTrainingGradesChart({
       plotX: grade.plotX,
       date: training.date,
       grade: grade.grade,
+      completed: grade.completed,
       gradeIndex: grade.gradeIndex,
       surface: "lina" as const,
       label: `${training.date} ${training.time}`,
@@ -2070,6 +2079,7 @@ type RopeGradePlotPoint = SessionGradePoint & {
   trainingTimestamp: number;
   plotX: number;
   gradeIndex: number;
+  completed: number;
   label: string;
   occurrenceCount: number;
 };
@@ -2474,7 +2484,7 @@ type ChartMarkerProps = {
   cx?: number;
   cy?: number;
   fill?: string;
-  payload?: { occurrenceCount?: number };
+  payload?: { occurrenceCount?: number; completed?: number };
 };
 
 function getMarkerScale(occurrenceCount = 1) {
@@ -2488,8 +2498,33 @@ function RopeAttemptMarker({
   payload,
 }: ChartMarkerProps) {
   const radius = 9 * getMarkerScale(payload?.occurrenceCount);
+  const completed = Math.min(Math.max(payload?.completed ?? 1, 0), 1);
 
-  return <circle cx={cx} cy={cy} r={radius} fill={fill} />;
+  if (completed === 1) {
+    return <circle cx={cx} cy={cy} r={radius} fill={fill} />;
+  }
+
+  const startAngle = -Math.PI / 2;
+  const endAngle = startAngle + Math.PI * 2 * completed;
+  const endX = cx + radius * Math.cos(endAngle);
+  const endY = cy + radius * Math.sin(endAngle);
+  const startX = cx + radius * Math.cos(startAngle);
+  const startY = cy + radius * Math.sin(startAngle);
+  const completionPath = `M ${cx} ${cy} L ${startX} ${startY} A ${radius} ${radius} 0 ${completed > 0.5 ? 1 : 0} 1 ${endX} ${endY} Z`;
+
+  return (
+    <g>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={radius}
+        fill={withAlpha(fill, 0.18)}
+        stroke={fill}
+        strokeWidth={1}
+      />
+      {completed > 0 && <path d={completionPath} fill={fill} />}
+    </g>
+  );
 }
 
 function TriangleMarker({
