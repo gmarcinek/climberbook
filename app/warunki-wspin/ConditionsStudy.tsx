@@ -7,6 +7,7 @@ import {
   CloudRain,
   Droplet,
   Droplets,
+  MapPin,
   Snowflake,
   Sun,
   Thermometer,
@@ -14,6 +15,16 @@ import {
   Tornado,
   Wind,
 } from "lucide-react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   CONDITIONS_STUDY_SCENARIO_VERSION,
   type ConditionsStudyScenario,
@@ -48,9 +59,22 @@ type SubmittedAnswerStats = {
 
 type ConditionPrediction = {
   estimatedScore: number | null;
+  peakScore: number | null;
   effectiveSampleSize: number;
   responseCount: number;
   probabilities: Array<{ score: number; probability: number }>;
+};
+
+type ConditionsHistory = {
+  nowTime?: string;
+  hours: Array<{
+    time: string;
+    temperatureC: number;
+    humidityPercent: number;
+    windKph: number;
+    averageScore: number | null;
+    peakScore: number | null;
+  }>;
 };
 
 function getModelReadiness(totalCount: number) {
@@ -66,6 +90,10 @@ function getScoreLabel(score: number) {
   if (score <= 60) return "możliwe";
   if (score <= 90) return "zwyczajne";
   return "epickie";
+}
+
+function formatHistoryTime(time: string) {
+  return `${time.slice(8, 10)}.${time.slice(5, 7)} ${time.slice(11, 16)}`;
 }
 
 function choose<T>(values: readonly T[]) {
@@ -155,6 +183,10 @@ export function ConditionsStudy() {
   const [predictionStatus, setPredictionStatus] = useState<
     "idle" | "loading" | "error"
   >("idle");
+  const [testerWeatherStatus, setTesterWeatherStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [history, setHistory] = useState<ConditionsHistory | null>(null);
   const [weatherStatus, setWeatherStatus] = useState<
     "loading" | "geo" | "fallback" | "synthetic"
   >("synthetic");
@@ -232,6 +264,40 @@ export function ConditionsStudy() {
     }
   }
 
+  async function loadTesterWeather() {
+    setTesterWeatherStatus("loading");
+    try {
+      const position = await getCurrentPosition();
+      const params = new URLSearchParams({
+        latitude: String(position.coords.latitude),
+        longitude: String(position.coords.longitude),
+      });
+      const [weatherResponse, historyResponse] = await Promise.all([
+        fetch(`/api/conditions-study/weather?${params}`),
+        fetch(`/api/conditions-study/history?${params}`),
+      ]);
+      if (!weatherResponse.ok || !historyResponse.ok) {
+        throw new Error("weather_unavailable");
+      }
+      const body = (await weatherResponse.json()) as {
+        weather: OutdoorWeather;
+      };
+      const historyBody = (await historyResponse.json()) as ConditionsHistory;
+      setPredictionInputs({
+        temperatureC: Math.max(-10, Math.min(40, body.weather.temperatureC)),
+        humidityPercent: Math.max(
+          0,
+          Math.min(100, body.weather.humidityPercent),
+        ),
+        windKph: Math.max(0, Math.min(70, body.weather.windKph)),
+      });
+      setHistory(historyBody);
+      setTesterWeatherStatus("ready");
+    } catch {
+      setTesterWeatherStatus("error");
+    }
+  }
+
   async function submit() {
     if (score === null || !scenario) return;
     setStatus("saving");
@@ -277,6 +343,12 @@ export function ConditionsStudy() {
   const TemperatureIcon = conditionIcons[temperature.icon];
   const HumidityIcon = conditionIcons[humidity.icon];
   const WindIcon = conditionIcons[wind.icon];
+  const peakPredictionScore = prediction
+    ? (prediction.peakScore ??
+      prediction.probabilities.reduce((peak, candidate) =>
+        candidate.probability > peak.probability ? candidate : peak,
+      ).score)
+    : null;
 
   return (
     <main className={styles.page}>
@@ -457,12 +529,37 @@ export function ConditionsStudy() {
                 <p>TESTER MODELU</p>
                 <h2>Sprawdź własne warunki</h2>
               </div>
-              {prediction?.estimatedScore !== null &&
-              prediction?.estimatedScore !== undefined ? (
+              {peakPredictionScore !== null ? (
                 <strong>
-                  {prediction.estimatedScore.toFixed(1)}%
-                  <small>{getScoreLabel(prediction.estimatedScore)}</small>
+                  {peakPredictionScore}%
+                  <small>
+                    MAKS. ESTYMACJA: {getScoreLabel(peakPredictionScore)}
+                  </small>
+                  {prediction?.estimatedScore !== null &&
+                  prediction?.estimatedScore !== undefined ? (
+                    <em>średnia: {prediction.estimatedScore.toFixed(1)}%</em>
+                  ) : null}
                 </strong>
+              ) : null}
+            </div>
+            <div className={styles.modelTesterActions}>
+              <button
+                type="button"
+                onClick={() => void loadTesterWeather()}
+                disabled={testerWeatherStatus === "loading"}
+              >
+                <MapPin size={16} aria-hidden="true" />
+                {testerWeatherStatus === "loading"
+                  ? "Pobieram dane..."
+                  : "Pobierz lokalizację, pogodę i historię 96 h"}
+              </button>
+              {testerWeatherStatus === "ready" ? (
+                <span>Wczytano pogodę i historię dla Twojej lokalizacji.</span>
+              ) : null}
+              {testerWeatherStatus === "error" ? (
+                <span className={styles.modelTesterError}>
+                  Nie udało się pobrać lokalizacji lub pogody.
+                </span>
               ) : null}
             </div>
             <div className={styles.modelTesterFields}>
@@ -558,6 +655,99 @@ export function ConditionsStudy() {
                   {prediction.effectiveSampleSize.toFixed(1)}.
                 </p>
               </>
+            ) : null}
+            {history ? (
+              <section className={styles.historyChart}>
+                <div className={styles.historyChartHeading}>
+                  <div>
+                    <p>HISTORIA WARUNKÓW</p>
+                    <h3>96 h historii + 48 h prognozy</h3>
+                  </div>
+                  <div className={styles.historyLegend}>
+                    <span className={styles.historyAverage}>
+                      Średnia estymacja
+                    </span>
+                    <span className={styles.historyPeak}>
+                      Maks. estymacja (nieuśredniona)
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className={styles.historyPlot}
+                  aria-label="Przebieg estymacji warunków z 96 godzin historii i 48 godzin prognozy"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={history.hours}
+                      margin={{ top: 8, right: 8, bottom: 0, left: -20 }}
+                    >
+                      <CartesianGrid stroke="#d9e0d6" vertical={false} />
+                      {history.nowTime ? (
+                        <ReferenceLine
+                          x={history.nowTime}
+                          stroke="#1d583f"
+                          strokeWidth={1.5}
+                          strokeDasharray="3 3"
+                          label={{
+                            value: "TERAZ",
+                            position: "insideTop",
+                            fill: "#1d583f",
+                            fontSize: 10,
+                            fontWeight: 700,
+                          }}
+                        />
+                      ) : null}
+                      <XAxis
+                        dataKey="time"
+                        tickFormatter={formatHistoryTime}
+                        interval={11}
+                        tick={{ fill: "#526754", fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={{ stroke: "#aebcaf" }}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        tick={{ fill: "#526754", fontSize: 11 }}
+                        tickFormatter={(value) => `${value}%`}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        labelFormatter={(label) =>
+                          typeof label === "string"
+                            ? formatHistoryTime(label)
+                            : ""
+                        }
+                        formatter={(value, name) => [
+                          `${Number(value ?? 0).toFixed(1)}%`,
+                          String(name),
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="averageScore"
+                        name="Średnia estymacja"
+                        stroke="#379d94"
+                        strokeWidth={2.5}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                        connectNulls
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="peakScore"
+                        name="Maks. estymacja"
+                        stroke="#d89323"
+                        strokeWidth={2}
+                        strokeDasharray="5 3"
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                        connectNulls
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
             ) : null}
           </section>
         </div>

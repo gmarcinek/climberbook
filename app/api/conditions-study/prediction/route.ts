@@ -83,10 +83,17 @@ export async function GET(request: Request) {
       totalWeight === 0
         ? null
         : Math.round((weightedScore / totalWeight) * 10) / 10;
+    const peakScore =
+      totalWeight === 0
+        ? null
+        : probabilities.reduce((peak, candidate) =>
+            candidate.probability > peak.probability ? candidate : peak,
+          ).score;
 
     return NextResponse.json({
       input,
       estimatedScore,
+      peakScore,
       effectiveSampleSize: Math.round(totalWeight * 10) / 10,
       responseCount: result.rows.length,
       probabilities,

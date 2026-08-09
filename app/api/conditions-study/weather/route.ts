@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchOpenMeteoForecast } from "@/lib/server/open-meteo";
 
 export const runtime = "nodejs";
 
@@ -40,18 +41,16 @@ export async function GET(request: Request) {
     );
   }
 
-  const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
-  weatherUrl.search = new URLSearchParams({
-    latitude: String(latitude),
-    longitude: String(longitude),
-    current: "temperature_2m,relative_humidity_2m,wind_speed_10m,is_day",
-    timezone: "auto",
-  }).toString();
-
   try {
-    const response = await fetch(weatherUrl, { cache: "no-store" });
-    if (!response.ok) throw new Error("weather_unavailable");
-    const data = (await response.json()) as OpenMeteoResponse;
+    const data = await fetchOpenMeteoForecast<OpenMeteoResponse>(
+      latitude,
+      longitude,
+      {
+        current: "temperature_2m,relative_humidity_2m,wind_speed_10m,is_day",
+        timezone: "auto",
+      },
+      5 * 60_000,
+    );
     const current = data.current;
     if (!current || typeof current.time !== "string")
       throw new Error("weather_missing");

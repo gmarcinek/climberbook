@@ -1,0 +1,132 @@
+.page {
+  display: grid;
+  gap: 28px;
+  padding: 24px 0 40px;
+}
+
+.header {
+  display: flex;
+  gap: 18px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.header h1 {
+  margin-bottom: 8px;
+}
+
+.header p {
+  max-width: 620px;
+}
+
+.modelCount {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 420px));
+  gap: 14px;
+}
+
+.modelCard {
+  min-height: 300px;
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 13%, var(--component-card-background)) 0%, var(--component-card-background) 48%);
+}
+
+.cardTopline,
+.cardContent,
+.inputs {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modelType {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.status {
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+
+.cardContent {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.cardContent h2 {
+  margin: 0 0 7px;
+  font-size: 1.2rem;
+}
+
+.cardContent p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.modelMark {
+  display: grid;
+  width: 48px;
+  min-width: 48px;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.inputs {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.inputs span {
+  padding: 4px 7px;
+  background: var(--component-metric-card-background);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.openModel {
+  align-self: start;
+  padding: 8px 12px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding-top: 16px;
+  }
+
+  .header {
+    display: grid;
+    align-items: start;
+  }
+
+  .modelCount {
+    margin: 0;
+  }
+
+  .gallery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
