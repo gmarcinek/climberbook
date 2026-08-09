@@ -62,6 +62,8 @@ type TrainingRow = {
   wellbeing: string;
   surfaces: TrainingRecord["surfaces"];
   facility_name: string | null;
+  facility_id: string | null;
+  facility_version: number | null;
   weather_snapshot: TrainingRecord["weatherSnapshot"] | null;
   rope_wall_name: string | null;
   rope_routes: TrainingRecord["ropeRoutes"] | null;
@@ -80,9 +82,12 @@ type SectionRow = {
 
 type FacilityRow = {
   id: string;
+  current_version: number;
   name: string;
   capabilities: FacilityRecord["capabilities"] | null;
   visibility: FacilityRecord["visibility"];
+  created_by: string;
+  is_owned_by_current_user: boolean;
   kind: FacilityRecord["kind"];
   location_label: string | null;
   latitude: number | null;
@@ -213,6 +218,8 @@ function mapTraining(row: TrainingRow): TrainingRecord {
     wellbeing: row.wellbeing,
     surfaces: row.surfaces,
     facilityName: row.facility_name ?? undefined,
+    facilityId: row.facility_id ?? undefined,
+    facilityVersion: row.facility_version ?? undefined,
     weatherSnapshot: row.weather_snapshot ?? undefined,
     ropeWallName: row.rope_wall_name ?? undefined,
     ropeRoutes: row.rope_routes ?? undefined,
@@ -236,8 +243,11 @@ function mapFacility(row: FacilityRow): FacilityRecord {
   const capabilities = row.capabilities ?? { activities: [], ropeWalls: [] };
   return {
     id: row.id,
+    currentVersion: row.current_version,
     name: row.name,
     visibility: row.visibility,
+    createdBy: row.created_by,
+    isOwnedByCurrentUser: row.is_owned_by_current_user,
     kind: row.kind,
     locationLabel: row.location_label ?? "",
     latitude: row.latitude,
@@ -986,7 +996,8 @@ export async function listTrainingsFromPostgres(
       trainings.age_years, trainings.calories_burned, trainings.attempts_count,
       trainings.difficulty_notes, trainings.difficulty_by_surface,
       trainings.protocol, trainings.load_profile, trainings.wellbeing, trainings.surfaces,
-      trainings.custom_session_type, trainings.facility_name, trainings.weather_snapshot, trainings.rope_wall_name,
+      trainings.custom_session_type, trainings.facility_name, trainings.facility_id, trainings.facility_version,
+      trainings.weather_snapshot, trainings.rope_wall_name,
       trainings.rope_routes, trainings.notes,
       trainings.created_at
     from trainings
@@ -1017,13 +1028,13 @@ export async function createTrainingInPostgres(
       id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, facility_name,
-      weather_snapshot, rope_wall_name, rope_routes, custom_session_type, notes
+      facility_id, facility_version, weather_snapshot, rope_wall_name, rope_routes, custom_session_type, notes
     )
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
-      facility_name, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
+      facility_name, facility_id, facility_version, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
   `,
     [
       trainingId,
@@ -1042,6 +1053,8 @@ export async function createTrainingInPostgres(
       input.wellbeing,
       input.surfaces,
       input.facilityName ?? null,
+      input.facilityId ?? null,
+      input.facilityVersion ?? null,
       input.weatherSnapshot ?? null,
       input.ropeWallName ?? null,
       input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
@@ -1075,22 +1088,24 @@ export async function updateTrainingInPostgres(
       wellbeing = $13,
       surfaces = $14,
       facility_name = $15,
-      weather_snapshot = $16,
-      rope_wall_name = $17,
-      rope_routes = $18,
-      custom_session_type = $19,
-      notes = $20
+      facility_id = $16,
+      facility_version = $17,
+      weather_snapshot = $18,
+      rope_wall_name = $19,
+      rope_routes = $20,
+      custom_session_type = $21,
+      notes = $22
     where id = $1
       and exists (
         select 1
         from athletes
         where athletes.id = trainings.athlete_id
-          and athletes.owner_user_id = $21
+          and athletes.owner_user_id = $23
       )
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
-      facility_name, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
+      facility_name, facility_id, facility_version, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
   `,
     [
       input.id,
@@ -1108,6 +1123,8 @@ export async function updateTrainingInPostgres(
       input.wellbeing,
       input.surfaces,
       input.facilityName ?? null,
+      input.facilityId ?? null,
+      input.facilityVersion ?? null,
       input.weatherSnapshot ?? null,
       input.ropeWallName ?? null,
       input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
@@ -1719,10 +1736,23 @@ export async function deleteSectionFromPostgres(
 export async function listFacilitiesFromPostgres(ownerUserId: string) {
   const result = await queryPostgres<FacilityRow>(
     `
-    select id, name, capabilities, visibility, kind, location_label, latitude, longitude, created_at
+    select facilities.id, facility_versions.version as current_version,
+           facility_versions.name, facility_versions.capabilities, facilities.visibility,
+           app_users.display_name as created_by,
+           facilities.owner_user_id = $1 as is_owned_by_current_user,
+           facility_versions.kind, facility_versions.location_label,
+           facility_versions.latitude, facility_versions.longitude, facilities.created_at
     from facilities
-    where owner_user_id = $1 or visibility = 'global'
-    order by created_at asc
+    join app_users on app_users.id = facilities.owner_user_id
+    join lateral (
+      select *
+      from facility_versions
+      where facility_versions.facility_id = facilities.id
+      order by facility_versions.version desc
+      limit 1
+    ) facility_versions on true
+    where facilities.owner_user_id = $1 or facilities.visibility = 'global'
+    order by facilities.created_at asc
   `,
     [ownerUserId],
   );
@@ -1745,9 +1775,26 @@ export async function createFacilityInPostgres(
   const facilityId = crypto.randomUUID();
   const result = await queryPostgres<FacilityRow>(
     `
-    insert into facilities (id, name, capabilities, kind, location_label, latitude, longitude, owner_user_id)
-    values ($1, $2, $3, $4, $5, $6, $7, $8)
-    returning id, name, capabilities, visibility, kind, location_label, latitude, longitude, created_at
+    with inserted_facility as (
+      insert into facilities (id, name, capabilities, visibility, kind, location_label, latitude, longitude, owner_user_id)
+      values ($1, $2, $3, 'global', $4, $5, $6, $7, $8)
+      returning id, visibility, owner_user_id, created_at
+    ), inserted_version as (
+      insert into facility_versions (
+        facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+      )
+      select id, 1, $2, $3, $4, $5, $6, $7
+      from inserted_facility
+      returning facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+    )
+    select inserted_facility.id, inserted_version.version as current_version,
+          inserted_version.name, inserted_version.capabilities, inserted_facility.visibility,
+          (select display_name from app_users where id = $8) as created_by,
+          true as is_owned_by_current_user,
+          inserted_version.kind, inserted_version.location_label,
+          inserted_version.latitude, inserted_version.longitude, inserted_facility.created_at
+    from inserted_facility
+    join inserted_version on inserted_version.facility_id = inserted_facility.id
   `,
     [
       facilityId,
@@ -1779,10 +1826,33 @@ export async function updateFacilityInPostgres(
 ) {
   const result = await queryPostgres<FacilityRow>(
     `
-    update facilities
-    set name = $3, capabilities = $4, kind = $5, location_label = $6, latitude = $7, longitude = $8
-    where id = $1 and owner_user_id = $2 and visibility = 'private'
-    returning id, name, capabilities, visibility, kind, location_label, latitude, longitude, created_at
+    with owned_facility as (
+      select id, visibility, created_at
+      from facilities
+      where id = $1 and owner_user_id = $2
+      for update
+    ), inserted_version as (
+      insert into facility_versions (
+        facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+      )
+      select owned_facility.id,
+        coalesce((
+          select max(version)
+          from facility_versions
+          where facility_id = owned_facility.id
+        ), 0) + 1,
+        $3, $4, $5, $6, $7, $8
+      from owned_facility
+      returning facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+    )
+    select owned_facility.id, inserted_version.version as current_version,
+          inserted_version.name, inserted_version.capabilities, owned_facility.visibility,
+          (select display_name from app_users where id = $2) as created_by,
+          true as is_owned_by_current_user,
+          inserted_version.kind, inserted_version.location_label,
+          inserted_version.latitude, inserted_version.longitude, owned_facility.created_at
+    from owned_facility
+    join inserted_version on inserted_version.facility_id = owned_facility.id
   `,
     [
       facilityId,
@@ -1803,6 +1873,46 @@ export async function updateFacilityInPostgres(
   return mapFacility(facility);
 }
 
+export async function publishFacilityToGlobalInPostgres(
+  ownerUserId: string,
+  facilityId: string,
+) {
+  const result = await queryPostgres<FacilityRow>(
+    `
+    with published_facility as (
+      update facilities
+      set visibility = 'global'
+      where id = $1 and owner_user_id = $2 and visibility = 'private'
+      returning id, visibility, created_at
+    )
+    select published_facility.id, facility_versions.version as current_version,
+              facility_versions.name, facility_versions.capabilities, published_facility.visibility,
+              (select display_name from app_users where id = $2) as created_by,
+              true as is_owned_by_current_user,
+              facility_versions.kind, facility_versions.location_label,
+              facility_versions.latitude, facility_versions.longitude, published_facility.created_at
+    from published_facility
+    join lateral (
+      select *
+      from facility_versions
+      where facility_versions.facility_id = published_facility.id
+      order by facility_versions.version desc
+      limit 1
+    ) facility_versions on true
+  `,
+    [facilityId, ownerUserId],
+  );
+
+  const facility = result.rows[0];
+  if (!facility) {
+    throw new Error(
+      "Nie znaleziono prywatnego obiektu należącego do użytkownika.",
+    );
+  }
+
+  return mapFacility(facility);
+}
+
 export async function deleteFacilityFromPostgres(
   ownerUserId: string,
   facilityId: string,
@@ -1810,7 +1920,7 @@ export async function deleteFacilityFromPostgres(
   const result = await queryPostgres<{ id: string }>(
     `
     delete from facilities
-    where id = $1 and owner_user_id = $2 and visibility = 'private'
+    where id = $1 and owner_user_id = $2
     returning id
   `,
     [facilityId, ownerUserId],
@@ -2048,18 +2158,40 @@ export async function importFullBackupToPostgres(
 
       await client.query(
         `
-          insert into facilities (id, name, capabilities, created_at, owner_user_id)
-          values ($1, $2, $3, $4, $5)
-          on conflict (id) do ${
-            skipDuplicates
-              ? "nothing"
-              : "update set name = excluded.name, capabilities = excluded.capabilities, created_at = excluded.created_at"
-          }
+          with imported_facility as (
+            insert into facilities (
+              id, name, capabilities, kind, location_label, latitude, longitude, created_at, owner_user_id
+            )
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            on conflict (id) do ${
+              skipDuplicates
+                ? "nothing"
+                : "update set name = excluded.name, capabilities = excluded.capabilities, kind = excluded.kind, location_label = excluded.location_label, latitude = excluded.latitude, longitude = excluded.longitude, created_at = excluded.created_at"
+            }
+            returning id, name, capabilities, kind, location_label, latitude, longitude, created_at
+          )
+          insert into facility_versions (
+            facility_id, version, name, capabilities, kind, location_label, latitude, longitude, created_at
+          )
+          select imported_facility.id,
+            coalesce((
+              select max(version)
+              from facility_versions
+              where facility_id = imported_facility.id
+            ), 0) + 1,
+            imported_facility.name, imported_facility.capabilities, imported_facility.kind,
+            imported_facility.location_label, imported_facility.latitude, imported_facility.longitude,
+            imported_facility.created_at
+          from imported_facility
         `,
         [
           facilityId,
           facility.name,
           facility.capabilities ?? { activities: [], ropeWalls: [] },
+          facility.kind,
+          facility.locationLabel || null,
+          facility.latitude,
+          facility.longitude,
           facility.createdAt,
           ownerUserId,
         ],

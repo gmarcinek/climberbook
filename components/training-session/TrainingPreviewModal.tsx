@@ -120,6 +120,9 @@ export function TrainingPreviewModal({
             <p className={styles.trainingSidebar__eyebrow}>Podgląd treningu</p>
             <h3 className={styles.trainingSidebar__drawerFacilityTitle}>
               {training.facilityName || "Nie wskazano"}
+              {training.facilityVersion
+                ? ` (v${training.facilityVersion})`
+                : ""}
             </h3>
             <h4 className={styles.trainingSidebar__drawerTrainingType}>
               {summarizeTrainingType(training)}

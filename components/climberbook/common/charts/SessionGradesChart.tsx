@@ -145,6 +145,8 @@ export function RopeTrainingGradesChart({
   const { selectedDate } = useSelectedDates();
   const { facilities } = useClimberbook();
   const [activeGradeTab, setActiveGradeTab] = useState<GradeChartTab>("all");
+  const [showTemperatureLine, setShowTemperatureLine] = useState(false);
+  const [showHumidityLine, setShowHumidityLine] = useState(false);
   const todayDate = new Date().toISOString().slice(0, 10);
   const chartEnd = previewMode
     ? chartRange.end
@@ -273,6 +275,18 @@ export function RopeTrainingGradesChart({
           (training.surfaces.includes("campus") ? 12 : 0),
       }),
     );
+  const weatherPoints = trainingsInRange.flatMap((training) => {
+    if (!training.weatherSnapshot) return [];
+
+    return [
+      {
+        trainingTimestamp: getTrainingTimestamp(training),
+        plotX: 1,
+        temperatureC: training.weatherSnapshot.temperatureC,
+        relativeHumidity: training.weatherSnapshot.relativeHumidity,
+      },
+    ];
+  });
   const availableGradeTabs = gradeChartTabs.filter((tab) => {
     if (tab.key === "all") {
       return true;
@@ -378,18 +392,6 @@ export function RopeTrainingGradesChart({
             : 0,
       })),
   );
-  const weatherPoints = trainingsInRange.flatMap((training) => {
-    if (!training.weatherSnapshot) return [];
-
-    return [
-      {
-        trainingTimestamp: getTrainingTimestamp(training),
-        plotX: 1,
-        weatherLevel: 1,
-        label: `${Math.round(training.weatherSnapshot.temperatureC)}/${Math.round(training.weatherSnapshot.relativeHumidity)}%`,
-      },
-    ];
-  });
   const boardAxisAnchors = [
     {
       trainingTimestamp: xAxisStartTimestamp,
@@ -651,6 +653,24 @@ export function RopeTrainingGradesChart({
                 }}
                 tick={{ fontSize: 9.6 }}
               />
+              {displayedGradeTab === "all" && weatherPoints.length > 0 && (
+                <>
+                  <YAxis
+                    yAxisId="temperature"
+                    type="number"
+                    dataKey="temperatureC"
+                    domain={["auto", "auto"]}
+                    hide
+                  />
+                  <YAxis
+                    yAxisId="humidity"
+                    type="number"
+                    dataKey="relativeHumidity"
+                    domain={[0, 100]}
+                    hide
+                  />
+                </>
+              )}
               {!isPreviewChart && totalStimulusPoints.length > 0 && (
                 <YAxis
                   yAxisId="stimulus"
@@ -708,15 +728,6 @@ export function RopeTrainingGradesChart({
                   domain={[1, 9]}
                   ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
                   interval={0}
-                  hide
-                />
-              )}
-              {weatherPoints.length > 0 && (
-                <YAxis
-                  yAxisId="weather"
-                  type="number"
-                  dataKey="weatherLevel"
-                  domain={[0, 1]}
                   hide
                 />
               )}
@@ -813,12 +824,31 @@ export function RopeTrainingGradesChart({
                   );
                 }}
               />
-              {weatherPoints.length > 0 && (
-                <Scatter
+              {displayedGradeTab === "all" && showTemperatureLine && (
+                <Line
                   data={weatherPoints}
-                  yAxisId="weather"
-                  shape={WeatherSnapshotMarker}
-                  isAnimationActive={false}
+                  type="monotone"
+                  dataKey="temperatureC"
+                  name="Temperatura"
+                  yAxisId="temperature"
+                  stroke="var(--component-chart-series-average)"
+                  strokeWidth={2.5}
+                  dot={false}
+                  connectNulls
+                />
+              )}
+              {displayedGradeTab === "all" && showHumidityLine && (
+                <Line
+                  data={weatherPoints}
+                  type="monotone"
+                  dataKey="relativeHumidity"
+                  name="Wilgotność"
+                  yAxisId="humidity"
+                  stroke="var(--component-chart-series-projection)"
+                  strokeWidth={2.5}
+                  strokeDasharray="5 4"
+                  dot={false}
+                  connectNulls
                 />
               )}
               {displayedGradeTab === "all" && (
@@ -868,6 +898,44 @@ export function RopeTrainingGradesChart({
         style={sessionGradeLegendStyle}
         aria-label="Legenda wycen"
       >
+        {displayedGradeTab === "all" && weatherPoints.length > 0 && (
+          <>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showTemperatureLine}
+                onChange={(event) =>
+                  setShowTemperatureLine(event.target.checked)
+                }
+                style={{ accentColor: "var(--component-chart-series-average)" }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-average)",
+                }}
+              />
+              Temperatura
+            </label>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showHumidityLine}
+                onChange={(event) => setShowHumidityLine(event.target.checked)}
+                style={{
+                  accentColor: "var(--component-chart-series-projection)",
+                }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-projection)",
+                }}
+              />
+              Wilgotność
+            </label>
+          </>
+        )}
         <span style={sessionGradeLegendItemStyle}>
           <i
             style={{
@@ -923,6 +991,8 @@ export function TrainingStimulusChart({
   const { theme } = useTheme();
   const [activeStimulusTab, setActiveStimulusTab] =
     useState<StimulusTab>("all");
+  const [showTemperatureLine, setShowTemperatureLine] = useState(false);
+  const [showHumidityLine, setShowHumidityLine] = useState(false);
   const [visibleExperimentalDimensions, setVisibleExperimentalDimensions] =
     useState<Record<FatigueDimension, boolean>>({
       aerobicEndurance: true,
@@ -959,6 +1029,19 @@ export function TrainingStimulusChart({
     };
   });
   const stimulusPoints = series.filter((point) => point.coin !== null);
+  const weatherPoints = trainings
+    .filter(
+      (training) =>
+        training.date >= chartRange.start &&
+        training.date <= chartEnd &&
+        training.weatherSnapshot,
+    )
+    .map((training) => ({
+      trainingTimestamp: getTrainingTimestamp(training),
+      barTimestamp: getDayStartTimestamp(training.date) + 12 * 60 * 60 * 1000,
+      temperatureC: training.weatherSnapshot!.temperatureC,
+      relativeHumidity: training.weatherSnapshot!.relativeHumidity,
+    }));
   const isAllView = activeStimulusTab === "all";
   const isBarView = activeStimulusTab === "bar";
   const activeDimension =
@@ -1135,6 +1218,24 @@ export function TrainingStimulusChart({
               }}
               tick={{ fontSize: 9.6 }}
             />
+            {(showTemperatureLine || showHumidityLine) && (
+              <>
+                <YAxis
+                  yAxisId="temperature"
+                  type="number"
+                  dataKey="temperatureC"
+                  domain={["auto", "auto"]}
+                  hide
+                />
+                <YAxis
+                  yAxisId="humidity"
+                  type="number"
+                  dataKey="relativeHumidity"
+                  domain={[0, 100]}
+                  hide
+                />
+              </>
+            )}
             {isBarView && (
               <YAxis
                 yAxisId="bars"
@@ -1169,6 +1270,33 @@ export function TrainingStimulusChart({
                 );
               }}
             />
+            {showTemperatureLine && (
+              <Line
+                data={weatherPoints}
+                type="monotone"
+                dataKey="temperatureC"
+                name="Temperatura"
+                yAxisId="temperature"
+                stroke="var(--component-chart-series-average)"
+                strokeWidth={2.5}
+                dot={false}
+                connectNulls
+              />
+            )}
+            {showHumidityLine && (
+              <Line
+                data={weatherPoints}
+                type="monotone"
+                dataKey="relativeHumidity"
+                name="Wilgotność"
+                yAxisId="humidity"
+                stroke="var(--component-chart-series-projection)"
+                strokeWidth={2.5}
+                strokeDasharray="5 4"
+                dot={false}
+                connectNulls
+              />
+            )}
             {isAllView && (
               <ExperimentalStimulusTab
                 data={stimulusPoints}
@@ -1191,6 +1319,44 @@ export function TrainingStimulusChart({
         </ResponsiveContainer>
       </div>
       <div style={sessionGradeLegendStyle} aria-label="Legenda bodźca">
+        {weatherPoints.length > 0 && (
+          <>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showTemperatureLine}
+                onChange={(event) =>
+                  setShowTemperatureLine(event.target.checked)
+                }
+                style={{ accentColor: "var(--component-chart-series-average)" }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-average)",
+                }}
+              />
+              Temperatura
+            </label>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showHumidityLine}
+                onChange={(event) => setShowHumidityLine(event.target.checked)}
+                style={{
+                  accentColor: "var(--component-chart-series-projection)",
+                }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-projection)",
+                }}
+              />
+              Wilgotność
+            </label>
+          </>
+        )}
         {isAllView && (
           <>
             <label style={sessionGradeLegendItemStyle}>
@@ -1667,13 +1833,6 @@ type TotalStimulusPoint = {
   coin: number;
 };
 
-type WeatherSnapshotPoint = {
-  trainingTimestamp: number;
-  plotX: number;
-  weatherLevel: number;
-  label: string;
-};
-
 type StimulusTab = (typeof stimulusTabs)[number]["key"];
 
 const weightedStimulusDataKeys: Record<
@@ -2095,31 +2254,6 @@ function TrainingTimelineBlock({
       />
       <line x1={x} y1={y} x2={x + 25} y2={y} stroke="#000000" />
     </g>
-  );
-}
-
-function WeatherSnapshotMarker({
-  cx,
-  cy,
-  payload,
-}: {
-  cx?: number;
-  cy?: number;
-  payload?: WeatherSnapshotPoint;
-}) {
-  if (cx === undefined || cy === undefined || !payload) return null;
-
-  return (
-    <text
-      x={cx}
-      y={cy + 10}
-      fill="var(--component-chart-axis)"
-      fontSize={9}
-      fontWeight={600}
-      textAnchor="middle"
-    >
-      {payload.label}
-    </text>
   );
 }
 

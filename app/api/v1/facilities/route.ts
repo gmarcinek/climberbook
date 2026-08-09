@@ -2,6 +2,7 @@ import {
   createFacilityInPostgres,
   deleteFacilityFromPostgres,
   listFacilitiesFromPostgres,
+  publishFacilityToGlobalInPostgres,
   updateFacilityInPostgres,
 } from "@/lib/server/climberbook-repository";
 import { getExperimentalActorId } from "@/lib/server/experimental-actor";
@@ -186,6 +187,14 @@ export async function PATCH(request: Request) {
 
   const input = await request.json();
   const facilityId = typeof input.id === "string" ? input.id : "";
+  if (input.publish === true) {
+    if (!facilityId)
+      return Response.json({ error: "id jest wymagane." }, { status: 400 });
+
+    return Response.json({
+      facility: await publishFacilityToGlobalInPostgres(actorId, facilityId),
+    });
+  }
   const name = getName(input.name);
   const capabilities = getCapabilities(input.capabilities);
   const location = getLocation(input);

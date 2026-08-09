@@ -75,7 +75,10 @@ export function TrainingSessionCard({
   return (
     <article className={styles.trainingSidebar__trainingCard}>
       <div className={styles.trainingSidebar__trainingButtonHeader}>
-        <strong>{training.facilityName || "Nie wskazano"}</strong>
+        <strong>
+          {training.facilityName || "Nie wskazano"}
+          {training.facilityVersion ? ` (v${training.facilityVersion})` : ""}
+        </strong>
         {showDate && (
           <span className={styles.trainingSidebar__pill}>
             {formatTrainingCardDateTime(training.date, training.time)}

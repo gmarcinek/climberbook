@@ -44,6 +44,8 @@ export type TrainingDraftValues = {
   wellbeing: string;
   surfaces: TrainingSurface[];
   facilityName: string;
+  facilityId?: string;
+  facilityVersion?: number;
   weatherSnapshot?: import("@/lib/climbs-db").TrainingWeatherSnapshot;
   ropeWallName: string;
   ropeRoutes: RopeRoute[];

@@ -12,6 +12,7 @@ type TypeaheadOption = {
 type TypeaheadProps = {
   ariaLabel: string;
   value: string;
+  selectedLabel?: string;
   options: TypeaheadOption[];
   placeholder?: string;
   inputClassName?: string;
@@ -25,6 +26,7 @@ function normalize(value: string) {
 export function Typeahead({
   ariaLabel,
   value,
+  selectedLabel,
   options,
   placeholder,
   inputClassName,
@@ -32,7 +34,8 @@ export function Typeahead({
 }: TypeaheadProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const listboxId = useId();
-  const [query, setQuery] = useState(value);
+  const displayValue = selectedLabel ?? value;
+  const [query, setQuery] = useState(displayValue);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const normalizedQuery = normalize(query);
@@ -41,8 +44,8 @@ export function Typeahead({
   );
 
   useEffect(() => {
-    setQuery(value);
-  }, [value]);
+    setQuery(displayValue);
+  }, [displayValue]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -95,7 +98,7 @@ export function Typeahead({
     if (event.key === "Escape") {
       setIsOpen(false);
       setActiveIndex(-1);
-      setQuery(value);
+      setQuery(displayValue);
     }
   }
 

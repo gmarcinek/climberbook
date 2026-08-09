@@ -117,6 +117,7 @@ import {
   importExperimentalPostgresBackup,
   isExperimentalPostgresUiEnabled,
   prepareExperimentalPostgresBackupImport,
+  publishExperimentalFacility,
   saveExperimentalProfile,
   updateExperimentalAscent,
   updateExperimentalAthlete,
@@ -267,6 +268,8 @@ const createTrainingDraft = (
           ? ""
           : (window.localStorage.getItem("climberbook:defaultFacilityName") ??
             ""),
+      facilityId: undefined,
+      facilityVersion: undefined,
       weatherSnapshot: undefined,
       ropeWallName: "",
       ropeRoutes: [],
@@ -319,6 +322,8 @@ const mapTrainingToDraft = (
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
       facilityName: training.facilityName ?? "",
+      facilityId: training.facilityId,
+      facilityVersion: training.facilityVersion,
       weatherSnapshot: training.weatherSnapshot,
       ropeWallName: training.ropeWallName ?? "",
       ropeRoutes: (
@@ -440,6 +445,7 @@ type ClimberbookContextValue = {
       "kind" | "locationLabel" | "latitude" | "longitude"
     >,
   ) => Promise<void>;
+  publishFacility: (facility: FacilityRecord) => Promise<void>;
   deleteFacility: (facility: FacilityRecord) => Promise<void>;
   assignAthleteSection: (
     athlete: AthleteRecord,
@@ -783,6 +789,14 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       );
       return false;
     }
+    const exactFacilityMatches = facilities.filter(
+      (facility) => facility.name === trainingDraft.facilityName,
+    );
+    const selectedFacility = trainingDraft.facilityId
+      ? facilities.find((facility) => facility.id === trainingDraft.facilityId)
+      : editingTrainingId === null && exactFacilityMatches.length === 1
+        ? exactFacilityMatches[0]
+        : undefined;
     const payload = {
       date: trainingDraft.date,
       time: trainingDraft.time,
@@ -834,6 +848,8 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       wellbeing: trainingDraft.wellbeing,
       surfaces: trainingDraft.surfaces,
       facilityName: trainingDraft.facilityName.trim() || undefined,
+      facilityId: selectedFacility?.id,
+      facilityVersion: selectedFacility?.currentVersion,
       weatherSnapshot: trainingDraft.weatherSnapshot,
       ropeWallName: trainingDraft.surfaces.includes("lina")
         ? trainingDraft.ropeWallName.trim() || undefined
@@ -1395,6 +1411,21 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       await refreshData();
     }
   }
+  async function publishFacilityAction(facility: FacilityRecord) {
+    if (
+      !window.confirm(
+        `Opublikować obiekt ${facility.name} w globalnym katalogu?`,
+      )
+    ) {
+      return;
+    }
+    if (!isExperimentalPostgresUiEnabled()) {
+      setStatus("Publikowanie obiektów wymaga aktywnego API PostgreSQL.");
+      return;
+    }
+    await publishExperimentalFacility(facility.id);
+    await refreshData();
+  }
   async function updateFacilityAction(
     facility: FacilityRecord,
     name: string,
@@ -1635,6 +1666,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     deleteSection: deleteSectionAction,
     addFacility: addFacilityAction,
     updateFacility: updateFacilityAction,
+    publishFacility: publishFacilityAction,
     deleteFacility: deleteFacilityAction,
     assignAthleteSection,
     exportAthlete,

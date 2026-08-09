@@ -59,10 +59,15 @@ function getFacilityNameWords(name: string) {
   );
 }
 
-function findFacilityByName(
+function findFacility(
   facilities: FacilityRecord[],
   facilityName: string,
+  facilityId?: string,
 ) {
+  if (facilityId) {
+    const facility = facilities.find((item) => item.id === facilityId);
+    if (facility) return facility;
+  }
   const normalizedName = facilityName.trim().toLocaleLowerCase("pl-PL");
   const exactMatch = facilities.find(
     (facility) =>
@@ -665,12 +670,22 @@ export function TrainingSessionDetails({
   const groups = getSurfaceOptionGroups(surfaceOptions);
   const facilityOptions = Array.from(
     new Map(
-      facilities.map((facility) => [facility.name, { value: facility.name }]),
+      facilities.map((facility) => [
+        facility.id,
+        {
+          value: facility.id,
+          label: `${facility.isOwnedByCurrentUser ? "★ " : ""}${facility.name} (v${facility.currentVersion})`,
+        },
+      ]),
     ).values(),
   ).sort((left, right) => left.value.localeCompare(right.value, "pl"));
   const update = (changes: Partial<TrainingDraftValues>) =>
     onDraftChange({ ...draft, ...changes });
-  const selectedFacility = findFacilityByName(facilities, draft.facilityName);
+  const selectedFacility = findFacility(
+    facilities,
+    draft.facilityName,
+    draft.facilityId,
+  );
   const canFetchWeather =
     selectedFacility?.latitude !== null &&
     selectedFacility?.latitude !== undefined &&
@@ -776,11 +791,21 @@ export function TrainingSessionDetails({
           <Typeahead
             ariaLabel="Szukaj obiektu"
             value={draft.facilityName}
+            selectedLabel={
+              selectedFacility
+                ? `${selectedFacility.isOwnedByCurrentUser ? "★ " : ""}${selectedFacility.name}`
+                : undefined
+            }
             options={facilityOptions}
-            onChange={(facilityName) => {
+            onChange={(facilityId) => {
+              const facility = facilities.find(
+                (item) => item.id === facilityId,
+              );
               setWeatherRequestKey(null);
               update({
-                facilityName,
+                facilityName: facility?.name ?? facilityId,
+                facilityId: facility?.id,
+                facilityVersion: facility?.currentVersion,
                 weatherSnapshot: undefined,
                 ropeWallName: "",
               });

@@ -40,9 +40,10 @@ export function TrainingGradeFields({
   const gradeSurfaces = draft.surfaces.filter(
     (surface) => gradeSurfaceLabels[surface],
   );
-  const ropeWalls =
-    facilities.find((facility) => facility.name === draft.facilityName)
-      ?.capabilities.ropeWalls ?? [];
+  const selectedFacility =
+    facilities.find((facility) => facility.id === draft.facilityId) ??
+    facilities.find((facility) => facility.name === draft.facilityName);
+  const ropeWalls = selectedFacility?.capabilities.ropeWalls ?? [];
   const updateGrades = (surface: TrainingSurface, grades: string[]) =>
     onDraftChange({
       ...draft,

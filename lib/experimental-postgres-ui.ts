@@ -498,6 +498,14 @@ export async function updateExperimentalFacility(
   return response.facility;
 }
 
+export async function publishExperimentalFacility(id: string) {
+  const response = await request<{ facility: FacilityRecord }>(
+    "/api/v1/facilities",
+    { method: "PATCH", body: JSON.stringify({ id, publish: true }) },
+  );
+  return response.facility;
+}
+
 export function deleteExperimentalFacility(id: string) {
   return request("/api/v1/facilities?id=" + encodeURIComponent(id), {
     method: "DELETE",

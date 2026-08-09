@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Star } from "lucide-react";
 import { Button } from "@/components/climberbook/common/Button";
 import { Input, Select } from "@/components/climberbook/common/FormControls";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
@@ -292,7 +293,7 @@ export function FacilitiesModule() {
   }
 
   const privateFacilities = app.facilities.filter(
-    (facility) => facility.visibility === "private",
+    (facility) => facility.isOwnedByCurrentUser,
   );
   const globalFacilities = app.facilities
     .filter((facility) => facility.visibility === "global")
@@ -832,14 +833,53 @@ export function FacilitiesModule() {
                 }}
               >
                 <div>
-                  <strong>{facility.name}</strong>
+                  <strong
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                    }}
+                  >
+                    {facility.name}
+                    <span style={{ color: "var(--muted)", fontSize: "0.8rem" }}>
+                      v{facility.currentVersion}
+                    </span>
+                    {activeTab === "global" &&
+                      facility.isOwnedByCurrentUser && (
+                        <span
+                          aria-label="Twój obiekt"
+                          title="Twój obiekt"
+                          style={{ display: "inline-flex" }}
+                        >
+                          <Star
+                            size={15}
+                            fill="currentColor"
+                            aria-hidden="true"
+                          />
+                        </span>
+                      )}
+                  </strong>
                   <div style={{ color: "var(--muted)", fontSize: "0.86rem" }}>
                     {facility.capabilities.activities.length} aktywności ·{" "}
                     {facility.capabilities.ropeWalls.length} sektorów z liną
                   </div>
+                  {activeTab === "global" && (
+                    <div style={{ color: "var(--muted)", fontSize: "0.86rem" }}>
+                      Utworzono przez {facility.createdBy}
+                    </div>
+                  )}
                 </div>
-                {activeTab === "mine" && (
+                {facility.isOwnedByCurrentUser && (
                   <div style={{ display: "flex", gap: "8px" }}>
+                    {facility.visibility === "private" && (
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        onClick={() => void app.publishFacility(facility)}
+                      >
+                        Opublikuj
+                      </Button>
+                    )}
                     <Button
                       variant="secondary"
                       size="small"

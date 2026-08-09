@@ -16,6 +16,10 @@ Lokalny UI używa API PostgreSQL i bazy Docker na `localhost:5432`. Dane Google 
 
 `npm run db:migrate`, `npm run db:status` i `npm run db:rollback:last` zawsze dotyczą lokalnego Dockera. Produkcję migruje osobny job wdrożeniowy uruchamiany w Azure z sekretem bazy produkcyjnej; projekt nie udostępnia skryptu, który uruchamia migracje produkcyjne z lokalnego komputera.
 
+## Role aplikacji
+
+`app_users.access_role` rozróżnia role `member` oraz `admin`. Migracja `022` przypisuje rolę administratora kontu `grzegorz.marcinek@gmail.com`.
+
 ## Produkcja: Azure Container Apps
 
 Pliki `.env.*` nie są kopiowane do obrazu Docker. Produkcyjny kontener otrzymuje konfigurację w **Environment variables** Container App. Ustaw co najmniej:

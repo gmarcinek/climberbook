@@ -130,6 +130,8 @@ export type TrainingRecord = {
   wellbeing: string;
   surfaces: TrainingSurface[];
   facilityName?: string;
+  facilityId?: string;
+  facilityVersion?: number;
   weatherSnapshot?: TrainingWeatherSnapshot;
   ropeWallName?: string;
   ropeRoutes?: RopeRoute[];
@@ -238,9 +240,12 @@ export type FacilityVisibility = "private" | "global";
 export type FacilityKind = "indoor_wall" | "crag" | "crag_sector";
 export type FacilityRecord = {
   id: string;
+  currentVersion: number;
   name: string;
   capabilities: FacilityCapabilities;
   visibility: FacilityVisibility;
+  createdBy: string;
+  isOwnedByCurrentUser: boolean;
   kind: FacilityKind;
   locationLabel: string;
   latitude: number | null;

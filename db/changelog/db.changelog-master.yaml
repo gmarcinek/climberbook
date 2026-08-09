@@ -39,3 +39,9 @@ databaseChangeLog:
       file: changelog/changes/019-add-facility-location.sql
   - include:
       file: changelog/changes/020-add-training-weather-snapshot.sql
+  - include:
+      file: changelog/changes/021-add-facility-versions.sql
+  - include:
+      file: changelog/changes/022-add-app-user-roles.sql
+  - include:
+      file: changelog/changes/023-grant-facility-version-access.sql
