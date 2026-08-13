@@ -80,7 +80,7 @@ export async function generateMetadata({
   const title = `${share.activity} | Climberbook`;
   const description = `${formatDate(share.date)} - ${formatDuration(share.durationMinutes)}${share.facilityName ? `, ${share.facilityName}` : ""}`;
   const shareUrl = `${origin}/share/${share.id}`;
-  const imageUrl = `${shareUrl}/opengraph-image`;
+  const imageUrl = `${shareUrl}/image`;
 
   return {
     title,

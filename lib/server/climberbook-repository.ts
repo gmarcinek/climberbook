@@ -1936,6 +1936,8 @@ type PublicTrainingShareRow = {
   share_id: string;
   owner_user_id: string;
   training_id: string;
+  image_data: Buffer | null;
+  image_content_type: string | null;
   snapshot: Partial<Omit<PublicTrainingShare, "id" | "createdAt">> &
     Pick<
       PublicTrainingShare,
@@ -2013,7 +2015,7 @@ export async function createPublicTrainingShareInPostgres(
         )
         values ($1, $2, $3, $4::jsonb)
         on conflict (share_id) do nothing
-        returning share_id, owner_user_id, training_id, snapshot, created_at
+        returning share_id, owner_user_id, training_id, image_data, image_content_type, snapshot, created_at
       `,
       [shareId, ownerUserId, trainingId, JSON.stringify(snapshot)],
     );
@@ -2026,7 +2028,7 @@ export async function createPublicTrainingShareInPostgres(
 export async function getPublicTrainingShareFromPostgres(shareId: string) {
   const result = await queryPostgres<PublicTrainingShareRow>(
     `
-      select share_id, owner_user_id, training_id, snapshot, created_at
+      select share_id, owner_user_id, training_id, image_data, image_content_type, snapshot, created_at
       from public_training_shares
       where share_id = $1
     `,
@@ -2067,6 +2069,38 @@ export async function getPublicTrainingShareFromPostgres(shareId: string) {
       : undefined,
     stimulusDimensions: stimulusImpact.dimensions,
   };
+}
+
+export async function savePublicTrainingShareImageInPostgres(
+  ownerUserId: string,
+  shareId: string,
+  imageData: Buffer,
+) {
+  const result = await queryPostgres<{ share_id: string }>(
+    `
+      update public_training_shares
+      set image_data = $3, image_content_type = 'image/jpeg'
+      where share_id = $1 and owner_user_id = $2
+      returning share_id
+    `,
+    [shareId, ownerUserId, imageData],
+  );
+  if (!result.rows[0])
+    throw new Error("Nie znaleziono linku należącego do użytkownika.");
+}
+
+export async function getPublicTrainingShareImageFromPostgres(shareId: string) {
+  const result = await queryPostgres<{
+    image_data: Buffer | null;
+    image_content_type: string | null;
+  }>(
+    `select image_data, image_content_type from public_training_shares where share_id = $1`,
+    [shareId],
+  );
+  const image = result.rows[0];
+  return image?.image_data && image.image_content_type
+    ? { data: image.image_data, contentType: image.image_content_type }
+    : null;
 }
 
 export async function listClimbsFromPostgres(
