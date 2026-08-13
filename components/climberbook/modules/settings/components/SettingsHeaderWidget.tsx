@@ -10,7 +10,7 @@ export function SettingsHeaderWidget({
   accountEmail,
 }: SettingsHeaderWidgetProps) {
   return (
-    <div style={moduleIntroStyle}>
+    <div style={{ ...moduleIntroStyle, marginTop: "1.5rem" }}>
       <div>
         <p style={eyebrowStyle}>{meta.eyebrow}</p>
         <h1 style={pageTitleStyle}>{meta.title}</h1>
