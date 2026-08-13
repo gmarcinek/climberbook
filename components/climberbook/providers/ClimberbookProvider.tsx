@@ -1936,6 +1936,7 @@ export function useAnalyticsModule() {
     activeAthleteId,
     ascents,
     createGoal,
+    updateGoal,
     deleteGoal,
     facilities,
     goals,

@@ -196,35 +196,6 @@ export default async function PublicTrainingSharePage({
               </div>
             ) : null}
           </dl>
-          {false && share.ropeRoutes?.length ? (
-            <section className={styles.chartSection}>
-              <div className={styles.chartHeader}>
-                <p className={styles.eyebrow}>Drogi</p>
-                <h3>Objętość treningowa</h3>
-                <p className={styles.chartDescription}>
-                  Procent treningowego przewspinania drogi.
-                </p>
-              </div>
-              <div className={styles.routeChart}>
-                {share.ropeRoutes.map((route, index) => (
-                  <div key={`${route.ropeWallName}-${route.grade}-${index}`}>
-                    <span>
-                      {route.ropeWallName} · {route.grade} · Ukończono w
-                      zakresie: {Math.round(route.completed * 100)}%
-                    </span>
-                    <div>
-                      <i
-                        style={{
-                          background: getCompletionColor(route.completed),
-                          width: `${Math.min(100, Math.max(0, route.completed * 100))}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
           {share.surfaces.length ? (
             <section className={styles.chartSection}>
               <div className={styles.chartHeader}>

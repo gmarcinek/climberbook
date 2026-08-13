@@ -360,7 +360,7 @@ export function GoalsPanelWidget({
       targetValue,
       targetGrade: kind === "route_grade" ? draft.targetGrade : undefined,
       startDate: today,
-      status: "active",
+      status: "active" as const,
     };
     try {
       const activeGoal = activeGoals.get(kind);
