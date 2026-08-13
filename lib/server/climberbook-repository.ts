@@ -18,6 +18,10 @@ import type {
 } from "@/lib/climbs-db";
 import { createTrainingExportMetadata } from "@/lib/climbs-db";
 import {
+  getTrainingStimulusImpact,
+  getTrainingStimulusScale,
+} from "@/components/climberbook/modules/analytics/components/TrainingLoadModel";
+import {
   getObjectiveStimulusActivities,
   getStimulusCatalog,
 } from "@/lib/training-stimulus";
@@ -1888,6 +1892,9 @@ const publicTrainingSurfaceLabels: Record<
 
 function createPublicTrainingShareSnapshot(
   training: TrainingRecord,
+  stimulusNormPercent: number | undefined,
+  stimulusLabel: string | undefined,
+  stimulusDimensions: PublicTrainingShare["stimulusDimensions"],
 ): Omit<PublicTrainingShare, "id" | "createdAt"> {
   const grades = Object.values(training.difficultyBySurface ?? {})
     .flatMap((value) => value?.split(",") ?? [])
@@ -1910,6 +1917,9 @@ function createPublicTrainingShareSnapshot(
     ageYears: training.ageYears,
     caloriesBurned: Math.max(training.caloriesBurned, 0),
     attemptsCount: Math.max(training.attemptsCount, 0),
+    stimulusNormPercent,
+    stimulusLabel,
+    stimulusDimensions,
     facilityName: training.facilityName?.trim() || undefined,
     surfaces: training.surfaces,
     grades,
@@ -1924,6 +1934,8 @@ function createPublicTrainingShareSnapshot(
 
 type PublicTrainingShareRow = {
   share_id: string;
+  owner_user_id: string;
+  training_id: string;
   snapshot: Partial<Omit<PublicTrainingShare, "id" | "createdAt">> &
     Pick<
       PublicTrainingShare,
@@ -1956,6 +1968,7 @@ function mapPublicTrainingShare(
 export async function createPublicTrainingShareInPostgres(
   ownerUserId: string,
   trainingId: string,
+  stimulusLabel?: string,
 ) {
   const trainingResult = await queryPostgres<TrainingRow>(
     `
@@ -1970,7 +1983,27 @@ export async function createPublicTrainingShareInPostgres(
   if (!training)
     throw new Error("Nie znaleziono treningu należącego do użytkownika.");
 
-  const snapshot = createPublicTrainingShareSnapshot(mapTraining(training));
+  const mappedTraining = mapTraining(training);
+  const [referenceTrainings, facilities] = await Promise.all([
+    listTrainingsFromPostgres(ownerUserId, mappedTraining.athleteId),
+    listFacilitiesFromPostgres(ownerUserId),
+  ]);
+  const stimulusScale = getTrainingStimulusScale(
+    mappedTraining,
+    referenceTrainings,
+    facilities,
+  );
+  const stimulusImpact = getTrainingStimulusImpact(
+    mappedTraining,
+    facilities,
+    referenceTrainings,
+  );
+  const snapshot = createPublicTrainingShareSnapshot(
+    mappedTraining,
+    stimulusScale ? Math.round(stimulusScale.ratio * 100) : undefined,
+    stimulusLabel,
+    stimulusImpact.dimensions,
+  );
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const shareId = randomBytes(9).toString("base64url");
     const result = await queryPostgres<PublicTrainingShareRow>(
@@ -1980,7 +2013,7 @@ export async function createPublicTrainingShareInPostgres(
         )
         values ($1, $2, $3, $4::jsonb)
         on conflict (share_id) do nothing
-        returning share_id, snapshot, created_at
+        returning share_id, owner_user_id, training_id, snapshot, created_at
       `,
       [shareId, ownerUserId, trainingId, JSON.stringify(snapshot)],
     );
@@ -1993,13 +2026,47 @@ export async function createPublicTrainingShareInPostgres(
 export async function getPublicTrainingShareFromPostgres(shareId: string) {
   const result = await queryPostgres<PublicTrainingShareRow>(
     `
-      select share_id, snapshot, created_at
+      select share_id, owner_user_id, training_id, snapshot, created_at
       from public_training_shares
       where share_id = $1
     `,
     [shareId],
   );
-  return result.rows[0] ? mapPublicTrainingShare(result.rows[0]) : null;
+  const row = result.rows[0];
+  if (!row) return null;
+
+  const share = mapPublicTrainingShare(row);
+  if (
+    share.stimulusNormPercent !== undefined &&
+    share.stimulusDimensions !== undefined
+  )
+    return share;
+
+  const training = await getTrainingFromPostgres(
+    row.owner_user_id,
+    row.training_id,
+  );
+  const [referenceTrainings, facilities] = await Promise.all([
+    listTrainingsFromPostgres(row.owner_user_id, training.athleteId),
+    listFacilitiesFromPostgres(row.owner_user_id),
+  ]);
+  const stimulusScale = getTrainingStimulusScale(
+    training,
+    referenceTrainings,
+    facilities,
+  );
+  const stimulusImpact = getTrainingStimulusImpact(
+    training,
+    facilities,
+    referenceTrainings,
+  );
+  return {
+    ...share,
+    stimulusNormPercent: stimulusScale
+      ? Math.round(stimulusScale.ratio * 100)
+      : undefined,
+    stimulusDimensions: stimulusImpact.dimensions,
+  };
 }
 
 export async function listClimbsFromPostgres(

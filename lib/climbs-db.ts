@@ -168,6 +168,9 @@ export type PublicTrainingShare = {
   ageYears: number;
   caloriesBurned: number;
   attemptsCount: number;
+  stimulusNormPercent?: number;
+  stimulusLabel?: string;
+  stimulusDimensions?: FatigueDimensions;
   facilityName?: string;
   surfaces: TrainingSurface[];
   grades: string[];

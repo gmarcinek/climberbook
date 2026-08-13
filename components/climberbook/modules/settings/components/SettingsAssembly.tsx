@@ -45,6 +45,7 @@ import { ProfileMetricsWidget } from "./ProfileMetricsWidget";
 import { SectionManagementWidget } from "./SectionManagementWidget";
 import { SettingsHeaderWidget } from "./SettingsHeaderWidget";
 import { SettingsTabsWidget } from "./SettingsTabsWidget";
+import { SharingConfigWidget } from "./SharingConfigWidget";
 import { TeamRosterSettingsWidget } from "./TeamRosterSettingsWidget";
 import { ThemeSelector } from "@/components/climberbook/providers/ThemeSelector";
 import styles from "./SettingsAssembly.module.css";
@@ -355,6 +356,11 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
               onAddSection={openSectionForm}
               onDeleteSection={onDeleteSection}
             />
+          </div>
+        )}
+        {settingsTab === "sharing" && (
+          <div style={settingsMainColumnStyle}>
+            <SharingConfigWidget />
           </div>
         )}
         {settingsTab === "zaawansowane" && (

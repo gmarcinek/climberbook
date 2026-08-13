@@ -21,6 +21,12 @@ export async function POST(request: Request) {
     typeof (input as { trainingId?: unknown }).trainingId === "string"
       ? (input as { trainingId: string }).trainingId
       : "";
+  const stimulusLabel =
+    input &&
+    typeof input === "object" &&
+    typeof (input as { stimulusLabel?: unknown }).stimulusLabel === "string"
+      ? (input as { stimulusLabel: string }).stimulusLabel.trim().slice(0, 72)
+      : undefined;
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
       trainingId,
@@ -32,6 +38,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const share = await createPublicTrainingShareInPostgres(actorId, trainingId);
+  const share = await createPublicTrainingShareInPostgres(
+    actorId,
+    trainingId,
+    stimulusLabel || undefined,
+  );
   return Response.json({ shareId: share.id }, { status: 201 });
 }

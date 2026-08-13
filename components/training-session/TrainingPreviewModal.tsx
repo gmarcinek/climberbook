@@ -25,6 +25,10 @@ import {
 } from "./training-session.utils";
 import { TrainingGradeSummary } from "./TrainingSessionCards";
 import { TrainingWeatherConditionMap } from "./TrainingSessionDetails";
+import {
+  getStimulusSharingLabel,
+  readStimulusSharingConfig,
+} from "@/lib/stimulus-sharing-config";
 
 type Props = {
   training: TrainingRecord;
@@ -130,10 +134,22 @@ export function TrainingPreviewModal({
   async function shareTraining() {
     setShareStatus("sharing");
     try {
+      const stimulusScale = getTrainingStimulusScale(
+        training,
+        trainings,
+        facilities,
+      );
+      const sharingConfig = readStimulusSharingConfig();
       const response = await fetch("/api/v1/training-shares", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ trainingId: training.id }),
+        body: JSON.stringify({
+          trainingId: training.id,
+          stimulusLabel: getStimulusSharingLabel(
+            stimulusScale ? Math.round(stimulusScale.ratio * 100) : undefined,
+            sharingConfig.labels,
+          ),
+        }),
       });
       const payload: unknown = await response.json().catch(() => null);
       const shareId =

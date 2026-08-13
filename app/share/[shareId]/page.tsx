@@ -80,8 +80,7 @@ export async function generateMetadata({
   const title = `${share.activity} | Climberbook`;
   const description = `${formatDate(share.date)} - ${formatDuration(share.durationMinutes)}${share.facilityName ? `, ${share.facilityName}` : ""}`;
   const shareUrl = `${origin}/share/${share.id}`;
-  const chartImageUrl = `${shareUrl}/session-chart-image`;
-  const conditionsImageUrl = `${shareUrl}/conditions-image`;
+  const imageUrl = `${shareUrl}/opengraph-image`;
 
   return {
     title,
@@ -93,21 +92,13 @@ export async function generateMetadata({
       url: shareUrl,
       title,
       description,
-      images: [
-        { url: chartImageUrl, width: 1200, height: 630, alt: "Wykres sesji" },
-        {
-          url: conditionsImageUrl,
-          width: 1200,
-          height: 630,
-          alt: "Warunki zewnętrzne",
-        },
-      ],
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [chartImageUrl],
+      images: [imageUrl],
     },
   };
 }

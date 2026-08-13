@@ -166,7 +166,7 @@ export type AthleteFormDraft = {
   heightCm: string;
   weightKg: string;
 };
-export type SettingsTab = "profil" | "zespol" | "zaawansowane";
+export type SettingsTab = "profil" | "sharing" | "zespol" | "zaawansowane";
 
 const emptyAthleteForm = (): AthleteFormDraft => ({
   nick: "",

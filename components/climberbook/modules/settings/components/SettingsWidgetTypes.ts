@@ -28,7 +28,7 @@ export type AthleteFormDraft = {
   heightCm: string;
   weightKg: string;
 };
-export type SettingsTab = "profil" | "zespol" | "zaawansowane";
+export type SettingsTab = "profil" | "sharing" | "zespol" | "zaawansowane";
 export type ModuleMeta = {
   title: string;
   eyebrow: string;
