@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { Power } from "lucide-react";
 import {
   moduleConfig,
   type ModuleKey,
@@ -22,7 +23,8 @@ type MainHeaderProps = {
 
 export function MainHeader({ activeModule }: MainHeaderProps) {
   const { athletes, activeAthleteId, setActiveAthleteId } = useClimberbook();
-  const { isMobileHeader, width } = useViewport();
+  const { width } = useViewport();
+  const isMobileHeader = width > 0 && width < 1024;
   const router = useRouter();
   const isTwoRowHeader = !isMobileHeader && width > 0 && width < 900;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -152,11 +154,18 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
             >
               {navLinks}
               <Button
-                className={styles.logoutButton}
+                className={[
+                  styles.logoutButton,
+                  width < 1200 && styles.logoutButtonIcon,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 onClick={() => void signOut({ callbackUrl: "/login" })}
                 variant="quadrary"
+                aria-label="Wyloguj"
+                title="Wyloguj"
               >
-                Logout
+                {width < 1200 ? <Power aria-hidden size={20} /> : "Logout"}
               </Button>
             </nav>
           ) : null}

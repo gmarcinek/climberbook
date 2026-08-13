@@ -84,6 +84,7 @@ import {
   type FacilityRecord,
   type FullDatabaseExportOptions,
   type FullDatabaseImportOptions,
+  type GoalRecord,
   type SectionRecord,
   type TrainingRecord,
   type TrainingSurface,
@@ -98,6 +99,7 @@ import {
   createExperimentalAscent,
   createExperimentalAthlete,
   createExperimentalFacility,
+  createExperimentalGoal,
   createExperimentalSection,
   createExperimentalTraining,
   createExperimentalWeightEntry,
@@ -105,6 +107,7 @@ import {
   deleteExperimental8aNuAscents,
   deleteExperimentalAthlete,
   deleteExperimentalFacility,
+  deleteExperimentalGoal,
   deleteExperimentalSection,
   deleteExperimentalTraining,
   deleteExperimentalWeightEntry,
@@ -120,6 +123,7 @@ import {
   publishExperimentalFacility,
   saveExperimentalProfile,
   updateExperimentalAscent,
+  updateExperimentalGoal,
   updateExperimentalAthlete,
   updateExperimentalFacility,
   updateExperimentalSection,
@@ -356,6 +360,7 @@ type ClimberbookContextValue = {
   ascents: AscentRecord[];
   weightEntries: WeightEntryRecord[];
   teamWeightEntries: WeightEntryRecord[];
+  goals: GoalRecord[];
   selectedDate: string | null;
   trainingRangeStart: string;
   settingsTab: SettingsTab;
@@ -404,6 +409,13 @@ type ClimberbookContextValue = {
     entryToUpdate?: WeightEntryRecord | null,
   ) => Promise<boolean>;
   deleteWeightEntry: (entry: WeightEntryRecord) => Promise<void>;
+  createGoal: (
+    input: Omit<GoalRecord, "id" | "createdAt" | "updatedAt">,
+  ) => Promise<void>;
+  updateGoal: (
+    input: Omit<GoalRecord, "createdAt" | "updatedAt">,
+  ) => Promise<void>;
+  deleteGoal: (goal: GoalRecord) => Promise<void>;
   submitAscent: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   previewAscentsCsv: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   confirmAscentsCsvImport: (
@@ -484,6 +496,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const [teamTrainings, setTeamTrainings] = useState<TrainingRecord[]>([]);
   const [ascents, setAscents] = useState<AscentRecord[]>([]);
   const [weightEntries, setWeightEntries] = useState<WeightEntryRecord[]>([]);
+  const [goals, setGoals] = useState<GoalRecord[]>([]);
   const [teamWeightEntries, setTeamWeightEntries] = useState<
     WeightEntryRecord[]
   >([]);
@@ -591,6 +604,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         setEditingAscentId(null);
         setProfileDraft(createUserProfileDraft());
         setWeightEntries([]);
+        setGoals([]);
         return;
       }
       if (athleteId !== activeAthleteId) {
@@ -606,6 +620,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       );
       const weightItems = snapshot.weightEntries.filter(
         (entry) => entry.athleteId === athleteId,
+      );
+      const goalItems = snapshot.goals.filter(
+        (goal) => goal.athleteId === athleteId,
       );
       const profileRecord = snapshot.profiles.find(
         (profile) => profile.athleteId === athleteId,
@@ -623,6 +640,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           .slice()
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
       );
+      setGoals(goalItems);
       setWeightEntryDraft(
         createWeightEntryDraft(
           today,
@@ -669,6 +687,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       setEditingAscentId(null);
       setProfileDraft(createUserProfileDraft());
       setWeightEntries([]);
+      setGoals([]);
       return;
     }
     if (athleteId !== activeAthleteId) {
@@ -694,6 +713,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         .slice()
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     );
+    setGoals([]);
     setWeightEntryDraft(
       createWeightEntryDraft(
         today,
@@ -962,6 +982,28 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       await deleteExperimentalWeightEntry(entry.id);
     else await deleteWeightEntry(entry.id);
     await refreshData();
+  }
+  async function createGoal(
+    input: Omit<GoalRecord, "id" | "createdAt" | "updatedAt">,
+  ) {
+    if (!isExperimentalPostgresUiEnabled()) return;
+    await createExperimentalGoal(input);
+    await refreshData();
+    showSuccessToast("Cel został dodany.");
+  }
+  async function updateGoal(
+    input: Omit<GoalRecord, "createdAt" | "updatedAt">,
+  ) {
+    if (!isExperimentalPostgresUiEnabled()) return;
+    await updateExperimentalGoal(input);
+    await refreshData();
+    showSuccessToast("Cel został zapisany.");
+  }
+  async function deleteGoal(goal: GoalRecord) {
+    if (!isExperimentalPostgresUiEnabled()) return;
+    await deleteExperimentalGoal(goal.id);
+    await refreshData();
+    showSuccessToast("Cel został usunięty.");
   }
   async function submitAscent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1580,6 +1622,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     ascents,
     weightEntries,
     teamWeightEntries,
+    goals,
     selectedDate,
     trainingRangeStart,
     settingsTab,
@@ -1639,6 +1682,9 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     deleteTraining: deleteTrainingAction,
     submitWeightEntry,
     deleteWeightEntry: deleteWeightEntryAction,
+    createGoal,
+    updateGoal,
+    deleteGoal,
     submitAscent,
     previewAscentsCsv,
     confirmAscentsCsvImport,
@@ -1763,8 +1809,13 @@ export function useClimberbook() {
 }
 export function useTrainingModule() {
   const {
+    activeAthleteId,
     ascents,
+    createGoal,
+    updateGoal,
+    deleteGoal,
     editingTrainingId,
+    goals,
     editingAscentId,
     editTraining,
     deleteTraining,
@@ -1790,8 +1841,13 @@ export function useTrainingModule() {
     weightEntryDraft,
   } = useClimberbook();
   return {
+    activeAthleteId,
     ascents,
+    createGoal,
+    updateGoal,
+    deleteGoal,
     editingTrainingId,
+    goals,
     editTraining,
     deleteTraining,
     deleteWeightEntry,
@@ -1862,8 +1918,13 @@ export function useReportsModule() {
 }
 export function useAnalyticsModule() {
   const {
+    activeAthleteId,
     ascents,
+    createGoal,
+    updateGoal,
+    deleteGoal,
     facilities,
+    goals,
     profileDraft,
     selectedDate,
     today,
@@ -1872,8 +1933,12 @@ export function useAnalyticsModule() {
     weightEntries,
   } = useClimberbook();
   return {
+    activeAthleteId,
     ascents,
+    createGoal,
+    deleteGoal,
     facilities,
+    goals,
     profileDraft,
     selectedDate,
     today,

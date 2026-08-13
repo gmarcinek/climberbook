@@ -41,6 +41,12 @@ export function TrainingModule() {
       averageWeight={stats.averageWeight}
       totalTrainingTime={stats.totalTrainingTime}
       totalCalories={stats.totalCalories}
+      athleteId={app.activeAthleteId}
+      goals={app.goals}
+      ascents={app.ascents}
+      onCreateGoal={app.createGoal}
+      onUpdateGoal={app.updateGoal}
+      onDeleteGoal={app.deleteGoal}
       weightChartEntries={stats.weightChartEntries}
       trainings={app.trainings}
       chartRange={stats.chartRange}

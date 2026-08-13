@@ -6,6 +6,7 @@ import type {
   ClimberbookFullDatabaseBackup,
   ClimbRecord,
   FacilityRecord,
+  GoalRecord,
   FullDatabaseImportOptions,
   FullDatabaseExportOptions,
   SectionRecord,
@@ -24,6 +25,7 @@ type PostgresSnapshot = {
   ascents: AscentRecord[];
   profiles: UserProfileRecord[];
   weightEntries: WeightEntryRecord[];
+  goals: GoalRecord[];
 };
 
 const testUserId =
@@ -367,6 +369,32 @@ export async function updateExperimentalWeightEntryRecord(
 
 export function deleteExperimentalWeightEntry(id: number) {
   return request("/api/v1/weight-entries?id=" + id, { method: "DELETE" });
+}
+
+export async function createExperimentalGoal(
+  input: Omit<GoalRecord, "id" | "createdAt" | "updatedAt">,
+) {
+  const response = await request<{ goal: GoalRecord }>("/api/v1/goals", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return response.goal;
+}
+
+export async function updateExperimentalGoal(
+  input: Omit<GoalRecord, "createdAt" | "updatedAt">,
+) {
+  const response = await request<{ goal: GoalRecord }>("/api/v1/goals", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return response.goal;
+}
+
+export function deleteExperimentalGoal(id: string) {
+  return request("/api/v1/goals?id=" + encodeURIComponent(id), {
+    method: "DELETE",
+  });
 }
 
 export async function createExperimentalAscent(

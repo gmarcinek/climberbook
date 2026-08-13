@@ -1,0 +1,275 @@
+.page {
+  min-height: 100vh;
+  padding: 0;
+  background: #151923;
+}
+
+.drawer {
+  width: 100%;
+  min-height: 100vh;
+  color: #fffaf0;
+  background: #151923;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 66px;
+  padding: 12px 24px;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+}
+
+.topBar p {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.brand {
+  letter-spacing: 0.12em;
+}
+
+.register,
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 4px;
+  color: #fffaf0;
+  background: rgb(255 255 255 / 10%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.content {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+
+.drawerHeader {
+  display: flex;
+  gap: 16px;
+}
+
+.eyebrow,
+.details dt,
+.weatherDetails dt {
+  margin: 0;
+  color: #d16d3f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.date {
+  margin: 0 0 8px;
+  color: #c8cec8;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.drawerHeader h1 {
+  margin: 8px 0 0;
+  font-family: Georgia, serif;
+  font-size: 1.55rem;
+  line-height: 1.15;
+}
+
+.drawerHeader h2 {
+  margin: 4px 0 0;
+  color: #c8cec8;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
+  margin: 0;
+}
+
+.details > div,
+.weatherDetails > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.details dd,
+.weatherDetails dd {
+  margin: 0;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.activityDetails,
+.gradeGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.activityDetails {
+  margin: 0;
+}
+
+.activityDetails > span:not(.gradeGroup) {
+  color: #c8cec8;
+  font-size: 0.82rem;
+}
+
+.gradeGroup {
+  margin-top: 4px;
+}
+
+.gradeGroup em {
+  color: #c8cec8;
+  font-size: 0.74rem;
+  font-style: normal;
+}
+
+.detailsFull {
+  grid-column: 1 / -1;
+}
+
+.caloriesValue {
+  font-weight: 700;
+}
+
+.caloriesTrack,
+.gradeBarTrack,
+.routeChart > div > div {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 13%);
+}
+
+.caloriesTrack > div {
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #d16d3f, #edbc70);
+}
+
+.chartSection {
+  display: grid;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgb(255 255 255 / 14%);
+}
+
+.shareImage {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  background: #151923;
+}
+
+.chartHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.chartHeader h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.chartDescription {
+  margin: 0;
+  color: #c8cec8;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.routeChart {
+  display: grid;
+  gap: 12px;
+}
+
+.routeChart span {
+  color: #c8cec8;
+  font-size: 0.78rem;
+}
+
+.gradeChips {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gradeChips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+}
+
+.routeChart i {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: #5cbd8b;
+}
+
+.routeChart > div {
+  display: grid;
+  gap: 6px;
+}
+
+.weatherDetails {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.previewChart,
+.weatherMap {
+  width: 100%;
+}
+
+.weatherMap :global(svg) {
+  width: 100%;
+  height: auto;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.footer > span {
+  color: #c8cec8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+@media (min-width: 720px) {
+  .page {
+    padding: 32px;
+    background: #0c1018;
+  }
+
+  .drawer {
+    width: min(100%, 520px);
+    min-height: calc(100vh - 64px);
+    margin: 0 auto;
+    box-shadow: 0 24px 64px rgb(0 0 0 / 38%);
+  }
+}

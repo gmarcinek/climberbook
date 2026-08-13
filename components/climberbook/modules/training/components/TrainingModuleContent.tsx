@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Button } from "@/components/climberbook/common/Button";
 import type { WeightEntryDraft } from "@/components/climberbook/common/training";
 import {
   mobileDrawerSheetStyle,
@@ -8,10 +9,13 @@ import {
 } from "@/components/climberbook/common/styles";
 import type { TrainingDraftValues } from "@/components/training-calendar/TrainingSidebar";
 import type {
+  AscentRecord,
+  GoalRecord,
   TrainingRecord,
   TrainingSurface,
   WeightEntryRecord,
 } from "@/lib/climbs-db";
+import { GoalsPanelWidget } from "@/components/climberbook/modules/analytics/components/GoalsPanelWidget";
 import { TrainingAnalyticsWidget } from "./TrainingAnalyticsWidget";
 import {
   TrainingCalendarWidget,
@@ -57,6 +61,16 @@ type TrainingModuleContentProps = {
   averageWeight: string;
   totalTrainingTime: number;
   totalCalories: number;
+  athleteId: string | null;
+  goals: GoalRecord[];
+  ascents: AscentRecord[];
+  onCreateGoal: (
+    input: Omit<GoalRecord, "id" | "createdAt" | "updatedAt">,
+  ) => Promise<void>;
+  onUpdateGoal: (
+    input: Omit<GoalRecord, "createdAt" | "updatedAt">,
+  ) => Promise<void>;
+  onDeleteGoal: (goal: GoalRecord) => Promise<void>;
   weightChartEntries: WeightEntryRecord[];
   trainings: TrainingRecord[];
   chartRange: { start: string; end: string };
@@ -103,6 +117,12 @@ export function TrainingModuleContent({
   averageWeight,
   totalTrainingTime,
   totalCalories,
+  athleteId,
+  goals,
+  ascents,
+  onCreateGoal,
+  onUpdateGoal,
+  onDeleteGoal,
   weightChartEntries,
   trainings,
   chartRange,
@@ -170,6 +190,20 @@ export function TrainingModuleContent({
       onDeleteTraining={onDeleteTraining}
       onResetSelection={onResetSelection}
       onCancelEdit={onCancelEdit}
+    />
+  );
+  const goalsPanel = (
+    <GoalsPanelWidget
+      embedded
+      athleteId={athleteId}
+      goals={goals}
+      trainings={trainings}
+      ascents={ascents}
+      weightEntries={weightChartEntries}
+      today={today}
+      onCreateGoal={onCreateGoal}
+      onUpdateGoal={onUpdateGoal}
+      onDeleteGoal={onDeleteGoal}
     />
   );
   const drawerSheetStyle = {
@@ -288,6 +322,10 @@ export function TrainingModuleContent({
               onResetSelection={onResetSelection}
               onEditTraining={onEditTraining}
               onPreviewTraining={openTrainingPreview}
+              secondaryTab={{
+                label: "Cele",
+                content: goalsPanel,
+              }}
             />
           </div>
         ) : null}
@@ -300,6 +338,10 @@ export function TrainingModuleContent({
               onAddTraining={() => onSelectDate(today)}
               onEditTraining={onEditTraining}
               onPreviewTraining={openTrainingPreview}
+              secondaryTab={{
+                label: "Cele",
+                content: goalsPanel,
+              }}
             />
           </div>
         ) : null}

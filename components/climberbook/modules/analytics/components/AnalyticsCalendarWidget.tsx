@@ -22,11 +22,15 @@ import type { TrainingRecord } from "@/lib/climbs-db";
 const TWO_MONTHS_MIN_WIDTH = 640;
 
 export function AnalyticsCalendarWidget({
+  isMobileLayout,
+  isWideDesktop,
   period,
   today,
   trainings,
   onVisibleRangeChange,
 }: {
+  isMobileLayout: boolean;
+  isWideDesktop: boolean;
   period: { start: string; end: string };
   today: string;
   trainings: TrainingRecord[];
@@ -34,10 +38,10 @@ export function AnalyticsCalendarWidget({
 }) {
   const { selectedDate, setSelectedDate } = useSelectedDates();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const previousPeriodStartRef = useRef(period.start);
+  const previousPeriodEndRef = useRef(period.end);
   const suppressRangeSyncRef = useRef(false);
   const [anchorMonthStart, setAnchorMonthStart] = useState(() =>
-    getMonthStart(period.start),
+    getMonthStart(today),
   );
   const [monthCount, setMonthCount] = useState(1);
   const trainingsByDate = useMemo(() => {
@@ -53,18 +57,22 @@ export function AnalyticsCalendarWidget({
   }, [trainings]);
 
   useEffect(() => {
-    if (period.start === previousPeriodStartRef.current) {
+    if (isMobileLayout) {
       return;
     }
 
-    previousPeriodStartRef.current = period.start;
-    const nextAnchorMonthStart = getMonthStart(period.start);
+    if (period.end === previousPeriodEndRef.current) {
+      return;
+    }
+
+    previousPeriodEndRef.current = period.end;
+    const nextAnchorMonthStart = getMonthStart(period.end);
 
     if (nextAnchorMonthStart !== anchorMonthStart) {
       suppressRangeSyncRef.current = true;
       setAnchorMonthStart(nextAnchorMonthStart);
     }
-  }, [anchorMonthStart, period.start]);
+  }, [anchorMonthStart, isMobileLayout, period.end]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -72,7 +80,15 @@ export function AnalyticsCalendarWidget({
     if (!container) return;
 
     const updateMonthCount = (width: number) => {
-      setMonthCount(width >= TWO_MONTHS_MIN_WIDTH ? 2 : 1);
+      setMonthCount(
+        isMobileLayout
+          ? 1
+          : isWideDesktop
+            ? 3
+            : width >= TWO_MONTHS_MIN_WIDTH
+              ? 2
+              : 1,
+      );
     };
 
     updateMonthCount(container.getBoundingClientRect().width);
@@ -84,7 +100,7 @@ export function AnalyticsCalendarWidget({
 
     resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [isMobileLayout, isWideDesktop]);
 
   useEffect(() => {
     if (suppressRangeSyncRef.current) {
@@ -93,21 +109,22 @@ export function AnalyticsCalendarWidget({
     }
 
     onVisibleRangeChange({
-      start: anchorMonthStart,
-      end: addDays(addMonths(anchorMonthStart, monthCount), -1),
+      start: addMonths(anchorMonthStart, 1 - monthCount),
+      end: addDays(addMonths(anchorMonthStart, 1), -1),
     });
   }, [anchorMonthStart, monthCount, onVisibleRangeChange]);
 
-  const anchorDate = toDate(anchorMonthStart);
-  const finalMonthDate = toDate(addMonths(anchorMonthStart, monthCount - 1));
+  const firstMonthStart = addMonths(anchorMonthStart, 1 - monthCount);
+  const firstMonthDate = toDate(firstMonthStart);
+  const finalMonthDate = toDate(anchorMonthStart);
   const monthLabel =
     monthCount === 1
-      ? getMonthLabel(anchorDate.getMonth())
-      : `${getMonthLabel(anchorDate.getMonth())} - ${getMonthLabel(finalMonthDate.getMonth())}`;
+      ? getMonthLabel(finalMonthDate.getMonth())
+      : `${getMonthLabel(firstMonthDate.getMonth())} - ${getMonthLabel(finalMonthDate.getMonth())}`;
   const yearLabel =
-    anchorDate.getFullYear() === finalMonthDate.getFullYear()
-      ? String(anchorDate.getFullYear())
-      : `${anchorDate.getFullYear()} - ${finalMonthDate.getFullYear()}`;
+    firstMonthDate.getFullYear() === finalMonthDate.getFullYear()
+      ? String(finalMonthDate.getFullYear())
+      : `${firstMonthDate.getFullYear()} - ${finalMonthDate.getFullYear()}`;
 
   return (
     <Panel>
@@ -164,10 +181,15 @@ export function AnalyticsCalendarWidget({
       </div>
       <div
         ref={containerRef}
-        style={{ margin: "0 auto", maxWidth: 840, minWidth: 0, width: "100%" }}
+        style={{
+          margin: "0 auto",
+          maxWidth: monthCount === 3 ? 1320 : 840,
+          minWidth: 0,
+          width: "100%",
+        }}
       >
         <TrainingCalendar
-          anchorMonthStart={anchorMonthStart}
+          anchorMonthStart={firstMonthStart}
           monthCount={monthCount}
           visibleColumns={monthCount}
           useScrollPane={false}

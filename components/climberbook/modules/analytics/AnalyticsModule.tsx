@@ -19,8 +19,8 @@ type AnalyticsPeriod = {
 
 export function AnalyticsModule() {
   const app = useAnalyticsModule();
-  const { isMobileChartLayout, width } = useViewport();
-  const isMobileAnalyticsLayout = width === 0 || isMobileChartLayout;
+  const { isMobileTrainingLayout, width } = useViewport();
+  const isMobileAnalyticsLayout = width === 0 || isMobileTrainingLayout;
   const moduleMeta = moduleConfig.find((module) => module.key === "analityka")!;
   const [period, setPeriod] = useState<AnalyticsPeriod | null>(null);
   const [activePeriodPreset, setActivePeriodPreset] = useState<
@@ -33,7 +33,7 @@ export function AnalyticsModule() {
     }
 
     setPeriod({ start: addDays(app.today, -29), end: app.today });
-  }, [app.today, isMobileChartLayout, period, width]);
+  }, [app.today, isMobileAnalyticsLayout, period, width]);
 
   const activePeriod = period ?? {
     start: addDays(app.today, -29),
@@ -116,6 +116,7 @@ export function AnalyticsModule() {
     <AnalyticsModuleContent
       moduleMeta={moduleMeta}
       isMobileChartLayout={isMobileAnalyticsLayout}
+      isWideDesktop={width >= 1920}
       period={activePeriod}
       activePeriodPreset={activePeriodPreset}
       onPreviousPeriod={() => shiftPeriod(-1)}
@@ -123,6 +124,13 @@ export function AnalyticsModule() {
       onCalendarRangeChange={setCalendarRange}
       onPeriodPreset={setPreset}
       facilities={app.facilities}
+      athleteId={app.activeAthleteId}
+      goals={app.goals}
+      ascents={app.ascents}
+      weightEntries={app.weightEntries}
+      onCreateGoal={app.createGoal}
+      onUpdateGoal={app.updateGoal}
+      onDeleteGoal={app.deleteGoal}
       allTrainings={app.trainings}
       trainings={periodTrainings}
       today={app.today}

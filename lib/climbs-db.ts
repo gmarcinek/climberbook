@@ -37,6 +37,26 @@ export type WeightEntryRecord = {
   weightKg: number;
   createdAt: string;
 };
+export type GoalKind =
+  | "weight"
+  | "training_count"
+  | "route_grade"
+  | "aerobic_coin"
+  | "strength_coin";
+export type GoalStatus = "active" | "completed" | "archived";
+export type GoalRecord = {
+  id: string;
+  athleteId: string;
+  kind: GoalKind;
+  title: string;
+  targetValue: number;
+  targetGrade?: string;
+  startDate: string;
+  endDate?: string;
+  status: GoalStatus;
+  createdAt: string;
+  updatedAt: string;
+};
 export type PullUpProtocolSet = {
   sets: number;
   repetitions?: number;
@@ -138,6 +158,71 @@ export type TrainingRecord = {
   customSessionType?: string;
   notes: string;
   createdAt: string;
+};
+export type PublicTrainingShare = {
+  id: string;
+  activity: string;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  ageYears: number;
+  caloriesBurned: number;
+  attemptsCount: number;
+  facilityName?: string;
+  surfaces: TrainingSurface[];
+  grades: string[];
+  difficultyBySurface?: Partial<Record<TrainingSurface, string>>;
+  difficultyNotes: string;
+  wellbeing: string;
+  notes: string;
+  ropeRoutes?: RopeRoute[];
+  weatherSnapshot?: TrainingWeatherSnapshot;
+  createdAt: string;
+};
+export type TrainingSummaryScope = "training" | "week" | "month";
+export type TrainingSummaryRecord = {
+  id: string;
+  scope: TrainingSummaryScope;
+  periodStart: string;
+  periodEnd: string;
+  trainingId?: string;
+  content: {
+    title: string;
+    text: string;
+    trainingCount: number;
+    totalDurationMinutes: number;
+    totalAttempts: number;
+    stimulus?: {
+      algorithmVersion: number;
+      coin: number;
+      dimensions: FatigueDimensions;
+    };
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+export type AgentActionKind =
+  | "summarize_training"
+  | "summarize_week"
+  | "summarize_month"
+  | "write_article";
+export type AgentActionRecord = {
+  id: string;
+  kind: AgentActionKind;
+  status: "todo" | "done";
+  title: string;
+  details: Record<string, unknown>;
+  createdAt: string;
+  completedAt?: string;
+};
+export type AgentFeedItemKind = "article" | "news" | "training_note";
+export type AgentFeedItemRecord = {
+  id: string;
+  kind: AgentFeedItemKind;
+  title: string;
+  body: string;
+  trainingId?: string;
+  publishedAt: string;
 };
 export type AscentRecord = {
   id?: number;

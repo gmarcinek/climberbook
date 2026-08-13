@@ -1,4 +1,6 @@
-import { Button } from "@/components/climberbook/common/Button";
+import { useEffect, useState } from "react";
+import { Share2 } from "lucide-react";
+import { Button, EmotButton } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts";
@@ -12,7 +14,7 @@ import {
   formatDateLabel,
   summarizeTrainingType,
 } from "@/components/training-calendar/training-calendar.helpers";
-import type { TrainingRecord } from "@/lib/climbs-db";
+import type { TrainingRecord, TrainingSummaryRecord } from "@/lib/climbs-db";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
 import type { SurfaceOption } from "./types";
 import {
@@ -31,6 +33,48 @@ type Props = {
   onEditTraining: (training: TrainingRecord) => void;
 };
 
+function TrainingSummaryBlock({ trainingId }: { trainingId: string }) {
+  const [summary, setSummary] = useState<TrainingSummaryRecord | null>(null);
+
+  useEffect(() => {
+    let isCurrent = true;
+    void fetch("/api/v1/insights")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as {
+          summaries: TrainingSummaryRecord[];
+        };
+      })
+      .then((data) => {
+        if (!isCurrent || !data) return;
+        setSummary(
+          data.summaries.find(
+            (item) =>
+              item.scope === "training" && item.trainingId === trainingId,
+          ) ?? null,
+        );
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [trainingId]);
+
+  if (!summary) return null;
+  return (
+    <section className={styles.trainingSidebar__previewCharts}>
+      <div className={styles.trainingSidebar__previewChartsHeader}>
+        <p className={styles.trainingSidebar__eyebrow}>Podsumowanie</p>
+        <h3 className={styles.trainingSidebar__previewChartsTitle}>
+          {summary.content.title}
+        </h3>
+      </div>
+      <p style={{ lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap" }}>
+        {summary.content.text}
+      </p>
+    </section>
+  );
+}
+
 export function TrainingPreviewModal({
   training,
   surfaceOptions,
@@ -38,6 +82,9 @@ export function TrainingPreviewModal({
   onEditTraining,
 }: Props) {
   const { facilities, trainings } = useClimberbook();
+  const [shareStatus, setShareStatus] = useState<
+    "idle" | "sharing" | "shared" | "copied" | "downloaded" | "error"
+  >("idle");
   const calories = Math.min(Math.max(training.caloriesBurned, 0), 1000);
   const hasChart =
     training.surfaces.includes("spraywall") ||
@@ -79,6 +126,40 @@ export function TrainingPreviewModal({
     (total, [, value]) => total + value,
     0,
   );
+
+  async function shareTraining() {
+    setShareStatus("sharing");
+    try {
+      const response = await fetch("/api/v1/training-shares", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ trainingId: training.id }),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+      const shareId =
+        payload &&
+        typeof payload === "object" &&
+        typeof (payload as { shareId?: unknown }).shareId === "string"
+          ? (payload as { shareId: string }).shareId
+          : null;
+      if (!response.ok || !shareId)
+        throw new Error("training_share_create_failed");
+
+      const shareUrl = new URL(
+        `/share/${shareId}`,
+        window.location.origin,
+      ).toString();
+      await navigator.clipboard.writeText(shareUrl);
+      setShareStatus("copied");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setShareStatus("idle");
+        return;
+      }
+      setShareStatus("error");
+    }
+  }
+
   return (
     <Modal
       labelledBy="training-preview-title"
@@ -246,6 +327,7 @@ export function TrainingPreviewModal({
             </PreviewDetail>
           )}
         </dl>
+        <TrainingSummaryBlock trainingId={training.id} />
         {training.weatherSnapshot ? (
           <section className={styles.trainingSidebar__previewCharts}>
             <div className={styles.trainingSidebar__previewChartsHeader}>
@@ -303,7 +385,20 @@ export function TrainingPreviewModal({
             </div>
           </section>
         )}
-        <div className={styles.trainingSidebar__drawerActions}>
+        <div
+          className={styles.trainingSidebar__drawerActions}
+          style={{ justifyContent: "space-between" }}
+        >
+          <EmotButton
+            size="small"
+            variant="ghost"
+            aria-label="Udostępnij trening"
+            title="Udostępnij trening"
+            onClick={() => void shareTraining()}
+            disabled={shareStatus === "sharing"}
+          >
+            <Share2 size={17} aria-hidden="true" />
+          </EmotButton>
           <Button
             variant="tertiary"
             onClick={() => {
@@ -315,6 +410,26 @@ export function TrainingPreviewModal({
             Edytuj
           </Button>
         </div>
+        {shareStatus === "shared" ? (
+          <p className={styles.trainingSidebar__notice}>
+            Grafika treningu jest gotowa do udostępnienia.
+          </p>
+        ) : null}
+        {shareStatus === "copied" ? (
+          <p className={styles.trainingSidebar__notice}>
+            Link do publicznego podglądu treningu został skopiowany do schowka.
+          </p>
+        ) : null}
+        {shareStatus === "downloaded" ? (
+          <p className={styles.trainingSidebar__notice}>
+            Grafika treningu została pobrana jako plik PNG.
+          </p>
+        ) : null}
+        {shareStatus === "error" ? (
+          <p className={styles.trainingSidebar__notice}>
+            Nie udało się przygotować grafiki do udostępnienia.
+          </p>
+        ) : null}
       </ScrollPane>
     </Modal>
   );

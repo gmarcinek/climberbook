@@ -57,3 +57,11 @@ databaseChangeLog:
       file: changelog/changes/028-remove-conditions-study-hour.sql
   - include:
       file: changelog/changes/029-remove-conditions-study-date.sql
+  - include:
+      file: changelog/changes/030-add-training-summaries-and-agent-actions.sql
+  - include:
+      file: changelog/changes/031-add-agent-feed-items.sql
+  - include:
+      file: changelog/changes/032-add-athlete-goals.sql
+  - include:
+      file: changelog/changes/033-add-public-training-shares.sql
