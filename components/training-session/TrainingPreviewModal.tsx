@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Share2 } from "lucide-react";
+import { Download, Share2 } from "lucide-react";
 import { Button, EmotButton } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
@@ -212,6 +212,12 @@ export function TrainingPreviewModal({
       }
       setShareStatus("error");
     }
+  }
+
+  function exportTraining() {
+    window.location.assign(
+      `/api/v1/trainings/${encodeURIComponent(training.id)}/export`,
+    );
   }
 
   return (
@@ -444,25 +450,35 @@ export function TrainingPreviewModal({
           )}
           <div
             className={styles.trainingSidebar__drawerActions}
-            style={{ justifyContent: "space-between" }}
           >
-            <EmotButton
-              size="small"
-              variant="ghost"
-              aria-label="Udostępnij trening"
-              title="Udostępnij trening"
-              onClick={() => void shareTraining()}
-              disabled={shareStatus === "sharing"}
-            >
-              <Share2 size={17} aria-hidden="true" />
-            </EmotButton>
+            <div className={styles.trainingSidebar__drawerActionGroup}>
+              <EmotButton
+                size="small"
+                variant="ghost"
+                aria-label="Udostępnij trening"
+                title="Udostępnij trening"
+                onClick={() => void shareTraining()}
+                disabled={shareStatus === "sharing"}
+              >
+                <Share2 size={17} aria-hidden="true" />
+              </EmotButton>
+              <EmotButton
+                size="small"
+                variant="ghost"
+                aria-label="Eksportuj trening"
+                title="Eksportuj trening"
+                onClick={exportTraining}
+              >
+                <Download size={17} aria-hidden="true" />
+              </EmotButton>
+            </div>
             <Button
               variant="tertiary"
               onClick={() => {
                 onEditTraining(training);
                 onClose();
               }}
-              className={styles.trainingSidebar__submitButton}
+              className={styles.trainingSidebar__drawerEditAction}
             >
               Edytuj
             </Button>

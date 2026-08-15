@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Button } from "@/components/climberbook/common/Button";
 import { Modal } from "@/components/climberbook/common/Modal";
+import { LayoutMaxWidthContent } from "@/components/climberbook/layout/LayoutMaxWidthContent";
 import { WeeklyAscentChartWidget } from "@/components/climberbook/common/WeeklyAscentChartWidget";
 import { AscentGradeDistributionWidget } from "./AscentGradeDistributionWidget";
 import { AscentFormWidget } from "./AscentFormWidget";
@@ -156,7 +157,7 @@ export function ReportsAssembly({
   );
 
   return (
-    <Stack gap="md" style={moduleContentStyle}>
+    <LayoutMaxWidthContent style={moduleContentStyle}>
       <ReportHeaderWidget
         meta={moduleMeta}
         ascentsCount={ascentsCount}
@@ -184,21 +185,23 @@ export function ReportsAssembly({
           ascentTimelineStats={ascentTimelineStats}
         />
       )}
-      <div
-        style={{
-          ...twoColumnLayoutStyle,
-          gridTemplateColumns: isTabletOrMobile
-            ? "minmax(0, 1fr)"
-            : twoColumnLayoutStyle.gridTemplateColumns,
-        }}
-      >
-        {lowerWidgets}
-      </div>
-      <ReportedAscentsListWidget
-        ascents={chronologicalAscents}
-        editingAscentId={editingAscentId}
-        onEdit={handleAscentEdit}
-      />
+      <Stack gap="md">
+        <div
+          style={{
+            ...twoColumnLayoutStyle,
+            gridTemplateColumns: isTabletOrMobile
+              ? "minmax(0, 1fr)"
+              : twoColumnLayoutStyle.gridTemplateColumns,
+          }}
+        >
+          {lowerWidgets}
+        </div>
+        <ReportedAscentsListWidget
+          ascents={chronologicalAscents}
+          editingAscentId={editingAscentId}
+          onEdit={handleAscentEdit}
+        />
+      </Stack>
       {!isMobile && (editingAscentId !== null || isNewAscentModalOpen) ? (
         <Modal
           labelledBy="ascent-form-title"
@@ -221,6 +224,6 @@ export function ReportsAssembly({
           {ascentFormWidget}
         </Modal>
       ) : null}
-    </Stack>
+    </LayoutMaxWidthContent>
   );
 }

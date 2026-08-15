@@ -11,6 +11,9 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { EmotButton } from "@/components/climberbook/common/Button";
+import { Button } from "@/components/climberbook/common/Button";
+import { FormActions } from "@/components/climberbook/common/FormLayout";
+import { Modal } from "@/components/climberbook/common/Modal";
 import { Panel } from "@/components/climberbook/common/Panel";
 import type {
   AgentFeedItemRecord,
@@ -79,6 +82,10 @@ function MarkdownContent({ children }: { children: string }) {
 export function AnalyticsInsightsWall() {
   const [data, setData] = useState<InsightsResponse | null>(null);
   const [hasFailed, setHasFailed] = useState(false);
+  const [wallItemToDelete, setWallItemToDelete] = useState<WallItem | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -113,33 +120,45 @@ export function AnalyticsInsightsWall() {
     })),
   ].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
-  async function deleteWallItem(item: WallItem) {
-    const itemLabel = item.type === "summary" ? "podsumowanie" : "wpis";
-    if (!window.confirm(`Usunąć ${itemLabel} z walla?`)) return;
+  async function deleteWallItem() {
+    if (!wallItemToDelete || isDeleting) return;
 
-    const response = await fetch("/api/v1/insights", {
-      method: "DELETE",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ itemId: item.item.id, itemType: item.type }),
-    });
-    if (!response.ok) {
+    setIsDeleting(true);
+    try {
+      const response = await fetch("/api/v1/insights", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          itemId: wallItemToDelete.item.id,
+          itemType: wallItemToDelete.type,
+        }),
+      });
+      if (!response.ok) throw new Error("delete_failed");
+
+      setData((current) =>
+        current
+          ? {
+              feedItems:
+                wallItemToDelete.type === "feed"
+                  ? current.feedItems.filter(
+                      (entry) => entry.id !== wallItemToDelete.item.id,
+                    )
+                  : current.feedItems,
+              summaries:
+                wallItemToDelete.type === "summary"
+                  ? current.summaries.filter(
+                      (entry) => entry.id !== wallItemToDelete.item.id,
+                    )
+                  : current.summaries,
+            }
+          : current,
+      );
+      setWallItemToDelete(null);
+    } catch {
       setHasFailed(true);
-      return;
+    } finally {
+      setIsDeleting(false);
     }
-    setData((current) =>
-      current
-        ? {
-            feedItems:
-              item.type === "feed"
-                ? current.feedItems.filter((entry) => entry.id !== item.item.id)
-                : current.feedItems,
-            summaries:
-              item.type === "summary"
-                ? current.summaries.filter((entry) => entry.id !== item.item.id)
-                : current.summaries,
-          }
-        : current,
-    );
   }
 
   return (
@@ -190,7 +209,7 @@ export function AnalyticsInsightsWall() {
                   size="small"
                   aria-label="Usuń podsumowanie z walla"
                   title="Usuń z walla"
-                  onClick={() => void deleteWallItem(wallItem)}
+                  onClick={() => setWallItemToDelete(wallItem)}
                   style={wallDeleteButtonStyle}
                 >
                   <Trash2 size={16} aria-hidden="true" />
@@ -230,7 +249,7 @@ export function AnalyticsInsightsWall() {
                 size="small"
                 aria-label="Usuń wpis z walla"
                 title="Usuń z walla"
-                onClick={() => void deleteWallItem(wallItem)}
+                onClick={() => setWallItemToDelete(wallItem)}
                 style={wallDeleteButtonStyle}
               >
                 <Trash2 size={16} aria-hidden="true" />
@@ -241,6 +260,40 @@ export function AnalyticsInsightsWall() {
           </Panel>
         );
       })}
+      {wallItemToDelete ? (
+        <Modal
+          labelledBy="wall-delete-confirmation-title"
+          onClose={() => {
+            if (!isDeleting) setWallItemToDelete(null);
+          }}
+        >
+          <div style={{ display: "grid", gap: 16 }}>
+            <div>
+              <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.82rem" }}>
+                Nieodwracalna akcja
+              </p>
+              <h2
+                id="wall-delete-confirmation-title"
+                style={{ margin: "4px 0 0", fontSize: "1.2rem" }}
+              >
+                Usunąć {wallItemToDelete.type === "summary" ? "podsumowanie" : "wpis"} z walla?
+              </h2>
+            </div>
+            <FormActions layout="inline" marginTop="none">
+              <Button
+                variant="secondary"
+                disabled={isDeleting}
+                onClick={() => setWallItemToDelete(null)}
+              >
+                Anuluj
+              </Button>
+              <Button variant="danger" disabled={isDeleting} onClick={() => void deleteWallItem()}>
+                {isDeleting ? "Usuwanie..." : "Usuń"}
+              </Button>
+            </FormActions>
+          </div>
+        </Modal>
+      ) : null}
     </section>
   );
 }

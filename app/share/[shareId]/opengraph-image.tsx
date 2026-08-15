@@ -90,15 +90,15 @@ function getMaximumGrade(share: {
 function getStimulusLabel(percent: number | undefined) {
   if (percent === undefined) return "BRAK NORMY";
   if (percent < 25) return "ROZGRZEWKA";
-  if (percent < 50) return "ROZRUCH | PITU PITU";
+  if (percent < 50) return "ROZRUCH";
   if (percent < 75) return "TROCHĘ MI SIĘ NIE CHCIAŁO";
-  if (percent < 100) return "CZUJĘ, ŻE TO MOŻE MIEĆ JAKIŚ SENS";
+  if (percent < 100) return "TO MOŻE MIEĆ JAKIŚ SENS";
   if (percent < 125) return "CIŚNIEMY";
-  if (percent < 150) return "CZUJĘ, ŻE MAM CIAŁO";
+  if (percent < 150) return "CZUJĘ CIAŁO";
   if (percent < 175) return "JESZCZE TRZYMAM CHWYTY";
-  if (percent < 200) return "BYŁ WPIERDOL";
-  if (percent < 225) return "JAZDA Z KURWAMI";
-  return "JUTRO NIE WSTANĘ";
+  if (percent < 200) return "WPIERDOL";
+  if (percent < 225) return "NA PEŁNEJ KURWIE";
+  return "NIE TRZYMAM MOCZU";
 }
 
 export default async function OpenGraphImage({

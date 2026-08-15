@@ -2,17 +2,16 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Star } from "lucide-react";
-import { Button } from "@/components/climberbook/common/Button";
+import { Pencil, Star, Trash2 } from "lucide-react";
+import { Button, EmotButton } from "@/components/climberbook/common/Button";
 import { Input, Select } from "@/components/climberbook/common/FormControls";
 import { FormActions } from "@/components/climberbook/common/FormLayout";
+import { LayoutMaxWidthContent } from "@/components/climberbook/layout/LayoutMaxWidthContent";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
 import {
   moduleEyebrowStyle,
-  moduleContainerStyle,
-  moduleContentStyle,
   mutedParagraphStyle,
   panelHeadingStyle,
   sectionTitleStyle,
@@ -754,7 +753,7 @@ export function FacilitiesModule() {
   }
 
   return (
-    <div style={{ ...moduleContentStyle, ...moduleContainerStyle }}>
+    <LayoutMaxWidthContent>
       <Panel gap="md">
         <div style={panelHeadingStyle}>
           <div>
@@ -870,31 +869,28 @@ export function FacilitiesModule() {
                   )}
                 </div>
                 {facility.isOwnedByCurrentUser && (
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    {facility.visibility === "private" && (
-                      <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={() => void app.publishFacility(facility)}
-                      >
-                        Opublikuj
-                      </Button>
-                    )}
-                    <Button
+                  <div
+                    style={{ display: "flex", gap: "8px", alignItems: "center" }}
+                  >
+                    <EmotButton
                       variant="secondary"
                       size="small"
                       onClick={() => openEdit(facility)}
+                      aria-label={`Edytuj obiekt ${facility.name}`}
+                      title={`Edytuj obiekt ${facility.name}`}
                     >
-                      Edytuj
-                    </Button>
+                      <Pencil size={18} aria-hidden="true" />
+                    </EmotButton>
                     {facility.visibility === "private" && (
-                      <Button
-                        variant="quadrary"
+                      <EmotButton
+                        variant="danger"
                         size="small"
                         onClick={() => void app.deleteFacility(facility)}
+                        aria-label={`Usuń obiekt ${facility.name}`}
+                        title={`Usuń obiekt ${facility.name}`}
                       >
-                        Usuń
-                      </Button>
+                        <Trash2 size={18} aria-hidden="true" />
+                      </EmotButton>
                     )}
                   </div>
                 )}
@@ -903,6 +899,6 @@ export function FacilitiesModule() {
           </div>
         )}
       </Panel>
-    </div>
+    </LayoutMaxWidthContent>
   );
 }

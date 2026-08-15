@@ -1,4 +1,7 @@
-import type { TrainingRecord } from "@/lib/climbs-db";
+import type {
+  ClimberbookFullDatabaseBackup,
+  TrainingRecord,
+} from "@/lib/climbs-db";
 import { toBlob } from "html-to-image";
 import { formatReportedAttempts } from "./training-session.utils";
 
@@ -276,18 +279,18 @@ async function getShareImage(training: TrainingRecord, shareUrl: string) {
   return createTrainingShareImage(training);
 }
 
-export async function shareTrainingImage(
+export async function downloadTrainingBackup(
   training: TrainingRecord,
-  shareUrl: string,
+  backup: ClimberbookFullDatabaseBackup,
 ) {
-  const image = await getShareImage(training, shareUrl);
-  const file = new File([image], `climberbook-trening-${training.date}.png`, {
-    type: "image/png",
-  });
+  const file = new File(
+    [JSON.stringify(backup, null, 2)],
+    `climberbook-trening-${training.date}-${training.time.replaceAll(":", "-")}.json`,
+    { type: "application/json" },
+  );
   const shareData = {
-    title: "Mój trening wspinaczkowy | Climberbook",
+    title: "Backup treningu | Climberbook",
     text: `${getTrainingType(training)} - ${formatShareDate(training.date)}`,
-    url: shareUrl,
     files: [file],
   };
 
@@ -299,21 +302,16 @@ export async function shareTrainingImage(
     return "shared" as const;
   }
 
-  if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "image/png": image,
-        "text/plain": new Blob([shareUrl], { type: "text/plain" }),
-      }),
-    ]);
-    return "copied" as const;
-  }
-
-  const url = URL.createObjectURL(image);
+  const url = URL.createObjectURL(file);
   const link = document.createElement("a");
   link.href = url;
   link.download = file.name;
+  link.style.display = "none";
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => {
+    link.remove();
+    URL.revokeObjectURL(url);
+  }, 100);
   return "downloaded" as const;
 }

@@ -13,8 +13,6 @@ import { Modal } from "@/components/climberbook/common/Modal";
 import { Panel } from "@/components/climberbook/common/Panel";
 import {
   moduleEyebrowStyle,
-  moduleContainerStyle,
-  moduleContentStyle,
   panelHeadingStyle,
   sectionTitleStyle,
   settingsMainColumnStyle,
@@ -48,6 +46,7 @@ import { SettingsTabsWidget } from "./SettingsTabsWidget";
 import { SharingConfigWidget } from "./SharingConfigWidget";
 import { TeamRosterSettingsWidget } from "./TeamRosterSettingsWidget";
 import { ThemeSelector } from "@/components/climberbook/providers/ThemeSelector";
+import { LayoutMaxWidthContent } from "@/components/climberbook/layout/LayoutMaxWidthContent";
 import styles from "./SettingsAssembly.module.css";
 import type {
   AthleteFormDraft,
@@ -305,7 +304,7 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
 
   return (
     <>
-      <div style={{ ...moduleContainerStyle, ...moduleContentStyle }}>
+      <LayoutMaxWidthContent>
         <SettingsHeaderWidget meta={meta} accountEmail={accountEmail} />
         <SettingsTabsWidget settingsTab={settingsTab} />
         {settingsTab === "profil" && (
@@ -380,7 +379,7 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
             />
           </div>
         )}
-      </div>
+      </LayoutMaxWidthContent>
       {isAthleteFormModalOpen ? (
         <Modal
           labelledBy="athlete-form-title"

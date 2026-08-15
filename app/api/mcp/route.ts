@@ -54,6 +54,16 @@ const write = {
   openWorldHint: false,
   destructiveHint: false,
 };
+const voiceAgentGuidelines = {
+  declaredFacts:
+    "Informację zadeklarowaną przez użytkownika uznaj za zebraną po pierwszym podaniu. Nie pytaj o nią ponownie, chyba że użytkownik ją poprawi lub sam zaprzeczy.",
+  noRepeatedLists:
+    "Kategoryczny zakaz powtarzania list danych, pytań lub elementów już potwierdzonych przez użytkownika. Nie wyliczaj, co zostało zapamiętane.",
+  questions:
+    "Dopytuj jednym krótkim, prostym pytaniem wprost, np. „Jakie było X?” albo „Co z X?”. Nie poprzedzaj pytania podsumowaniem zebranych danych.",
+  finish:
+    "Gdy wszystkie potrzebne dane są zebrane, powiedz dokładnie: „OK mam wszystko co potrzeba.” Następnie zakończ rozmowę albo wykonaj uzgodnioną akcję.",
+};
 
 function getOAuthSecuritySchemes() {
   const apiClientId = process.env.ENTRA_API_CLIENT_ID?.trim() ?? "";
@@ -159,7 +169,7 @@ function getFacilityCapabilities(value: unknown): FacilityCapabilities | null {
 
 function getContentTemplates() {
   return {
-    version: 2,
+    version: 3,
     summary: {
       requiredTools: [
         "get_training_stimulus",
@@ -173,6 +183,19 @@ function getContentTemplates() {
         "Nie przypisuj przyczyn, kontuzji ani gotowości bez danych użytkownika.",
         "Temperaturę wewnątrz bez pomiaru oznacz jako ostrożny szacunek, uwzględniając klimatyzację, zimę i brak informacji o ogrzewaniu.",
       ],
+      formatting: {
+        engine:
+          "coachComment renderuje się jako markdown (react-markdown + remark-gfm) na wallu użytkownika, tak samo jak artykuły.",
+        allowed: [
+          "**pogrubienie** dla kluczowej liczby lub tezy",
+          "`kod inline` dla jednostek/etykiet, np. `coin`",
+          "krótka lista punktowana, gdy porównujesz kilka sesji w tygodniu/miesiącu",
+        ],
+        visualization:
+          "Dla pojedynczego treningu (scope: training) nie rysuj paska - jest tylko jedna wartość, opisz ją zdaniem. Dla summarize_period z kilkoma sesjami (week, month) możesz dodać maksymalnie jedną linię z paskami █ (wypełnienie) i ░ (reszta) na sesję, proporcjonalnie do realnego zakresu coin z danych - nigdy nie zmyślaj wartości. To dodatek do 2-4 zdań, nie zamiennik. Każdą linię wykresu (etykietę i pasek) pisz jako nagłówek markdown ##### - zawsze dokładnie pięć znaków # (nigdy 3, 6, 7 ani inna liczba) plus spacja, nigdy zwykłym tekstem. Etykieta i pasek MUSZĄ mieć dokładnie tę samą liczbę # - nie różnicuj poziomu nagłówka między nimi. Są dwa dozwolone układy: (1) gdy wszystkie etykiety (np. daty) mają równą długość, jedna linia ##### z etykietą i paskiem razem: '##### DD.MM ████████░░░░░░░░░░░░ **wartość**'; (2) gdy etykiety mają różną długość, osobna linia ##### na etykietę i osobna linia ##### na pasek pod nią: '##### Etykieta' a pod spodem '##### ████████░░░░░░░░░░░░ **wartość**'.",
+        example:
+          "Przykład stylu dla podsumowania tygodnia z równymi etykietami-datami (dane ilustracyjne, nie do skopiowania): '**0,075 coin** 13 sierpnia to najmocniejszy bodziec tygodnia, prawie 2x wyższy niż linowe sesje z 10-12 sierpnia. ##### 10.08 ████████░░░░░░░░░░░░ **0,030** / ##### 13.08 ████████████████████ **0,075**. Fakt: przesunięcie w stronę baldów zwiększyło udział siły/mocy w coin. Warto sprawdzić na kolejnym treningu, czy ruch na rozgrzewce jest nadal dynamiczny.'",
+      },
     },
     article: {
       structure: [
@@ -186,6 +209,39 @@ function getContentTemplates() {
         "Minimum 80 znaków, język polski, bez ogólników i bez diagnoz medycznych.",
         "Nie publikuj artykułu, gdy dane nie dają wystarczającego materiału.",
       ],
+      formatting: {
+        engine:
+          "body renderuje się jako markdown (react-markdown + remark-gfm) na wallu użytkownika.",
+        allowed: [
+          "nagłówki ### dla sekcji",
+          "**pogrubienie** dla kluczowych liczb i tez",
+          "`kod inline` dla jednostek/etykiet, np. `coin na sesję`",
+          "listy punktowane dla faktów z sesji",
+          "tabele GFM, gdy dane mają regularną strukturę",
+        ],
+        visualization:
+          "Do pokazania trendu w czasie użyj poziomych pasków zbudowanych ze znaków Unicode █ (wypełnienie) i ░ (reszta) w linii tekstu, obok pogrubionej wartości liczbowej. Długość paska licz proporcjonalnie do realnego zakresu min-max danych z get_training_stimulus, nie z przykładu poniżej. Nigdy nie zmyślaj wartości - jeśli danych jest za mało na wiarygodny wykres, opisz to zamiast rysować pasek. Każdą linię wykresu (etykietę i pasek) pisz jako nagłówek markdown ##### - zawsze dokładnie pięć znaków # (nigdy 3, 6, 7 ani inna liczba) plus spacja, nigdy zwykłym tekstem ani nagłówkiem ###. Etykieta i pasek MUSZĄ mieć dokładnie tę samą liczbę # - nie różnicuj poziomu nagłówka między nimi. Są dwa dozwolone układy etykiety+pasek: (1) gdy wszystkie etykiety w zestawieniu mają równą długość (np. same daty DD.MM), etykieta i pasek w jednej linii #####: '##### DD.MM ████████░░░░░░░░░░░░ **wartość** opis'; (2) gdy etykiety mają różną długość (np. nazwy kanałów bodźca jak Tlenowa/Kontaktowa), osobna linia ##### na etykietę i osobna linia ##### na pasek pod nią, tak żeby wszystkie paski zaczynały się w tej samej kolumnie: '##### Etykieta' a pod spodem '##### ████████░░░░░░░░░░░░ **wartość**'. Sekcje artykułu (nietabelaryczne nagłówki) nadal pisz jako ### - ##### jest zarezerwowane wyłącznie dla linii wykresu.",
+        example:
+          "Poniższy tekst to WYŁĄCZNIE przykład stylu i formatu (nagłówki, pogrubienia, paski █░ w obu układach jako #####, rozróżnienie faktu od hipotezy) - liczby, daty i wnioski są ilustracyjne i nie wolno ich kopiować ani traktować jako prawdziwych danych:\n\n" +
+          "### Oś czasu obciążenia\n" +
+          "`coin na sesję`, etykiety równej długości - jedna linia ##### na wpis:\n" +
+          "##### 01.08 ████████░░░░░░░░░░░░ **0,029** Lina + tablica\n" +
+          "##### 08.08 ██████████████░░░░░░ **0,054** Baldy + tablica\n" +
+          "##### 13.08 ████████████████████ **0,075** Baldy\n\n" +
+          "**Fakt:** między 1 a 12 sierpnia większość sesji linowych mieści się w zakresie około 0,026-0,037 coin, natomiast 13 sierpnia bodziec rośnie do 0,075.\n\n" +
+          "**Hipoteza treningowa:** to wygląda jak przejście od objętości na linie do bardziej specyficznego bodźca siłowo-mocowego na baldach - do potwierdzenia kolejnymi sesjami.\n\n" +
+          "### Podział bodźca sesji z 13.08\n" +
+          "Etykiety różnej długości (nazwy kanałów) - osobna linia ##### na etykietę i osobna ##### na pasek:\n" +
+          "##### Tlenowa\n" +
+          "##### ████████████░░░░░░░░ **0,0178**\n" +
+          "##### Wytrzymałość siłowa\n" +
+          "##### ██████░░░░░░░░░░░░░░ **0,0089**\n" +
+          "##### Siła/moc\n" +
+          "##### ████████████████░░░░ **0,0237**\n" +
+          "##### Kontaktowa\n" +
+          "##### ████░░░░░░░░░░░░░░░░ **0,0059**\n\n" +
+          "**Fakt:** w tej sesji dominował kanał siła/moc, przy najniższym udziale kanału kontaktowego.",
+      },
     },
     trainingNote: {
       requiredContext: {
@@ -308,6 +364,15 @@ function createServer(request: Request) {
     async () =>
       ({
         tools: [
+          {
+            name: "get_voice_agent_guidelines",
+            title: "Pobierz zasady rozmowy głosowej",
+            description:
+              "Zwraca obowiązkowe zasady prowadzenia krótkiej rozmowy głosowej z użytkownikiem. Wywołaj raz na początku rozmowy, zanim zaczniesz zbierać dane.",
+            inputSchema: { type: "object", properties: {} },
+            annotations: readOnly,
+            securitySchemes,
+          },
           {
             name: "get_climbing_snapshot",
             title: "Pobierz dane wspinaczkowe",
@@ -522,7 +587,7 @@ function createServer(request: Request) {
             name: "create_training",
             title: "Zbierz i zapisz trening",
             description:
-              "Najpierw wywołaj z mode=draft i poprowadź krótki wywiad, zadając jedno naturalne pytanie naraz. Zacznij od: co robiłeś/aś na treningu - lina, baldy czy coś innego? Dopytuj tylko o informacje, których jeszcze nie podał użytkownik: rozgrzewkę, cel, aktywności lub drogi, rezultat, trudności, samopoczucie ogólne i stan palców. Gdy użytkownik nie poda czasu, zapytaj: „Ile trwał - 2 godziny?”; po potwierdzeniu użyj fallbacku 120 minut. Przy linie dla każdej drogi zapytaj o całość/odcinek oraz procent ukończenia: 25%, 50%, 75% lub 100%; gdy użytkownik nie zna wartości, użyj 25% jako fallback i zaznacz niepewność. Po wywiadzie ułóż krótki opis w notes językiem naturalnym; rozgrzewkę, palce i postęp na drogach zapisuj tylko w notes, bez nowych pól wejściowych. Facility jest opcjonalne: gdy użytkownik poda miejsce, najpierw użyj search_facilities; jeśli nie istnieje, możesz po wyraźnym poleceniu utworzyć je przez create_facility, po znalezieniu współrzędnych w publicznym źródle lub z pustymi współrzędnymi. Jeśli użytkownik nie poda miejsca, zapisz trening bez facility. Pokaż użytkownikowi zebrane dane i dopiero po jego potwierdzeniu wywołaj mode=confirm. Nie wymyślaj danych.",
+              "Przed rozpoczęciem rozmowy wywołaj raz get_voice_agent_guidelines i bezwzględnie stosuj zwrócone zasady. Następnie wywołaj z mode=draft i poprowadź krótki wywiad, zadając jedno naturalne pytanie naraz. Zacznij od: co robiłeś/aś na treningu - lina, baldy czy coś innego? Dopytuj tylko o informacje, których jeszcze nie podał użytkownik: rozgrzewkę, cel, aktywności lub drogi, rezultat, trudności, samopoczucie ogólne i stan palców. Gdy użytkownik nie poda czasu, zapytaj: „Ile trwał - 2 godziny?”; po potwierdzeniu użyj fallbacku 120 minut. Przy linie dla każdej drogi zapytaj o całość/odcinek oraz procent ukończenia: 25%, 50%, 75% lub 100%; gdy użytkownik nie zna wartości, użyj 25% jako fallback i zaznacz niepewność. Po wywiadzie ułóż krótki opis w notes językiem naturalnym; rozgrzewkę, palce i postęp na drogach zapisuj tylko w notes, bez nowych pól wejściowych. Facility jest opcjonalne: gdy użytkownik poda miejsce, najpierw użyj search_facilities; jeśli nie istnieje, możesz po wyraźnym poleceniu utworzyć je przez create_facility, po znalezieniu współrzędnych w publicznym źródle lub z pustymi współrzędnymi. Jeśli użytkownik nie poda miejsca, zapisz trening bez facility. Pokaż użytkownikowi zebrane dane i dopiero po jego potwierdzeniu wywołaj mode=confirm. Nie wymyślaj danych.",
             inputSchema: {
               type: "object",
               properties: {
@@ -707,6 +772,8 @@ function createServer(request: Request) {
     const args = (message.params.arguments ?? {}) as Record<string, unknown>;
     try {
       switch (message.params.name) {
+        case "get_voice_agent_guidelines":
+          return result(voiceAgentGuidelines);
         case "get_climbing_snapshot":
           return result(await getPostgresDatabaseSnapshot(actorId));
         case "get_goals": {

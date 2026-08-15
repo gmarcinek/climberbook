@@ -13,15 +13,15 @@ export const stimulusSharingRanges = [
 
 export const defaultStimulusSharingLabels = [
   "ROZGRZEWKA",
-  "ROZRUCH | PITU PITU",
+  "ROZRUCH",
   "TROCHĘ MI SIĘ NIE CHCIAŁO",
-  "CZUJĘ, ŻE TO MOŻE MIEĆ JAKIŚ SENS",
+  "TO MOŻE MIEĆ JAKIŚ SENS",
   "CIŚNIEMY",
-  "CZUJĘ, ŻE MAM CIAŁO",
+  "CZUJĘ CIAŁO",
   "JESZCZE TRZYMAM CHWYTY",
-  "BYŁ WPIERDOL",
-  "JAZDA Z KURWAMI",
-  "JUTRO NIE WSTANĘ",
+  "WPIERDOL",
+  "NA PEŁNEJ KURWIE",
+  "NIE TRZYMAM MOCZU",
 ] as const;
 
 export type StimulusSharingConfig = {

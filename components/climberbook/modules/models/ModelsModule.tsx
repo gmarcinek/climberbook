@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { moduleConfig } from "@/components/climberbook/common/modules";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { LayoutMaxWidthContent } from "@/components/climberbook/layout/LayoutMaxWidthContent";
 import {
   eyebrowStyle,
   mutedParagraphStyle,
@@ -14,7 +15,7 @@ export function ModelsModule() {
   const moduleMeta = moduleConfig.find((module) => module.key === "modele")!;
 
   return (
-    <div className={styles.page}>
+    <LayoutMaxWidthContent className={styles.page}>
       <header className={styles.header}>
         <div>
           <p style={eyebrowStyle}>{moduleMeta.eyebrow}</p>
@@ -52,6 +53,6 @@ export function ModelsModule() {
           </Link>
         </Panel>
       </section>
-    </div>
+    </LayoutMaxWidthContent>
   );
 }

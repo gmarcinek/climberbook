@@ -53,7 +53,7 @@ export function ReportHeaderWidget({
         gap="sm"
         wrap
         align="center"
-        style={{ order: isMobileHeader ? 1 : 2 }}
+        style={{ marginTop: "1.5rem", order: isMobileHeader ? 1 : 2 }}
       >
         <span style={headerBadgeStyle}>Przejścia: {ascentsCount}</span>
         <span style={headerBadgeStyle}>Panel: {panelAscents}</span>

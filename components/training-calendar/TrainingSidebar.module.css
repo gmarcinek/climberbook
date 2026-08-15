@@ -1641,12 +1641,22 @@
 
 .trainingSidebar__drawerActions {
   display: flex;
+  justify-content: space-between;
   gap: 16px;
   align-items: center;
 }
 
-.trainingSidebar__drawerActions .trainingSidebar__submitButton {
+.trainingSidebar__drawerActionGroup {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.trainingSidebar__drawerEditAction {
   margin: 0;
+  width: auto;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 767px) {
@@ -1673,6 +1683,10 @@
   .trainingSidebar__submitButton {
     width: 100%;
     justify-self: stretch;
+  }
+
+  .trainingSidebar__drawerEditAction {
+    width: auto;
   }
 
   .trainingSidebar__formDeleteAction {

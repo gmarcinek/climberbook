@@ -11,3 +11,4 @@ climberbook-logs/
 .env.*
 .env.azure
 !.env.example
+!.env.*.example

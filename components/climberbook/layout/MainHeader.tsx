@@ -154,18 +154,15 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
             >
               {navLinks}
               <Button
-                className={[
-                  styles.logoutButton,
-                  width < 1200 && styles.logoutButtonIcon,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
+                className={[styles.logoutButton, styles.logoutButtonIcon].join(
+                  " ",
+                )}
                 onClick={() => void signOut({ callbackUrl: "/login" })}
                 variant="quadrary"
                 aria-label="Wyloguj"
                 title="Wyloguj"
               >
-                {width < 1200 ? <Power aria-hidden size={20} /> : "Logout"}
+                <Power aria-hidden size={20} />
               </Button>
             </nav>
           ) : null}

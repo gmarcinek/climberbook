@@ -930,11 +930,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     }
   }
   async function deleteTrainingAction(training: TrainingRecord) {
-    if (
-      !training.id ||
-      !window.confirm("Usunąć ten trening? Tej operacji nie można cofnąć.")
-    )
-      return;
+    if (!training.id) return;
     if (isExperimentalPostgresUiEnabled())
       await deleteExperimentalTraining(training.id);
     else await deleteTraining(training.id);

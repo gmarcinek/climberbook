@@ -1043,6 +1043,42 @@ export async function exportPostgresDatabaseBackup(
   };
 }
 
+export async function exportPostgresTrainingBackup(
+  ownerUserId: string,
+  trainingId: string,
+): Promise<ClimberbookFullDatabaseBackup | null> {
+  const backup = await exportPostgresDatabaseBackup(ownerUserId);
+  const training = backup.trainings.find(
+    (candidate) => candidate.id === trainingId,
+  );
+
+  if (!training) return null;
+
+  const athlete = backup.athletes.find(
+    (candidate) => candidate.id === training.athleteId,
+  );
+
+  if (!athlete) return null;
+
+  return {
+    ...backup,
+    ...createTrainingExportMetadata([training]),
+    ownerAthleteId: athlete.id,
+    athletes: [{ ...athlete, sectionId: null }],
+    sections: [],
+    facilities: training.facilityId
+      ? backup.facilities.filter(
+          (facility) => facility.id === training.facilityId,
+        )
+      : [],
+    climbs: [],
+    trainings: [training],
+    ascents: [],
+    profiles: [],
+    weightEntries: [],
+  };
+}
+
 export async function createAthleteInPostgres(
   ownerUserId: string,
   input: AthleteInput,

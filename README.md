@@ -47,6 +47,12 @@ Dodaj `POSTGRES_PASSWORD` jako sekret Container App, a następnie przekaż go do
 4. Uruchom aplikację: `docker compose up app`.
 5. Aplikacja będzie dostępna pod `http://localhost:3000`, a PostgreSQL pod `localhost:5432`.
 
+Logowanie e-mailem wymaga niepustej zmiennej `AUTH_SECRET` w `.env`. Google i
+Facebook są opcjonalne: aby ich włączyć, ustaw odpowiednio pary
+`AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` oraz `AUTH_FACEBOOK_ID` /
+`AUTH_FACEBOOK_SECRET`. Docker Compose przekazuje te zmienne do kontenera
+`app`; po ich zmianie uruchom `docker compose up -d --force-recreate app`.
+
 Lokalny compose używa PostgreSQL 18, żeby środowisko było zgodne z późniejszym przeniesieniem na Azure Database for PostgreSQL Flexible Server. Domyślne dane lokalne:
 
 - host z poziomu kontenerów: `db`
