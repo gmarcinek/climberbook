@@ -1287,12 +1287,12 @@ export function TrainingStimulusChart({
                   <div style={sessionGradeTooltipStyle}>
                     <span>{point.date}</span>
                     <div style={sessionGradeTooltipGroupStyle}>
-                      <span>Łącznie: {(point.coin ?? 0).toFixed(3)}</span>
+                      <span>Łącznie: {(point.coin ?? 0).toFixed(5)}</span>
                       <span>Czas: {point.durationMinutes ?? 0} min</span>
                       {stimulusDimensionKeys.map((dimension) => (
                         <span key={dimension}>
                           {stimulusDimensionConfig[dimension].label}:{" "}
-                          {(point[dimension] ?? 0).toFixed(3)}
+                          {(point[dimension] ?? 0).toFixed(5)}
                         </span>
                       ))}
                     </div>
