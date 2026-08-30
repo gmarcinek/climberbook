@@ -6,6 +6,7 @@ import type {
   ClimberbookFullDatabaseBackup,
   ClimbRecord,
   FacilityRecord,
+  GoalRecord,
   FullDatabaseImportOptions,
   FullDatabaseExportOptions,
   SectionRecord,
@@ -24,6 +25,7 @@ type PostgresSnapshot = {
   ascents: AscentRecord[];
   profiles: UserProfileRecord[];
   weightEntries: WeightEntryRecord[];
+  goals: GoalRecord[];
 };
 
 const testUserId =
@@ -95,8 +97,15 @@ async function request<T>(path: string, options: RequestInit = {}) {
   }
 }
 
-export function getExperimentalPostgresSnapshot() {
-  return request<PostgresSnapshot>("/api/v1/snapshot");
+export function getExperimentalPostgresSnapshot(chartRange?: {
+  start: string;
+  end: string;
+}) {
+  const search = chartRange
+    ? `?${new URLSearchParams(chartRange).toString()}`
+    : "";
+
+  return request<PostgresSnapshot>(`/api/v1/snapshot${search}`);
 }
 
 export function deleteExperimentalAccount() {
@@ -135,6 +144,9 @@ export async function exportExperimentalPostgresBackup(
   const trainings = options.trainings
     ? backup.trainings.filter((training) => athleteIds.has(training.athleteId))
     : [];
+  trainings.forEach((training) => {
+    if (training.facilityId) facilityIds.add(training.facilityId);
+  });
 
   return {
     ...backup,
@@ -146,7 +158,12 @@ export async function exportExperimentalPostgresBackup(
         )
       : [],
     facilities: options.facilities
-      ? backup.facilities.filter((facility) => facilityIds.has(facility.id))
+      ? backup.facilities.filter(
+          (facility) =>
+            facility.visibility === "global" ||
+            facility.isOwnedByCurrentUser ||
+            facilityIds.has(facility.id),
+        )
       : [],
     climbs: options.climbs
       ? backup.climbs.filter((climb) => athleteIds.has(climb.athleteId))
@@ -354,6 +371,32 @@ export function deleteExperimentalWeightEntry(id: number) {
   return request("/api/v1/weight-entries?id=" + id, { method: "DELETE" });
 }
 
+export async function createExperimentalGoal(
+  input: Omit<GoalRecord, "id" | "createdAt" | "updatedAt">,
+) {
+  const response = await request<{ goal: GoalRecord }>("/api/v1/goals", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return response.goal;
+}
+
+export async function updateExperimentalGoal(
+  input: Omit<GoalRecord, "createdAt" | "updatedAt">,
+) {
+  const response = await request<{ goal: GoalRecord }>("/api/v1/goals", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return response.goal;
+}
+
+export function deleteExperimentalGoal(id: string) {
+  return request("/api/v1/goals?id=" + encodeURIComponent(id), {
+    method: "DELETE",
+  });
+}
+
 export async function createExperimentalAscent(
   input: Omit<AscentRecord, "id" | "createdAt">,
 ) {
@@ -455,7 +498,15 @@ export function deleteExperimentalSection(id: string) {
 }
 
 export async function createExperimentalFacility(
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const response = await request<{ facility: FacilityRecord }>(
     "/api/v1/facilities",
@@ -466,11 +517,27 @@ export async function createExperimentalFacility(
 
 export async function updateExperimentalFacility(
   id: string,
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const response = await request<{ facility: FacilityRecord }>(
     "/api/v1/facilities",
     { method: "PATCH", body: JSON.stringify({ id, ...input }) },
+  );
+  return response.facility;
+}
+
+export async function publishExperimentalFacility(id: string) {
+  const response = await request<{ facility: FacilityRecord }>(
+    "/api/v1/facilities",
+    { method: "PATCH", body: JSON.stringify({ id, publish: true }) },
   );
   return response.facility;
 }

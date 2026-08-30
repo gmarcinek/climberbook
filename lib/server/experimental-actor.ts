@@ -1,7 +1,10 @@
 import {
   getOrCreateLocalDevelopmentUserId,
+  findUserIdByAuthIdentity,
+  linkExistingUserToAuthIdentity,
   requireExperimentalUser,
 } from "@/lib/server/climberbook-repository";
+import { getEntraTokenIdentity } from "@/lib/server/entra-auth";
 import { getServerSession } from "next-auth";
 import {
   authOptions,
@@ -19,6 +22,10 @@ function isUuid(value: string): boolean {
 export async function getExperimentalActorId(
   request: Request,
 ): Promise<string | Response> {
+  const entraActorId = await getEntraActorId(request);
+  if (typeof entraActorId === "string" || entraActorId instanceof Response)
+    return entraActorId;
+
   if (isSocialLoginConfigured()) {
     const session = await getServerSession(authOptions);
     const sessionUserId = session?.user?.id;
@@ -28,11 +35,17 @@ export async function getExperimentalActorId(
         await requireExperimentalUser(sessionUserId);
         return sessionUserId;
       } catch {
-        return Response.json({ error: "Sesja użytkownika jest nieprawidłowa." }, { status: 401 });
+        return Response.json(
+          { error: "Sesja użytkownika jest nieprawidłowa." },
+          { status: 401 },
+        );
       }
     }
 
-    return Response.json({ error: "Wymagane jest zalogowanie." }, { status: 401 });
+    return Response.json(
+      { error: "Wymagane jest zalogowanie." },
+      { status: 401 },
+    );
   }
 
   if (process.env.CLIMBERBOOK_ENV === "local") {
@@ -57,4 +70,39 @@ export async function getExperimentalActorId(
       { status: 401 },
     );
   }
+}
+
+export async function getEntraActorId(
+  request: Request,
+): Promise<string | Response | null> {
+  const identity = await getEntraTokenIdentity(request);
+  if (identity === null || identity instanceof Response) return identity;
+
+  const userId = await findUserIdByAuthIdentity(identity);
+  if (userId) return userId;
+
+  const email = identity.email;
+  if (!email) {
+    return Response.json(
+      {
+        error:
+          "Konto Entra nie jest przypisane do użytkownika Climberbook i nie zawiera e-maila do jednorazowego dopasowania.",
+      },
+      { status: 403 },
+    );
+  }
+
+  const linkedUserId = await linkExistingUserToAuthIdentity({
+    provider: identity.provider,
+    subject: identity.subject,
+    email,
+  });
+  if (!linkedUserId) {
+    return Response.json(
+      { error: "Konto Entra nie jest przypisane do użytkownika Climberbook." },
+      { status: 403 },
+    );
+  }
+
+  return linkedUserId;
 }

@@ -1,0 +1,103 @@
+.content {
+  display: grid;
+  gap: 12px;
+  padding: 0 24px 24px;
+}
+
+.headerTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+}
+
+.title {
+  margin: 0;
+  color: inherit;
+  font-size: 1.1rem;
+}
+
+.description {
+  margin: 0;
+  color: var(--component-modal-muted-text, var(--muted));
+  line-height: 1.5;
+}
+
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 18rem;
+  border-collapse: collapse;
+  color: var(--component-modal-muted-text, var(--muted));
+  font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.table th {
+  color: inherit;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.trigger {
+  display: inline-grid;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #6eaed8;
+  cursor: pointer;
+}
+
+.triggerLabel {
+  display: none;
+}
+
+.trigger:hover,
+.trigger:focus-visible {
+  color: #6eaed8;
+}
+
+.trigger:focus-visible {
+  outline: 1px solid var(--theme-text);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .trigger {
+    grid-auto-flow: column;
+    gap: 6px;
+    width: auto;
+    min-width: 0;
+    height: 32px;
+    min-height: 32px;
+    border: 1px solid color-mix(in srgb, currentColor 42%, transparent);
+    padding: 0 8px;
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    font-size: 0.875rem;
+    margin-bottom: 8px;
+  }
+
+  .triggerLabel {
+    display: inline;
+  }
+}

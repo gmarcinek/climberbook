@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { Button } from "@/components/climberbook/common/Button";
+import { InformationModalTrigger } from "@/components/climberbook/common/InformationModal";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import {
@@ -180,7 +181,6 @@ export function TrainingAnalyticsPanel(props: {
               <span style={moduleEyebrowStyle}>Analityka</span>
               <h2 style={sectionTitleStyle}>Waga i trend</h2>
             </div>
-            <span style={softTagStyle}>Bieżący miesiąc</span>
           </div>
 
           <div style={analyticsStatsGridStyle}>
@@ -246,7 +246,12 @@ export function TrainingAnalyticsPanel(props: {
             <div style={panelHeadingStyle}>
               <div>
                 <span style={moduleEyebrowStyle}>Treningi</span>
-                <h3 style={sectionTitleStyle}>Wyceny i sesje</h3>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "4px" }}
+                >
+                  <h3 style={sectionTitleStyle}>Wyceny i sesje</h3>
+                  <InformationModalTrigger topic="trainingGradesAndSessions" />
+                </div>
               </div>
               <span style={softPillStyle}>Lina, Moon, Kilter i baldy</span>
             </div>
@@ -265,7 +270,12 @@ export function TrainingAnalyticsPanel(props: {
             <div style={panelHeadingStyle}>
               <div>
                 <span style={moduleEyebrowStyle}>Bodziec</span>
-                <h3 style={sectionTitleStyle}>Rozkład bodźca</h3>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "4px" }}
+                >
+                  <h3 style={sectionTitleStyle}>Rozkład bodźca</h3>
+                  <InformationModalTrigger topic="trainingStimulusDistribution" />
+                </div>
               </div>
               <span style={softPillStyle}>5 wymiarów</span>
             </div>

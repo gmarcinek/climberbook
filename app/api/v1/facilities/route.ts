@@ -2,6 +2,7 @@ import {
   createFacilityInPostgres,
   deleteFacilityFromPostgres,
   listFacilitiesFromPostgres,
+  publishFacilityToGlobalInPostgres,
   updateFacilityInPostgres,
 } from "@/lib/server/climberbook-repository";
 import { getExperimentalActorId } from "@/lib/server/experimental-actor";
@@ -9,12 +10,53 @@ import {
   isPostgresExperimentalApiEnabled,
   postgresExperimentalApiDisabledResponse,
 } from "@/lib/server/feature-flags";
-import type { FacilityCapabilities, TrainingSurface } from "@/lib/climbs-db";
+import type {
+  FacilityCapabilities,
+  FacilityKind,
+  TrainingSurface,
+} from "@/lib/climbs-db";
 
 export const runtime = "nodejs";
 
 function getName(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function getLocation(value: unknown) {
+  if (!value || typeof value !== "object") return null;
+  const input = value as {
+    kind?: unknown;
+    locationLabel?: unknown;
+    latitude?: unknown;
+    longitude?: unknown;
+  };
+  const kinds: FacilityKind[] = ["indoor_wall", "crag", "crag_sector"];
+  if (
+    typeof input.kind !== "string" ||
+    !kinds.includes(input.kind as FacilityKind)
+  )
+    return null;
+  const latitude = input.latitude;
+  const longitude = input.longitude;
+  const hasCoordinates = latitude !== null && longitude !== null;
+  if (
+    (latitude !== null && typeof latitude !== "number") ||
+    (longitude !== null && typeof longitude !== "number") ||
+    (hasCoordinates &&
+      (!Number.isFinite(latitude) ||
+        !Number.isFinite(longitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180))
+  )
+    return null;
+  return {
+    kind: input.kind as FacilityKind,
+    locationLabel: getName(input.locationLabel),
+    latitude: latitude as number | null,
+    longitude: longitude as number | null,
+  };
 }
 
 const trainingSurfaces: TrainingSurface[] = [
@@ -42,8 +84,17 @@ const ropeWallInclinations = [
 
 function getCapabilities(value: unknown): FacilityCapabilities | null {
   if (!value || typeof value !== "object") return null;
-  const input = value as { activities?: unknown; ropeWalls?: unknown };
+  const input = value as {
+    activities?: unknown;
+    ropeWalls?: unknown;
+    hasAirConditioning?: unknown;
+  };
   if (!Array.isArray(input.activities) || !Array.isArray(input.ropeWalls))
+    return null;
+  if (
+    input.hasAirConditioning !== undefined &&
+    typeof input.hasAirConditioning !== "boolean"
+  )
     return null;
   if (
     !input.activities.every(
@@ -69,6 +120,7 @@ function getCapabilities(value: unknown): FacilityCapabilities | null {
     return null;
   return {
     activities: input.activities as TrainingSurface[],
+    hasAirConditioning: input.hasAirConditioning === true,
     ropeWalls: input.ropeWalls.map((wall, index) => {
       const profile = wall as {
         name?: unknown;
@@ -110,15 +162,20 @@ export async function POST(request: Request) {
   const input = await request.json();
   const name = getName(input.name);
   const capabilities = getCapabilities(input.capabilities);
-  if (!name || !capabilities)
+  const location = getLocation(input);
+  if (!name || !capabilities || !location)
     return Response.json(
-      { error: "name i capabilities są wymagane." },
+      { error: "name, capabilities i poprawny typ obiektu są wymagane." },
       { status: 400 },
     );
 
   return Response.json(
     {
-      facility: await createFacilityInPostgres(actorId, { name, capabilities }),
+      facility: await createFacilityInPostgres(actorId, {
+        name,
+        capabilities,
+        ...location,
+      }),
     },
     { status: 201 },
   );
@@ -130,11 +187,20 @@ export async function PATCH(request: Request) {
 
   const input = await request.json();
   const facilityId = typeof input.id === "string" ? input.id : "";
+  if (input.publish === true) {
+    if (!facilityId)
+      return Response.json({ error: "id jest wymagane." }, { status: 400 });
+
+    return Response.json({
+      facility: await publishFacilityToGlobalInPostgres(actorId, facilityId),
+    });
+  }
   const name = getName(input.name);
   const capabilities = getCapabilities(input.capabilities);
-  if (!facilityId || !name || !capabilities)
+  const location = getLocation(input);
+  if (!facilityId || !name || !capabilities || !location)
     return Response.json(
-      { error: "id, name i capabilities są wymagane." },
+      { error: "id, name, capabilities i poprawny typ obiektu są wymagane." },
       { status: 400 },
     );
 
@@ -142,6 +208,7 @@ export async function PATCH(request: Request) {
     facility: await updateFacilityInPostgres(actorId, facilityId, {
       name,
       capabilities,
+      ...location,
     }),
   });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode, type UIEvent } from "react";
+import { Clock, Droplets, Flame, Thermometer } from "lucide-react";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { Button } from "@/components/climberbook/common/Button";
 import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
@@ -15,6 +16,7 @@ import { TrainingCalendar } from "@/components/training-calendar/TrainingCalenda
 import { TrainingTimelineBar } from "@/components/training-calendar/TrainingTimelineBar";
 import {
   addMonths,
+  formatTrainingCardDateTime,
   getMonthLabel,
   summarizeTrainingType,
   toDate,
@@ -27,6 +29,11 @@ type TrainingCalendarWidgetProps = {
   isWideLayout: boolean;
   showVisibleTrainingList: boolean;
   selectedDayContent?: ReactNode;
+  secondaryTab?: {
+    label: string;
+    content: ReactNode;
+    headerAction?: ReactNode;
+  };
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   trainingRangeStart: string;
@@ -45,6 +52,7 @@ export function TrainingCalendarWidget({
   isWideLayout,
   showVisibleTrainingList,
   selectedDayContent,
+  secondaryTab,
   onPreviousMonth,
   onNextMonth,
   trainingRangeStart,
@@ -244,6 +252,7 @@ export function TrainingCalendarWidget({
             onEditTraining={onEditTraining}
             onPreviewTraining={onPreviewTraining}
             content={selectedDayContent}
+            secondaryTab={secondaryTab}
           />
         )}
       </ScrollPane>
@@ -258,6 +267,7 @@ export function VisibleTrainingList({
   showAddTraining = true,
   standalone = false,
   content,
+  secondaryTab,
   onEditTraining,
   onPreviewTraining,
 }: {
@@ -267,9 +277,19 @@ export function VisibleTrainingList({
   showAddTraining?: boolean;
   standalone?: boolean;
   content?: ReactNode;
+  secondaryTab?: {
+    label: string;
+    content: ReactNode;
+    headerAction?: ReactNode;
+  };
   onEditTraining: (training: TrainingRecord) => void;
   onPreviewTraining: (training: TrainingRecord) => void;
 }) {
+  const [activeTab, setActiveTab] = useState<"trainings" | "secondary">(
+    "trainings",
+  );
+  const isSecondaryTabActive = activeTab === "secondary" && secondaryTab;
+
   return (
     <div
       className={[
@@ -283,9 +303,36 @@ export function VisibleTrainingList({
     >
       <div className={sidebarStyles.trainingSidebar__panelHeader}>
         <div>
-          <h2 className={sidebarStyles.trainingSidebar__title}>Treningi</h2>
+          {secondaryTab ? (
+            <div role="tablist" aria-label="Zawartość panelu treningów">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!isSecondaryTabActive}
+                className={sidebarStyles.trainingSidebar__title}
+                style={tabStyle(!isSecondaryTabActive)}
+                onClick={() => setActiveTab("trainings")}
+              >
+                Treningi
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={Boolean(isSecondaryTabActive)}
+                className={sidebarStyles.trainingSidebar__title}
+                style={tabStyle(Boolean(isSecondaryTabActive))}
+                onClick={() => setActiveTab("secondary")}
+              >
+                {secondaryTab.label}
+              </button>
+            </div>
+          ) : (
+            <h2 className={sidebarStyles.trainingSidebar__title}>Treningi</h2>
+          )}
         </div>
-        {showAddTraining ? (
+        {isSecondaryTabActive ? (
+          secondaryTab.headerAction
+        ) : showAddTraining ? (
           <div className={sidebarStyles.trainingSidebar__headerActions}>
             <Button
               onClick={content ? onCancelTraining : onAddTraining}
@@ -303,13 +350,16 @@ export function VisibleTrainingList({
           </div>
         ) : null}
       </div>
-      {content ??
-        (trainings.length === 0 && (
-          <p className={sidebarStyles.trainingSidebar__helperText}>
-            W wybranym zakresie jeszcze nie ma treningów.
-          </p>
-        ))}
-      {!content &&
+      {isSecondaryTabActive
+        ? secondaryTab.content
+        : (content ??
+          (trainings.length === 0 && (
+            <p className={sidebarStyles.trainingSidebar__helperText}>
+              W wybranym zakresie jeszcze nie ma treningów.
+            </p>
+          )))}
+      {!isSecondaryTabActive &&
+        !content &&
         trainings.map((training) => (
           <article
             key={`${training.id ?? training.createdAt}-${training.time}`}
@@ -318,16 +368,39 @@ export function VisibleTrainingList({
             <div
               className={sidebarStyles.trainingSidebar__trainingButtonHeader}
             >
-              <strong>{summarizeTrainingType(training)}</strong>
+              <strong>{training.facilityName || "Nie wskazano"}</strong>
               <span className={sidebarStyles.trainingSidebar__pill}>
-                {training.date}
+                {formatTrainingCardDateTime(training.date, training.time)}
+              </span>
+            </div>
+            <div
+              className={sidebarStyles.trainingSidebar__trainingButtonHeader}
+            >
+              <span className={sidebarStyles.trainingSidebar__trainingType}>
+                {summarizeTrainingType(training)}
               </span>
             </div>
             <div className={sidebarStyles.trainingSidebar__metaLine}>
-              <span>
-                {formatDurationMinutes(training.durationMinutes)} ·{" "}
+              <span className={sidebarStyles.trainingSidebar__metaItem}>
+                <Clock size={14} aria-hidden="true" />
+                {formatDurationMinutes(training.durationMinutes)}
+              </span>
+              <span className={sidebarStyles.trainingSidebar__metaItem}>
+                <Flame size={14} aria-hidden="true" />
                 {training.caloriesBurned} kcal
               </span>
+              {training.weatherSnapshot ? (
+                <>
+                  <span className={sidebarStyles.trainingSidebar__metaItem}>
+                    <Thermometer size={14} aria-hidden="true" />
+                    {training.weatherSnapshot.apparentTemperatureC.toFixed(1)}°C
+                  </span>
+                  <span className={sidebarStyles.trainingSidebar__metaItem}>
+                    <Droplets size={14} aria-hidden="true" />
+                    {Math.round(training.weatherSnapshot.relativeHumidity)}%
+                  </span>
+                </>
+              ) : null}
             </div>
             <TrainingTimelineBar
               time={training.time}
@@ -363,4 +436,20 @@ export function VisibleTrainingList({
         ))}
     </div>
   );
+}
+
+function tabStyle(isActive: boolean) {
+  return {
+    background: "transparent",
+    border: 0,
+    borderBottom: isActive
+      ? "2px solid var(--accent)"
+      : "2px solid transparent",
+    color: isActive ? "var(--text)" : "var(--muted)",
+    cursor: "pointer",
+    font: "inherit",
+    fontWeight: isActive ? 700 : 500,
+    marginRight: 12,
+    padding: "0 0 5px",
+  };
 }

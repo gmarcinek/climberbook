@@ -536,12 +536,8 @@ export function useClimberbookStats({
     return roundToSingleDecimal(current.weightKg - previous.weightKg);
   }, [sortedWeightEntries]);
   const weightChartEntries = useMemo(
-    () =>
-      sortedWeightEntries.filter(
-        (entry) =>
-          entry.date >= chartRange.start && entry.date <= chartRange.end,
-      ),
-    [chartRange, sortedWeightEntries],
+    () => sortedWeightEntries,
+    [sortedWeightEntries],
   );
 
   return {

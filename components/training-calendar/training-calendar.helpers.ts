@@ -76,6 +76,15 @@ export function formatDateLabel(value: string) {
   }).format(date);
 }
 
+export function formatTrainingCardDateTime(date: string, time: string) {
+  return `${new Intl.DateTimeFormat("pl-PL", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(toDate(date))} · ${time}`;
+}
+
 export function getMonthStart(value: string | Date) {
   const date = toDate(value);
   return formatDateIso(

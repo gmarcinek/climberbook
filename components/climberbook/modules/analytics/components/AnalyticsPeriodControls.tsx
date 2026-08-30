@@ -13,11 +13,15 @@ type AnalyticsPeriodControlsProps = {
   onPreset: (preset: AnalyticsPeriodPreset) => void;
 };
 
-const presets: Array<{ key: AnalyticsPeriodPreset; label: string }> = [
-  { key: "year", label: "Rok" },
-  { key: "month", label: "Miesiąc" },
-  { key: "week", label: "Tydzień" },
-  { key: "all", label: "Wszystko" },
+const presets: Array<{
+  key: AnalyticsPeriodPreset;
+  label: string;
+  mobileLabel: string;
+}> = [
+  { key: "year", label: "Rok", mobileLabel: "Rok" },
+  { key: "month", label: "Miesiąc", mobileLabel: "1M" },
+  { key: "week", label: "Tydzień", mobileLabel: "1T" },
+  { key: "all", label: "Wszystko", mobileLabel: "All" },
 ];
 
 const periodTabStyle = {
@@ -48,7 +52,7 @@ export function AnalyticsPeriodControls({
           activePreset === "custom" ? periodTabActiveStyle : periodTabStyle
         }
       >
-        Okres bieżący
+        {isMobileLayout ? "Ostatnio" : "Okres bieżący"}
       </Button>
       {presets.map((preset) => (
         <Button
@@ -60,7 +64,7 @@ export function AnalyticsPeriodControls({
             activePreset === preset.key ? periodTabActiveStyle : periodTabStyle
           }
         >
-          {preset.label}
+          {isMobileLayout ? preset.mobileLabel : preset.label}
         </Button>
       ))}
     </Stack>

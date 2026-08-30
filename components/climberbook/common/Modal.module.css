@@ -8,26 +8,31 @@
 .dialog {
   position: relative;
   display: grid;
-  grid-template-rows: 44px minmax(0, 1fr);
+  grid-template-rows: 66px minmax(0, 1fr);
   align-content: start;
 
   min-width: 0;
   min-height: 0;
   max-width: 100%;
   max-height: 100%;
+  color: var(--component-modal-text, var(--theme-text));
 }
 
 .header {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  position: relative;
   z-index: 1;
-  height: 44px;
+  height: 66px;
   min-height: 44px;
-  max-height: 44px;
-  padding: 6px 6px 6px 0;
+  max-height: 70px;
+  padding: 1.5rem;
   align-self: start;
+}
+
+.headerContent {
+  min-width: 0;
+  margin-right: auto;
 }
 
 .content {
@@ -43,12 +48,13 @@
   min-width: 32px;
   height: 32px;
   min-height: 32px;
-  border: 1px solid var(--theme-border-strong);
+  border: none;
   border-radius: 0;
   padding: 0;
-  background: var(--component-modal-close-background);
-  color: var(--theme-text);
+  background: rgb(255 250 240 / 14%);
+  color: var(--component-modal-text, var(--theme-text));
   cursor: pointer;
+  font-size: 1rem;
   display: grid;
   place-items: center;
   box-shadow: var(--component-modal-close-shadow);

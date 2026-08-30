@@ -7,6 +7,7 @@ import {
   type SetStateAction,
 } from "react";
 import { moduleContentStyle } from "@/components/climberbook/common/styles";
+import { LayoutMaxWidthContent } from "@/components/climberbook/layout/LayoutMaxWidthContent";
 import { Stack } from "@/components/climberbook/common/Stack";
 import { TeamHeaderWidget } from "./TeamHeaderWidget";
 import { TeamManagementWidget } from "./TeamManagementWidget";
@@ -97,7 +98,7 @@ export function TeamAssembly({
   );
 
   return (
-    <Stack gap="md" style={moduleContentStyle}>
+    <LayoutMaxWidthContent style={moduleContentStyle}>
       <TeamHeaderWidget
         moduleMeta={moduleMeta}
         athletesCount={athletes.length}
@@ -173,6 +174,6 @@ export function TeamAssembly({
           onResetAthleteForm={onResetAthleteForm}
         />
       )}
-    </Stack>
+    </LayoutMaxWidthContent>
   );
 }

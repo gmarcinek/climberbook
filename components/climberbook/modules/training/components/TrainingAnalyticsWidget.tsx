@@ -23,6 +23,7 @@ const desktopChartReservedWidthPx = 72;
 const desktopChartDaysForward = 3;
 const desktopMinChartDaysBack = 14;
 const desktopChartEdgeMarginDays = 1;
+const maximumVisibleChartDays = 61;
 const mobileChartTargetDayWidthPx = 25;
 const mobileChartDaysForward = 0;
 const mobileMinChartDaysBack = 7;
@@ -64,7 +65,10 @@ function getAdaptiveChartRange(
   );
   const daysBack = Math.max(
     minDaysBack,
-    Math.round(totalVisibleDays - daysForward - edgeMarginDays),
+    Math.min(
+      maximumVisibleChartDays - daysForward - 1,
+      Math.round(totalVisibleDays - daysForward - edgeMarginDays),
+    ),
   );
 
   return {

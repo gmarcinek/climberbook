@@ -70,11 +70,12 @@ const legacyFrenchGradeOptions = [
 import type { TrainingSurface } from "@/lib/climbs-db";
 
 export const settingsTabs: {
-  key: "profil" | "zaawansowane";
+  key: "profil" | "sharing" | "zaawansowane";
   label: string;
   route: string;
 }[] = [
   { key: "profil", label: "Profil", route: "/ustawienia/profil" },
+  { key: "sharing", label: "Sharing config", route: "/ustawienia/sharing" },
   {
     key: "zaawansowane",
     label: "Zaawansowane",

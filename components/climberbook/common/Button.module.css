@@ -30,6 +30,7 @@
 }
 
 .variant--secondary {
+  border: 1px solid var(--component-button-secondary-border, transparent);
   background: var(--component-button-secondary-background);
   color: var(--component-button-secondary-text);
 }
@@ -42,6 +43,12 @@
 .variant--quadrary {
   background: var(--component-button-quadrary-background);
   color: var(--component-button-quadrary-text);
+}
+
+.variant--danger {
+  border: 1px solid var(--component-button-danger-border);
+  background: var(--component-button-danger-background);
+  color: var(--component-button-danger-text);
 }
 
 .variant--ghost {

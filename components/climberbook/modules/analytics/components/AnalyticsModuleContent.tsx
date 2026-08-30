@@ -12,22 +12,34 @@ import {
 import { GradeDistributionWidget } from "./GradeDistributionWidget";
 import { SurfaceVolumeChartWidget } from "./SurfaceVolumeChartWidget";
 import { TrainingFatigueForecastChartWidget } from "./TrainingFatigueForecastChartWidget";
+import { AnalyticsInsightsWall } from "./AnalyticsInsightsWall";
+import { GoalsPanelWidget } from "./GoalsPanelWidget";
 import { TrainingOverviewTabsWidget } from "./TrainingOverviewTabsWidget";
 import { RopeTrainingGradesChart } from "@/components/climberbook/common/charts";
 import { TrainingStimulusChart } from "@/components/climberbook/common/charts/SessionGradesChart";
+import { Button } from "@/components/climberbook/common/Button";
 import { Panel } from "@/components/climberbook/common/Panel";
+import { ScrollPane } from "@/components/climberbook/common/ScrollPane";
 import { Stack } from "@/components/climberbook/common/Stack";
 import {
-  moduleContainerStyle,
+  calendarPanelStyle,
   moduleContentStyle,
+  trainingModuleStyle,
   twoColumnLayoutStyle,
 } from "@/components/climberbook/common/styles";
-import type { FacilityRecord, TrainingRecord } from "@/lib/climbs-db";
+import type {
+  AscentRecord,
+  FacilityRecord,
+  GoalRecord,
+  TrainingRecord,
+  WeightEntryRecord,
+} from "@/lib/climbs-db";
 import type { TrainingSurface } from "@/lib/climbs-db";
 
 type AnalyticsModuleContentProps = {
   moduleMeta: { eyebrow: string; title: string; description: string };
   isMobileChartLayout: boolean;
+  isWideDesktop: boolean;
   period: { start: string; end: string };
   activePeriodPreset: AnalyticsPeriodPreset | "custom";
   onPreviousPeriod: () => void;
@@ -35,6 +47,17 @@ type AnalyticsModuleContentProps = {
   onCalendarRangeChange: (range: { start: string; end: string }) => void;
   onPeriodPreset: (preset: AnalyticsPeriodPreset) => void;
   facilities: FacilityRecord[];
+  athleteId: string | null;
+  goals: GoalRecord[];
+  ascents: AscentRecord[];
+  weightEntries: WeightEntryRecord[];
+  onCreateGoal: (
+    input: Omit<GoalRecord, "id" | "createdAt" | "updatedAt">,
+  ) => Promise<void>;
+  onUpdateGoal: (
+    input: Omit<GoalRecord, "createdAt" | "updatedAt">,
+  ) => Promise<void>;
+  onDeleteGoal: (goal: GoalRecord) => Promise<void>;
   allTrainings: TrainingRecord[];
   trainings: TrainingRecord[];
   today: string;
@@ -64,6 +87,7 @@ type AnalyticsModuleContentProps = {
 export function AnalyticsModuleContent({
   moduleMeta,
   isMobileChartLayout,
+  isWideDesktop,
   period,
   activePeriodPreset,
   onPreviousPeriod,
@@ -71,6 +95,13 @@ export function AnalyticsModuleContent({
   onCalendarRangeChange,
   onPeriodPreset,
   facilities,
+  athleteId,
+  goals,
+  ascents,
+  weightEntries,
+  onCreateGoal,
+  onUpdateGoal,
+  onDeleteGoal,
   allTrainings,
   trainings,
   today,
@@ -83,6 +114,9 @@ export function AnalyticsModuleContent({
   gradeDistribution,
 }: AnalyticsModuleContentProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(true);
+  const [mobileTab, setMobileTab] = useState<"wall" | "analysis" | "goals">(
+    "analysis",
+  );
   const handlePeriodPreset = (preset: AnalyticsPeriodPreset) => {
     onPeriodPreset(preset);
 
@@ -100,9 +134,22 @@ export function AnalyticsModuleContent({
       }
     />
   );
+  const goalsPanel = (
+    <GoalsPanelWidget
+      athleteId={athleteId}
+      goals={goals}
+      trainings={allTrainings}
+      ascents={ascents}
+      weightEntries={weightEntries}
+      today={today}
+      onCreateGoal={onCreateGoal}
+      onUpdateGoal={onUpdateGoal}
+      onDeleteGoal={onDeleteGoal}
+    />
+  );
 
-  return (
-    <Stack gap="md" style={{ ...moduleContentStyle, ...moduleContainerStyle }}>
+  const analysisContent = (
+    <Stack gap="md" style={moduleContentStyle}>
       {isMobileChartLayout ? (
         <AnalyticsPeriodControls
           activePreset={activePeriodPreset}
@@ -154,6 +201,8 @@ export function AnalyticsModuleContent({
       ) : null}
       {isCalendarOpen ? (
         <AnalyticsCalendarWidget
+          isMobileLayout={isMobileChartLayout}
+          isWideDesktop={isWideDesktop}
           period={period}
           today={today}
           trainings={allTrainings}
@@ -172,6 +221,7 @@ export function AnalyticsModuleContent({
       />
 
       <GradeDistributionWidget gradeDistribution={gradeDistribution} />
+      {!isMobileChartLayout ? goalsPanel : null}
 
       <Panel>
         <div style={analyticsChartHeadingStyle}>
@@ -208,6 +258,153 @@ export function AnalyticsModuleContent({
       </div>
     </Stack>
   );
+
+  if (isMobileChartLayout) {
+    return (
+      <Stack
+        gap="md"
+        style={{ ...moduleContentStyle, paddingTop: 0, width: "100%" }}
+      >
+        <div
+          role="tablist"
+          aria-label="Widok analityki"
+          style={mobileAnalyticsTabNavStyle}
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileTab === "analysis"}
+            style={mobileAnalyticsTabStyle(mobileTab === "analysis")}
+            onClick={() => setMobileTab("analysis")}
+          >
+            Analizy
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileTab === "goals"}
+            style={mobileAnalyticsTabStyle(mobileTab === "goals")}
+            onClick={() => setMobileTab("goals")}
+          >
+            Cele
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileTab === "wall"}
+            style={mobileAnalyticsTabStyle(mobileTab === "wall")}
+            onClick={() => setMobileTab("wall")}
+          >
+            Wall
+          </button>
+        </div>
+        {mobileTab === "analysis" ? (
+          analysisContent
+        ) : mobileTab === "goals" ? (
+          goalsPanel
+        ) : (
+          <AnalyticsInsightsWall />
+        )}
+      </Stack>
+    );
+  }
+
+  return (
+    <div style={desktopLayoutStyle}>
+      <main style={analysisColumnStyle}>
+        <ScrollPane
+          style={{ height: "100%", minHeight: 0 }}
+          viewportStyle={analysisViewportStyle}
+          contentStyle={analysisContentStyle}
+        >
+          {analysisContent}
+        </ScrollPane>
+      </main>
+      <aside style={wallColumnStyle}>
+        <ScrollPane
+          style={{ height: "100%", minHeight: 0 }}
+          viewportStyle={wallViewportStyle}
+          contentStyle={wallContentStyle}
+        >
+          <AnalyticsInsightsWall />
+        </ScrollPane>
+      </aside>
+    </div>
+  );
+}
+
+const desktopLayoutStyle = {
+  ...trainingModuleStyle,
+  gap: 9,
+  gridTemplateColumns: "minmax(0, 1.7fr) minmax(320px, 0.82fr)",
+  height: "100%",
+  minHeight: 0,
+};
+
+const wallColumnStyle = {
+  ...calendarPanelStyle,
+  gridColumn: 2,
+  gridRow: 1,
+  gridTemplateRows: "minmax(0, 1fr)",
+  height: "100%",
+  overflow: "hidden" as const,
+  padding: 0,
+};
+
+const wallViewportStyle = {
+  background: "var(--component-calendar-viewport-background)",
+  height: "100%",
+  minHeight: 0,
+  overflowY: "auto" as const,
+};
+
+const wallContentStyle = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 9,
+  minHeight: 0,
+  padding: "1rem 11px 11px",
+};
+
+const analysisColumnStyle = {
+  minHeight: 0,
+  minWidth: 0,
+  overflow: "hidden" as const,
+};
+
+const analysisViewportStyle = {
+  height: "100%",
+  minHeight: 0,
+  overflowY: "auto" as const,
+};
+
+const analysisContentStyle = {
+  minHeight: 0,
+  padding: "1rem 11px 11px",
+};
+
+const mobileAnalyticsTabNavStyle = {
+  borderBottom: "1px solid var(--border-strong)",
+  display: "flex",
+  gap: 4,
+  marginTop: 0,
+  order: -2,
+  width: "100%",
+};
+
+function mobileAnalyticsTabStyle(isActive: boolean) {
+  return {
+    background: "transparent",
+    border: 0,
+    borderBottom: isActive
+      ? "2px solid var(--accent)"
+      : "2px solid transparent",
+    color: isActive ? "var(--text)" : "var(--muted)",
+    cursor: "pointer",
+    fontSize: "0.9rem",
+    fontWeight: isActive ? 700 : 500,
+    padding: "8px 12px",
+  };
 }
 
 const analyticsChartHeadingStyle = {

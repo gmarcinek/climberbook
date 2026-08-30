@@ -1,0 +1,8 @@
+.wallCard {
+  border: var(--component-card-border);
+  background: var(--component-training-card-background) !important;
+}
+
+:global(body.theme-old-money) .wallCard {
+  background: color-mix(in srgb, #ffffff26 82%, #c98c5524) !important;
+}

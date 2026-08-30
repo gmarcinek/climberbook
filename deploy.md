@@ -1,3 +1,16 @@
+W skrócie
+
+1. spradzź tsx czy sie kompilije no emit i posprzątaj jego output
+2. zbuduj image
+3. sprawdz tagi ostanie
+4. wypchnij na acr.
+5. otaguj latest i nowa wersje
+6. wypchnij na acr.
+7. sprawdz czy poszło
+8. sprawdź czy baza ma migracje do zrobienia zmigruj
+9. deploy
+10. wywal z acr stare images
+
 ````md
 # Climberbook: build i deploy obrazu do Azure
 
@@ -127,6 +140,20 @@ zakończeniu migracji. Hasła pozostają w `.env.azure` lub w sekretach Azure i
 nie mogą trafić do obrazu ani do logów wdrożenia.
 
 ## 7. Ustaw nową wersję w App Service
+
+Przed pierwszym wdrożeniem API/MCP zabezpieczonego przez Entra ustaw konfigurację aplikacji. Wartości identyfikatorów nie są sekretami, ale nie zapisuj ich w obrazie:
+
+```bash
+az webapp config appsettings set \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$APP_SERVICE" \
+  --settings \
+    ENTRA_TENANT_ID="<Directory-tenant-ID>" \
+    ENTRA_API_CLIENT_ID="<Application-client-ID-Climberbook-MCP-API>" \
+    ENTRA_REQUIRED_SCOPE="climberbook.access"
+```
+
+Jeśli API jest zarejestrowane w tenant'cie External ID, dodaj też `ENTRA_ISSUER` oraz `ENTRA_OPENID_CONFIGURATION_URL` z dokumentu OpenID Connect tego tenant'a.
 
 ```bash
 az webapp config container set \

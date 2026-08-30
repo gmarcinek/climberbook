@@ -37,6 +37,26 @@ export type WeightEntryRecord = {
   weightKg: number;
   createdAt: string;
 };
+export type GoalKind =
+  | "weight"
+  | "training_count"
+  | "route_grade"
+  | "aerobic_coin"
+  | "strength_coin";
+export type GoalStatus = "active" | "completed" | "archived";
+export type GoalRecord = {
+  id: string;
+  athleteId: string;
+  kind: GoalKind;
+  title: string;
+  targetValue: number;
+  targetGrade?: string;
+  startDate: string;
+  endDate?: string;
+  status: GoalStatus;
+  createdAt: string;
+  updatedAt: string;
+};
 export type PullUpProtocolSet = {
   sets: number;
   repetitions?: number;
@@ -81,7 +101,15 @@ export type TrainingFocus =
   | "volume"
   | "intervals"
   | "general_conditioning";
-export type TrainingConditions = "optimal" | "cold" | "stuffy" | "too_warm";
+export type KnownTrainingConditions =
+  | "frosty"
+  | "cold"
+  | "cool"
+  | "optimal"
+  | "stuffy"
+  | "too_warm"
+  | "burdensome";
+export type TrainingConditions = KnownTrainingConditions | (string & {});
 export type TrainingLoadProfile = {
   algorithmVersion: 1;
   focus: TrainingFocus;
@@ -92,6 +120,17 @@ export type RopeRoute = {
   grade: string;
   ropeWallName: string;
   completed: number;
+};
+export type TrainingWeatherSnapshot = {
+  source: "open-meteo";
+  capturedAt: string;
+  temperatureC: number;
+  apparentTemperatureC: number;
+  precipitationMm: number;
+  windSpeedKmh: number;
+  relativeHumidity: number;
+  wmo_code_wether: number;
+  weatherCode?: number;
 };
 export type TrainingRecord = {
   id: string;
@@ -111,11 +150,82 @@ export type TrainingRecord = {
   wellbeing: string;
   surfaces: TrainingSurface[];
   facilityName?: string;
+  facilityId?: string;
+  facilityVersion?: number;
+  weatherSnapshot?: TrainingWeatherSnapshot;
   ropeWallName?: string;
   ropeRoutes?: RopeRoute[];
   customSessionType?: string;
   notes: string;
   createdAt: string;
+};
+export type PublicTrainingShare = {
+  id: string;
+  activity: string;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  ageYears: number;
+  caloriesBurned: number;
+  attemptsCount: number;
+  stimulusNormPercent?: number;
+  stimulusLabel?: string;
+  stimulusDimensions?: FatigueDimensions;
+  facilityName?: string;
+  surfaces: TrainingSurface[];
+  grades: string[];
+  difficultyBySurface?: Partial<Record<TrainingSurface, string>>;
+  difficultyNotes: string;
+  wellbeing: string;
+  notes: string;
+  ropeRoutes?: RopeRoute[];
+  weatherSnapshot?: TrainingWeatherSnapshot;
+  createdAt: string;
+};
+export type TrainingSummaryScope = "training" | "week" | "month";
+export type TrainingSummaryRecord = {
+  id: string;
+  scope: TrainingSummaryScope;
+  periodStart: string;
+  periodEnd: string;
+  trainingId?: string;
+  content: {
+    title: string;
+    text: string;
+    trainingCount: number;
+    totalDurationMinutes: number;
+    totalAttempts: number;
+    stimulus?: {
+      algorithmVersion: number;
+      coin: number;
+      dimensions: FatigueDimensions;
+    };
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+export type AgentActionKind =
+  | "summarize_training"
+  | "summarize_week"
+  | "summarize_month"
+  | "write_article";
+export type AgentActionRecord = {
+  id: string;
+  kind: AgentActionKind;
+  status: "todo" | "done";
+  title: string;
+  details: Record<string, unknown>;
+  createdAt: string;
+  completedAt?: string;
+};
+export type AgentFeedItemKind = "article" | "news" | "training_note";
+export type AgentFeedItemRecord = {
+  id: string;
+  kind: AgentFeedItemKind;
+  title: string;
+  body: string;
+  trainingId?: string;
+  publishedAt: string;
 };
 export type AscentRecord = {
   id?: number;
@@ -212,11 +322,22 @@ export type RopeWallProfile = {
 export type FacilityCapabilities = {
   activities: TrainingSurface[];
   ropeWalls: RopeWallProfile[];
+  hasAirConditioning?: boolean;
 };
+export type FacilityVisibility = "private" | "global";
+export type FacilityKind = "indoor_wall" | "crag" | "crag_sector";
 export type FacilityRecord = {
   id: string;
+  currentVersion: number;
   name: string;
   capabilities: FacilityCapabilities;
+  visibility: FacilityVisibility;
+  createdBy: string;
+  isOwnedByCurrentUser: boolean;
+  kind: FacilityKind;
+  locationLabel: string;
+  latitude: number | null;
+  longitude: number | null;
   createdAt: string;
 };
 export type AthleteInput = {

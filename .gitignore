@@ -4,7 +4,11 @@ dist/
 out/
 coverage/
 *.log
+*-logs.zip
+.logs/
+climberbook-logs/
 .env
 .env.*
 .env.azure
 !.env.example
+!.env.*.example

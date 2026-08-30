@@ -1,20 +1,34 @@
 import type {
   AscentRecord,
+  AgentActionRecord,
+  AgentFeedItemRecord,
   AthleteInput,
   AthleteRecord,
   ClimbRecord,
   ClimberbookFullDatabaseBackup,
   FacilityRecord,
+  GoalRecord,
+  PublicTrainingShare,
   SectionRecord,
   TrainingRecord,
+  TrainingSummaryRecord,
+  TrainingSummaryScope,
   UserProfileRecord,
   WeightEntryRecord,
 } from "@/lib/climbs-db";
 import { createTrainingExportMetadata } from "@/lib/climbs-db";
+import {
+  getTrainingStimulusImpact,
+  getTrainingStimulusScale,
+} from "@/components/climberbook/modules/analytics/components/TrainingLoadModel";
+import {
+  getObjectiveStimulusActivities,
+  getStimulusCatalog,
+} from "@/lib/training-stimulus";
 import { queryPostgres, withPostgresTransaction } from "@/lib/server/postgres";
 import { hashPassword, verifyPassword } from "@/lib/server/passwords";
 import type { PoolClient } from "pg";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 type AthleteRow = {
   id: string;
@@ -62,6 +76,9 @@ type TrainingRow = {
   wellbeing: string;
   surfaces: TrainingRecord["surfaces"];
   facility_name: string | null;
+  facility_id: string | null;
+  facility_version: number | null;
+  weather_snapshot: TrainingRecord["weatherSnapshot"] | null;
   rope_wall_name: string | null;
   rope_routes: TrainingRecord["ropeRoutes"] | null;
   custom_session_type: string | null;
@@ -79,8 +96,16 @@ type SectionRow = {
 
 type FacilityRow = {
   id: string;
+  current_version: number;
   name: string;
   capabilities: FacilityRecord["capabilities"] | null;
+  visibility: FacilityRecord["visibility"];
+  created_by: string;
+  is_owned_by_current_user: boolean;
+  kind: FacilityRecord["kind"];
+  location_label: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: Date;
 };
 
@@ -126,6 +151,50 @@ type WeightEntryRow = {
   created_at: Date;
 };
 
+type GoalRow = {
+  id: string;
+  athlete_id: string;
+  kind: GoalRecord["kind"];
+  title: string;
+  target_value: number | string;
+  target_grade: string | null;
+  start_date: string;
+  end_date: string | null;
+  status: GoalRecord["status"];
+  created_at: Date;
+  updated_at: Date;
+};
+
+type TrainingSummaryRow = {
+  id: string;
+  scope: TrainingSummaryScope;
+  period_start: string;
+  period_end: string;
+  training_id: string | null;
+  content: TrainingSummaryRecord["content"];
+  created_at: Date;
+  updated_at: Date;
+};
+
+type AgentActionRow = {
+  id: string;
+  kind: AgentActionRecord["kind"];
+  status: AgentActionRecord["status"];
+  title: string;
+  details: Record<string, unknown>;
+  created_at: Date;
+  completed_at: Date | null;
+};
+
+type AgentFeedItemRow = {
+  id: string;
+  kind: AgentFeedItemRecord["kind"];
+  title: string;
+  body: string;
+  training_id: string | null;
+  published_at: Date;
+};
+
 function mapPostgresNumeric(value: number | string | null) {
   if (value === null) return null;
 
@@ -146,6 +215,23 @@ function mapRequiredPostgresNumeric(value: number | string) {
   }
 
   return numericValue;
+}
+
+function mapRopeRoutes(value: TrainingRow["rope_routes"]) {
+  if (!value) return undefined;
+
+  const routes =
+    typeof value === "string" ? (JSON.parse(value) as unknown) : value;
+  if (!Array.isArray(routes)) return undefined;
+
+  return routes.filter(
+    (route): route is NonNullable<TrainingRecord["ropeRoutes"]>[number] =>
+      typeof route === "object" &&
+      route !== null &&
+      typeof route.grade === "string" &&
+      typeof route.ropeWallName === "string" &&
+      typeof route.completed === "number",
+  );
 }
 
 function computeAthleteName(input: AthleteInput) {
@@ -207,8 +293,11 @@ function mapTraining(row: TrainingRow): TrainingRecord {
     wellbeing: row.wellbeing,
     surfaces: row.surfaces,
     facilityName: row.facility_name ?? undefined,
+    facilityId: row.facility_id ?? undefined,
+    facilityVersion: row.facility_version ?? undefined,
+    weatherSnapshot: row.weather_snapshot ?? undefined,
     ropeWallName: row.rope_wall_name ?? undefined,
-    ropeRoutes: row.rope_routes ?? undefined,
+    ropeRoutes: mapRopeRoutes(row.rope_routes),
     customSessionType: row.custom_session_type ?? undefined,
     notes: row.notes,
     createdAt: row.created_at.toISOString(),
@@ -229,7 +318,15 @@ function mapFacility(row: FacilityRow): FacilityRecord {
   const capabilities = row.capabilities ?? { activities: [], ropeWalls: [] };
   return {
     id: row.id,
+    currentVersion: row.current_version,
     name: row.name,
+    visibility: row.visibility,
+    createdBy: row.created_by,
+    isOwnedByCurrentUser: row.is_owned_by_current_user,
+    kind: row.kind,
+    locationLabel: row.location_label ?? "",
+    latitude: row.latitude,
+    longitude: row.longitude,
     capabilities: {
       ...capabilities,
       ropeWalls: capabilities.ropeWalls.map((wall, index) => ({
@@ -238,6 +335,42 @@ function mapFacility(row: FacilityRow): FacilityRecord {
       })),
     },
     createdAt: row.created_at.toISOString(),
+  };
+}
+
+function mapTrainingSummary(row: TrainingSummaryRow): TrainingSummaryRecord {
+  return {
+    id: row.id,
+    scope: row.scope,
+    periodStart: row.period_start,
+    periodEnd: row.period_end,
+    trainingId: row.training_id ?? undefined,
+    content: row.content,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  };
+}
+
+function mapAgentAction(row: AgentActionRow): AgentActionRecord {
+  return {
+    id: row.id,
+    kind: row.kind,
+    status: row.status,
+    title: row.title,
+    details: row.details,
+    createdAt: row.created_at.toISOString(),
+    completedAt: row.completed_at?.toISOString(),
+  };
+}
+
+function mapAgentFeedItem(row: AgentFeedItemRow): AgentFeedItemRecord {
+  return {
+    id: row.id,
+    kind: row.kind,
+    title: row.title,
+    body: row.body,
+    trainingId: row.training_id ?? undefined,
+    publishedAt: row.published_at.toISOString(),
   };
 }
 
@@ -291,6 +424,22 @@ function mapWeightEntry(row: WeightEntryRow): WeightEntryRecord {
   };
 }
 
+function mapGoal(row: GoalRow): GoalRecord {
+  return {
+    id: row.id,
+    athleteId: row.athlete_id,
+    kind: row.kind,
+    title: row.title,
+    targetValue: mapRequiredPostgresNumeric(row.target_value),
+    targetGrade: row.target_grade ?? undefined,
+    startDate: row.start_date,
+    endDate: row.end_date ?? undefined,
+    status: row.status,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  };
+}
+
 export type PostgresDatabaseSnapshot = {
   athletes: AthleteRecord[];
   sections: SectionRecord[];
@@ -300,6 +449,7 @@ export type PostgresDatabaseSnapshot = {
   ascents: AscentRecord[];
   profiles: UserProfileRecord[];
   weightEntries: WeightEntryRecord[];
+  goals: GoalRecord[];
 };
 
 export async function checkDatabase() {
@@ -588,6 +738,63 @@ export async function requireExperimentalUser(userId: string) {
   return mapExperimentalUser(user);
 }
 
+export async function findUserIdByAuthIdentity(input: {
+  provider: string;
+  subject: string;
+}) {
+  const result = await queryPostgres<SocialIdentityRow>(
+    `
+      select id, user_id
+      from auth_identities
+      where provider = $1 and provider_subject = $2
+    `,
+    [input.provider, input.subject],
+  );
+
+  return result.rows[0]?.user_id ?? null;
+}
+
+export async function linkExistingUserToAuthIdentity(input: {
+  provider: string;
+  subject: string;
+  email: string;
+}) {
+  return withPostgresTransaction(async (client) => {
+    const matchingUsers = await client.query<SocialIdentityRow>(
+      `
+        select id, id as user_id
+        from app_users
+        where lower(email) = $1
+        limit 2
+      `,
+      [input.email.trim().toLowerCase()],
+    );
+
+    const matchingUser =
+      matchingUsers.rows.length === 1 ? matchingUsers.rows[0] : null;
+    if (!matchingUser) return null;
+
+    const identity = await client.query<SocialIdentityRow>(
+      `
+        insert into auth_identities (id, user_id, provider, provider_subject, email_at_login)
+        values ($1, $2, $3, $4, $5)
+        on conflict (provider, provider_subject) do update
+        set email_at_login = excluded.email_at_login
+        returning id, user_id
+      `,
+      [
+        crypto.randomUUID(),
+        matchingUser.user_id,
+        input.provider,
+        input.subject,
+        input.email.trim().toLowerCase(),
+      ],
+    );
+
+    return identity.rows[0]?.user_id ?? null;
+  });
+}
+
 export async function deleteExperimentalUser(userId: string) {
   const result = await queryPostgres<{ id: string }>(
     "delete from app_users where id = $1 returning id",
@@ -689,6 +896,7 @@ export async function listAthletesFromPostgres(ownerUserId: string) {
 
 export async function getPostgresDatabaseSnapshot(
   ownerUserId: string,
+  chartRange?: { start: string; end: string },
 ): Promise<PostgresDatabaseSnapshot> {
   const [
     athletes,
@@ -699,16 +907,14 @@ export async function getPostgresDatabaseSnapshot(
     ascents,
     profiles,
     weightEntries,
+    goals,
   ] = await Promise.all([
     listAthletesFromPostgres(ownerUserId),
     queryPostgres<SectionRow>(
       "select id, source_id, name, facility_id, created_at from sections where owner_user_id = $1 order by created_at asc",
       [ownerUserId],
     ),
-    queryPostgres<FacilityRow>(
-      "select id, name, capabilities, created_at from facilities where owner_user_id = $1 order by created_at asc",
-      [ownerUserId],
-    ),
+    listFacilitiesFromPostgres(ownerUserId),
     queryPostgres<ClimbRow>(
       `
       select climbs.id, climbs.athlete_id, climbs.name, climbs.grade, climbs.created_at
@@ -719,7 +925,7 @@ export async function getPostgresDatabaseSnapshot(
     `,
       [ownerUserId],
     ),
-    listTrainingsFromPostgres(ownerUserId),
+    listTrainingsFromPostgres(ownerUserId, undefined, chartRange),
     queryPostgres<AscentRow>(
       `
       select ascents.id, ascents.athlete_id, ascents.date, ascents.source,
@@ -751,7 +957,22 @@ export async function getPostgresDatabaseSnapshot(
       from weight_entries
       join athletes on athletes.id = weight_entries.athlete_id
       where athletes.owner_user_id = $1
+        and ($2::text is null or weight_entries.date >= $2::text)
+        and ($3::text is null or weight_entries.date <= $3::text)
       order by weight_entries.created_at desc
+    `,
+      [ownerUserId, chartRange?.start ?? null, chartRange?.end ?? null],
+    ),
+    queryPostgres<GoalRow>(
+      `
+      select athlete_goals.id, athlete_goals.athlete_id, athlete_goals.kind,
+        athlete_goals.title, athlete_goals.target_value, athlete_goals.target_grade,
+        athlete_goals.start_date, athlete_goals.end_date, athlete_goals.status,
+        athlete_goals.created_at, athlete_goals.updated_at
+      from athlete_goals
+      join athletes on athletes.id = athlete_goals.athlete_id
+      where athletes.owner_user_id = $1
+      order by athlete_goals.status asc, athlete_goals.start_date desc
     `,
       [ownerUserId],
     ),
@@ -760,12 +981,13 @@ export async function getPostgresDatabaseSnapshot(
   return {
     athletes,
     sections: sections.rows.map(mapSection),
-    facilities: facilities.rows.map(mapFacility),
+    facilities,
     climbs: climbs.rows.map(mapClimb),
     trainings,
     ascents: ascents.rows.map(mapAscent),
     profiles: profiles.rows.map(mapUserProfile),
     weightEntries: weightEntries.rows.map(mapWeightEntry),
+    goals: goals.rows.map(mapGoal),
   };
 }
 
@@ -818,6 +1040,42 @@ export async function exportPostgresDatabaseBackup(
     ...createTrainingExportMetadata(snapshot.trainings),
     ...snapshot,
     athletes,
+  };
+}
+
+export async function exportPostgresTrainingBackup(
+  ownerUserId: string,
+  trainingId: string,
+): Promise<ClimberbookFullDatabaseBackup | null> {
+  const backup = await exportPostgresDatabaseBackup(ownerUserId);
+  const training = backup.trainings.find(
+    (candidate) => candidate.id === trainingId,
+  );
+
+  if (!training) return null;
+
+  const athlete = backup.athletes.find(
+    (candidate) => candidate.id === training.athleteId,
+  );
+
+  if (!athlete) return null;
+
+  return {
+    ...backup,
+    ...createTrainingExportMetadata([training]),
+    ownerAthleteId: athlete.id,
+    athletes: [{ ...athlete, sectionId: null }],
+    sections: [],
+    facilities: training.facilityId
+      ? backup.facilities.filter(
+          (facility) => facility.id === training.facilityId,
+        )
+      : [],
+    climbs: [],
+    trainings: [training],
+    ascents: [],
+    profiles: [],
+    weightEntries: [],
   };
 }
 
@@ -908,6 +1166,7 @@ export async function deleteAthleteFromPostgres(
 export async function listTrainingsFromPostgres(
   ownerUserId: string,
   athleteId?: string,
+  range?: { start: string; end: string },
 ) {
   const result = await queryPostgres<TrainingRow>(
     `
@@ -916,19 +1175,585 @@ export async function listTrainingsFromPostgres(
       trainings.age_years, trainings.calories_burned, trainings.attempts_count,
       trainings.difficulty_notes, trainings.difficulty_by_surface,
       trainings.protocol, trainings.load_profile, trainings.wellbeing, trainings.surfaces,
-      trainings.custom_session_type, trainings.facility_name, trainings.rope_wall_name,
+      trainings.custom_session_type, trainings.facility_name, trainings.facility_id, trainings.facility_version,
+      trainings.weather_snapshot, trainings.rope_wall_name,
       trainings.rope_routes, trainings.notes,
       trainings.created_at
     from trainings
     join athletes on athletes.id = trainings.athlete_id
     where athletes.owner_user_id = $1
       and ($2::uuid is null or trainings.athlete_id = $2::uuid)
+      and ($3::text is null or trainings.date >= $3::text)
+      and ($4::text is null or trainings.date <= $4::text)
     order by trainings.date desc, trainings.time desc, trainings.created_at desc
   `,
-    [ownerUserId, athleteId ?? null],
+    [ownerUserId, athleteId ?? null, range?.start ?? null, range?.end ?? null],
   );
 
   return result.rows.map(mapTraining);
+}
+
+export async function getTrainingFromPostgres(
+  ownerUserId: string,
+  trainingId: string,
+) {
+  const trainings = await listTrainingsFromPostgres(ownerUserId);
+  const training = trainings.find((item) => item.id === trainingId);
+  if (!training)
+    throw new Error("Nie znaleziono treningu należącego do użytkownika.");
+  return training;
+}
+
+export async function searchFacilitiesFromPostgres(
+  ownerUserId: string,
+  query: string,
+) {
+  const normalizedQuery = query.trim();
+  const result = await queryPostgres<FacilityRow>(
+    `
+    select facilities.id, facility_versions.version as current_version,
+      facility_versions.name, facility_versions.capabilities, facilities.visibility,
+      facilities.owner_user_id as created_by,
+      facilities.owner_user_id = $1 as is_owned_by_current_user,
+      facility_versions.kind, facility_versions.location_label,
+      facility_versions.latitude, facility_versions.longitude, facilities.created_at
+    from facilities
+    join lateral (
+      select *
+      from facility_versions
+      where facility_versions.facility_id = facilities.id
+      order by facility_versions.version desc
+      limit 1
+    ) facility_versions on true
+    where (facilities.owner_user_id = $1 or facilities.visibility = 'global')
+      and ($2::text = '' or facility_versions.name ilike '%' || $2 || '%'
+        or facility_versions.location_label ilike '%' || $2 || '%')
+    order by (facilities.owner_user_id = $1) desc, facility_versions.name asc
+    limit 30
+  `,
+    [ownerUserId, normalizedQuery],
+  );
+  return result.rows.map(mapFacility);
+}
+
+export async function getDefaultFacilityFromPostgres(ownerUserId: string) {
+  const result = await queryPostgres<FacilityRow>(
+    `
+    select facilities.id, facility_versions.version as current_version,
+      facility_versions.name, facility_versions.capabilities, facilities.visibility,
+      facilities.owner_user_id as created_by,
+      facilities.owner_user_id = $1 as is_owned_by_current_user,
+      facility_versions.kind, facility_versions.location_label,
+      facility_versions.latitude, facility_versions.longitude, facilities.created_at
+    from facilities
+    join lateral (
+      select *
+      from facility_versions
+      where facility_versions.facility_id = facilities.id
+      order by facility_versions.version desc
+      limit 1
+    ) facility_versions on true
+    where facilities.owner_user_id = $1 or facilities.visibility = 'global'
+    order by coalesce((
+      select max(trainings.date || 'T' || trainings.time)
+      from trainings
+      join athletes on athletes.id = trainings.athlete_id
+      where athletes.owner_user_id = $1 and trainings.facility_id = facilities.id
+    ), '') desc, (facilities.owner_user_id = $1) desc, facility_versions.name asc
+    limit 1
+  `,
+    [ownerUserId],
+  );
+  return result.rows[0] ? mapFacility(result.rows[0]) : null;
+}
+
+function describeConditions(
+  training: TrainingRecord,
+  facilities: FacilityRecord[],
+) {
+  const weather = training.weatherSnapshot;
+  const facility = facilities.find((item) => item.id === training.facilityId);
+  const isWinter = [12, 1, 2].includes(Number(training.date.slice(5, 7)));
+
+  if (!weather) {
+    return "Brak zapisanego pomiaru pogody, więc nie można rzetelnie oszacować temperatury podczas tej jednostki.";
+  }
+
+  const outdoor = `${weather.temperatureC.toFixed(0)}°C na zewnątrz`;
+  if (facility?.kind === "crag" || facility?.kind === "crag_sector") {
+    return `Warunki zewnętrzne przy zapisie: ${outdoor}, wilgotność ${weather.relativeHumidity}% i wiatr ${weather.windSpeedKmh.toFixed(0)} km/h.`;
+  }
+  if (facility?.capabilities.hasAirConditioning === true) {
+    return `Na zewnątrz było ${outdoor}. Obiekt deklaruje klimatyzację, dlatego nie wyciągam temperatury wewnątrz z danych zewnętrznych.`;
+  }
+  if (isWinter) {
+    const lowerEstimate = Math.max(6, Math.round(weather.temperatureC + 3));
+    const upperEstimate = Math.max(
+      lowerEstimate + 4,
+      Math.round(weather.temperatureC + 9),
+    );
+    return `Na zewnątrz było ${outdoor}. Obiekt nie deklaruje klimatyzacji ani nie mamy informacji o ogrzewaniu; jeśli zimą nie grzano, wewnątrz mogło być orientacyjnie ${lowerEstimate}-${upperEstimate}°C. To wyłącznie szacunek, nie pomiar.`;
+  }
+  const lowerEstimate = Math.round(weather.temperatureC + 2);
+  const upperEstimate = Math.round(weather.temperatureC + 6);
+  return `Na zewnątrz było ${outdoor}. Obiekt nie deklaruje klimatyzacji, więc wewnątrz mogło być orientacyjnie ${lowerEstimate}-${upperEstimate}°C; bez pomiaru to ostrożny szacunek.`;
+}
+
+function describeTrainingData(training: TrainingRecord) {
+  const activities =
+    training.surfaces.join(", ") || "brak zapisanej aktywności";
+  const grades = training.difficultyBySurface
+    ? Object.entries(training.difficultyBySurface)
+        .filter(([, value]) => typeof value === "string" && value.trim())
+        .map(([surface, value]) => {
+          const gradeList = value
+            .split(",")
+            .map((grade) => grade.trim())
+            .filter(Boolean);
+          const visibleGrades = gradeList.slice(0, 5).join(", ");
+          const remainingGrades = gradeList.length - 5;
+          return `${surface}: ${visibleGrades}${remainingGrades > 0 ? ` (+${remainingGrades} kolejnych)` : ""}`;
+        })
+        .join("; ")
+    : "";
+  const routes = training.ropeRoutes
+    ?.map(
+      (route) =>
+        `${route.completed} x ${route.grade}${route.ropeWallName ? ` (${route.ropeWallName})` : ""}`,
+    )
+    .join(", ");
+  return [
+    `W surowym zapisie widzimy: ${activities}.`,
+    grades ? `Zapisane wyceny: ${grades}.` : "Brak zapisanej wyceny.",
+    routes ? `Drogi: ${routes}.` : "",
+    `${training.attemptsCount} prób${training.wellbeing ? ` oraz samopoczucie: ${training.wellbeing}` : ""}.`,
+    training.notes.trim()
+      ? `Notatka zawodnika: „${training.notes.trim()}”`
+      : "Brak dodatkowej notatki z treningu.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function describeRecentHistory(
+  training: TrainingRecord,
+  previousTrainings: TrainingRecord[],
+) {
+  if (previousTrainings.length === 0) {
+    return "Nie ma wcześniejszych zapisanych treningów, więc ta sesja stanowi pierwszy punkt odniesienia.";
+  }
+  const priorDuration = previousTrainings.reduce(
+    (total, item) => total + item.durationMinutes,
+    0,
+  );
+  const priorAttempts = previousTrainings.reduce(
+    (total, item) => total + item.attemptsCount,
+    0,
+  );
+  const averageDuration = Math.round(priorDuration / previousTrainings.length);
+  const difference = training.durationMinutes - averageDuration;
+  const durationComment =
+    difference === 0
+      ? "dokładnie na poziomie średniej"
+      : difference > 0
+        ? `${difference} min powyżej średniej`
+        : `${Math.abs(difference)} min poniżej średniej`;
+  return `Punkt odniesienia to ${previousTrainings.length} wcześniejszych treningów: łącznie ${priorDuration} min i ${priorAttempts} prób. Dzisiejsze ${training.durationMinutes} min jest ${durationComment}; to czytelny element ciągłości pracy, nie samodzielna ocena formy.`;
+}
+
+function formatSummaryDate(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Intl.DateTimeFormat("pl-PL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(year, month - 1, day));
+}
+
+function getSingleTrainingSummaryTitle(training: TrainingRecord) {
+  const facility = training.facilityName ?? "Miejsce nie zostało zapisane";
+  const ropeWall = training.ropeWallName ? `, ${training.ropeWallName}` : "";
+  return `${formatSummaryDate(training.date)}, ${facility}${ropeWall} ${training.time}`;
+}
+
+function createSummaryContent(
+  scope: TrainingSummaryScope,
+  periodStart: string,
+  periodEnd: string,
+  trainings: TrainingRecord[],
+  facilities: FacilityRecord[],
+  previousTrainings: TrainingRecord[],
+  coachComment: string,
+) {
+  const trainingCount = trainings.length;
+  const totalDurationMinutes = trainings.reduce(
+    (total, training) => total + training.durationMinutes,
+    0,
+  );
+  const totalAttempts = trainings.reduce(
+    (total, training) => total + training.attemptsCount,
+    0,
+  );
+  const durationText = `${Math.floor(totalDurationMinutes / 60)} h ${totalDurationMinutes % 60} min`;
+  const label =
+    scope === "training" ? "Trening" : scope === "week" ? "Tydzień" : "Miesiąc";
+  const noteExcerpts = trainings
+    .map((training) => training.notes.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((note) => `„${note.slice(0, 240)}${note.length > 240 ? "..." : ""}”`);
+  const dimensions = trainings
+    .flatMap((training) =>
+      getObjectiveStimulusActivities(training, facilities, trainings),
+    )
+    .reduce(
+      (total, activity) => ({
+        aerobicEndurance:
+          total.aerobicEndurance +
+          (activity.dimensionCoin?.aerobicEndurance ??
+            activity.coin * activity.dimensionSplit.aerobicEndurance),
+        strengthEndurance:
+          total.strengthEndurance +
+          (activity.dimensionCoin?.strengthEndurance ??
+            activity.coin * activity.dimensionSplit.strengthEndurance),
+        strengthPower:
+          total.strengthPower +
+          (activity.dimensionCoin?.strengthPower ??
+            activity.coin * activity.dimensionSplit.strengthPower),
+        contactStrength:
+          total.contactStrength +
+          (activity.dimensionCoin?.contactStrength ??
+            activity.coin * activity.dimensionSplit.contactStrength),
+      }),
+      {
+        aerobicEndurance: 0,
+        strengthEndurance: 0,
+        strengthPower: 0,
+        contactStrength: 0,
+      },
+    );
+  const coin = Object.values(dimensions).reduce(
+    (total, value) => total + value,
+    0,
+  );
+  const singleTraining = scope === "training" ? trainings[0] : undefined;
+  const dominantDimensions = Object.entries(dimensions)
+    .sort(([, left], [, right]) => right - left)
+    .slice(0, 2)
+    .map(([dimension]) => dimension)
+    .join(" i ");
+  const weeklyLocations = trainings
+    .map((training) =>
+      [
+        `### ${training.date}: ${training.facilityName ?? "Miejsce nie zostało zapisane"}`,
+        `Start o ${training.time}, czas trwania ${training.durationMinutes} min. ${describeConditions(training, facilities)}`,
+        describeTrainingData(training),
+      ].join("\n\n"),
+    )
+    .join("\n\n");
+  return {
+    title: singleTraining
+      ? getSingleTrainingSummaryTitle(singleTraining)
+      : `${label}: ${periodStart}${periodStart === periodEnd ? "" : ` - ${periodEnd}`}`,
+    text: singleTraining
+      ? [
+          "### O której i ile trwał",
+          `${singleTraining.durationMinutes} min. ${describeConditions(singleTraining, facilities)}`,
+          "### Co zostało zrobione",
+          describeTrainingData(singleTraining),
+          "### W odniesieniu do ostatnich treningów",
+          describeRecentHistory(singleTraining, previousTrainings),
+          "### Komentarz trenerski",
+          coachComment,
+        ].join("\n\n")
+      : [
+          "## Gdzie były treningi",
+          weeklyLocations || "Brak treningów w podanym okresie.",
+          "## O której i ile trwały",
+          `${trainingCount} trening(i) w okresie ${periodStart}${periodStart === periodEnd ? "" : ` - ${periodEnd}`}; łączny czas: ${durationText}; łącznie ${totalAttempts} prób.`,
+          "### Co wynika z surowych danych",
+          noteExcerpts.length
+            ? `Notatki z treningów: ${noteExcerpts.join("; ")}`
+            : "Brak opisów użytkownika do uwzględnienia.",
+          `Dominujący bodziec: ${dominantDimensions || "brak wystarczających danych"}; suma: ${coin.toFixed(3)} coin. To faktograficzny punkt wyjścia, nie ocena formy.`,
+          "### W odniesieniu do ostatnich treningów",
+          trainings[0]
+            ? describeRecentHistory(trainings[0], previousTrainings)
+            : "Brak danych porównawczych.",
+          "### Komentarz trenerski",
+          coachComment,
+        ].join("\n\n"),
+    trainingCount,
+    totalDurationMinutes,
+    totalAttempts,
+    stimulus: {
+      algorithmVersion: getStimulusCatalog().algorithmVersion,
+      coin,
+      dimensions,
+    },
+  };
+}
+
+export async function summarizeTrainingsInPostgres(input: {
+  ownerUserId: string;
+  scope: TrainingSummaryScope;
+  periodStart: string;
+  periodEnd: string;
+  trainingId?: string;
+  coachComment: string;
+}) {
+  const allTrainings = await listTrainingsFromPostgres(input.ownerUserId);
+  const trainings = input.trainingId
+    ? [
+        allTrainings.find((training) => training.id === input.trainingId) ??
+          (await getTrainingFromPostgres(input.ownerUserId, input.trainingId)),
+      ]
+    : allTrainings.filter(
+        (training) =>
+          training.date >= input.periodStart &&
+          training.date <= input.periodEnd,
+      );
+  const referenceTraining = trainings[0];
+  const previousTrainings = referenceTraining
+    ? allTrainings
+        .filter((training) =>
+          training.athleteId === referenceTraining.athleteId && input.trainingId
+            ? `${training.date}T${training.time}` <
+              `${referenceTraining.date}T${referenceTraining.time}`
+            : training.date < input.periodStart,
+        )
+        .slice(0, 7)
+    : [];
+  const facilities = await listFacilitiesFromPostgres(input.ownerUserId);
+  const content = createSummaryContent(
+    input.scope,
+    input.periodStart,
+    input.periodEnd,
+    trainings,
+    facilities,
+    previousTrainings,
+    input.coachComment,
+  );
+  const result = await queryPostgres<TrainingSummaryRow>(
+    `
+    insert into training_summaries (id, owner_user_id, scope, period_start, period_end, training_id, content)
+    values ($1, $2, $3, $4, $5, $6, $7)
+    on conflict (owner_user_id, scope, period_start, period_end, training_id) do nothing
+    returning id, scope, period_start, period_end, training_id, content, created_at, updated_at
+  `,
+    [
+      crypto.randomUUID(),
+      input.ownerUserId,
+      input.scope,
+      input.periodStart,
+      input.periodEnd,
+      input.trainingId ?? null,
+      content,
+    ],
+  );
+  if (result.rows[0]) return mapTrainingSummary(result.rows[0]);
+
+  const existing = await queryPostgres<TrainingSummaryRow>(
+    `select id, scope, period_start, period_end, training_id, content, created_at, updated_at
+     from training_summaries
+     where owner_user_id = $1 and scope = $2 and period_start = $3 and period_end = $4
+       and training_id is not distinct from $5`,
+    [
+      input.ownerUserId,
+      input.scope,
+      input.periodStart,
+      input.periodEnd,
+      input.trainingId ?? null,
+    ],
+  );
+  return mapTrainingSummary(existing.rows[0]);
+}
+
+export async function listAgentActionsFromPostgres(ownerUserId: string) {
+  const result = await queryPostgres<AgentActionRow>(
+    `select id, kind, status, title, details, created_at, completed_at
+     from agent_actions where owner_user_id = $1 order by status asc, created_at desc`,
+    [ownerUserId],
+  );
+  return result.rows.map(mapAgentAction);
+}
+
+export async function listTrainingSummariesFromPostgres(ownerUserId: string) {
+  const result = await queryPostgres<TrainingSummaryRow>(
+    `select id, scope, period_start, period_end, training_id, content, created_at, updated_at
+     from training_summaries where owner_user_id = $1
+     order by period_end desc, updated_at desc`,
+    [ownerUserId],
+  );
+  return result.rows.map(mapTrainingSummary);
+}
+
+export async function deleteTrainingSummaryFromPostgres(
+  ownerUserId: string,
+  summaryId: string,
+) {
+  const result = await queryPostgres<{ id: string }>(
+    `
+    delete from training_summaries
+    where id = $1 and owner_user_id = $2
+    returning id
+  `,
+    [summaryId, ownerUserId],
+  );
+  if (!result.rows[0]) {
+    throw new Error("Nie znaleziono podsumowania należącego do użytkownika.");
+  }
+  return { id: result.rows[0].id, deleted: true };
+}
+
+export async function listAgentFeedItemsFromPostgres(ownerUserId: string) {
+  const result = await queryPostgres<AgentFeedItemRow>(
+    `select id, kind, title, body, training_id, published_at
+     from agent_feed_items where owner_user_id = $1
+     order by published_at desc`,
+    [ownerUserId],
+  );
+  return result.rows.map(mapAgentFeedItem);
+}
+
+export async function deleteAgentFeedItemFromPostgres(
+  ownerUserId: string,
+  feedItemId: string,
+) {
+  const result = await queryPostgres<{ id: string }>(
+    `
+    delete from agent_feed_items
+    where id = $1 and owner_user_id = $2
+    returning id
+  `,
+    [feedItemId, ownerUserId],
+  );
+  if (!result.rows[0]) {
+    throw new Error("Nie znaleziono wpisu walla należącego do użytkownika.");
+  }
+  return { id: result.rows[0].id, deleted: true };
+}
+
+export async function createAgentFeedItemInPostgres(
+  ownerUserId: string,
+  input: Pick<AgentFeedItemRecord, "kind" | "title" | "body" | "trainingId">,
+) {
+  if (input.trainingId)
+    await getTrainingFromPostgres(ownerUserId, input.trainingId);
+  const result = await queryPostgres<AgentFeedItemRow>(
+    `insert into agent_feed_items (id, owner_user_id, kind, title, body, training_id)
+     values ($1, $2, $3, $4, $5, $6)
+     returning id, kind, title, body, training_id, published_at`,
+    [
+      crypto.randomUUID(),
+      ownerUserId,
+      input.kind,
+      input.title.trim(),
+      input.body.trim(),
+      input.trainingId ?? null,
+    ],
+  );
+  return mapAgentFeedItem(result.rows[0]);
+}
+
+export async function createAgentActionInPostgres(
+  ownerUserId: string,
+  input: Pick<AgentActionRecord, "kind" | "title" | "details">,
+) {
+  const result = await queryPostgres<AgentActionRow>(
+    `insert into agent_actions (id, owner_user_id, kind, title, details)
+     values ($1, $2, $3, $4, $5)
+     returning id, kind, status, title, details, created_at, completed_at`,
+    [crypto.randomUUID(), ownerUserId, input.kind, input.title, input.details],
+  );
+  return mapAgentAction(result.rows[0]);
+}
+
+export async function completeAgentActionInPostgres(
+  ownerUserId: string,
+  actionId: string,
+) {
+  const result = await queryPostgres<AgentActionRow>(
+    `update agent_actions set status = 'done', completed_at = now()
+     where id = $1 and owner_user_id = $2
+     returning id, kind, status, title, details, created_at, completed_at`,
+    [actionId, ownerUserId],
+  );
+  if (!result.rows[0]) throw new Error("Nie znaleziono akcji agenta.");
+  return mapAgentAction(result.rows[0]);
+}
+
+export async function createGoalInPostgres(
+  ownerUserId: string,
+  input: Omit<GoalRecord, "id" | "createdAt" | "updatedAt">,
+) {
+  await requireOwnedAthlete(ownerUserId, input.athleteId);
+  const result = await queryPostgres<GoalRow>(
+    `insert into athlete_goals (
+      id, athlete_id, kind, title, target_value, target_grade, start_date, end_date, status
+    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    returning id, athlete_id, kind, title, target_value, target_grade, start_date, end_date, status, created_at, updated_at`,
+    [
+      crypto.randomUUID(),
+      input.athleteId,
+      input.kind,
+      input.title.trim(),
+      input.targetValue,
+      input.targetGrade?.trim() || null,
+      input.startDate,
+      input.endDate ?? null,
+      input.status,
+    ],
+  );
+  return mapGoal(result.rows[0]);
+}
+
+export async function updateGoalInPostgres(
+  ownerUserId: string,
+  input: Omit<GoalRecord, "createdAt" | "updatedAt">,
+) {
+  await requireOwnedAthlete(ownerUserId, input.athleteId);
+  const result = await queryPostgres<GoalRow>(
+    `update athlete_goals set athlete_id = $2, kind = $3, title = $4,
+      target_value = $5, target_grade = $6, start_date = $7, end_date = $8,
+      status = $9, updated_at = now()
+    where id = $1 and exists (
+      select 1 from athletes
+      where athletes.id = athlete_goals.athlete_id and athletes.owner_user_id = $10
+    )
+    returning id, athlete_id, kind, title, target_value, target_grade, start_date, end_date, status, created_at, updated_at`,
+    [
+      input.id,
+      input.athleteId,
+      input.kind,
+      input.title.trim(),
+      input.targetValue,
+      input.targetGrade?.trim() || null,
+      input.startDate,
+      input.endDate ?? null,
+      input.status,
+      ownerUserId,
+    ],
+  );
+  if (!result.rows[0])
+    throw new Error("Nie znaleziono celu należącego do użytkownika.");
+  return mapGoal(result.rows[0]);
+}
+
+export async function deleteGoalFromPostgres(
+  ownerUserId: string,
+  goalId: string,
+) {
+  const result = await queryPostgres<{ id: string }>(
+    `delete from athlete_goals where id = $1 and exists (
+      select 1 from athletes
+      where athletes.id = athlete_goals.athlete_id and athletes.owner_user_id = $2
+    ) returning id`,
+    [goalId, ownerUserId],
+  );
+  if (!result.rows[0])
+    throw new Error("Nie znaleziono celu należącego do użytkownika.");
+  return { id: result.rows[0].id, deleted: true };
 }
 
 export async function createTrainingInPostgres(
@@ -945,13 +1770,13 @@ export async function createTrainingInPostgres(
       id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, facility_name,
-      rope_wall_name, rope_routes, custom_session_type, notes
+      facility_id, facility_version, weather_snapshot, rope_wall_name, rope_routes, custom_session_type, notes
     )
-    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
-      facility_name, rope_wall_name, rope_routes, notes, created_at
+      facility_name, facility_id, facility_version, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
   `,
     [
       trainingId,
@@ -970,6 +1795,9 @@ export async function createTrainingInPostgres(
       input.wellbeing,
       input.surfaces,
       input.facilityName ?? null,
+      input.facilityId ?? null,
+      input.facilityVersion ?? null,
+      input.weatherSnapshot ?? null,
       input.ropeWallName ?? null,
       input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
       input.customSessionType ?? null,
@@ -1002,21 +1830,24 @@ export async function updateTrainingInPostgres(
       wellbeing = $13,
       surfaces = $14,
       facility_name = $15,
-      rope_wall_name = $16,
-      rope_routes = $17,
-      custom_session_type = $18,
-      notes = $19
+      facility_id = $16,
+      facility_version = $17,
+      weather_snapshot = $18,
+      rope_wall_name = $19,
+      rope_routes = $20,
+      custom_session_type = $21,
+      notes = $22
     where id = $1
       and exists (
         select 1
         from athletes
         where athletes.id = trainings.athlete_id
-          and athletes.owner_user_id = $20
+          and athletes.owner_user_id = $23
       )
     returning id, source_id, athlete_id, date, time, duration_minutes,
       age_years, calories_burned, attempts_count, difficulty_notes,
       difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, custom_session_type,
-      facility_name, rope_wall_name, rope_routes, notes, created_at
+      facility_name, facility_id, facility_version, weather_snapshot, rope_wall_name, rope_routes, notes, created_at
   `,
     [
       input.id,
@@ -1034,6 +1865,9 @@ export async function updateTrainingInPostgres(
       input.wellbeing,
       input.surfaces,
       input.facilityName ?? null,
+      input.facilityId ?? null,
+      input.facilityVersion ?? null,
+      input.weatherSnapshot ?? null,
       input.ropeWallName ?? null,
       input.ropeRoutes ? JSON.stringify(input.ropeRoutes) : null,
       input.customSessionType ?? null,
@@ -1071,6 +1905,238 @@ export async function deleteTrainingFromPostgres(
   if (!result.rows[0]) {
     throw new Error("Nie znaleziono treningu należącego do użytkownika.");
   }
+}
+
+const publicTrainingSurfaceLabels: Record<
+  TrainingRecord["surfaces"][number],
+  string
+> = {
+  lina: "Wspinanie z liną",
+  baldy: "Bouldering",
+  moon: "MoonBoard",
+  drazek: "Drążek",
+  spraywall: "Spraywall",
+  kilter: "Kilter Board",
+  silownia: "Siłownia",
+  chwytotablica: "Chwytotablica",
+  campus: "Campus",
+  bieznia: "Bieżnia",
+  rower: "Rower",
+  bieg: "Bieg",
+  treking: "Trekking",
+};
+
+function createPublicTrainingShareSnapshot(
+  training: TrainingRecord,
+  stimulusNormPercent: number | undefined,
+  stimulusLabel: string | undefined,
+  stimulusDimensions: PublicTrainingShare["stimulusDimensions"],
+): Omit<PublicTrainingShare, "id" | "createdAt"> {
+  const grades = Object.values(training.difficultyBySurface ?? {})
+    .flatMap((value) => value?.split(",") ?? [])
+    .map((grade) => grade.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  const activity =
+    training.customSessionType?.trim() ||
+    training.surfaces
+      .slice(0, 3)
+      .map((surface) => publicTrainingSurfaceLabels[surface])
+      .join(" • ") ||
+    "Trening wspinaczkowy";
+
+  return {
+    activity,
+    date: training.date,
+    time: training.time,
+    durationMinutes: training.durationMinutes,
+    ageYears: training.ageYears,
+    caloriesBurned: Math.max(training.caloriesBurned, 0),
+    attemptsCount: Math.max(training.attemptsCount, 0),
+    stimulusNormPercent,
+    stimulusLabel,
+    stimulusDimensions,
+    facilityName: training.facilityName?.trim() || undefined,
+    surfaces: training.surfaces,
+    grades,
+    difficultyBySurface: training.difficultyBySurface,
+    difficultyNotes: training.difficultyNotes.trim(),
+    wellbeing: training.wellbeing.trim(),
+    notes: training.notes.trim(),
+    ropeRoutes: training.ropeRoutes?.map((route) => ({ ...route })),
+    weatherSnapshot: training.weatherSnapshot,
+  };
+}
+
+type PublicTrainingShareRow = {
+  share_id: string;
+  owner_user_id: string;
+  training_id: string;
+  image_data: Buffer | null;
+  image_content_type: string | null;
+  snapshot: Partial<Omit<PublicTrainingShare, "id" | "createdAt">> &
+    Pick<
+      PublicTrainingShare,
+      | "activity"
+      | "date"
+      | "durationMinutes"
+      | "caloriesBurned"
+      | "attemptsCount"
+      | "grades"
+    >;
+  created_at: Date;
+};
+
+function mapPublicTrainingShare(
+  row: PublicTrainingShareRow,
+): PublicTrainingShare {
+  return {
+    id: row.share_id,
+    time: "",
+    ageYears: 0,
+    surfaces: [],
+    difficultyNotes: "",
+    wellbeing: "",
+    notes: "",
+    ...row.snapshot,
+    createdAt: row.created_at.toISOString(),
+  };
+}
+
+export async function createPublicTrainingShareInPostgres(
+  ownerUserId: string,
+  trainingId: string,
+  stimulusLabel?: string,
+) {
+  const trainingResult = await queryPostgres<TrainingRow>(
+    `
+      select trainings.*
+      from trainings
+      join athletes on athletes.id = trainings.athlete_id
+      where trainings.id = $1 and athletes.owner_user_id = $2
+    `,
+    [trainingId, ownerUserId],
+  );
+  const training = trainingResult.rows[0];
+  if (!training)
+    throw new Error("Nie znaleziono treningu należącego do użytkownika.");
+
+  const mappedTraining = mapTraining(training);
+  const [referenceTrainings, facilities] = await Promise.all([
+    listTrainingsFromPostgres(ownerUserId, mappedTraining.athleteId),
+    listFacilitiesFromPostgres(ownerUserId),
+  ]);
+  const stimulusScale = getTrainingStimulusScale(
+    mappedTraining,
+    referenceTrainings,
+    facilities,
+  );
+  const stimulusImpact = getTrainingStimulusImpact(
+    mappedTraining,
+    facilities,
+    referenceTrainings,
+  );
+  const snapshot = createPublicTrainingShareSnapshot(
+    mappedTraining,
+    stimulusScale ? Math.round(stimulusScale.ratio * 100) : undefined,
+    stimulusLabel,
+    stimulusImpact.dimensions,
+  );
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const shareId = randomBytes(9).toString("base64url");
+    const result = await queryPostgres<PublicTrainingShareRow>(
+      `
+        insert into public_training_shares (
+          share_id, owner_user_id, training_id, snapshot
+        )
+        values ($1, $2, $3, $4::jsonb)
+        on conflict (share_id) do nothing
+        returning share_id, owner_user_id, training_id, image_data, image_content_type, snapshot, created_at
+      `,
+      [shareId, ownerUserId, trainingId, JSON.stringify(snapshot)],
+    );
+    if (result.rows[0]) return mapPublicTrainingShare(result.rows[0]);
+  }
+
+  throw new Error("Nie udało się utworzyć publicznego linku treningu.");
+}
+
+export async function getPublicTrainingShareFromPostgres(shareId: string) {
+  const result = await queryPostgres<PublicTrainingShareRow>(
+    `
+      select share_id, owner_user_id, training_id, image_data, image_content_type, snapshot, created_at
+      from public_training_shares
+      where share_id = $1
+    `,
+    [shareId],
+  );
+  const row = result.rows[0];
+  if (!row) return null;
+
+  const share = mapPublicTrainingShare(row);
+  if (
+    share.stimulusNormPercent !== undefined &&
+    share.stimulusDimensions !== undefined
+  )
+    return share;
+
+  const training = await getTrainingFromPostgres(
+    row.owner_user_id,
+    row.training_id,
+  );
+  const [referenceTrainings, facilities] = await Promise.all([
+    listTrainingsFromPostgres(row.owner_user_id, training.athleteId),
+    listFacilitiesFromPostgres(row.owner_user_id),
+  ]);
+  const stimulusScale = getTrainingStimulusScale(
+    training,
+    referenceTrainings,
+    facilities,
+  );
+  const stimulusImpact = getTrainingStimulusImpact(
+    training,
+    facilities,
+    referenceTrainings,
+  );
+  return {
+    ...share,
+    stimulusNormPercent: stimulusScale
+      ? Math.round(stimulusScale.ratio * 100)
+      : undefined,
+    stimulusDimensions: stimulusImpact.dimensions,
+  };
+}
+
+export async function savePublicTrainingShareImageInPostgres(
+  ownerUserId: string,
+  shareId: string,
+  imageData: Buffer,
+) {
+  const result = await queryPostgres<{ share_id: string }>(
+    `
+      update public_training_shares
+      set image_data = $3, image_content_type = 'image/jpeg'
+      where share_id = $1 and owner_user_id = $2
+      returning share_id
+    `,
+    [shareId, ownerUserId, imageData],
+  );
+  if (!result.rows[0])
+    throw new Error("Nie znaleziono linku należącego do użytkownika.");
+}
+
+export async function getPublicTrainingShareImageFromPostgres(shareId: string) {
+  const result = await queryPostgres<{
+    image_data: Buffer | null;
+    image_content_type: string | null;
+  }>(
+    `select image_data, image_content_type from public_training_shares where share_id = $1`,
+    [shareId],
+  );
+  const image = result.rows[0];
+  return image?.image_data && image.image_content_type
+    ? { data: image.image_data, contentType: image.image_content_type }
+    : null;
 }
 
 export async function listClimbsFromPostgres(
@@ -1231,6 +2297,7 @@ export async function saveUserProfileToPostgres(
 export async function listWeightEntriesFromPostgres(
   ownerUserId: string,
   athleteId: string,
+  range?: { start: string; end: string },
 ) {
   await requireOwnedAthlete(ownerUserId, athleteId);
   const result = await queryPostgres<WeightEntryRow>(
@@ -1238,9 +2305,11 @@ export async function listWeightEntriesFromPostgres(
     select id, athlete_id, date, time, weight_kg, created_at
     from weight_entries
     where athlete_id = $1
+      and ($2::text is null or date >= $2::text)
+      and ($3::text is null or date <= $3::text)
     order by date desc, time desc, created_at desc
   `,
-    [athleteId],
+    [athleteId, range?.start ?? null, range?.end ?? null],
   );
 
   return result.rows.map(mapWeightEntry);
@@ -1641,10 +2710,23 @@ export async function deleteSectionFromPostgres(
 export async function listFacilitiesFromPostgres(ownerUserId: string) {
   const result = await queryPostgres<FacilityRow>(
     `
-    select id, name, capabilities, created_at
+    select facilities.id, facility_versions.version as current_version,
+           facility_versions.name, facility_versions.capabilities, facilities.visibility,
+          facilities.owner_user_id as created_by,
+           facilities.owner_user_id = $1 as is_owned_by_current_user,
+           facility_versions.kind, facility_versions.location_label,
+           facility_versions.latitude, facility_versions.longitude, facilities.created_at
     from facilities
-    where owner_user_id = $1
-    order by created_at asc
+    join app_users on app_users.id = facilities.owner_user_id
+    join lateral (
+      select *
+      from facility_versions
+      where facility_versions.facility_id = facilities.id
+      order by facility_versions.version desc
+      limit 1
+    ) facility_versions on true
+    where facilities.owner_user_id = $1 or facilities.visibility = 'global'
+    order by facilities.created_at asc
   `,
     [ownerUserId],
   );
@@ -1654,16 +2736,50 @@ export async function listFacilitiesFromPostgres(ownerUserId: string) {
 
 export async function createFacilityInPostgres(
   ownerUserId: string,
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const facilityId = crypto.randomUUID();
   const result = await queryPostgres<FacilityRow>(
     `
-    insert into facilities (id, name, capabilities, owner_user_id)
-    values ($1, $2, $3, $4)
-    returning id, name, capabilities, created_at
+    with inserted_facility as (
+      insert into facilities (id, name, capabilities, visibility, kind, location_label, latitude, longitude, owner_user_id)
+      values ($1, $2, $3, 'global', $4, $5, $6, $7, $8)
+      returning id, visibility, owner_user_id, created_at
+    ), inserted_version as (
+      insert into facility_versions (
+        facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+      )
+      select id, 1, $2, $3, $4, $5, $6, $7
+      from inserted_facility
+      returning facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+    )
+    select inserted_facility.id, inserted_version.version as current_version,
+          inserted_version.name, inserted_version.capabilities, inserted_facility.visibility,
+          (select display_name from app_users where id = $8) as created_by,
+          true as is_owned_by_current_user,
+          inserted_version.kind, inserted_version.location_label,
+          inserted_version.latitude, inserted_version.longitude, inserted_facility.created_at
+    from inserted_facility
+    join inserted_version on inserted_version.facility_id = inserted_facility.id
   `,
-    [facilityId, input.name.trim(), input.capabilities, ownerUserId],
+    [
+      facilityId,
+      input.name.trim(),
+      input.capabilities,
+      input.kind,
+      input.locationLabel.trim() || null,
+      input.latitude,
+      input.longitude,
+      ownerUserId,
+    ],
   );
 
   return mapFacility(result.rows[0]);
@@ -1672,21 +2788,101 @@ export async function createFacilityInPostgres(
 export async function updateFacilityInPostgres(
   ownerUserId: string,
   facilityId: string,
-  input: Pick<FacilityRecord, "name" | "capabilities">,
+  input: Pick<
+    FacilityRecord,
+    | "name"
+    | "capabilities"
+    | "kind"
+    | "locationLabel"
+    | "latitude"
+    | "longitude"
+  >,
 ) {
   const result = await queryPostgres<FacilityRow>(
     `
-    update facilities
-    set name = $3, capabilities = $4
-    where id = $1 and owner_user_id = $2
-    returning id, name, capabilities, created_at
+    with owned_facility as (
+      select id, visibility, created_at
+      from facilities
+      where id = $1 and owner_user_id = $2
+      for update
+    ), inserted_version as (
+      insert into facility_versions (
+        facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+      )
+      select owned_facility.id,
+        coalesce((
+          select max(version)
+          from facility_versions
+          where facility_id = owned_facility.id
+        ), 0) + 1,
+        $3, $4, $5, $6, $7, $8
+      from owned_facility
+      returning facility_id, version, name, capabilities, kind, location_label, latitude, longitude
+    )
+    select owned_facility.id, inserted_version.version as current_version,
+          inserted_version.name, inserted_version.capabilities, owned_facility.visibility,
+          (select display_name from app_users where id = $2) as created_by,
+          true as is_owned_by_current_user,
+          inserted_version.kind, inserted_version.location_label,
+          inserted_version.latitude, inserted_version.longitude, owned_facility.created_at
+    from owned_facility
+    join inserted_version on inserted_version.facility_id = owned_facility.id
   `,
-    [facilityId, ownerUserId, input.name.trim(), input.capabilities],
+    [
+      facilityId,
+      ownerUserId,
+      input.name.trim(),
+      input.capabilities,
+      input.kind,
+      input.locationLabel.trim() || null,
+      input.latitude,
+      input.longitude,
+    ],
   );
 
   const facility = result.rows[0];
   if (!facility)
     throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
+
+  return mapFacility(facility);
+}
+
+export async function publishFacilityToGlobalInPostgres(
+  ownerUserId: string,
+  facilityId: string,
+) {
+  const result = await queryPostgres<FacilityRow>(
+    `
+    with published_facility as (
+      update facilities
+      set visibility = 'global'
+      where id = $1 and owner_user_id = $2 and visibility = 'private'
+      returning id, visibility, created_at
+    )
+    select published_facility.id, facility_versions.version as current_version,
+              facility_versions.name, facility_versions.capabilities, published_facility.visibility,
+              (select display_name from app_users where id = $2) as created_by,
+              true as is_owned_by_current_user,
+              facility_versions.kind, facility_versions.location_label,
+              facility_versions.latitude, facility_versions.longitude, published_facility.created_at
+    from published_facility
+    join lateral (
+      select *
+      from facility_versions
+      where facility_versions.facility_id = published_facility.id
+      order by facility_versions.version desc
+      limit 1
+    ) facility_versions on true
+  `,
+    [facilityId, ownerUserId],
+  );
+
+  const facility = result.rows[0];
+  if (!facility) {
+    throw new Error(
+      "Nie znaleziono prywatnego obiektu należącego do użytkownika.",
+    );
+  }
 
   return mapFacility(facility);
 }
@@ -1698,14 +2894,16 @@ export async function deleteFacilityFromPostgres(
   const result = await queryPostgres<{ id: string }>(
     `
     delete from facilities
-    where id = $1 and owner_user_id = $2
+    where id = $1 and owner_user_id = $2 and visibility = 'private'
     returning id
   `,
     [facilityId, ownerUserId],
   );
 
   if (!result.rows[0]) {
-    throw new Error("Nie znaleziono obiektu należącego do użytkownika.");
+    throw new Error(
+      "Nie znaleziono prywatnego obiektu należącego do użytkownika.",
+    );
   }
 }
 
@@ -1936,18 +3134,40 @@ export async function importFullBackupToPostgres(
 
       await client.query(
         `
-          insert into facilities (id, name, capabilities, created_at, owner_user_id)
-          values ($1, $2, $3, $4, $5)
-          on conflict (id) do ${
-            skipDuplicates
-              ? "nothing"
-              : "update set name = excluded.name, capabilities = excluded.capabilities, created_at = excluded.created_at"
-          }
+          with imported_facility as (
+            insert into facilities (
+              id, name, capabilities, kind, location_label, latitude, longitude, created_at, owner_user_id
+            )
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            on conflict (id) do ${
+              skipDuplicates
+                ? "nothing"
+                : "update set name = excluded.name, capabilities = excluded.capabilities, kind = excluded.kind, location_label = excluded.location_label, latitude = excluded.latitude, longitude = excluded.longitude, created_at = excluded.created_at"
+            }
+            returning id, name, capabilities, kind, location_label, latitude, longitude, created_at
+          )
+          insert into facility_versions (
+            facility_id, version, name, capabilities, kind, location_label, latitude, longitude, created_at
+          )
+          select imported_facility.id,
+            coalesce((
+              select max(version)
+              from facility_versions
+              where facility_id = imported_facility.id
+            ), 0) + 1,
+            imported_facility.name, imported_facility.capabilities, imported_facility.kind,
+            imported_facility.location_label, imported_facility.latitude, imported_facility.longitude,
+            imported_facility.created_at
+          from imported_facility
         `,
         [
           facilityId,
           facility.name,
           facility.capabilities ?? { activities: [], ropeWalls: [] },
+          facility.kind,
+          facility.locationLabel || null,
+          facility.latitude,
+          facility.longitude,
           facility.createdAt,
           ownerUserId,
         ],
@@ -2025,11 +3245,11 @@ export async function importFullBackupToPostgres(
             id, source_id, athlete_id, date, time, duration_minutes,
             age_years, calories_burned, attempts_count, difficulty_notes,
             difficulty_by_surface, protocol, load_profile, wellbeing, surfaces, facility_name,
-            rope_wall_name, rope_routes, custom_session_type, notes, created_at
+            weather_snapshot, rope_wall_name, rope_routes, custom_session_type, notes, created_at
           )
           select
             $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-            $15, $16, $17, $18, $19, $20
+            $15, $16, $17, $18, $19, $20, $21
           where not exists (
             select 1
             from trainings
@@ -2047,16 +3267,17 @@ export async function importFullBackupToPostgres(
               and wellbeing = $13
               and surfaces = $14
               and facility_name is not distinct from $15
-              and rope_wall_name is not distinct from $16
-              and rope_routes is not distinct from $17::jsonb
-              and custom_session_type is not distinct from $18
-              and notes = $19
-              and created_at = $20
+              and weather_snapshot is not distinct from $16::jsonb
+              and rope_wall_name is not distinct from $17
+              and rope_routes is not distinct from $18::jsonb
+              and custom_session_type is not distinct from $19
+              and notes = $20
+              and created_at = $21
           )
           on conflict (id) do ${
             skipDuplicates
               ? "nothing"
-              : "update set athlete_id = excluded.athlete_id, date = excluded.date, time = excluded.time, duration_minutes = excluded.duration_minutes, age_years = excluded.age_years, calories_burned = excluded.calories_burned, attempts_count = excluded.attempts_count, difficulty_notes = excluded.difficulty_notes, difficulty_by_surface = excluded.difficulty_by_surface, protocol = excluded.protocol, load_profile = excluded.load_profile, wellbeing = excluded.wellbeing, surfaces = excluded.surfaces, facility_name = excluded.facility_name, rope_wall_name = excluded.rope_wall_name, rope_routes = excluded.rope_routes, custom_session_type = excluded.custom_session_type, notes = excluded.notes, created_at = excluded.created_at"
+              : "update set athlete_id = excluded.athlete_id, date = excluded.date, time = excluded.time, duration_minutes = excluded.duration_minutes, age_years = excluded.age_years, calories_burned = excluded.calories_burned, attempts_count = excluded.attempts_count, difficulty_notes = excluded.difficulty_notes, difficulty_by_surface = excluded.difficulty_by_surface, protocol = excluded.protocol, load_profile = excluded.load_profile, wellbeing = excluded.wellbeing, surfaces = excluded.surfaces, facility_name = excluded.facility_name, weather_snapshot = excluded.weather_snapshot, rope_wall_name = excluded.rope_wall_name, rope_routes = excluded.rope_routes, custom_session_type = excluded.custom_session_type, notes = excluded.notes, created_at = excluded.created_at"
           }
         `,
         [
@@ -2075,6 +3296,7 @@ export async function importFullBackupToPostgres(
           training.wellbeing,
           training.surfaces,
           training.facilityName ?? null,
+          training.weatherSnapshot ?? null,
           training.ropeWallName ?? null,
           training.ropeRoutes ? JSON.stringify(training.ropeRoutes) : null,
           training.customSessionType ?? null,

@@ -145,6 +145,8 @@ export function RopeTrainingGradesChart({
   const { selectedDate } = useSelectedDates();
   const { facilities } = useClimberbook();
   const [activeGradeTab, setActiveGradeTab] = useState<GradeChartTab>("all");
+  const [showTemperatureLine, setShowTemperatureLine] = useState(false);
+  const [showHumidityLine, setShowHumidityLine] = useState(false);
   const todayDate = new Date().toISOString().slice(0, 10);
   const chartEnd = previewMode
     ? chartRange.end
@@ -169,15 +171,23 @@ export function RopeTrainingGradesChart({
   const ropeTrainings = trainingsInRange
     .map((training) => ({
       ...training,
-      grades: getSurfaceGradeValues(training.difficultyBySurface?.lina)
-        .concat(
-          training.difficultyBySurface?.lina ||
-            !training.surfaces.includes("lina")
-            ? []
-            : getSurfaceGradeValues(training.difficultyNotes),
-        )
-        .map((grade) => ({
+      grades: (training.ropeRoutes?.length
+        ? training.ropeRoutes.map((route) => ({
+            grade: route.grade,
+            completed: route.completed,
+          }))
+        : getSurfaceGradeValues(training.difficultyBySurface?.lina)
+            .concat(
+              training.difficultyBySurface?.lina ||
+                !training.surfaces.includes("lina")
+                ? []
+                : getSurfaceGradeValues(training.difficultyNotes),
+            )
+            .map((grade) => ({ grade, completed: 1 }))
+      )
+        .map(({ grade, completed }) => ({
           grade,
+          completed: Math.min(Math.max(completed ?? 1, 0), 1),
           gradeIndex: getRopeGradeIndex(grade),
           plotX: getPreviewPlotX("lina"),
         }))
@@ -224,6 +234,7 @@ export function RopeTrainingGradesChart({
       plotX: grade.plotX,
       date: training.date,
       grade: grade.grade,
+      completed: grade.completed,
       gradeIndex: grade.gradeIndex,
       surface: "lina" as const,
       label: `${training.date} ${training.time}`,
@@ -264,6 +275,18 @@ export function RopeTrainingGradesChart({
           (training.surfaces.includes("campus") ? 12 : 0),
       }),
     );
+  const weatherPoints = trainingsInRange.flatMap((training) => {
+    if (!training.weatherSnapshot) return [];
+
+    return [
+      {
+        trainingTimestamp: getTrainingTimestamp(training),
+        plotX: 1,
+        temperatureC: training.weatherSnapshot.temperatureC,
+        relativeHumidity: training.weatherSnapshot.relativeHumidity,
+      },
+    ];
+  });
   const availableGradeTabs = gradeChartTabs.filter((tab) => {
     if (tab.key === "all") {
       return true;
@@ -477,7 +500,15 @@ export function RopeTrainingGradesChart({
           }}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart margin={{ top: 12, right: 0, bottom: 4, left: -16 }}>
+            <ComposedChart
+              margin={{
+                top: 12,
+                right:
+                  displayedGradeTab === "all" && showTemperatureLine ? 48 : 0,
+                bottom: 4,
+                left: -16,
+              }}
+            >
               <defs>
                 <linearGradient
                   id="sessionGradeStimulusFill"
@@ -630,6 +661,35 @@ export function RopeTrainingGradesChart({
                 }}
                 tick={{ fontSize: 9.6 }}
               />
+              {displayedGradeTab === "all" && weatherPoints.length > 0 && (
+                <>
+                  {showTemperatureLine && (
+                    <YAxis
+                      yAxisId="temperature"
+                      orientation="right"
+                      type="number"
+                      dataKey="temperatureC"
+                      width={40}
+                      domain={["auto", "auto"]}
+                      tickFormatter={(value) => `${value}°C`}
+                      label={{
+                        value: "temperatura",
+                        angle: 90,
+                        position: "insideRight",
+                        style: { fontSize: 9.6 },
+                      }}
+                      tick={{ fontSize: 9.6 }}
+                    />
+                  )}
+                  <YAxis
+                    yAxisId="humidity"
+                    type="number"
+                    dataKey="relativeHumidity"
+                    domain={[0, 100]}
+                    hide
+                  />
+                </>
+              )}
               {!isPreviewChart && totalStimulusPoints.length > 0 && (
                 <YAxis
                   yAxisId="stimulus"
@@ -783,6 +843,33 @@ export function RopeTrainingGradesChart({
                   );
                 }}
               />
+              {displayedGradeTab === "all" && showTemperatureLine && (
+                <Line
+                  data={weatherPoints}
+                  type="monotone"
+                  dataKey="temperatureC"
+                  name="Temperatura"
+                  yAxisId="temperature"
+                  stroke="var(--component-chart-series-average)"
+                  strokeWidth={2.5}
+                  dot={false}
+                  connectNulls
+                />
+              )}
+              {displayedGradeTab === "all" && showHumidityLine && (
+                <Line
+                  data={weatherPoints}
+                  type="monotone"
+                  dataKey="relativeHumidity"
+                  name="Wilgotność"
+                  yAxisId="humidity"
+                  stroke="var(--component-chart-series-projection)"
+                  strokeWidth={2.5}
+                  strokeDasharray="5 4"
+                  dot={false}
+                  connectNulls
+                />
+              )}
               {displayedGradeTab === "all" && (
                 <CombinedSessionGradeView
                   boardAxisAnchors={boardAxisAnchors}
@@ -830,6 +917,44 @@ export function RopeTrainingGradesChart({
         style={sessionGradeLegendStyle}
         aria-label="Legenda wycen"
       >
+        {displayedGradeTab === "all" && weatherPoints.length > 0 && (
+          <>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showTemperatureLine}
+                onChange={(event) =>
+                  setShowTemperatureLine(event.target.checked)
+                }
+                style={{ accentColor: "var(--component-chart-series-average)" }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-average)",
+                }}
+              />
+              Temperatura
+            </label>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showHumidityLine}
+                onChange={(event) => setShowHumidityLine(event.target.checked)}
+                style={{
+                  accentColor: "var(--component-chart-series-projection)",
+                }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-projection)",
+                }}
+              />
+              Wilgotność
+            </label>
+          </>
+        )}
         <span style={sessionGradeLegendItemStyle}>
           <i
             style={{
@@ -885,6 +1010,8 @@ export function TrainingStimulusChart({
   const { theme } = useTheme();
   const [activeStimulusTab, setActiveStimulusTab] =
     useState<StimulusTab>("all");
+  const [showTemperatureLine, setShowTemperatureLine] = useState(false);
+  const [showHumidityLine, setShowHumidityLine] = useState(false);
   const [visibleExperimentalDimensions, setVisibleExperimentalDimensions] =
     useState<Record<FatigueDimension, boolean>>({
       aerobicEndurance: true,
@@ -921,6 +1048,19 @@ export function TrainingStimulusChart({
     };
   });
   const stimulusPoints = series.filter((point) => point.coin !== null);
+  const weatherPoints = trainings
+    .filter(
+      (training) =>
+        training.date >= chartRange.start &&
+        training.date <= chartEnd &&
+        training.weatherSnapshot,
+    )
+    .map((training) => ({
+      trainingTimestamp: getTrainingTimestamp(training),
+      barTimestamp: getDayStartTimestamp(training.date) + 12 * 60 * 60 * 1000,
+      temperatureC: training.weatherSnapshot!.temperatureC,
+      relativeHumidity: training.weatherSnapshot!.relativeHumidity,
+    }));
   const isAllView = activeStimulusTab === "all";
   const isBarView = activeStimulusTab === "bar";
   const activeDimension =
@@ -1097,6 +1237,35 @@ export function TrainingStimulusChart({
               }}
               tick={{ fontSize: 9.6 }}
             />
+            {(showTemperatureLine || showHumidityLine) && (
+              <>
+                {showTemperatureLine && (
+                  <YAxis
+                    yAxisId="temperature"
+                    orientation="right"
+                    type="number"
+                    dataKey="temperatureC"
+                    width={40}
+                    domain={["auto", "auto"]}
+                    tickFormatter={(value) => `${value}°C`}
+                    label={{
+                      value: "temperatura",
+                      angle: 90,
+                      position: "insideRight",
+                      style: { fontSize: 9.6 },
+                    }}
+                    tick={{ fontSize: 9.6 }}
+                  />
+                )}
+                <YAxis
+                  yAxisId="humidity"
+                  type="number"
+                  dataKey="relativeHumidity"
+                  domain={[0, 100]}
+                  hide
+                />
+              </>
+            )}
             {isBarView && (
               <YAxis
                 yAxisId="bars"
@@ -1118,12 +1287,12 @@ export function TrainingStimulusChart({
                   <div style={sessionGradeTooltipStyle}>
                     <span>{point.date}</span>
                     <div style={sessionGradeTooltipGroupStyle}>
-                      <span>Łącznie: {(point.coin ?? 0).toFixed(3)}</span>
+                      <span>Łącznie: {(point.coin ?? 0).toFixed(5)}</span>
                       <span>Czas: {point.durationMinutes ?? 0} min</span>
                       {stimulusDimensionKeys.map((dimension) => (
                         <span key={dimension}>
                           {stimulusDimensionConfig[dimension].label}:{" "}
-                          {(point[dimension] ?? 0).toFixed(3)}
+                          {(point[dimension] ?? 0).toFixed(5)}
                         </span>
                       ))}
                     </div>
@@ -1131,6 +1300,33 @@ export function TrainingStimulusChart({
                 );
               }}
             />
+            {showTemperatureLine && (
+              <Line
+                data={weatherPoints}
+                type="monotone"
+                dataKey="temperatureC"
+                name="Temperatura"
+                yAxisId="temperature"
+                stroke="var(--component-chart-series-average)"
+                strokeWidth={2.5}
+                dot={false}
+                connectNulls
+              />
+            )}
+            {showHumidityLine && (
+              <Line
+                data={weatherPoints}
+                type="monotone"
+                dataKey="relativeHumidity"
+                name="Wilgotność"
+                yAxisId="humidity"
+                stroke="var(--component-chart-series-projection)"
+                strokeWidth={2.5}
+                strokeDasharray="5 4"
+                dot={false}
+                connectNulls
+              />
+            )}
             {isAllView && (
               <ExperimentalStimulusTab
                 data={stimulusPoints}
@@ -1153,6 +1349,44 @@ export function TrainingStimulusChart({
         </ResponsiveContainer>
       </div>
       <div style={sessionGradeLegendStyle} aria-label="Legenda bodźca">
+        {weatherPoints.length > 0 && (
+          <>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showTemperatureLine}
+                onChange={(event) =>
+                  setShowTemperatureLine(event.target.checked)
+                }
+                style={{ accentColor: "var(--component-chart-series-average)" }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-average)",
+                }}
+              />
+              Temperatura
+            </label>
+            <label style={sessionGradeLegendItemStyle}>
+              <input
+                type="checkbox"
+                checked={showHumidityLine}
+                onChange={(event) => setShowHumidityLine(event.target.checked)}
+                style={{
+                  accentColor: "var(--component-chart-series-projection)",
+                }}
+              />
+              <i
+                style={{
+                  ...stimulusLegendLineStyle,
+                  background: "var(--component-chart-series-projection)",
+                }}
+              />
+              Wilgotność
+            </label>
+          </>
+        )}
         {isAllView && (
           <>
             <label style={sessionGradeLegendItemStyle}>
@@ -2070,6 +2304,7 @@ type RopeGradePlotPoint = SessionGradePoint & {
   trainingTimestamp: number;
   plotX: number;
   gradeIndex: number;
+  completed: number;
   label: string;
   occurrenceCount: number;
 };
@@ -2474,7 +2709,7 @@ type ChartMarkerProps = {
   cx?: number;
   cy?: number;
   fill?: string;
-  payload?: { occurrenceCount?: number };
+  payload?: { occurrenceCount?: number; completed?: number };
 };
 
 function getMarkerScale(occurrenceCount = 1) {
@@ -2488,8 +2723,33 @@ function RopeAttemptMarker({
   payload,
 }: ChartMarkerProps) {
   const radius = 9 * getMarkerScale(payload?.occurrenceCount);
+  const completed = Math.min(Math.max(payload?.completed ?? 1, 0), 1);
 
-  return <circle cx={cx} cy={cy} r={radius} fill={fill} />;
+  if (completed === 1) {
+    return <circle cx={cx} cy={cy} r={radius} fill={fill} />;
+  }
+
+  const startAngle = -Math.PI / 2;
+  const endAngle = startAngle + Math.PI * 2 * completed;
+  const endX = cx + radius * Math.cos(endAngle);
+  const endY = cy + radius * Math.sin(endAngle);
+  const startX = cx + radius * Math.cos(startAngle);
+  const startY = cy + radius * Math.sin(startAngle);
+  const completionPath = `M ${cx} ${cy} L ${startX} ${startY} A ${radius} ${radius} 0 ${completed > 0.5 ? 1 : 0} 1 ${endX} ${endY} Z`;
+
+  return (
+    <g>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={radius}
+        fill={withAlpha(fill, 0.18)}
+        stroke={fill}
+        strokeWidth={1}
+      />
+      {completed > 0 && <path d={completionPath} fill={fill} />}
+    </g>
+  );
 }
 
 function TriangleMarker({

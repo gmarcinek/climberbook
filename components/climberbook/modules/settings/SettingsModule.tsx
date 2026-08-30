@@ -9,6 +9,11 @@ import { useClimberbookStats } from "@/components/climberbook/hooks/useClimberbo
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { SettingsAssembly } from "./components/SettingsAssembly";
 import { useSettingsModule } from "@/components/climberbook/providers/ClimberbookProvider";
+
+const settingsModuleMeta = moduleConfig.find(
+  (module) => module.key === "ustawienia",
+);
+
 export function SettingsModule() {
   const app = useSettingsModule();
   const pathname = usePathname();
@@ -43,7 +48,7 @@ export function SettingsModule() {
   });
   return (
     <SettingsAssembly
-      meta={moduleConfig[4]}
+      meta={settingsModuleMeta!}
       accountEmail={accountEmail}
       currentAge={stats.currentAge}
       profileDraft={app.profileDraft}

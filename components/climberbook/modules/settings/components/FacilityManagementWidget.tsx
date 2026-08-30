@@ -43,14 +43,16 @@ export function FacilityManagementWidget({
           {facilities.map((facility) => (
             <span key={facility.id} className={styles.sectionChip}>
               {facility.name}
-              <EmotButton
-                size="small"
-                className={styles.deleteButton}
-                onClick={() => void onDeleteFacility(facility)}
-                aria-label={`Usuń obiekt ${facility.name}`}
-              >
-                ×
-              </EmotButton>
+              {facility.visibility === "private" && (
+                <EmotButton
+                  size="small"
+                  className={styles.deleteButton}
+                  onClick={() => void onDeleteFacility(facility)}
+                  aria-label={`Usuń obiekt ${facility.name}`}
+                >
+                  ×
+                </EmotButton>
+              )}
             </span>
           ))}
         </div>

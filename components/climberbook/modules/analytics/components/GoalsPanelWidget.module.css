@@ -1,0 +1,141 @@
+.embeddedPanel {
+  background: color-mix(in srgb, #ffffff26 82%, #c98c5524) !important;
+  border: 0;
+  box-shadow: none;
+  padding: 1rem !important;
+}
+
+:global(body.theme-old-money) .embeddedPanel,
+:global(body.theme-old-money-toned) .embeddedPanel {
+  background: color-mix(in srgb, #ffffff26 82%, #c98c5524) !important;
+  border: var(--component-panel-border);
+}
+
+:global(body.theme-old-money) .oldMoneyControl :global(input),
+:global(body.theme-old-money-toned) .oldMoneyControl :global(input) {
+  border: 1px solid color-mix(in srgb, var(--theme-beige) 20%, transparent);
+  padding: 0.5rem;
+  background-color: #ffffff1a;
+  color: var(--component-input-text);
+}
+
+:global(body.theme-old-money) .oldMoneyControl :global(.FormControls_stepButton__qeJCX),
+:global(body.theme-old-money-toned) .oldMoneyControl :global(.FormControls_stepButton__qeJCX) {
+  border-color: #ffffff40;
+  background: transparent;
+  color: #fff;
+}
+
+:global(body.theme-old-money) .oldMoneyControl :global(input[type="number"]),
+:global(body.theme-old-money-toned) .oldMoneyControl :global(input[type="number"]) {
+  appearance: textfield;
+}
+
+:global(body.theme-old-money) .oldMoneyControl :global(input[type="number"]::-webkit-inner-spin-button),
+:global(body.theme-old-money) .oldMoneyControl :global(input[type="number"]::-webkit-outer-spin-button),
+:global(body.theme-old-money-toned) .oldMoneyControl :global(input[type="number"]::-webkit-inner-spin-button),
+:global(body.theme-old-money-toned) .oldMoneyControl :global(input[type="number"]::-webkit-outer-spin-button) {
+  appearance: none;
+  margin: 0;
+}
+
+:global(body.theme-old-money) .oldMoneyControl::placeholder,
+:global(body.theme-old-money-toned) .oldMoneyControl::placeholder {
+  color: color-mix(in srgb, var(--theme-beige) 72%, transparent);
+}
+
+:global(body.theme-old-money) .oldMoneyControl:focus,
+:global(body.theme-old-money-toned) .oldMoneyControl:focus,
+:global(body.theme-old-money) .oldMoneyControl :global(input):focus,
+:global(body.theme-old-money-toned) .oldMoneyControl :global(input):focus {
+  border-color: var(--theme-beige);
+  box-shadow:
+    0 0 0 1px var(--theme-beige),
+    0 0 0 4px color-mix(in srgb, var(--theme-beige) 35%, transparent);
+}
+
+:global(body.theme-old-money) select.oldMoneyControl,
+:global(body.theme-old-money-toned) select.oldMoneyControl {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%231e1916' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(color-mix(in srgb, var(--theme-beige) 30%, transparent), color-mix(in srgb, var(--theme-beige) 30%, transparent));
+}
+
+:global(body.theme-old-money) select.oldMoneyControl option,
+:global(body.theme-old-money-toned) select.oldMoneyControl option {
+  background: var(--theme-beige);
+  color: var(--theme-ink);
+}
+
+.heading {
+  display: grid;
+  gap: 2px;
+}
+
+.eyebrow,
+.goalLabel {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.goalRows {
+  display: grid;
+}
+
+.goalRow {
+  display: grid;
+  gap: 16px;
+  border-top: 1px solid var(--border-strong);
+  padding: 18px 0;
+}
+
+.goalForm {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.goalForm :global(.FormControls_controlGroup__FAPEq) {
+  max-width: 400px;
+  width: 100%;
+}
+
+.goalDescription {
+  margin: 2px 0 0;
+  font-size: 1rem;
+}
+
+.goalChart {
+  min-height: 160px;
+}
+
+@media (max-width: 760px) {
+  :global(body.theme-old-money) .oldMoneyControl,
+  :global(body.theme-old-money-toned) .oldMoneyControl {
+    background-color: #00000026;
+  }
+
+  :global(body.theme-old-money) .oldMoneyControl :global(input),
+  :global(body.theme-old-money-toned) .oldMoneyControl :global(input),
+  :global(body.theme-old-money) select.oldMoneyControl,
+  :global(body.theme-old-money-toned) select.oldMoneyControl,
+  :global(body.theme-old-money) .oldMoneyControl :global(.FormControls_stepButton__qeJCX),
+  :global(body.theme-old-money-toned) .oldMoneyControl :global(.FormControls_stepButton__qeJCX) {
+    background-color: #00000026;
+  }
+
+  .goalRow {
+    gap: 16px;
+  }
+
+  .goalChart {
+    min-height: 160px;
+  }
+}

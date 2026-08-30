@@ -93,11 +93,24 @@ const boulderRopeGradeByV: Record<string, string> = {
 const boulderCoinByGrade: Record<string, number> = Object.entries(
   boulderRopeGradeByV,
 ).reduce<Record<string, number>>((prices, [grade, ropeGrade]) => {
-  const coin = (ropeCoinPer10mByGrade[ropeGrade] ?? minimumCoin) / 3;
+  const gradeNumber = Number(grade.slice(1));
+  const discount =
+    gradeNumber >= 10
+      ? 0.35
+      : 0.15 + ((gradeNumber - 1) / (9 - 1)) * (0.3 - 0.15);
+  const coin =
+    ((ropeCoinPer10mByGrade[ropeGrade] ?? minimumCoin) / 3) * (1 - discount);
   prices[grade] = coin;
   prices[grade.slice(1)] = coin;
   return prices;
 }, {});
+
+const boulderGymCoinByGrade = Object.fromEntries(
+  Object.entries(boulderCoinByGrade).map(([grade, coin]) => [
+    grade,
+    coin * 0.8,
+  ]),
+);
 
 const spraywallAttemptProfile = {
   soft: { grade: "V2", attemptIntervalMinutes: 2 },
@@ -108,11 +121,11 @@ const spraywallAttemptProfile = {
   { grade: keyof typeof boulderRopeGradeByV; attemptIntervalMinutes: number }
 >;
 
-export const stimulusAlgorithmVersion = 3;
+export const stimulusAlgorithmVersion = 5;
 
 const surfaceHourlyCoin: Record<TrainingSurface | "general", number> = {
   lina: 0.012,
-  baldy: 0.016,
+  baldy: 0.0128,
   moon: 0.018,
   kilter: 0.018,
   spraywall: 0.014,
@@ -495,8 +508,10 @@ function getProtocolCoin(
 
 function getGradeCoin(surface: TrainingSurface, grades: string[]) {
   if (surface === "baldy" || surface === "moon" || surface === "kilter") {
+    const priceByGrade =
+      surface === "baldy" ? boulderGymCoinByGrade : boulderCoinByGrade;
     return grades.reduce(
-      (sum, grade) => sum + (boulderCoinByGrade[grade] ?? minimumCoin),
+      (sum, grade) => sum + (priceByGrade[grade] ?? minimumCoin),
       0,
     );
   }
@@ -558,16 +573,16 @@ export function getStimulusCatalog() {
       activity(
         "baldy",
         "Baldy",
-        "Każdy zadeklarowany problem V kosztuje 1/3 ceny 10 m liny o porównywalnej wycenie.",
+        "Każdy zadeklarowany problem V bazuje na 1/3 ceny 10 m liny o porównywalnej wycenie, obniżonej progresywnie o 15% dla V1, 30% dla V9 i 35% od V10, a następnie dodatkowo o 20% dla baldów.",
         {
-          priceByGrade: boulderCoinByGrade,
+          priceByGrade: boulderGymCoinByGrade,
           fallbackPerHour: surfaceHourlyCoin.baldy,
         },
       ),
       activity(
         "moon",
         "Moon",
-        "Każdy zadeklarowany problem V kosztuje 1/3 ceny 10 m liny o porównywalnej wycenie.",
+        "Każdy zadeklarowany problem V bazuje na 1/3 ceny 10 m liny o porównywalnej wycenie, obniżonej progresywnie o 15% dla V1, 30% dla V9 i 35% od V10.",
         {
           unit: "wycena",
           priceByGrade: boulderCoinByGrade,
@@ -577,7 +592,7 @@ export function getStimulusCatalog() {
       activity(
         "kilter",
         "Kilter",
-        "Każdy zadeklarowany problem V kosztuje 1/3 ceny 10 m liny o porównywalnej wycenie.",
+        "Każdy zadeklarowany problem V bazuje na 1/3 ceny 10 m liny o porównywalnej wycenie, obniżonej progresywnie o 15% dla V1, 30% dla V9 i 35% od V10.",
         {
           unit: "wycena",
           priceByGrade: boulderCoinByGrade,
@@ -696,9 +711,11 @@ export function getObjectiveStimulusActivities(
           (candidate) => candidate.name === route.ropeWallName,
         );
         const lengthMeters = wall?.lengthMeters ?? fallbackRopeLength;
+        const completion = Math.min(Math.max(route.completed ?? 1, 0), 1);
         const coin =
           (ropeCoinPer10mByGrade[route.grade] ?? minimumCoin) *
-          (lengthMeters / 10);
+          (lengthMeters / 10) *
+          completion;
         return {
           coin,
           dimensionSplit: getRopeDimensionSplit(
@@ -760,16 +777,15 @@ export function getObjectiveStimulusActivities(
             training.protocol?.spraywallIntensity ?? "medium",
           )
         : 0;
+    const calculatedCoin =
+      surface === "spraywall"
+        ? spraywallCoin
+        : gradeCoin || protocolCoin
+          ? gradeCoin + protocolCoin
+          : timeCoin;
     return {
       surface,
-      coin: Math.max(
-        minimumCoin,
-        surface === "spraywall"
-          ? spraywallCoin
-          : gradeCoin || protocolCoin
-            ? gradeCoin + protocolCoin
-            : timeCoin,
-      ),
+      coin: gradeCoin ? calculatedCoin : Math.max(minimumCoin, calculatedCoin),
       dimensionSplit:
         surface === "spraywall"
           ? spraywallDimensionSplits[

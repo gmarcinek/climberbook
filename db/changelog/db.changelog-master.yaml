@@ -31,3 +31,39 @@ databaseChangeLog:
       file: changelog/changes/015-add-training-rope-wall.sql
   - include:
       file: changelog/changes/016-add-training-rope-routes.sql
+  - include:
+      file: changelog/changes/017-grant-password-credential-access.sql
+  - include:
+      file: changelog/changes/018-add-facility-visibility.sql
+  - include:
+      file: changelog/changes/019-add-facility-location.sql
+  - include:
+      file: changelog/changes/020-add-training-weather-snapshot.sql
+  - include:
+      file: changelog/changes/021-add-facility-versions.sql
+  - include:
+      file: changelog/changes/022-add-app-user-roles.sql
+  - include:
+      file: changelog/changes/023-grant-facility-version-access.sql
+  - include:
+      file: changelog/changes/024-add-climbing-conditions-study.sql
+  - include:
+      file: changelog/changes/025-remove-conditions-study-reasoning.sql
+  - include:
+      file: changelog/changes/026-simplify-climbing-conditions-study.sql
+  - include:
+      file: changelog/changes/027-focus-climbing-conditions-study.sql
+  - include:
+      file: changelog/changes/028-remove-conditions-study-hour.sql
+  - include:
+      file: changelog/changes/029-remove-conditions-study-date.sql
+  - include:
+      file: changelog/changes/030-add-training-summaries-and-agent-actions.sql
+  - include:
+      file: changelog/changes/031-add-agent-feed-items.sql
+  - include:
+      file: changelog/changes/032-add-athlete-goals.sql
+  - include:
+      file: changelog/changes/033-add-public-training-shares.sql
+  - include:
+      file: changelog/changes/034-add-public-training-share-image.sql

@@ -148,6 +148,20 @@
   font-weight: var(--common-font-weight-bold);
 }
 
+:global(body.theme-old-money) .navigationLinkMobile,
+:global(body.theme-old-money-toned) .navigationLinkMobile {
+  border-color: color-mix(in srgb, var(--theme-beige) 46%, transparent);
+  background: color-mix(in srgb, var(--theme-beige) 22%, transparent);
+  color: var(--theme-text);
+}
+
+:global(body.theme-old-money) .navigationLinkMobileActive,
+:global(body.theme-old-money-toned) .navigationLinkMobileActive {
+  border-color: color-mix(in srgb, var(--theme-beige) 62%, transparent);
+  background: var(--theme-burgundy);
+  color: var(--theme-text-inverse);
+}
+
 .navigationSeparator {
   color: var(--theme-text-muted);
   opacity: 0.7;
@@ -155,6 +169,10 @@
 
 .logoutButton {
   margin-left: 2rem;
+}
+
+.logoutButtonIcon {
+  background: transparent;
 }
 
 .mobileNavigationDialog {

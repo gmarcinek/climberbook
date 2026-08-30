@@ -1,9 +1,11 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/climberbook/common/Button";
 import { Select } from "@/components/climberbook/common/FormControls";
 import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
+import { InformationModalTrigger } from "@/components/climberbook/common/InformationModal";
 import type {
   FacilityRecord,
   RopeRoute,
@@ -40,9 +42,10 @@ export function TrainingGradeFields({
   const gradeSurfaces = draft.surfaces.filter(
     (surface) => gradeSurfaceLabels[surface],
   );
-  const ropeWalls =
-    facilities.find((facility) => facility.name === draft.facilityName)
-      ?.capabilities.ropeWalls ?? [];
+  const selectedFacility =
+    facilities.find((facility) => facility.id === draft.facilityId) ??
+    facilities.find((facility) => facility.name === draft.facilityName);
+  const ropeWalls = selectedFacility?.capabilities.ropeWalls ?? [];
   const updateGrades = (surface: TrainingSurface, grades: string[]) =>
     onDraftChange({
       ...draft,
@@ -88,6 +91,7 @@ export function TrainingGradeFields({
                 <strong className={styles.trainingSidebar__protocolHeading}>
                   Drogi na linie
                 </strong>
+                <InformationModalTrigger topic="ropeRouteGrades" />
               </div>
               <div className={styles.trainingSidebar__stack}>
                 <div className={styles.trainingSidebar__chipGrid}>
@@ -142,101 +146,140 @@ export function TrainingGradeFields({
                 )}
               </div>
               {draft.ropeRoutes.length ? (
-                <>
-                  <div
-                    className={styles.trainingSidebar__ropeRouteLabels}
-                    aria-hidden="true"
-                  >
-                    <span>Wycena</span>
-                    <span>Ściana</span>
-                    <span />
-                  </div>
-                  {draft.ropeRoutes.map((route, index) => (
-                    <div
-                      key={index}
-                      className={styles.trainingSidebar__ropeRouteRow}
-                    >
-                      <span className={styles.trainingSidebar__ropeRouteGrade}>
-                        {route.grade}
-                      </span>
-                      <Select
-                        aria-label={`Ściana drogi ${index + 1}`}
-                        value={route.ropeWallName}
-                        disabled={!ropeWalls.length}
-                        onChange={(event) =>
-                          updateRopeRoutes(
-                            draft.ropeRoutes.map((item, itemIndex) =>
-                              itemIndex === index
-                                ? { ...item, ropeWallName: event.target.value }
-                                : item,
-                            ),
-                          )
-                        }
-                      >
-                        <option value="">
-                          {ropeWalls.length
-                            ? "Wybierz ścianę"
-                            : "Brak ścian w obiekcie"}
-                        </option>
-                        {ropeWalls.map((wall) => (
-                          <option key={wall.name} value={wall.name}>
-                            {wall.name}
-                          </option>
-                        ))}
-                      </Select>
-                      <div
-                        className={styles.trainingSidebar__ropeRouteCompletion}
-                        aria-label={`Ukończenie drogi ${index + 1}`}
-                      >
-                        {[0.25, 0.5, 0.75, 1.0].map((completed) => (
-                          <button
-                            key={completed}
-                            type="button"
-                            aria-pressed={route.completed === completed}
-                            className={[
-                              styles.trainingSidebar__ropeRouteCompletionButton,
-                              route.completed === completed
-                                ? styles[
-                                    "trainingSidebar__ropeRouteCompletionButton--active"
-                                  ]
-                                : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            onClick={() =>
-                              updateRopeRoutes(
-                                draft.ropeRoutes.map((item, itemIndex) =>
-                                  itemIndex === index
-                                    ? { ...item, completed }
-                                    : item,
-                                ),
-                              )
+                <div className={styles.trainingSidebar__ropeRouteTableWrap}>
+                  <table className={styles.trainingSidebar__ropeRouteTable}>
+                    <thead>
+                      <tr>
+                        <th scope="col">Wycena</th>
+                        <th scope="col">Sektor</th>
+                        <th
+                          scope="col"
+                          className={styles.trainingSidebar__ropeRouteVolume}
+                        >
+                          <span
+                            className={
+                              styles.trainingSidebar__ropeRouteLabelWithInfo
                             }
                           >
-                            {Math.round(completed * 100)}%
-                          </button>
-                        ))}
-                      </div>
-                      <Button
-                        type="button"
-                        size="small"
-                        variant="secondary"
-                        aria-label={`Usuń drogę ${index + 1}`}
-                        title="Usuń drogę"
-                        className={styles.trainingSidebar__ropeRouteDelete}
-                        onClick={() =>
-                          updateRopeRoutes(
-                            draft.ropeRoutes.filter(
-                              (_route, routeIndex) => routeIndex !== index,
-                            ),
-                          )
-                        }
-                      >
-                        🗑
-                      </Button>
-                    </div>
-                  ))}
-                </>
+                            Objętość treningowa
+                            <InformationModalTrigger topic="trainingVolume" />
+                          </span>
+                        </th>
+                        <th scope="col">
+                          <span
+                            className={styles.trainingSidebar__visuallyHidden}
+                          >
+                            Usuń drogę
+                          </span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {draft.ropeRoutes.map((route, index) => (
+                        <tr key={index}>
+                          <td>
+                            <span
+                              className={styles.trainingSidebar__ropeRouteGrade}
+                            >
+                              {route.grade}
+                            </span>
+                          </td>
+                          <td>
+                            <Select
+                              aria-label={`Ściana drogi ${index + 1}`}
+                              value={route.ropeWallName}
+                              disabled={!ropeWalls.length}
+                              onChange={(event) =>
+                                updateRopeRoutes(
+                                  draft.ropeRoutes.map((item, itemIndex) =>
+                                    itemIndex === index
+                                      ? {
+                                          ...item,
+                                          ropeWallName: event.target.value,
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            >
+                              <option value="">
+                                {ropeWalls.length
+                                  ? "Wybierz ścianę"
+                                  : "Brak ścian w obiekcie"}
+                              </option>
+                              {ropeWalls.map((wall) => (
+                                <option key={wall.name} value={wall.name}>
+                                  {wall.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </td>
+                          <td
+                            className={styles.trainingSidebar__ropeRouteVolume}
+                          >
+                            <div
+                              className={
+                                styles.trainingSidebar__ropeRouteCompletion
+                              }
+                              aria-label={`Ukończenie drogi ${index + 1}`}
+                            >
+                              {[0.25, 0.5, 0.75, 1.0].map((completed) => (
+                                <button
+                                  key={completed}
+                                  type="button"
+                                  aria-pressed={route.completed === completed}
+                                  className={[
+                                    styles.trainingSidebar__ropeRouteCompletionButton,
+                                    route.completed === completed
+                                      ? styles[
+                                          "trainingSidebar__ropeRouteCompletionButton--active"
+                                        ]
+                                      : "",
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" ")}
+                                  onClick={() =>
+                                    updateRopeRoutes(
+                                      draft.ropeRoutes.map((item, itemIndex) =>
+                                        itemIndex === index
+                                          ? { ...item, completed }
+                                          : item,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  {Math.round(completed * 100)}%
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                          <td>
+                            <Button
+                              type="button"
+                              size="small"
+                              variant="secondary"
+                              aria-label={`Usuń drogę ${index + 1}`}
+                              title="Usuń drogę"
+                              className={
+                                styles.trainingSidebar__ropeRouteDelete
+                              }
+                              onClick={() =>
+                                updateRopeRoutes(
+                                  draft.ropeRoutes.filter(
+                                    (_route, routeIndex) =>
+                                      routeIndex !== index,
+                                  ),
+                                )
+                              }
+                            >
+                              <Trash2 size={16} aria-hidden="true" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <p className={styles.trainingSidebar__helperText}>
                   Wybierz wycenę poniżej, aby dodać drogę.
@@ -251,7 +294,16 @@ export function TrainingGradeFields({
             <label
               className={`${fullFieldClassName} ${styles.trainingSidebar__protocolHeading}`}
             >
-              Wyceny - {gradeSurfaceLabels[surface]}
+              <span className={styles.trainingSidebar__headingWithInfo}>
+                Wyceny - {gradeSurfaceLabels[surface]}
+                {surface === "baldy" ? (
+                  <InformationModalTrigger topic="boulderGymGrades" />
+                ) : surface === "moon" ? (
+                  <InformationModalTrigger topic="moonBoardGrades" />
+                ) : surface === "kilter" ? (
+                  <InformationModalTrigger topic="kilterBoardGrades" />
+                ) : null}
+              </span>
             </label>
             <div
               className={[
