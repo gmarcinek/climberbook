@@ -29,6 +29,11 @@ import {
   getStimulusSharingLabel,
   readStimulusSharingConfig,
 } from "@/lib/stimulus-sharing-config";
+import {
+  formatHeartRateZoneRange,
+  formatHeartRateZoneTime,
+  heartRateZoneConfig,
+} from "@/lib/heart-rate-zones";
 
 type Props = {
   training: TrainingRecord;
@@ -158,6 +163,25 @@ export function TrainingPreviewModal({
   ] as const;
   const totalStimulusDimensions = stimulusDimensions.reduce(
     (total, [, value]) => total + value,
+    0,
+  );
+  const heartRateZoneValues =
+    training.loadProfile?.heartRateZoneSeconds ??
+    training.loadProfile?.heartRateZones;
+  const usesLegacyHeartRatePercentages =
+    !training.loadProfile?.heartRateZoneSeconds &&
+    Boolean(training.loadProfile?.heartRateZones);
+  const heartRateZones = heartRateZoneConfig
+    .map((zone) => {
+      const storedValue = Math.max(0, heartRateZoneValues?.[zone.key] ?? 0);
+      const seconds = usesLegacyHeartRatePercentages
+        ? Math.round((training.durationMinutes * 60 * storedValue) / 100)
+        : storedValue;
+      return { ...zone, seconds };
+    })
+    .filter((zone) => zone.seconds > 0);
+  const heartRateZoneTotalSeconds = heartRateZones.reduce(
+    (total, zone) => total + zone.seconds,
     0,
   );
 
@@ -300,6 +324,49 @@ export function TrainingPreviewModal({
             <PreviewDetail label="Wstawki">
               {formatReportedAttempts(training)}
             </PreviewDetail>
+            {heartRateZones.length > 0 ? (
+              <PreviewDetail label="Strefy tętna" full>
+                <div className={styles.trainingSidebar__previewHeartRateZones}>
+                  {heartRateZones.map((zone) => (
+                    <div
+                      key={zone.key}
+                      className={styles.trainingSidebar__previewHeartRateZone}
+                    >
+                      <div
+                        className={
+                          styles.trainingSidebar__previewHeartRateZoneHeader
+                        }
+                      >
+                        <span>
+                          <strong>{zone.label}</strong>
+                          <small>
+                            {formatHeartRateZoneRange(zone, training.ageYears)}
+                          </small>
+                        </span>
+                        <b>{formatHeartRateZoneTime(zone.seconds)}</b>
+                      </div>
+                      <div
+                        className={
+                          styles.trainingSidebar__previewHeartRateZoneTrack
+                        }
+                        role="progressbar"
+                        aria-label={`${zone.label}: ${formatHeartRateZoneTime(zone.seconds)}`}
+                        aria-valuemin={0}
+                        aria-valuemax={heartRateZoneTotalSeconds}
+                        aria-valuenow={zone.seconds}
+                      >
+                        <span
+                          style={{
+                            backgroundColor: zone.color,
+                            width: `${(zone.seconds / heartRateZoneTotalSeconds) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </PreviewDetail>
+            ) : null}
             <PreviewDetail label="Impakt bodźca" full>
               <div style={{ display: "grid", gap: "4px" }}>
                 {stimulusScale ? (
@@ -448,9 +515,7 @@ export function TrainingPreviewModal({
               </div>
             </section>
           )}
-          <div
-            className={styles.trainingSidebar__drawerActions}
-          >
+          <div className={styles.trainingSidebar__drawerActions}>
             <div className={styles.trainingSidebar__drawerActionGroup}>
               <EmotButton
                 size="small"

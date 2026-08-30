@@ -1,5 +1,6 @@
 import type {
   HangboardMode,
+  HeartRateZone,
   RopeRoute,
   SpraywallIntensity,
   TrainingConditions,
@@ -17,6 +18,9 @@ export type TrainingDraftValues = {
   ageYears: string;
   caloriesBurned: string;
   caloriesMode: "auto" | "manual";
+  heartRateZoneTimes: Record<HeartRateZone, string>;
+  runningDistanceKm: string;
+  runningAveragePace: string;
   focus: TrainingFocus;
   conditions: TrainingConditions;
   conditionsWasSetManually: boolean;

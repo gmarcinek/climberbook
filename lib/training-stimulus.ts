@@ -121,7 +121,7 @@ const spraywallAttemptProfile = {
   { grade: keyof typeof boulderRopeGradeByV; attemptIntervalMinutes: number }
 >;
 
-export const stimulusAlgorithmVersion = 5;
+export const stimulusAlgorithmVersion = 8;
 
 const surfaceHourlyCoin: Record<TrainingSurface | "general", number> = {
   lina: 0.012,
@@ -145,9 +145,9 @@ const surfaceDimensionSplits: Record<
   FatigueDimensions
 > = {
   lina: {
-    aerobicEndurance: 0.45,
-    strengthEndurance: 0.35,
-    strengthPower: 0.1,
+    aerobicEndurance: 0.3,
+    strengthEndurance: 0.45,
+    strengthPower: 0.15,
     contactStrength: 0.1,
   },
   baldy: {
@@ -211,9 +211,9 @@ const surfaceDimensionSplits: Record<
     contactStrength: 0,
   },
   bieg: {
-    aerobicEndurance: 0.8,
-    strengthEndurance: 0.1,
-    strengthPower: 0.1,
+    aerobicEndurance: 0.95,
+    strengthEndurance: 0.04,
+    strengthPower: 0.01,
     contactStrength: 0,
   },
   treking: {
@@ -253,28 +253,61 @@ const spraywallDimensionSplits = {
 
 const ropeDimensionSplits = {
   low: {
-    aerobicEndurance: 0.7,
-    strengthEndurance: 0.25,
-    strengthPower: 0.03,
-    contactStrength: 0.02,
+    aerobicEndurance: 0.5,
+    strengthEndurance: 0.4,
+    strengthPower: 0.06,
+    contactStrength: 0.04,
   },
   medium: {
-    aerobicEndurance: 0.4,
-    strengthEndurance: 0.4,
-    strengthPower: 0.12,
-    contactStrength: 0.08,
+    aerobicEndurance: 0.25,
+    strengthEndurance: 0.5,
+    strengthPower: 0.15,
+    contactStrength: 0.1,
   },
   high: {
-    aerobicEndurance: 0.2,
-    strengthEndurance: 0.4,
+    aerobicEndurance: 0.12,
+    strengthEndurance: 0.48,
     strengthPower: 0.25,
     contactStrength: 0.15,
   },
   elite: {
-    aerobicEndurance: 0.1,
-    strengthEndurance: 0.25,
-    strengthPower: 0.45,
+    aerobicEndurance: 0.08,
+    strengthEndurance: 0.37,
+    strengthPower: 0.35,
     contactStrength: 0.2,
+  },
+} satisfies Record<string, FatigueDimensions>;
+
+const runningZoneDimensionSplits = {
+  z1: {
+    aerobicEndurance: 1,
+    strengthEndurance: 0,
+    strengthPower: 0,
+    contactStrength: 0,
+  },
+  z2: {
+    aerobicEndurance: 0.98,
+    strengthEndurance: 0.02,
+    strengthPower: 0,
+    contactStrength: 0,
+  },
+  z3: {
+    aerobicEndurance: 0.95,
+    strengthEndurance: 0.05,
+    strengthPower: 0,
+    contactStrength: 0,
+  },
+  z4: {
+    aerobicEndurance: 0.9,
+    strengthEndurance: 0.09,
+    strengthPower: 0.01,
+    contactStrength: 0,
+  },
+  z5: {
+    aerobicEndurance: 0.85,
+    strengthEndurance: 0.1,
+    strengthPower: 0.05,
+    contactStrength: 0,
   },
 } satisfies Record<string, FatigueDimensions>;
 
@@ -328,6 +361,42 @@ function normalizeDimensions(dimensions: FatigueDimensions): FatigueDimensions {
     strengthPower: dimensions.strengthPower / total,
     contactStrength: dimensions.contactStrength / total,
   };
+}
+
+function getRunningDimensionSplit(
+  zones: NonNullable<TrainingRecord["loadProfile"]>["heartRateZoneSeconds"],
+) {
+  const entries = Object.entries(zones ?? {}).filter(
+    (entry): entry is [keyof typeof runningZoneDimensionSplits, number] =>
+      entry[0] in runningZoneDimensionSplits &&
+      Number.isFinite(entry[1]) &&
+      entry[1] > 0,
+  );
+  const total = entries.reduce((sum, [, percent]) => sum + percent, 0);
+  if (total <= 0) return surfaceDimensionSplits.bieg;
+
+  return normalizeDimensions(
+    entries.reduce<FatigueDimensions>(
+      (dimensions, [zone, percent]) => ({
+        aerobicEndurance:
+          dimensions.aerobicEndurance +
+          runningZoneDimensionSplits[zone].aerobicEndurance * percent,
+        strengthEndurance:
+          dimensions.strengthEndurance +
+          runningZoneDimensionSplits[zone].strengthEndurance * percent,
+        strengthPower:
+          dimensions.strengthPower +
+          runningZoneDimensionSplits[zone].strengthPower * percent,
+        contactStrength: 0,
+      }),
+      {
+        aerobicEndurance: 0,
+        strengthEndurance: 0,
+        strengthPower: 0,
+        contactStrength: 0,
+      },
+    ),
+  );
 }
 
 function parseGrades(value: string | undefined) {
@@ -393,28 +462,39 @@ function getBoulderDimensionSplit(
     ...grades.map((grade) => getGradeRank(surface, grade)),
   );
 
-  if (!reference || highestRank < 0) return surfaceDimensionSplits[surface];
+  const moveHalfContactToStrength = (dimensions: FatigueDimensions) => {
+    if (surface !== "baldy") return dimensions;
+    const transferredContactStrength = dimensions.contactStrength / 2;
+    return {
+      ...dimensions,
+      strengthPower: dimensions.strengthPower + transferredContactStrength,
+      contactStrength: transferredContactStrength,
+    };
+  };
+
+  if (!reference || highestRank < 0)
+    return moveHalfContactToStrength(surfaceDimensionSplits[surface]);
   if (
     highestRank <= reference.average - 2 ||
     highestRank <= reference.maximum - 3
   ) {
-    return {
+    return moveHalfContactToStrength({
       aerobicEndurance: 0.6,
       strengthEndurance: 0.25,
       strengthPower: 0.1,
       contactStrength: 0.05,
-    } satisfies FatigueDimensions;
+    });
   }
   if (highestRank <= reference.maximum) {
-    return {
+    return moveHalfContactToStrength({
       aerobicEndurance: 0.15,
       strengthEndurance: 0.45,
       strengthPower: 0.25,
       contactStrength: 0.15,
-    } satisfies FatigueDimensions;
+    });
   }
 
-  return surfaceDimensionSplits[surface];
+  return moveHalfContactToStrength(surfaceDimensionSplits[surface]);
 }
 
 function getRopeDimensionSplit(
@@ -643,10 +723,16 @@ export function getStimulusCatalog() {
         unit: "godzina",
         coin: surfaceHourlyCoin.rower,
       }),
-      activity("bieg", "Bieg", "Cena godzinowa treningu biegowego.", {
-        unit: "godzina",
-        coin: surfaceHourlyCoin.bieg,
-      }),
+      activity(
+        "bieg",
+        "Bieg",
+        "Cena godzinowa treningu biegowego. Opcjonalny czas w strefach tętna koryguje profil bodźca.",
+        {
+          unit: "godzina",
+          coin: surfaceHourlyCoin.bieg,
+          heartRateZones: runningZoneDimensionSplits,
+        },
+      ),
       activity(
         "treking",
         "Treck",
@@ -673,6 +759,7 @@ export function getObjectiveStimulusActivities(
     | "durationMinutes"
     | "difficultyBySurface"
     | "protocol"
+    | "loadProfile"
     | "facilityName"
     | "ropeRoutes"
   >,
@@ -797,7 +884,12 @@ export function getObjectiveStimulusActivities(
                 parseGrades(training.difficultyBySurface?.[surface]),
                 getGradeReference(training, surface, referenceTrainings),
               )
-            : surfaceDimensionSplits[surface],
+            : surface === "bieg"
+              ? getRunningDimensionSplit(
+                  training.loadProfile?.heartRateZoneSeconds ??
+                    training.loadProfile?.heartRateZones,
+                )
+              : surfaceDimensionSplits[surface],
     };
   });
 }

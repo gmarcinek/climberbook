@@ -110,10 +110,16 @@ export type KnownTrainingConditions =
   | "too_warm"
   | "burdensome";
 export type TrainingConditions = KnownTrainingConditions | (string & {});
+export type HeartRateZone = "z1" | "z2" | "z3" | "z4" | "z5";
+export type HeartRateZoneDistribution = Partial<Record<HeartRateZone, number>>;
 export type TrainingLoadProfile = {
   algorithmVersion: 1;
   focus: TrainingFocus;
   conditions: TrainingConditions;
+  heartRateZoneSeconds?: HeartRateZoneDistribution;
+  heartRateZones?: HeartRateZoneDistribution;
+  runningDistanceKm?: number;
+  runningAveragePaceSecondsPerKm?: number;
   activities?: TrainingLoadActivity[];
 };
 export type RopeRoute = {

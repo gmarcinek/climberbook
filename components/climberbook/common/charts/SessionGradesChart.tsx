@@ -30,10 +30,12 @@ import {
 } from "@/components/climberbook/common/training";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { weightChartCanvasStyle } from "@/components/climberbook/common/styles";
+import { heartRateZoneConfig } from "@/lib/heart-rate-zones";
 import type {
   FatigueDimension,
   FatigueDimensions,
   FacilityRecord,
+  HeartRateZoneDistribution,
   SpraywallIntensity,
   TrainingRecord,
 } from "@/lib/climbs-db";
@@ -275,6 +277,23 @@ export function RopeTrainingGradesChart({
           (training.surfaces.includes("campus") ? 12 : 0),
       }),
     );
+  const runningSessions: RunningSessionPoint[] = trainingsInRange
+    .filter((training) => training.surfaces.includes("bieg"))
+    .map((training) => ({
+      trainingTimestamp: getTrainingTimestamp(training),
+      plotX: getPreviewPlotX("bieg"),
+      date: training.date,
+      time: training.time,
+      durationMinutes: training.durationMinutes,
+      distanceKm: training.loadProfile?.runningDistanceKm ?? null,
+      averagePaceSecondsPerKm:
+        training.loadProfile?.runningAveragePaceSecondsPerKm ?? null,
+      heartRateZoneValues:
+        training.loadProfile?.heartRateZoneSeconds ??
+        training.loadProfile?.heartRateZones,
+      gradeIndex: 1,
+      surface: "bieg",
+    }));
   const weatherPoints = trainingsInRange.flatMap((training) => {
     if (!training.weatherSnapshot) return [];
 
@@ -297,7 +316,8 @@ export function RopeTrainingGradesChart({
       (tab.key === "moon" && moonPoints.length > 0) ||
       (tab.key === "kilter" && kilterPoints.length > 0) ||
       (tab.key === "baldy" && boulderPoints.length > 0) ||
-      (tab.key === "spraywall" && spraywallSessions.length > 0)
+      (tab.key === "spraywall" && spraywallSessions.length > 0) ||
+      (tab.key === "bieg" && runningSessions.length > 0)
     );
   });
   const displayedGradeTab = availableGradeTabs.some(
@@ -310,6 +330,8 @@ export function RopeTrainingGradesChart({
   const showsTrainingBlocks = displayedGradeTab === "all";
   const showsSpraywall =
     displayedGradeTab === "all" || displayedGradeTab === "spraywall";
+  const showsRunning =
+    displayedGradeTab === "all" || displayedGradeTab === "bieg";
   const visibleRopePoints = showsRope ? points : [];
   const visibleMoonPoints =
     displayedGradeTab === "all" || displayedGradeTab === "moon"
@@ -409,7 +431,8 @@ export function RopeTrainingGradesChart({
     visibleMoonPoints.length > 0 ||
     visibleKilterPoints.length > 0 ||
     visibleBoulderPoints.length > 0 ||
-    (showsSpraywall && spraywallSessions.length > 0);
+    (showsSpraywall && spraywallSessions.length > 0) ||
+    (showsRunning && runningSessions.length > 0);
   const xAxisDataKey = isPreviewChart ? "plotX" : "trainingTimestamp";
   const xAxisDomain = isPreviewChart
     ? [0, 2]
@@ -761,6 +784,7 @@ export function RopeTrainingGradesChart({
                   const point = payload[0].payload as
                     | SessionGradePoint
                     | SpraywallHoverPoint
+                    | RunningSessionPoint
                     | TrainingBlockTimelinePoint
                     | TotalStimulusPoint;
 
@@ -823,6 +847,30 @@ export function RopeTrainingGradesChart({
                     );
                   }
 
+                  if ("surface" in point && point.surface === "bieg") {
+                    return (
+                      <div style={sessionGradeTooltipStyle}>
+                        <span>
+                          {point.date} {point.time}
+                        </span>
+                        <div style={sessionGradeTooltipGroupStyle}>
+                          <strong>Bieg</strong>
+                          <span>
+                            {formatRunningDistance(point.distanceKm)} ·{" "}
+                            {formatRunningDuration(point.durationMinutes)}
+                          </span>
+                          {point.averagePaceSecondsPerKm !== null ? (
+                            <span>
+                              Średnio{" "}
+                              {formatRunningPace(point.averagePaceSecondsPerKm)}
+                              /km
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const gradeGroups = gradeGroupsByDate.get(point.date) ?? [];
 
                   return (
@@ -875,6 +923,7 @@ export function RopeTrainingGradesChart({
                   boardAxisAnchors={boardAxisAnchors}
                   ropePoints={visibleRopePoints}
                   spraywallPoints={spraywallHoverPoints}
+                  runningPoints={runningSessions}
                   trainingBlockPoints={trainingBlockTimelineItems}
                   moonPoints={visibleMoonPoints}
                   kilterPoints={visibleKilterPoints}
@@ -888,6 +937,12 @@ export function RopeTrainingGradesChart({
                 <SpraywallSessionGradeView
                   boardAxisAnchors={boardAxisAnchors}
                   points={spraywallHoverPoints}
+                />
+              )}
+              {displayedGradeTab === "bieg" && (
+                <RunningSessionGradeView
+                  boardAxisAnchors={boardAxisAnchors}
+                  points={runningSessions}
                 />
               )}
               {displayedGradeTab === "baldy" && (
@@ -2039,12 +2094,20 @@ const sessionGradeLegendStyle = {
   fontSize: "0.8rem",
 };
 
-type GradeChartTab = "all" | "lina" | "baldy" | "moon" | "kilter" | "spraywall";
+type GradeChartTab =
+  | "all"
+  | "lina"
+  | "baldy"
+  | "moon"
+  | "kilter"
+  | "spraywall"
+  | "bieg";
 
 const gradeChartTabs: Array<{ key: GradeChartTab; label: string }> = [
   { key: "all", label: "Zbiorczo" },
   { key: "lina", label: "Lina" },
   { key: "spraywall", label: "Spray" },
+  { key: "bieg", label: "Bieg" },
   { key: "baldy", label: "Baldy" },
   { key: "moon", label: "Moon" },
   { key: "kilter", label: "Kilter" },
@@ -2202,6 +2265,19 @@ type SpraywallHoverPoint = {
   surface: "spraywall";
 };
 
+type RunningSessionPoint = {
+  trainingTimestamp: number;
+  plotX: number;
+  date: string;
+  time: string;
+  durationMinutes: number;
+  distanceKm: number | null;
+  averagePaceSecondsPerKm: number | null;
+  heartRateZoneValues?: HeartRateZoneDistribution;
+  gradeIndex: number;
+  surface: "bieg";
+};
+
 type TrainingBlockTimelinePoint = {
   kind: "hangboard" | "campus";
   trainingTimestamp: number;
@@ -2248,6 +2324,97 @@ function SpraywallDurationBar({
         transform={`rotate(-90 ${cx + 2} ${labelY})`}
       >
         {payload.durationMinutes} min
+      </text>
+    </g>
+  );
+}
+
+function formatRunningDuration(durationMinutes: number) {
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function formatRunningDistance(distanceKm: number | null) {
+  return distanceKm === null
+    ? "— km"
+    : `${new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 2 }).format(distanceKm)} km`;
+}
+
+function formatRunningPace(secondsPerKm: number) {
+  const minutes = Math.floor(secondsPerKm / 60);
+  const seconds = secondsPerKm % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function RunningSessionBar({
+  cx,
+  cy,
+  payload,
+}: {
+  cx?: number;
+  cy?: number;
+  payload?: RunningSessionPoint;
+}) {
+  if (cx === undefined || cy === undefined || !payload) return null;
+
+  const width = 25;
+  const height = 116;
+  const x = cx - width / 2;
+  const y = cy - height;
+  const labelX = cx + 3;
+  const labelY = y + height / 2;
+  const zoneSegments = heartRateZoneConfig
+    .map((zone) => ({
+      ...zone,
+      value: Math.max(0, payload.heartRateZoneValues?.[zone.key] ?? 0),
+    }))
+    .filter((zone) => zone.value > 0);
+  const zoneTotal = zoneSegments.reduce((total, zone) => total + zone.value, 0);
+  let segmentBottom = cy;
+
+  return (
+    <g>
+      {zoneTotal > 0 ? (
+        zoneSegments.map((zone) => {
+          const segmentHeight = (height * zone.value) / zoneTotal;
+          segmentBottom -= segmentHeight;
+          return (
+            <rect
+              key={zone.key}
+              x={x}
+              y={segmentBottom}
+              width={width}
+              height={segmentHeight}
+              fill={zone.color}
+            />
+          );
+        })
+      ) : (
+        <rect x={x} y={y} width={width} height={height} fill="#ffffff" />
+      )}
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill="none"
+        stroke="#6b7280"
+      />
+      <text
+        x={labelX}
+        y={labelY}
+        fill={zoneTotal > 0 ? "#ffffff" : "#111111"}
+        stroke={zoneTotal > 0 ? "#111111" : "none"}
+        strokeWidth={zoneTotal > 0 ? 0.8 : 0}
+        paintOrder="stroke"
+        fontSize={10}
+        fontWeight={700}
+        textAnchor="middle"
+        transform={`rotate(-90 ${labelX} ${labelY})`}
+      >
+        {formatRunningDistance(payload.distanceKm)} ·{" "}
+        {formatRunningDuration(payload.durationMinutes)}
       </text>
     </g>
   );
@@ -2323,6 +2490,7 @@ function CombinedSessionGradeView({
   boardAxisAnchors,
   ropePoints,
   spraywallPoints,
+  runningPoints,
   trainingBlockPoints,
   moonPoints,
   kilterPoints,
@@ -2331,6 +2499,7 @@ function CombinedSessionGradeView({
   boardAxisAnchors: BoardAxisAnchor[];
   ropePoints: RopeGradePlotPoint[];
   spraywallPoints: SpraywallHoverPoint[];
+  runningPoints: RunningSessionPoint[];
   trainingBlockPoints: TrainingBlockTimelinePoint[];
   moonPoints: BoardGradePlotPoint[];
   kilterPoints: BoardGradePlotPoint[];
@@ -2342,9 +2511,25 @@ function CombinedSessionGradeView({
       <BoardAxisAnchorSeries points={boardAxisAnchors} />
       <TrainingBlockSessionGradeSeries points={trainingBlockPoints} />
       <SpraywallSessionGradeSeries points={spraywallPoints} />
+      <RunningSessionGradeSeries points={runningPoints} />
       <MoonSessionGradeSeries points={moonPoints} />
       <KilterSessionGradeSeries points={kilterPoints} />
       <BoulderSessionGradeSeries points={boulderPoints} />
+    </>
+  );
+}
+
+function RunningSessionGradeView({
+  boardAxisAnchors,
+  points,
+}: {
+  boardAxisAnchors: BoardAxisAnchor[];
+  points: RunningSessionPoint[];
+}) {
+  return (
+    <>
+      <BoardAxisAnchorSeries points={boardAxisAnchors} />
+      <RunningSessionGradeSeries points={points} />
     </>
   );
 }
@@ -2457,6 +2642,21 @@ function SpraywallSessionGradeSeries({
       name="Spraywall"
       yAxisId="board"
       shape={SpraywallDurationBar}
+    />
+  );
+}
+
+function RunningSessionGradeSeries({
+  points,
+}: {
+  points: RunningSessionPoint[];
+}) {
+  return (
+    <Scatter
+      data={points}
+      name="Bieg"
+      yAxisId="board"
+      shape={RunningSessionBar}
     />
   );
 }
@@ -2859,7 +3059,14 @@ function getBoardGradeColor(
 }
 
 function getPreviewPlotX(
-  surface: "lina" | "moon" | "kilter" | "baldy" | "spraywall" | "chwytotablica",
+  surface:
+    | "lina"
+    | "moon"
+    | "kilter"
+    | "baldy"
+    | "spraywall"
+    | "chwytotablica"
+    | "bieg",
 ) {
   switch (surface) {
     case "lina":
@@ -2874,6 +3081,8 @@ function getPreviewPlotX(
       return 1.56;
     case "chwytotablica":
       return 1.75;
+    case "bieg":
+      return 1.2;
     default:
       return 1;
   }

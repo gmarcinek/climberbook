@@ -93,6 +93,10 @@ import {
 } from "../../../lib/climbs-db";
 import { parse8aNuCsv } from "@/lib/8a-nu-csv";
 import type { CsvSkippedAscentRow } from "@/lib/8a-nu-csv";
+import {
+  formatHeartRateZoneTime,
+  parseHeartRateZoneTime,
+} from "@/lib/heart-rate-zones";
 import { createSampleBackupData } from "@/lib/sample-backup";
 import {
   assignExperimentalAthleteToSection,
@@ -242,6 +246,32 @@ function asProtocolSetList<T>(value: T[] | undefined) {
 
   return value ? [value as unknown as T] : [];
 }
+function formatRunningPace(secondsPerKm: number | undefined) {
+  if (!secondsPerKm) return "";
+  const minutes = Math.floor(secondsPerKm / 60);
+  const seconds = secondsPerKm % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function parseRunningPace(value: string) {
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(value.trim());
+  if (!match) return null;
+  const secondsPerKm = Number(match[1]) * 60 + Number(match[2]);
+  return secondsPerKm > 0 ? secondsPerKm : null;
+}
+
+function getHeartRateZoneSeconds(
+  training: TrainingRecord,
+  zone: "z1" | "z2" | "z3" | "z4" | "z5",
+) {
+  const seconds = training.loadProfile?.heartRateZoneSeconds?.[zone];
+  if (seconds !== undefined) return seconds;
+  const legacyPercent = training.loadProfile?.heartRateZones?.[zone];
+  return legacyPercent === undefined
+    ? undefined
+    : Math.round((training.durationMinutes * 60 * legacyPercent) / 100);
+}
+
 const createTrainingDraft = (
   date: string,
   options: { birthDate?: string; defaultWeightKg?: number | null } = {},
@@ -255,6 +285,9 @@ const createTrainingDraft = (
       ageYears: "",
       caloriesBurned: "",
       caloriesMode: "auto",
+      heartRateZoneTimes: { z1: "", z2: "", z3: "", z4: "", z5: "" },
+      runningDistanceKm: "",
+      runningAveragePace: "",
       focus: "none",
       conditions: "optimal",
       conditionsWasSetManually: false,
@@ -295,6 +328,17 @@ const mapTrainingToDraft = (
       ageYears: "",
       caloriesBurned: String(training.caloriesBurned),
       caloriesMode: "manual",
+      heartRateZoneTimes: {
+        z1: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z1")),
+        z2: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z2")),
+        z3: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z3")),
+        z4: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z4")),
+        z5: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z5")),
+      },
+      runningDistanceKm: String(training.loadProfile?.runningDistanceKm ?? ""),
+      runningAveragePace: formatRunningPace(
+        training.loadProfile?.runningAveragePaceSecondsPerKm,
+      ),
       focus: training.loadProfile?.focus ?? "none",
       conditions: training.loadProfile?.conditions ?? "optimal",
       conditionsWasSetManually: true,
@@ -794,6 +838,29 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   async function submitTraining(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const customSessionType = trainingDraft.customSessionType.trim();
+    const runningAveragePaceSecondsPerKm = parseRunningPace(
+      trainingDraft.runningAveragePace,
+    );
+    const parsedHeartRateZoneSeconds = {
+      z1: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z1),
+      z2: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z2),
+      z3: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z3),
+      z4: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z4),
+      z5: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z5),
+    };
+    const hasInvalidHeartRateZoneTime = Object.values(
+      parsedHeartRateZoneSeconds,
+    ).some((value) => value === null);
+    const heartRateZoneTotalSeconds = Object.values(
+      parsedHeartRateZoneSeconds,
+    ).reduce<number>((total, value) => total + (value ?? 0), 0);
+    const heartRateZoneSeconds = {
+      z1: parsedHeartRateZoneSeconds.z1 ?? 0,
+      z2: parsedHeartRateZoneSeconds.z2 ?? 0,
+      z3: parsedHeartRateZoneSeconds.z3 ?? 0,
+      z4: parsedHeartRateZoneSeconds.z4 ?? 0,
+      z5: parsedHeartRateZoneSeconds.z5 ?? 0,
+    };
     const bodyWeightKg = getTrainingWeight(trainingDraft.date);
     const ropeRoutes = trainingDraft.surfaces.includes("lina")
       ? trainingDraft.ropeRoutes.filter((route) => route.grade.trim())
@@ -814,6 +881,18 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           ? "Najpierw dodaj i wybierz zawodnika."
           : "Wybierz co najmniej jeden rodzaj sesji lub wpisz własny typ w polu Inne.",
       );
+      return false;
+    }
+    if (hasInvalidHeartRateZoneTime) {
+      setStatus("Czas w strefach tętna podaj w minutach albo formacie mm:ss.");
+      return false;
+    }
+    if (
+      trainingDraft.surfaces.includes("bieg") &&
+      trainingDraft.runningAveragePace.trim() &&
+      runningAveragePaceSecondsPerKm === null
+    ) {
+      setStatus("Średni czas na kilometr podaj w formacie mm:ss.");
       return false;
     }
     const exactFacilityMatches = facilities.filter(
@@ -889,6 +968,15 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       algorithmVersion: 1 as const,
       focus: trainingDraft.focus,
       conditions: trainingDraft.conditions,
+      ...(heartRateZoneTotalSeconds > 0 && { heartRateZoneSeconds }),
+      ...(trainingDraft.surfaces.includes("bieg") &&
+        Number(trainingDraft.runningDistanceKm) > 0 && {
+          runningDistanceKm: Number(trainingDraft.runningDistanceKm),
+        }),
+      ...(trainingDraft.surfaces.includes("bieg") &&
+        runningAveragePaceSecondsPerKm !== null && {
+          runningAveragePaceSecondsPerKm,
+        }),
     };
     try {
       const current = trainings.find(

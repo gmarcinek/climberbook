@@ -39,6 +39,7 @@ type TrainingLoadInput = Pick<
   | "caloriesBurned"
   | "difficultyBySurface"
   | "protocol"
+  | "loadProfile"
   | "facilityName"
   | "ropeRoutes"
 > & {

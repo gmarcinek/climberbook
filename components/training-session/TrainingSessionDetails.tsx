@@ -20,6 +20,11 @@ import {
   Select,
 } from "@/components/climberbook/common/FormControls";
 import { formatDurationMinutes } from "@/components/climberbook/common/training";
+import {
+  formatHeartRateZoneRange,
+  heartRateZoneConfig,
+  parseHeartRateZoneTime,
+} from "@/lib/heart-rate-zones";
 import type {
   FacilityRecord,
   TrainingSurface,
@@ -682,6 +687,14 @@ export function TrainingSessionDetails({
   ).sort((left, right) => left.value.localeCompare(right.value, "pl"));
   const update = (changes: Partial<TrainingDraftValues>) =>
     onDraftChange({ ...draft, ...changes });
+  const parsedHeartRateZoneTimes = Object.values(draft.heartRateZoneTimes).map(
+    parseHeartRateZoneTime,
+  );
+  const heartRateZoneTotalSeconds = parsedHeartRateZoneTimes.reduce<number>(
+    (total, value) => total + (value ?? 0),
+    0,
+  );
+  const heartRateZoneTotalLabel = `${Math.floor(heartRateZoneTotalSeconds / 60)}:${String(heartRateZoneTotalSeconds % 60).padStart(2, "0")}`;
   const selectedFacility = findFacility(
     facilities,
     draft.facilityName,
@@ -1012,6 +1025,107 @@ export function TrainingSessionDetails({
             className={styles.trainingSidebar__controlGroup}
           />
         </label>
+        {draft.surfaces.includes("bieg") ? (
+          <fieldset
+            className={`${styles.trainingSidebar__heartRateZones} ${styles["trainingSidebar__field--full"]}`}
+          >
+            <legend>Dane biegu</legend>
+            <div className={styles.trainingSidebar__runningMetricGrid}>
+              <label className={styles.trainingSidebar__field}>
+                Dystans (km)
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={draft.runningDistanceKm}
+                  placeholder="np. 10"
+                  onChange={(event) =>
+                    update({ runningDistanceKm: event.target.value })
+                  }
+                />
+              </label>
+              <label className={styles.trainingSidebar__field}>
+                Średni czas na km
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{1,2}:[0-5][0-9]"
+                  value={draft.runningAveragePace}
+                  placeholder="mm:ss"
+                  aria-label="Średni czas na kilometr w formacie minuty i sekundy"
+                  onChange={(event) =>
+                    update({ runningAveragePace: event.target.value })
+                  }
+                />
+              </label>
+            </div>
+          </fieldset>
+        ) : null}
+        <fieldset
+          className={`${styles.trainingSidebar__heartRateZones} ${styles["trainingSidebar__field--full"]}`}
+        >
+          <legend>Strefy tętna (min lub mm:ss)</legend>
+          <div className={styles.trainingSidebar__heartRateZoneGrid}>
+            {heartRateZoneConfig.map((zone) => {
+              const { key, label, color } = zone;
+              const zoneSeconds =
+                parseHeartRateZoneTime(draft.heartRateZoneTimes[key]) ?? 0;
+              const zoneShare =
+                heartRateZoneTotalSeconds > 0
+                  ? (zoneSeconds / heartRateZoneTotalSeconds) * 100
+                  : 0;
+
+              return (
+                <label
+                  key={key}
+                  className={styles.trainingSidebar__heartRateZoneRow}
+                >
+                  <span className={styles.trainingSidebar__heartRateZoneName}>
+                    <strong>{label}</strong>
+                    <small>
+                      {formatHeartRateZoneRange(zone, Number(draft.ageYears))}
+                    </small>
+                  </span>
+                  <span
+                    className={styles.trainingSidebar__heartRateZoneTrack}
+                    aria-hidden="true"
+                  >
+                    <span
+                      className={styles.trainingSidebar__heartRateZoneBar}
+                      style={{
+                        backgroundColor: color,
+                        width: `${zoneShare}%`,
+                      }}
+                    />
+                  </span>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="(?:[0-9]{1,3}|[0-9]{1,3}:[0-5][0-9])"
+                    placeholder="min lub mm:ss"
+                    value={draft.heartRateZoneTimes[key]}
+                    aria-label={`Czas w strefie ${label} w minutach lub formacie minuty i sekundy`}
+                    onChange={(event) =>
+                      update({
+                        heartRateZoneTimes: {
+                          ...draft.heartRateZoneTimes,
+                          [key]: event.target.value,
+                        },
+                      })
+                    }
+                  />
+                </label>
+              );
+            })}
+          </div>
+          <output
+            className={styles.trainingSidebar__heartRateZoneTotal}
+            aria-live="polite"
+          >
+            Suma: {heartRateZoneTotalLabel}
+          </output>
+        </fieldset>
         <label className={styles.trainingSidebar__field}>
           <span className={styles.trainingSidebar__labelWithInfo}>
             Główny cel
