@@ -17,6 +17,7 @@ import type {
   WeightEntryRecord,
 } from "@/lib/climbs-db";
 import { createTrainingExportMetadata } from "@/lib/climbs-db";
+import { normalizeHeartRateZoneLoadProfile } from "@/lib/heart-rate-zones";
 import {
   getTrainingStimulusImpact,
   getTrainingStimulusScale,
@@ -289,7 +290,9 @@ function mapTraining(row: TrainingRow): TrainingRecord {
     difficultyNotes: row.difficulty_notes,
     difficultyBySurface: row.difficulty_by_surface ?? undefined,
     protocol: row.protocol ?? undefined,
-    loadProfile: row.load_profile ?? undefined,
+    loadProfile: normalizeHeartRateZoneLoadProfile(
+      row.load_profile ?? undefined,
+    ),
     wellbeing: row.wellbeing,
     surfaces: row.surfaces,
     facilityName: row.facility_name ?? undefined,

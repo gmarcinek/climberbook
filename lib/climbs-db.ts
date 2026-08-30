@@ -110,14 +110,23 @@ export type KnownTrainingConditions =
   | "too_warm"
   | "burdensome";
 export type TrainingConditions = KnownTrainingConditions | (string & {});
-export type HeartRateZone = "z1" | "z2" | "z3" | "z4" | "z5";
+export type HeartRateZone =
+  | "recovery"
+  | "intense"
+  | "aerobic"
+  | "anaerobic"
+  | "vo2max";
+export type LegacyHeartRateZone = "z1" | "z2" | "z3" | "z4" | "z5";
 export type HeartRateZoneDistribution = Partial<Record<HeartRateZone, number>>;
+export type StoredHeartRateZoneDistribution = Partial<
+  Record<HeartRateZone | LegacyHeartRateZone, number>
+>;
 export type TrainingLoadProfile = {
   algorithmVersion: 1;
   focus: TrainingFocus;
   conditions: TrainingConditions;
-  heartRateZoneSeconds?: HeartRateZoneDistribution;
-  heartRateZones?: HeartRateZoneDistribution;
+  heartRateZoneSeconds?: StoredHeartRateZoneDistribution;
+  heartRateZones?: StoredHeartRateZoneDistribution;
   runningDistanceKm?: number;
   runningAveragePaceSecondsPerKm?: number;
   activities?: TrainingLoadActivity[];
@@ -478,6 +487,8 @@ const trainingDataInterpretation: ClimberbookDataInterpretation = {
       "Tekstowa deklaracja ekspozycji na trudność dla aktywności w ramach sesji. Może zawierać listę wycen; elementy listy nie są osobnymi drogami, baldami, próbami ani przejściami.",
     protocol:
       "Szczegóły protokołu treningowego, np. serie, obciążenie, zwisy i przerwy.",
+    heartRateZoneSeconds:
+      "Czas w sekundach według stref tętna: recovery, intense, aerobic, anaerobic i vo2max.",
     facilityName:
       "Opcjonalna nazwa obiektu zapisana przy sesji jako historyczna etykieta.",
     caloriesBurned: "Szacowane, a nie zmierzone spalanie energii.",

@@ -30,7 +30,10 @@ import {
 } from "@/components/climberbook/common/training";
 import { EmptyState } from "@/components/climberbook/common/charts/ChartPrimitives";
 import { weightChartCanvasStyle } from "@/components/climberbook/common/styles";
-import { heartRateZoneConfig } from "@/lib/heart-rate-zones";
+import {
+  heartRateZoneConfig,
+  normalizeHeartRateZoneDistribution,
+} from "@/lib/heart-rate-zones";
 import type {
   FatigueDimension,
   FatigueDimensions,
@@ -288,9 +291,10 @@ export function RopeTrainingGradesChart({
       distanceKm: training.loadProfile?.runningDistanceKm ?? null,
       averagePaceSecondsPerKm:
         training.loadProfile?.runningAveragePaceSecondsPerKm ?? null,
-      heartRateZoneValues:
+      heartRateZoneValues: normalizeHeartRateZoneDistribution(
         training.loadProfile?.heartRateZoneSeconds ??
-        training.loadProfile?.heartRateZones,
+          training.loadProfile?.heartRateZones,
+      ),
       gradeIndex: 1,
       surface: "bieg",
     }));

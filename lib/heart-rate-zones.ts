@@ -1,11 +1,29 @@
-import type { HeartRateZone } from "@/lib/climbs-db";
+import type {
+  HeartRateZone,
+  HeartRateZoneDistribution,
+  LegacyHeartRateZone,
+  StoredHeartRateZoneDistribution,
+  TrainingLoadProfile,
+} from "@/lib/climbs-db";
 
 export const heartRateZoneConfig = [
-  { key: "z1", label: "Regeneracja", color: "#3b82f6", min: 0.5, max: 0.6 },
-  { key: "z2", label: "Intensywna", color: "#22c55e", min: 0.6, max: 0.7 },
-  { key: "z3", label: "Aerobowa", color: "#eab308", min: 0.7, max: 0.8 },
-  { key: "z4", label: "Anaerobowa", color: "#f97316", min: 0.8, max: 0.9 },
-  { key: "z5", label: "VO2max", color: "#ef4444", min: 0.9, max: 1 },
+  {
+    key: "recovery",
+    label: "Regeneracja",
+    color: "#3b82f6",
+    min: 0.5,
+    max: 0.6,
+  },
+  { key: "intense", label: "Intensywna", color: "#22c55e", min: 0.6, max: 0.7 },
+  { key: "aerobic", label: "Aerobowa", color: "#eab308", min: 0.7, max: 0.8 },
+  {
+    key: "anaerobic",
+    label: "Anaerobowa",
+    color: "#f97316",
+    min: 0.8,
+    max: 0.9,
+  },
+  { key: "vo2max", label: "VO2max", color: "#ef4444", min: 0.9, max: 1 },
 ] as const satisfies ReadonlyArray<{
   key: HeartRateZone;
   label: string;
@@ -13,6 +31,54 @@ export const heartRateZoneConfig = [
   min: number;
   max: number;
 }>;
+
+const legacyHeartRateZoneKeys: Record<HeartRateZone, LegacyHeartRateZone> = {
+  recovery: "z1",
+  intense: "z2",
+  aerobic: "z3",
+  anaerobic: "z4",
+  vo2max: "z5",
+};
+
+export function getHeartRateZoneValue(
+  distribution: StoredHeartRateZoneDistribution | undefined,
+  zone: HeartRateZone,
+) {
+  return distribution?.[zone] ?? distribution?.[legacyHeartRateZoneKeys[zone]];
+}
+
+export function normalizeHeartRateZoneDistribution(
+  distribution: StoredHeartRateZoneDistribution | undefined,
+): HeartRateZoneDistribution | undefined {
+  if (!distribution) return undefined;
+
+  return Object.fromEntries(
+    heartRateZoneConfig.flatMap(({ key }) => {
+      const value = getHeartRateZoneValue(distribution, key);
+      return value === undefined ? [] : [[key, value]];
+    }),
+  ) as HeartRateZoneDistribution;
+}
+
+export function normalizeHeartRateZoneLoadProfile(
+  loadProfile: TrainingLoadProfile | undefined,
+): TrainingLoadProfile | undefined {
+  if (!loadProfile) return undefined;
+
+  return {
+    ...loadProfile,
+    ...(loadProfile.heartRateZoneSeconds && {
+      heartRateZoneSeconds: normalizeHeartRateZoneDistribution(
+        loadProfile.heartRateZoneSeconds,
+      ),
+    }),
+    ...(loadProfile.heartRateZones && {
+      heartRateZones: normalizeHeartRateZoneDistribution(
+        loadProfile.heartRateZones,
+      ),
+    }),
+  };
+}
 
 export function formatHeartRateZoneRange(
   zone: (typeof heartRateZoneConfig)[number],

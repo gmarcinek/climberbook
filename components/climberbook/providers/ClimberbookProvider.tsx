@@ -85,6 +85,7 @@ import {
   type FullDatabaseExportOptions,
   type FullDatabaseImportOptions,
   type GoalRecord,
+  type HeartRateZone,
   type SectionRecord,
   type TrainingRecord,
   type TrainingSurface,
@@ -95,6 +96,7 @@ import { parse8aNuCsv } from "@/lib/8a-nu-csv";
 import type { CsvSkippedAscentRow } from "@/lib/8a-nu-csv";
 import {
   formatHeartRateZoneTime,
+  getHeartRateZoneValue,
   parseHeartRateZoneTime,
 } from "@/lib/heart-rate-zones";
 import { createSampleBackupData } from "@/lib/sample-backup";
@@ -262,11 +264,17 @@ function parseRunningPace(value: string) {
 
 function getHeartRateZoneSeconds(
   training: TrainingRecord,
-  zone: "z1" | "z2" | "z3" | "z4" | "z5",
+  zone: HeartRateZone,
 ) {
-  const seconds = training.loadProfile?.heartRateZoneSeconds?.[zone];
+  const seconds = getHeartRateZoneValue(
+    training.loadProfile?.heartRateZoneSeconds,
+    zone,
+  );
   if (seconds !== undefined) return seconds;
-  const legacyPercent = training.loadProfile?.heartRateZones?.[zone];
+  const legacyPercent = getHeartRateZoneValue(
+    training.loadProfile?.heartRateZones,
+    zone,
+  );
   return legacyPercent === undefined
     ? undefined
     : Math.round((training.durationMinutes * 60 * legacyPercent) / 100);
@@ -285,7 +293,13 @@ const createTrainingDraft = (
       ageYears: "",
       caloriesBurned: "",
       caloriesMode: "auto",
-      heartRateZoneTimes: { z1: "", z2: "", z3: "", z4: "", z5: "" },
+      heartRateZoneTimes: {
+        recovery: "",
+        intense: "",
+        aerobic: "",
+        anaerobic: "",
+        vo2max: "",
+      },
       runningDistanceKm: "",
       runningAveragePace: "",
       focus: "none",
@@ -329,11 +343,21 @@ const mapTrainingToDraft = (
       caloriesBurned: String(training.caloriesBurned),
       caloriesMode: "manual",
       heartRateZoneTimes: {
-        z1: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z1")),
-        z2: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z2")),
-        z3: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z3")),
-        z4: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z4")),
-        z5: formatHeartRateZoneTime(getHeartRateZoneSeconds(training, "z5")),
+        recovery: formatHeartRateZoneTime(
+          getHeartRateZoneSeconds(training, "recovery"),
+        ),
+        intense: formatHeartRateZoneTime(
+          getHeartRateZoneSeconds(training, "intense"),
+        ),
+        aerobic: formatHeartRateZoneTime(
+          getHeartRateZoneSeconds(training, "aerobic"),
+        ),
+        anaerobic: formatHeartRateZoneTime(
+          getHeartRateZoneSeconds(training, "anaerobic"),
+        ),
+        vo2max: formatHeartRateZoneTime(
+          getHeartRateZoneSeconds(training, "vo2max"),
+        ),
       },
       runningDistanceKm: String(training.loadProfile?.runningDistanceKm ?? ""),
       runningAveragePace: formatRunningPace(
@@ -842,11 +866,15 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       trainingDraft.runningAveragePace,
     );
     const parsedHeartRateZoneSeconds = {
-      z1: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z1),
-      z2: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z2),
-      z3: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z3),
-      z4: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z4),
-      z5: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.z5),
+      recovery: parseHeartRateZoneTime(
+        trainingDraft.heartRateZoneTimes.recovery,
+      ),
+      intense: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.intense),
+      aerobic: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.aerobic),
+      anaerobic: parseHeartRateZoneTime(
+        trainingDraft.heartRateZoneTimes.anaerobic,
+      ),
+      vo2max: parseHeartRateZoneTime(trainingDraft.heartRateZoneTimes.vo2max),
     };
     const hasInvalidHeartRateZoneTime = Object.values(
       parsedHeartRateZoneSeconds,
@@ -855,11 +883,11 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
       parsedHeartRateZoneSeconds,
     ).reduce<number>((total, value) => total + (value ?? 0), 0);
     const heartRateZoneSeconds = {
-      z1: parsedHeartRateZoneSeconds.z1 ?? 0,
-      z2: parsedHeartRateZoneSeconds.z2 ?? 0,
-      z3: parsedHeartRateZoneSeconds.z3 ?? 0,
-      z4: parsedHeartRateZoneSeconds.z4 ?? 0,
-      z5: parsedHeartRateZoneSeconds.z5 ?? 0,
+      recovery: parsedHeartRateZoneSeconds.recovery ?? 0,
+      intense: parsedHeartRateZoneSeconds.intense ?? 0,
+      aerobic: parsedHeartRateZoneSeconds.aerobic ?? 0,
+      anaerobic: parsedHeartRateZoneSeconds.anaerobic ?? 0,
+      vo2max: parsedHeartRateZoneSeconds.vo2max ?? 0,
     };
     const bodyWeightKg = getTrainingWeight(trainingDraft.date);
     const ropeRoutes = trainingDraft.surfaces.includes("lina")

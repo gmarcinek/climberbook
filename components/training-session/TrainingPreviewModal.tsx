@@ -32,6 +32,7 @@ import {
 import {
   formatHeartRateZoneRange,
   formatHeartRateZoneTime,
+  getHeartRateZoneValue,
   heartRateZoneConfig,
 } from "@/lib/heart-rate-zones";
 
@@ -173,7 +174,10 @@ export function TrainingPreviewModal({
     Boolean(training.loadProfile?.heartRateZones);
   const heartRateZones = heartRateZoneConfig
     .map((zone) => {
-      const storedValue = Math.max(0, heartRateZoneValues?.[zone.key] ?? 0);
+      const storedValue = Math.max(
+        0,
+        getHeartRateZoneValue(heartRateZoneValues, zone.key) ?? 0,
+      );
       const seconds = usesLegacyHeartRatePercentages
         ? Math.round((training.durationMinutes * 60 * storedValue) / 100)
         : storedValue;

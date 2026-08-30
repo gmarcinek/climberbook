@@ -6,6 +6,7 @@ import type {
   TrainingSurface,
   SpraywallIntensity,
 } from "@/lib/climbs-db";
+import { normalizeHeartRateZoneDistribution } from "@/lib/heart-rate-zones";
 
 export type ObjectiveStimulusActivity = {
   surface: TrainingSurface | "general";
@@ -279,31 +280,31 @@ const ropeDimensionSplits = {
 } satisfies Record<string, FatigueDimensions>;
 
 const runningZoneDimensionSplits = {
-  z1: {
+  recovery: {
     aerobicEndurance: 1,
     strengthEndurance: 0,
     strengthPower: 0,
     contactStrength: 0,
   },
-  z2: {
+  intense: {
     aerobicEndurance: 0.98,
     strengthEndurance: 0.02,
     strengthPower: 0,
     contactStrength: 0,
   },
-  z3: {
+  aerobic: {
     aerobicEndurance: 0.95,
     strengthEndurance: 0.05,
     strengthPower: 0,
     contactStrength: 0,
   },
-  z4: {
+  anaerobic: {
     aerobicEndurance: 0.9,
     strengthEndurance: 0.09,
     strengthPower: 0.01,
     contactStrength: 0,
   },
-  z5: {
+  vo2max: {
     aerobicEndurance: 0.85,
     strengthEndurance: 0.1,
     strengthPower: 0.05,
@@ -366,7 +367,9 @@ function normalizeDimensions(dimensions: FatigueDimensions): FatigueDimensions {
 function getRunningDimensionSplit(
   zones: NonNullable<TrainingRecord["loadProfile"]>["heartRateZoneSeconds"],
 ) {
-  const entries = Object.entries(zones ?? {}).filter(
+  const entries = Object.entries(
+    normalizeHeartRateZoneDistribution(zones) ?? {},
+  ).filter(
     (entry): entry is [keyof typeof runningZoneDimensionSplits, number] =>
       entry[0] in runningZoneDimensionSplits &&
       Number.isFinite(entry[1]) &&
