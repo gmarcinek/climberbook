@@ -75,10 +75,18 @@ export type HangboardProtocolSet = {
   edgeDepthMm: number;
 };
 export type SpraywallIntensity = "soft" | "medium" | "hard";
+export type SpraywallMode = "standard" | "intervals";
+export type SpraywallIntervals = {
+  sets: number;
+  circuitsPerSet: number;
+  movesPerCircuit: number;
+};
 export type TrainingProtocol = {
   pullUp?: PullUpProtocolSet[];
   hangboard?: HangboardProtocolSet[];
   spraywallIntensity?: SpraywallIntensity;
+  spraywallMode?: SpraywallMode;
+  spraywallIntervals?: SpraywallIntervals;
 };
 export type FatigueDimension =
   | "aerobicEndurance"

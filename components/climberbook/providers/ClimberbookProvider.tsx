@@ -311,6 +311,12 @@ const createTrainingDraft = (
         pullUp: [createPullUpProtocolSet()],
         hangboard: [createHangboardProtocolSet()],
         spraywallIntensity: "medium",
+        spraywallMode: "standard",
+        spraywallIntervals: {
+          sets: "3",
+          circuitsPerSet: "5",
+          movesPerCircuit: "20",
+        },
       },
       wellbeing: "",
       surfaces: [],
@@ -390,6 +396,16 @@ const mapTrainingToDraft = (
           }),
         ),
         spraywallIntensity: training.protocol?.spraywallIntensity ?? "medium",
+        spraywallMode: training.protocol?.spraywallMode ?? "standard",
+        spraywallIntervals: {
+          sets: String(training.protocol?.spraywallIntervals?.sets ?? 3),
+          circuitsPerSet: String(
+            training.protocol?.spraywallIntervals?.circuitsPerSet ?? 5,
+          ),
+          movesPerCircuit: String(
+            training.protocol?.spraywallIntervals?.movesPerCircuit ?? 20,
+          ),
+        },
       },
       wellbeing: training.wellbeing,
       surfaces: training.surfaces,
@@ -977,6 +993,18 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
         }),
         ...(trainingDraft.surfaces.includes("spraywall") && {
           spraywallIntensity: trainingDraft.protocol.spraywallIntensity,
+          spraywallMode: trainingDraft.protocol.spraywallMode,
+          ...(trainingDraft.protocol.spraywallMode === "intervals" && {
+            spraywallIntervals: {
+              sets: Number(trainingDraft.protocol.spraywallIntervals.sets || 0),
+              circuitsPerSet: Number(
+                trainingDraft.protocol.spraywallIntervals.circuitsPerSet || 0,
+              ),
+              movesPerCircuit: Number(
+                trainingDraft.protocol.spraywallIntervals.movesPerCircuit || 0,
+              ),
+            },
+          }),
         }),
       },
       wellbeing: trainingDraft.wellbeing,

@@ -3,6 +3,7 @@ import type {
   HeartRateZone,
   RopeRoute,
   SpraywallIntensity,
+  SpraywallMode,
   TrainingConditions,
   TrainingFocus,
   TrainingSurface,
@@ -44,6 +45,12 @@ export type TrainingDraftValues = {
       edgeDepthMm: string;
     }>;
     spraywallIntensity: SpraywallIntensity;
+    spraywallMode: SpraywallMode;
+    spraywallIntervals: {
+      sets: string;
+      circuitsPerSet: string;
+      movesPerCircuit: string;
+    };
   };
   wellbeing: string;
   surfaces: TrainingSurface[];

@@ -715,6 +715,36 @@
   gap: 8px;
 }
 
+.trainingSidebar__spraywallIntervalGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border: var(--component-card-border);
+}
+
+.trainingSidebar__spraywallIntervalToggle {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.trainingSidebar__spraywallIntervalToggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.trainingSidebar__spraywallIntervalTotal {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .trainingSidebar__spraywallOption {
   display: grid;
   gap: 4px;
@@ -746,6 +776,12 @@
 
 .trainingSidebar__spraywallOption--active small {
   color: var(--component-spraywall-option-active-muted-text);
+}
+
+@media (max-width: 680px) {
+  .trainingSidebar__spraywallIntervalGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .trainingSidebar__protocolSeries {

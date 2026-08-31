@@ -121,8 +121,9 @@ const spraywallAttemptProfile = {
   SpraywallIntensity,
   { grade: keyof typeof boulderRopeGradeByV; attemptIntervalMinutes: number }
 >;
+export const spraywallMovesPerBoulderEquivalent = 9.375;
 
-export const stimulusAlgorithmVersion = 8;
+export const stimulusAlgorithmVersion = 9;
 
 const surfaceHourlyCoin: Record<TrainingSurface | "general", number> = {
   lina: 0.012,
@@ -601,9 +602,25 @@ function getGradeCoin(surface: TrainingSurface, grades: string[]) {
   return 0;
 }
 
-function getSpraywallCoin(minutes: number, intensity: SpraywallIntensity) {
+function getSpraywallCoin(
+  training: Pick<TrainingRecord, "durationMinutes" | "protocol">,
+) {
+  const intensity = training.protocol?.spraywallIntensity ?? "medium";
   const profile = spraywallAttemptProfile[intensity];
-  const attempts = minutes / profile.attemptIntervalMinutes;
+  const intervals = training.protocol?.spraywallIntervals;
+  if (training.protocol?.spraywallMode === "intervals" && intervals) {
+    const totalMoves =
+      Math.max(0, intervals.sets) *
+      Math.max(0, intervals.circuitsPerSet) *
+      Math.max(0, intervals.movesPerCircuit);
+    const boulderEquivalents =
+      totalMoves / spraywallMovesPerBoulderEquivalent;
+    return (
+      boulderEquivalents *
+      (boulderGymCoinByGrade[profile.grade] ?? minimumCoin)
+    );
+  }
+  const attempts = training.durationMinutes / profile.attemptIntervalMinutes;
   return attempts * (boulderCoinByGrade[profile.grade] ?? minimumCoin);
 }
 
@@ -685,8 +702,13 @@ export function getStimulusCatalog() {
       activity(
         "spraywall",
         "Spray",
-        "Cena wynika z realistycznej liczby wstawek: V2 co 2 min, V4 co 4 min albo V7 co 5,5 min.",
-        { unit: "wstawka", attemptProfile: spraywallAttemptProfile },
+        "Cena wynika z liczby wstawek albo, dla interwałów, z łącznej liczby przechwytów. Każde 7,5 przechwytu odpowiada jednemu baldowi o wybranej intensywności.",
+        {
+          unit: "wstawka",
+          attemptProfile: spraywallAttemptProfile,
+          intervalMovesPerBoulderEquivalent:
+            spraywallMovesPerBoulderEquivalent,
+        },
       ),
       activity(
         "chwytotablica",
@@ -862,10 +884,7 @@ export function getObjectiveStimulusActivities(
     const timeCoin = (minutesPerSurface / 60) * surfaceHourlyCoin[surface];
     const spraywallCoin =
       surface === "spraywall"
-        ? getSpraywallCoin(
-            training.durationMinutes,
-            training.protocol?.spraywallIntensity ?? "medium",
-          )
+        ? getSpraywallCoin(training)
         : 0;
     const calculatedCoin =
       surface === "spraywall"

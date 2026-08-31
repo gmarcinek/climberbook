@@ -4,6 +4,7 @@ import {
 } from "@/components/climberbook/common/FormControls";
 import { formLayoutClassNames } from "@/components/climberbook/common/FormLayout";
 import styles from "@/components/training-calendar/TrainingSidebar.module.css";
+import { spraywallMovesPerBoulderEquivalent } from "@/lib/training-stimulus";
 import type { TrainingDraftValues } from "./types";
 import {
   adjustEdgeDepthValue,
@@ -26,6 +27,7 @@ type NumericProps = {
   min: string;
   suffix?: string;
   className?: string;
+  required?: boolean;
 };
 
 function NumericField({
@@ -38,6 +40,7 @@ function NumericField({
   min,
   suffix,
   className,
+  required,
 }: NumericProps) {
   return (
     <label
@@ -58,6 +61,8 @@ function NumericField({
           min,
           max: min === "-200" ? "200" : undefined,
           step: "1",
+          required,
+          "aria-label": label,
         }}
         inputSuffix={suffix}
         className={styles.trainingSidebar__controlGroup}
@@ -483,6 +488,32 @@ function SpraywallProtocol({
   onDraftChange,
   protocolHeadingClassName,
 }: Props & { protocolHeadingClassName: string }) {
+  const adjustIntervalValue = (value: string, delta: number) =>
+    String(Math.max(1, Math.trunc((Number(value) || 0) + delta)));
+  const totalIntervalMoves = [
+    draft.protocol.spraywallIntervals.sets,
+    draft.protocol.spraywallIntervals.circuitsPerSet,
+    draft.protocol.spraywallIntervals.movesPerCircuit,
+  ].reduce(
+    (total, value) => total * Math.max(0, Math.trunc(Number(value) || 0)),
+    1,
+  );
+  const boulderEquivalents = Math.round(
+    totalIntervalMoves / spraywallMovesPerBoulderEquivalent,
+  );
+  const updateIntervals = (
+    changes: Partial<TrainingDraftValues["protocol"]["spraywallIntervals"]>,
+  ) =>
+    onDraftChange({
+      ...draft,
+      protocol: {
+        ...draft.protocol,
+        spraywallIntervals: {
+          ...draft.protocol.spraywallIntervals,
+          ...changes,
+        },
+      },
+    });
   const options = [
     {
       value: "soft" as const,
@@ -506,10 +537,26 @@ function SpraywallProtocol({
   return (
     <div className={styles.trainingSidebar__protocolStack}>
       <span className={protocolHeadingClassName}>Protokół - Spraywall</span>
+      <label className={styles.trainingSidebar__spraywallIntervalToggle}>
+        <input
+          type="checkbox"
+          checked={draft.protocol.spraywallMode === "intervals"}
+          onChange={(event) =>
+            onDraftChange({
+              ...draft,
+              protocol: {
+                ...draft.protocol,
+                spraywallMode: event.target.checked ? "intervals" : "standard",
+              },
+            })
+          }
+        />
+        Interwały
+      </label>
       <div
         className={styles.trainingSidebar__spraywallOptions}
         role="radiogroup"
-        aria-label="Intensywność Spraywall"
+        aria-label="Intensywność i wycena Spraywall"
       >
         {options.map((option) => (
           <button
@@ -535,6 +582,48 @@ function SpraywallProtocol({
           </button>
         ))}
       </div>
+      {draft.protocol.spraywallMode === "intervals" && (
+        <div className={styles.trainingSidebar__spraywallIntervalGrid}>
+          {([
+            ["sets", "Ile serii", "serię"],
+            ["circuitsPerSet", "Obwodów w serii", "obwód w serii"],
+            ["movesPerCircuit", "Przechwytów w obwodzie", "przechwyt"],
+          ] as const).map(([field, label, ariaLabel]) => (
+            <NumericField
+              key={field}
+              label={label}
+              value={draft.protocol.spraywallIntervals[field]}
+              onChange={(value) => updateIntervals({ [field]: value })}
+              onDecrement={() =>
+                updateIntervals({
+                  [field]: adjustIntervalValue(
+                    draft.protocol.spraywallIntervals[field],
+                    -1,
+                  ),
+                })
+              }
+              onIncrement={() =>
+                updateIntervals({
+                  [field]: adjustIntervalValue(
+                    draft.protocol.spraywallIntervals[field],
+                    1,
+                  ),
+                })
+              }
+              ariaLabel={ariaLabel}
+              min="1"
+              required
+            />
+          ))}
+          <output
+            className={styles.trainingSidebar__spraywallIntervalTotal}
+            aria-live="polite"
+          >
+            Łącznie: {totalIntervalMoves} przechwytów · ok. {boulderEquivalents}{" "}
+            baldów
+          </output>
+        </div>
+      )}
     </div>
   );
 }
