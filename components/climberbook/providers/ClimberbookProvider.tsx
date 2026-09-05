@@ -31,6 +31,7 @@ import {
   type WeightEntryDraft,
 } from "@/components/climberbook/common/training";
 import {
+  addDays,
   addMonths,
   formatDateIso,
   getMonthStart,
@@ -447,6 +448,9 @@ type ClimberbookContextValue = {
   goals: GoalRecord[];
   selectedDate: string | null;
   trainingRangeStart: string;
+  setTrainingDataRange: Dispatch<
+    SetStateAction<{ start: string; end: string }>
+  >;
   settingsTab: SettingsTab;
   setSettingsTab: Dispatch<SetStateAction<SettingsTab>>;
   athleteFormMode: "add" | "edit";
@@ -564,10 +568,10 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const today = formatDateIso(new Date());
-  const chartDataRange = useRef({
-    start: addMonths(getMonthStart(today), -1),
+  const [trainingDataRange, setTrainingDataRange] = useState(() => ({
+    start: getMonthStart(addDays(today, -55)),
     end: today,
-  });
+  }));
   const [athletes, setAthletes] = useState<AthleteRecord[]>([]);
   const [activeAthleteId, setActiveAthleteId] = useState<string | null>(() =>
     typeof window === "undefined"
@@ -666,9 +670,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
 
   async function refreshData() {
     if (isExperimentalPostgresUiEnabled()) {
-      const snapshot = await getExperimentalPostgresSnapshot(
-        chartDataRange.current,
-      );
+      const snapshot = await getExperimentalPostgresSnapshot(trainingDataRange);
       const athleteId = snapshot.athletes.some(
         (athlete) => athlete.id === activeAthleteId,
       )
@@ -828,7 +830,12 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
           : "Nie udało się połączyć z API PostgreSQL.",
       );
     });
-  }, [activeAthleteId, pathname]);
+  }, [
+    activeAthleteId,
+    pathname,
+    trainingDataRange.end,
+    trainingDataRange.start,
+  ]);
   useEffect(() => {
     if (activeAthleteId)
       window.localStorage.setItem(
@@ -1765,6 +1772,7 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     goals,
     selectedDate,
     trainingRangeStart,
+    setTrainingDataRange,
     settingsTab,
     setSettingsTab,
     athleteFormMode,
@@ -1966,6 +1974,7 @@ export function useTrainingModule() {
     resetTrainingSelection,
     selectedDate,
     selectTrainingDate,
+    setTrainingDataRange,
     setTrainingDraft,
     setWeightEntryDraft,
     status,
@@ -1997,6 +2006,7 @@ export function useTrainingModule() {
     resetTrainingSelection,
     selectedDate,
     selectTrainingDate,
+    setTrainingDataRange,
     setTrainingDraft,
     setWeightEntryDraft,
     status,
@@ -2067,6 +2077,7 @@ export function useAnalyticsModule() {
     goals,
     profileDraft,
     selectedDate,
+    setTrainingDataRange,
     today,
     trainingRangeStart,
     trainings,
@@ -2082,6 +2093,7 @@ export function useAnalyticsModule() {
     goals,
     profileDraft,
     selectedDate,
+    setTrainingDataRange,
     today,
     trainingRangeStart,
     trainings,

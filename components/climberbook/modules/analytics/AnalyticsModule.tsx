@@ -7,6 +7,8 @@ import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { useAnalyticsModule } from "@/components/climberbook/providers/ClimberbookProvider";
 import {
   addDays,
+  addMonths,
+  getMonthStart,
   toDate,
 } from "@/components/training-calendar/training-calendar.helpers";
 import { AnalyticsModuleContent } from "./components/AnalyticsModuleContent";
@@ -39,6 +41,21 @@ export function AnalyticsModule() {
     start: addDays(app.today, -29),
     end: app.today,
   };
+
+  useEffect(() => {
+    const requestedDataRange = {
+      start: getMonthStart(addMonths(activePeriod.start, -1)),
+      end: activePeriod.end,
+    };
+
+    app.setTrainingDataRange((current) =>
+      current.start === requestedDataRange.start &&
+      current.end === requestedDataRange.end
+        ? current
+        : requestedDataRange,
+    );
+  }, [activePeriod.end, activePeriod.start, app.setTrainingDataRange]);
+
   const periodTrainings = useMemo(
     () =>
       app.trainings.filter(

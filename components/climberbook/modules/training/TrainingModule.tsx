@@ -1,10 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { surfaceOptions } from "@/components/climberbook/common/constants";
 import { useTrainingModule } from "@/components/climberbook/providers/ClimberbookProvider";
 import { useClimberbookStats } from "@/components/climberbook/hooks/useClimberbookStats";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
+import {
+  addDays,
+  addMonths,
+  getTrainingsInRange,
+  getMonthStart,
+  getVisibleRange,
+} from "@/components/training-calendar/training-calendar.helpers";
 import { TrainingModuleContent } from "./components/TrainingModuleContent";
 
 export function TrainingModule() {
@@ -14,6 +22,48 @@ export function TrainingModule() {
   const visibleTrainingMonthCount = viewport.width >= 1725 ? 2 : 1;
   const usesDedicatedTrainingEditor =
     viewport.width > 0 && viewport.width < 1024;
+  const visibleTrainingRangeStart =
+    visibleTrainingMonthCount > 1
+      ? addMonths(app.trainingRangeStart, -(visibleTrainingMonthCount - 1))
+      : app.trainingRangeStart;
+  const visibleTrainingRange = getVisibleRange(
+    visibleTrainingRangeStart,
+    visibleTrainingMonthCount,
+  );
+  const isCurrentCalendar = app.trainingRangeStart === getMonthStart(app.today);
+  const requestedTrainingDataRange = isCurrentCalendar
+    ? {
+        start: getMonthStart(
+          addDays(app.today, -(visibleTrainingMonthCount * 28 - 1)),
+        ),
+        end: app.today,
+      }
+    : {
+        start: getMonthStart(addMonths(visibleTrainingRangeStart, -1)),
+        end: visibleTrainingRange.end,
+      };
+
+  useEffect(() => {
+    if (viewport.width === 0) return;
+
+    app.setTrainingDataRange((current) =>
+      current.start === requestedTrainingDataRange.start &&
+      current.end === requestedTrainingDataRange.end
+        ? current
+        : requestedTrainingDataRange,
+    );
+  }, [
+    app.setTrainingDataRange,
+    requestedTrainingDataRange.end,
+    requestedTrainingDataRange.start,
+    viewport.width,
+  ]);
+
+  const visibleTrainings = getTrainingsInRange(
+    app.trainings,
+    visibleTrainingRange.start,
+    visibleTrainingRange.end,
+  );
   const stats = useClimberbookStats({
     ascents: app.ascents,
     isMobileChartLayout: viewport.isMobileChartLayout,
@@ -22,6 +72,7 @@ export function TrainingModule() {
     today: app.today,
     trainingRangeStart: app.trainingRangeStart,
     visibleTrainingMonthCount,
+    chartRangeOverride: visibleTrainingRange,
     trainings: app.trainings,
     weightEntries: app.weightEntries,
   });
@@ -48,7 +99,7 @@ export function TrainingModule() {
       onUpdateGoal={app.updateGoal}
       onDeleteGoal={app.deleteGoal}
       weightChartEntries={stats.weightChartEntries}
-      trainings={app.trainings}
+      trainings={visibleTrainings}
       chartRange={stats.chartRange}
       chartRangeLabel={stats.chartRangeLabel}
       weightEntryDraft={app.weightEntryDraft}

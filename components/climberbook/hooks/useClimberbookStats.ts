@@ -106,11 +106,18 @@ export function useClimberbookStats({
     () => getTrainingsInRange(trainings, visibleRange.start, visibleRange.end),
     [trainings, visibleRange.end, visibleRange.start],
   );
-  const totalTrainingTime = trainings.reduce(
+  const summaryTrainings = chartRangeOverride
+    ? getTrainingsInRange(
+        trainings,
+        chartRangeOverride.start,
+        chartRangeOverride.end,
+      )
+    : trainings;
+  const totalTrainingTime = summaryTrainings.reduce(
     (sum, item) => sum + item.durationMinutes,
     0,
   );
-  const totalCalories = trainings.reduce(
+  const totalCalories = summaryTrainings.reduce(
     (sum, item) => sum + item.caloriesBurned,
     0,
   );

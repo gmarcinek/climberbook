@@ -522,9 +522,9 @@ function getRopeDimensionSplit(
         : gradeIndex <= 20
           ? ropeDimensionSplits.high
           : ropeDimensionSplits.elite;
-  const multipliers = inclination
-    ? inclinationDimensionMultipliers[inclination]
-    : inclinationDimensionMultipliers.vertical;
+  const multipliers =
+    (inclination && inclinationDimensionMultipliers[inclination]) ||
+    inclinationDimensionMultipliers.vertical;
   return normalizeDimensions({
     aerobicEndurance: base.aerobicEndurance * multipliers.aerobicEndurance,
     strengthEndurance: base.strengthEndurance * multipliers.strengthEndurance,
@@ -613,11 +613,9 @@ function getSpraywallCoin(
       Math.max(0, intervals.sets) *
       Math.max(0, intervals.circuitsPerSet) *
       Math.max(0, intervals.movesPerCircuit);
-    const boulderEquivalents =
-      totalMoves / spraywallMovesPerBoulderEquivalent;
+    const boulderEquivalents = totalMoves / spraywallMovesPerBoulderEquivalent;
     return (
-      boulderEquivalents *
-      (boulderGymCoinByGrade[profile.grade] ?? minimumCoin)
+      boulderEquivalents * (boulderGymCoinByGrade[profile.grade] ?? minimumCoin)
     );
   }
   const attempts = training.durationMinutes / profile.attemptIntervalMinutes;
@@ -706,8 +704,7 @@ export function getStimulusCatalog() {
         {
           unit: "wstawka",
           attemptProfile: spraywallAttemptProfile,
-          intervalMovesPerBoulderEquivalent:
-            spraywallMovesPerBoulderEquivalent,
+          intervalMovesPerBoulderEquivalent: spraywallMovesPerBoulderEquivalent,
         },
       ),
       activity(
@@ -791,8 +788,11 @@ export function getObjectiveStimulusActivities(
   facilities: FacilityRecord[] = [],
   referenceTrainings: TrainingRecord[] = [],
 ): ObjectiveStimulusActivity[] {
-  const surfaces: Array<TrainingSurface | "general"> = training.surfaces.length
-    ? training.surfaces
+  const validSurfaces = training.surfaces.filter(
+    (surface) => surface in surfaceDimensionSplits,
+  );
+  const surfaces: Array<TrainingSurface | "general"> = validSurfaces.length
+    ? validSurfaces
     : ["general" as const];
   const minutesPerSurface =
     Math.max(training.durationMinutes, 1) / surfaces.length;
@@ -883,9 +883,7 @@ export function getObjectiveStimulusActivities(
     const protocolCoin = getProtocolCoin(training, surface);
     const timeCoin = (minutesPerSurface / 60) * surfaceHourlyCoin[surface];
     const spraywallCoin =
-      surface === "spraywall"
-        ? getSpraywallCoin(training)
-        : 0;
+      surface === "spraywall" ? getSpraywallCoin(training) : 0;
     const calculatedCoin =
       surface === "spraywall"
         ? spraywallCoin

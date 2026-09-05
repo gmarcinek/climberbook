@@ -39,6 +39,29 @@ import { getPublicOrigin } from "@/lib/server/public-url";
 
 export const runtime = "nodejs";
 
+const trainingSurfaces = [
+  "lina",
+  "baldy",
+  "moon",
+  "drazek",
+  "spraywall",
+  "kilter",
+  "silownia",
+  "chwytotablica",
+  "campus",
+  "bieznia",
+  "rower",
+  "bieg",
+  "treking",
+] as const satisfies readonly TrainingSurface[];
+
+function isTrainingSurface(value: unknown): value is TrainingSurface {
+  return (
+    typeof value === "string" &&
+    trainingSurfaces.includes(value as TrainingSurface)
+  );
+}
+
 const mcpTransports = new Map<
   string,
   WebStandardStreamableHTTPServerTransport
@@ -596,7 +619,10 @@ function createServer(request: Request) {
                 date: { type: "string" },
                 time: { type: "string" },
                 durationMinutes: { type: "number" },
-                surfaces: { type: "array", items: { type: "string" } },
+                surfaces: {
+                  type: "array",
+                  items: { type: "string", enum: [...trainingSurfaces] },
+                },
                 notes: { type: "string" },
                 facilityId: { type: "string" },
                 weatherSnapshot: { type: "object" },
@@ -1007,6 +1033,11 @@ function createServer(request: Request) {
           return result(getContentTemplates());
         case "create_training": {
           const snapshot = await getPostgresDatabaseSnapshot(actorId);
+          const surfaces: TrainingSurface[] =
+            Array.isArray(args.surfaces) &&
+            args.surfaces.every(isTrainingSurface)
+              ? args.surfaces
+              : [];
           const facility =
             typeof args.facilityId === "string"
               ? (await searchFacilitiesFromPostgres(actorId, "")).find(
@@ -1016,22 +1047,18 @@ function createServer(request: Request) {
           const missingFields = [
             ...(isDate(args.date) ? [] : ["date (YYYY-MM-DD)"]),
             ...(isTime(args.time) ? [] : ["time (HH:MM)"]),
-            ...(Array.isArray(args.surfaces) && args.surfaces.length > 0
-              ? []
-              : ["surfaces"]),
+            ...(surfaces.length > 0 ? [] : ["surfaces"]),
             ...(hasMeaningfulNotes(args.notes)
               ? []
               : [
                   "notes: opis naturalnym językiem (cel, przebieg, odczucia i rezultat; min. 4 słowa / 24 znaki)",
                 ]),
-            ...(Array.isArray(args.surfaces) &&
-            args.surfaces.includes("chwytotablica") &&
+            ...(surfaces.includes("chwytotablica") &&
             args.hangboardContext !== "warmup" &&
             args.hangboardContext !== "main"
               ? ["hangboardContext: warmup albo main"]
               : []),
-            ...(Array.isArray(args.surfaces) &&
-            args.surfaces.includes("campus") &&
+            ...(surfaces.includes("campus") &&
             args.campusContext !== "warmup" &&
             args.campusContext !== "main"
               ? ["campusContext: warmup albo main"]
@@ -1066,8 +1093,7 @@ function createServer(request: Request) {
                 args.durationMinutes > 0
                   ? []
                   : ["Ile trwał - 2 godziny?"]),
-                ...(Array.isArray(args.surfaces) &&
-                args.surfaces.includes("lina")
+                ...(surfaces.includes("lina")
                   ? [
                       "Dla każdej drogi na linie: całość czy odcinek i ile procent ukończono: 25%, 50%, 75% czy 100%? Przy braku danych użyjemy 25% jako ostrożnego fallbacku.",
                     ]
@@ -1076,14 +1102,12 @@ function createServer(request: Request) {
                 "Jaki był cel i co konkretnie udało się zrobić?",
                 "Jak ogólnie się czułeś/aś i jak czuły się palce?",
                 "Co było trudne, co poszło dobrze i jaki wniosek chcesz zapamiętać?",
-                ...(Array.isArray(args.surfaces) &&
-                args.surfaces.includes("chwytotablica")
+                ...(surfaces.includes("chwytotablica")
                   ? [
                       "Czy chwytotablica była rozgrzewką (warmup) czy osobnym treningiem głównym (main)?",
                     ]
                   : []),
-                ...(Array.isArray(args.surfaces) &&
-                args.surfaces.includes("campus")
+                ...(surfaces.includes("campus")
                   ? [
                       "Czy campus był rozgrzewką (warmup) czy osobnym treningiem głównym (main)?",
                     ]
@@ -1093,12 +1117,12 @@ function createServer(request: Request) {
           if (
             !isDate(args.date) ||
             !isTime(args.time) ||
-            !Array.isArray(args.surfaces) ||
+            surfaces.length === 0 ||
             !hasMeaningfulNotes(args.notes) ||
-            (args.surfaces.includes("chwytotablica") &&
+            (surfaces.includes("chwytotablica") &&
               args.hangboardContext !== "warmup" &&
               args.hangboardContext !== "main") ||
-            (args.surfaces.includes("campus") &&
+            (surfaces.includes("campus") &&
               args.campusContext !== "warmup" &&
               args.campusContext !== "main")
           )
@@ -1119,15 +1143,15 @@ function createServer(request: Request) {
                 args.durationMinutes > 0
                   ? args.durationMinutes
                   : 120,
-              surfaces: args.surfaces as TrainingSurface[],
+              surfaces,
               notes: [
                 args.notes.trim(),
-                ...(args.surfaces.includes("chwytotablica")
+                ...(surfaces.includes("chwytotablica")
                   ? [
                       `Kontekst chwytotablicy: ${args.hangboardContext === "warmup" ? "rozgrzewka" : "trening główny"}.`,
                     ]
                   : []),
-                ...(args.surfaces.includes("campus")
+                ...(surfaces.includes("campus")
                   ? [
                       `Kontekst campusu: ${args.campusContext === "warmup" ? "rozgrzewka" : "trening główny"}.`,
                     ]
