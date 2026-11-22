@@ -73,3 +73,11 @@ databaseChangeLog:
       file: changelog/changes/036-add-care-event-ranges.sql
   - include:
       file: changelog/changes/037-add-platform-friendships-and-wall.sql
+  - include:
+      file: changelog/changes/038-add-care-avatars.sql
+  - include:
+      file: changelog/changes/039-add-care-caregivers.sql
+  - include:
+      file: changelog/changes/040-add-care-plans.sql
+  - include:
+      file: changelog/changes/041-grant-care-planning-access.sql

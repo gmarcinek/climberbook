@@ -164,10 +164,154 @@
   gap: 14px;
 }
 
+.dangerActionCard {
+  border-color: #edc7c7;
+  background: #fff9f9;
+
+  .actionIcon {
+    background: #f9e6e6;
+    color: #9b4545;
+  }
+}
+
 .parentGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.avatarEditor {
+  position: relative;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e2e7ea;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fafbfb;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: #26383f;
+    font-size: 0.84rem;
+  }
+
+  small {
+    overflow: hidden;
+    color: #788088;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.avatarPreview {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  grid-row: span 2;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #2d5465;
+  box-shadow: 0 0 0 1px #dce3e7;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 800;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.avatarUploadButton {
+  display: inline-flex;
+  width: max-content;
+  min-height: 30px;
+  grid-column: 3;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #cbd5da;
+  border-radius: 7px;
+  padding: 5px 9px !important;
+  background: #fff;
+  color: #2d5465;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  input {
+    display: none;
+  }
+}
+
+.caregiverRoleSelect {
+  min-height: 30px;
+  grid-column: 2;
+  border: 1px solid #dce3e7;
+  border-radius: 7px;
+  padding: 4px 8px !important;
+  background: #fff;
+  color: #33454d;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.addCaregiverForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px auto auto;
+  align-items: end;
+  gap: 10px;
+  margin-top: 14px;
+  border-top: 1px solid #e7ebed;
+  padding-top: 14px;
+}
+
+.secondaryActionButton {
+  min-height: 36px;
+  border: 1px solid #cbd5da;
+  border-radius: 8px;
+  padding: 7px 12px !important;
+  background: #fff;
+  color: #2d5465;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.avatarRemoveButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #e0e4e7;
+  border-radius: 7px;
+  background: #fff;
+  color: #7c858b;
+  cursor: pointer;
+}
+
+.avatarError {
+  margin: 12px 0 0;
+  color: #a53f3f;
+  font-size: 0.78rem;
 }
 
 .field {
@@ -525,6 +669,27 @@
     margin: 0;
   }
 
+  .dangerActionButton {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 6px;
+    border-radius: 9px;
+    padding: 9px 16px !important;
+    background: #9b4545 !important;
+    color: #fff !important;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+  }
+
   .friendRow,
   .friendSearchResults > div {
     align-items: stretch;
@@ -604,7 +769,9 @@
 
   .modeGrid,
   .dataActions,
-  .parentGrid {
+  .parentGrid,
+  .avatarGrid,
+  .addCaregiverForm {
     grid-template-columns: 1fr;
   }
 

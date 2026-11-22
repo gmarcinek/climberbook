@@ -1,7 +1,7 @@
 .tabs {
   position: sticky;
   z-index: 5;
-  top: -24px;
+  top: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   margin: -24px -24px 20px;
@@ -29,42 +29,136 @@
 
 .editCareButton {
   display: grid;
-  min-height: 44px;
+  justify-self: start;
+  min-height: 34px;
+  width: max-content;
+  padding: 0 12px !important;
   place-items: center;
   border-radius: 8px;
   background: #2d5465 !important;
   color: #fff !important;
-  font-size: 0.9rem !important;
+  font-size: 0.78rem !important;
   font-weight: 600 !important;
   text-decoration: none;
-  width: 100%;
   border: 0;
   cursor: pointer;
 }
 
 .careEditActions {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 
   span {
+    margin-right: auto;
     font-size: 0.85rem;
     font-weight: 600;
   }
 
   button {
-    min-height: 38px;
-    padding: 0 12px;
+    min-height: 34px;
+    padding: 0 12px !important;
     border: 1px solid #b8c2c9;
-    border-radius: 6px;
+    border-radius: 8px;
     background: #fff;
     color: #333;
+    font-size: 0.78rem;
+    font-weight: 600;
   }
 }
 
 .confirmCareEdit {
+  display: grid;
+  min-height: 34px !important;
+  width: max-content;
+  padding: 0 12px !important;
+  place-items: center;
   border-color: #2d5465 !important;
+  border-radius: 8px !important;
   background: #2d5465 !important;
   color: #fff !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+}
+
+.manualCorrections {
+  border: 1px solid #dce4e8;
+  border-radius: 14px;
+  padding: 16px;
+  background: #f8fafb;
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    > div {
+      display: grid;
+      gap: 2px;
+    }
+
+    span {
+      color: #778188;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    h3 {
+      margin: 0;
+      color: #26383f;
+      font-size: 1rem;
+    }
+  }
+
+  p {
+    margin: 14px 0;
+    color: #788088;
+    font-size: 0.8rem;
+  }
+
+  ul {
+    display: grid;
+    max-height: 180px;
+    overflow-y: auto;
+    gap: 6px;
+    margin: 14px 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: #fff;
+    color: #33454d;
+    font-size: 0.8rem;
+
+    small {
+      color: #788088;
+    }
+  }
+
+  footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+
+    button {
+      min-height: 34px;
+      border: 1px solid #cbd5da;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #fff;
+      color: #33454d;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+  }
 }

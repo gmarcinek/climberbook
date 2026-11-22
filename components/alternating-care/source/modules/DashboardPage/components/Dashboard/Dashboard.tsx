@@ -35,16 +35,6 @@ import { useEventCounter } from '@utils/useEventCounter';
 import { useOtherParent } from '@utils/useOtherParent';
 import styles from './Dashboard.module.scss';
 
-if (
-  process.env.NODE_ENV === 'development' &&
-  typeof window !== 'undefined'
-) {
-  const hotModule = module as NodeModule & {
-    hot?: { dispose: (callback: () => void) => void };
-  };
-  hotModule.hot?.dispose(() => window.location.reload());
-}
-
 interface DashboardProps {
   fetchEventsQuery: CareEventsQuery;
   loadMonth: (
@@ -91,6 +81,7 @@ export const Dashboard = (props: DashboardProps) => {
   });
   const [isPlanVisible, setIsPlanVisible] = useState(isPlanInUrl);
   const [isAlternatingVisible, setIsAlternatingVisible] = useState(true);
+  const [isOtherCareVisible, setIsOtherCareVisible] = useState(true);
   const [isEventsVisible, setIsEventsVisible] = useState(true);
   const [formWidth, setFormWidth] = useState(520);
   const upcomingQuery = useQuery({
@@ -293,7 +284,8 @@ export const Dashboard = (props: DashboardProps) => {
             )}
           </nav>
         )}
-        {isCareEditActive &&
+        {isMobileLayout &&
+          isCareEditActive &&
           createPortal(
             <div className={styles.careEditBar} role='status'>
               <span>
@@ -342,6 +334,8 @@ export const Dashboard = (props: DashboardProps) => {
                 setIsPlanVisible={setIsPlanVisible}
                 isAlternatingVisible={isAlternatingVisible}
                 setIsAlternatingVisible={setIsAlternatingVisible}
+                isOtherCareVisible={isOtherCareVisible}
+                setIsOtherCareVisible={setIsOtherCareVisible}
                 isEventsVisible={isEventsVisible && !isCareEditActive}
                 setIsEventsVisible={setIsEventsVisible}
               />
@@ -355,6 +349,7 @@ export const Dashboard = (props: DashboardProps) => {
                   }
                   handlers={isCareEditActive ? careEdit.handlers : handlers}
                   isAlternatingVisible={isAlternatingVisible}
+                  isOtherCareVisible={isOtherCareVisible}
                   isMultiSelectionMode={
                     isCareEditActive ? false : isMultiSelectionMode
                   }
@@ -371,6 +366,7 @@ export const Dashboard = (props: DashboardProps) => {
                   isTodayVisible
                   isPlanVisible={isPlanVisible}
                   isAlternatingVisible={isAlternatingVisible}
+                  isOtherCareVisible={isOtherCareVisible}
                   isEventsVisible={false}
                   displayStrategy={'continous'}
                   events={sortedEvents}

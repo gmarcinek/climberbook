@@ -7,22 +7,45 @@ import { dateFormat } from '@components/Calendar/Calendar.helpers';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useCareHandoffMode } from '@utils/useCareHandoffMode';
+import { useCareAvatars } from '@utils/useCareAvatars';
 import { useOtherParent } from '@utils/useOtherParent';
-import { useMemo } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ArrowLeftRight } from 'lucide-react';
 import styles from './CareSummary.module.scss';
 
 const DEFAULT_WINDOW_DAYS = 120;
+const POLISH_MONTHS_GENITIVE = [
+  'stycznia',
+  'lutego',
+  'marca',
+  'kwietnia',
+  'maja',
+  'czerwca',
+  'lipca',
+  'sierpnia',
+  'września',
+  'października',
+  'listopada',
+  'grudnia',
+] as const;
+
+const formatPolishDate = (date: dayjs.Dayjs, withYear = true) =>
+  `${date.format('DD')} ${POLISH_MONTHS_GENITIVE[date.month()]}${
+    withYear ? ` ${date.format('YYYY')}` : ''
+  }`;
 
 interface CareSummaryProps {
   windowDays?: number;
   upcomingCount?: number | 'all';
   endDate?: string;
+  action?: ReactNode;
 }
 
 export const CareSummary = ({
   windowDays = DEFAULT_WINDOW_DAYS,
   upcomingCount = 4,
   endDate,
+  action,
 }: CareSummaryProps) => {
   const { user, language } = useAppContext();
   const isEnglish = language === 'en';
@@ -30,6 +53,36 @@ export const CareSummary = ({
   const today = dayjs().format(dateFormat);
   const { mode } = useCareHandoffMode();
   const { profile: otherParent } = useOtherParent();
+  const { avatars, getAvatar } = useCareAvatars(otherParent.userId);
+  const [caregiversBySubject, setCaregiversBySubject] = useState<
+    Record<string, { name: string; role: string }>
+  >(
+    {}
+  );
+  useEffect(() => {
+    void fetch('/api/alternating-care/caregivers', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Nie udało się pobrać ról opiekunów.');
+        return (await response.json()) as {
+          caregivers?: Array<{
+            subjectId: string;
+            name: string;
+            role: string;
+          }>;
+        };
+      })
+      .then((data) =>
+        setCaregiversBySubject(
+          Object.fromEntries(
+            (data.caregivers ?? []).map((item) => [
+              item.subjectId,
+              { name: item.name, role: item.role },
+            ])
+          )
+        )
+      )
+      .catch((error) => console.error('Could not load caregiver roles.', error));
+  }, []);
   const requestedEndDate = endDate ? dayjs(endDate) : dayjs(today).add(windowDays, 'day');
   const futureWindowDays = Math.max(
     windowDays,
@@ -50,15 +103,25 @@ export const CareSummary = ({
 
   const summary = useMemo(() => {
     if (!query.data) return null;
-    const careDays = new Set(
+    const ownSubject = `self:${user.id}`;
+    const otherSubject = `other:${otherParent.userId || 'manual'}`;
+    const subjectsByDate = new Map(
       query.data
         .filter((event) => event.type === CalendarEventType.Alternating)
-        .map((event) => event.date)
+        .map((event) => [
+          event.date,
+          event.groupId.startsWith('CARE:')
+            ? event.groupId.slice(5)
+            : ownSubject,
+        ])
     );
-    const isMine = careDays.has(today);
+    if (subjectsByDate.size === 0) return null;
+    const subjectAt = (date: dayjs.Dayjs) =>
+      subjectsByDate.get(date.format(dateFormat)) ?? otherSubject;
+    const currentSubject = subjectAt(dayjs(today));
+    const isMine = currentSubject === ownSubject;
     const hasSameState = (offset: number) =>
-      careDays.has(dayjs(today).add(offset, 'day').format(dateFormat)) ===
-      isMine;
+      subjectAt(dayjs(today).add(offset, 'day')) === currentSubject;
 
     let back = 0;
     while (back < windowDays && hasSameState(-(back + 1))) back += 1;
@@ -68,28 +131,30 @@ export const CareSummary = ({
 
     const ranges = [];
     let cursor = 0;
-    let rangeIsMine = isMine;
+    let rangeSubject = currentSubject;
     while (cursor <= futureWindowDays && ranges.length < upcomingLimit) {
       const from = dayjs(today).add(cursor, 'day');
       let length = 1;
       while (
         cursor + length <= futureWindowDays &&
-        careDays.has(from.add(length, 'day').format(dateFormat)) === rangeIsMine
+        subjectAt(from.add(length, 'day')) === rangeSubject
       ) {
         length += 1;
       }
       ranges.push({
-        isMine: rangeIsMine,
+        isMine: rangeSubject === ownSubject,
+        subjectId: rangeSubject,
         from,
         to: from.add(length - 1, 'day'),
         openEnded: cursor + length > futureWindowDays,
       });
       cursor += length;
-      rangeIsMine = !rangeIsMine;
+      rangeSubject = subjectAt(dayjs(today).add(cursor, 'day'));
     }
 
     return {
       isMine,
+      currentSubject,
       startDate: dayjs(today).subtract(back, 'day'),
       startOpen: back >= windowDays,
       currentTo: dayjs(today).add(forward - 1, 'day'),
@@ -97,7 +162,15 @@ export const CareSummary = ({
       ranges,
       nextStart: dayjs(today).add(forward, 'day'),
     };
-  }, [futureWindowDays, query.data, today, upcomingLimit, windowDays]);
+  }, [
+    futureWindowDays,
+    otherParent.userId,
+    query.data,
+    today,
+    upcomingLimit,
+    user.id,
+    windowDays,
+  ]);
 
   if (query.isLoading) {
     return (
@@ -109,10 +182,23 @@ export const CareSummary = ({
 
   if (!summary) {
     return (
-      <section className={styles.card}>
-        {isEnglish
-          ? 'Could not load care data.'
-          : 'Nie udało się wczytać opieki.'}
+      <section className={`${styles.card} ${styles.emptyCare}`}>
+        <div>
+          <span className={styles.label}>
+            {isEnglish ? 'Care plan' : 'Plan opieki'}
+          </span>
+          <strong>
+            {isEnglish
+              ? 'No care is scheduled yet'
+              : 'Brak zaplanowanej opieki'}
+          </strong>
+          <p>
+            {isEnglish
+              ? 'Set a recurring plan or correct individual calendar days.'
+              : 'Ustal plan cykliczny albo popraw pojedyncze dni kalendarza.'}
+          </p>
+        </div>
+        {action}
       </section>
     );
   }
@@ -122,15 +208,24 @@ export const CareSummary = ({
     : isEnglish
       ? 'You'
       : 'Ja';
-  const holder = summary.isMine
-    ? mineLabel
-    : otherParent.name || (isEnglish ? 'Other parent' : 'Drugi rodzic');
-
-  const rangeLabel = (isMine: boolean) =>
-    isMine
+  const holder =
+    caregiversBySubject[summary.currentSubject]?.name ||
+    (summary.isMine
       ? mineLabel
-      : otherParent.name || (isEnglish ? 'Other parent' : 'Drugi rodzic');
-  const daysUntilHandoff = summary.nextStart.diff(dayjs(today), 'day');
+      : otherParent.name || (isEnglish ? 'Other parent' : 'Drugi rodzic'));
+  const currentRole =
+    caregiversBySubject[summary.currentSubject]?.role ||
+    (isEnglish ? 'Parent' : 'Rodzic');
+  const currentAvatar = summary.isMine
+    ? avatars.mine
+    : getAvatar('other', summary.currentSubject.split(':').slice(1).join(':'));
+
+  const rangeLabel = (subjectId: string, isMine: boolean) =>
+    caregiversBySubject[subjectId]?.name ||
+    (isMine
+      ? mineLabel
+      : otherParent.name || (isEnglish ? 'Other parent' : 'Drugi rodzic'));
+  const daysUntilHandoff = summary.currentTo.diff(dayjs(today), 'day');
   const elapsedDays = dayjs(today).diff(summary.startDate, 'day');
   const currentDay =
     mode === 'hourly' ? elapsedDays + 1 : Math.max(1, elapsedDays + 1);
@@ -155,68 +250,114 @@ export const CareSummary = ({
     const localizedFrom = from.locale(locale);
     const localizedTo = to.locale(locale);
 
-    if (openEnded) return `${localizedFrom.format('DD MMMM YYYY')}–…`;
+    if (openEnded) {
+      return isEnglish
+        ? `${localizedFrom.format('DD MMMM YYYY')}–…`
+        : `${formatPolishDate(from)}–…`;
+    }
     if (from.isSame(to, 'month')) {
-      return `${localizedFrom.format('DD')}-${localizedTo.format(
-        'DD MMMM YYYY'
-      )}`;
+      return isEnglish
+        ? `${localizedFrom.format('DD')}-${localizedTo.format('DD MMMM YYYY')}`
+        : `${localizedFrom.format('DD')}-${formatPolishDate(to)}`;
     }
     if (from.isSame(to, 'year')) {
-      return `${localizedFrom.format('DD MMMM')}-${localizedTo.format(
-        'DD MMMM YYYY'
-      )}`;
+      return isEnglish
+        ? `${localizedFrom.format('DD MMMM')}-${localizedTo.format('DD MMMM YYYY')}`
+        : `${formatPolishDate(from, false)}-${formatPolishDate(to)}`;
     }
-    return `${localizedFrom.format('DD MMMM YYYY')}-${localizedTo.format(
-      'DD MMMM YYYY'
-    )}`;
+    return isEnglish
+      ? `${localizedFrom.format('DD MMMM YYYY')}-${localizedTo.format('DD MMMM YYYY')}`
+      : `${formatPolishDate(from)}-${formatPolishDate(to)}`;
   };
 
   return (
     <section className={styles.card}>
-      <span className={styles.dayBadge}>
-        {currentDay}/{totalDays}
-      </span>
-      <span className={styles.label}>
-        {isEnglish ? 'Care now' : 'Opiekę ma teraz'}
-      </span>
-      <strong className={styles.holder}>{holder}</strong>
-
-      <div className={styles.range}>
-        <span>{isEnglish ? 'From' : 'Od'} {summary.startDate.format(dateFormat)}</span>
-        <span>{isEnglish ? 'to' : 'do'} {summary.currentTo.format(dateFormat)}</span>
-      </div>
-      <div
-        className={styles.progressTrack}
-        role='progressbar'
-        aria-label={isEnglish ? 'Current care progress' : 'Postęp bieżącej opieki'}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(progress * 100)}
-      >
-        <span
-          className={styles.progressValue}
-          style={{ width: `${progress * 100}%` }}
-        />
+      <div className={styles.currentCare}>
+        <span className={styles.label}>
+          {isEnglish ? 'Care provided by' : 'Opiekę sprawuje teraz'}
+        </span>
+        <div className={styles.currentCareAction}>{action}</div>
+        <div className={styles.currentCarePerson}>
+          <span className={styles.currentCareAvatar} aria-hidden>
+            {currentAvatar ? (
+              <img src={currentAvatar} alt='' />
+            ) : (
+              holder.charAt(0).toUpperCase()
+            )}
+          </span>
+          <div className={styles.currentCareCopy}>
+            <strong className={styles.holder}>
+              {holder.replace(/ · .+$/, '')}
+              <small> · {currentRole}</small>
+            </strong>
+          </div>
+        </div>
+        <div className={styles.range}>
+          <span>
+            {isEnglish ? 'From ' : 'Od '}
+            {isEnglish
+              ? summary.startDate.locale('en').format('MMM D, YYYY')
+              : formatPolishDate(summary.startDate)}
+          </span>
+          <span>
+            {isEnglish ? 'to ' : 'do '}
+            {isEnglish
+              ? summary.currentTo.locale('en').format('MMM D, YYYY')
+              : formatPolishDate(summary.currentTo)}
+          </span>
+        </div>
       </div>
 
       <div className={styles.exchangeSection}>
         <div className={styles.exchange}>
+          <span className={styles.exchangeIcon} aria-hidden>
+            <ArrowLeftRight size={19} />
+          </span>
           <span className={styles.upcomingTitle}>
             {isEnglish ? 'Next handoff' : 'Wymiana'}
           </span>
-          <strong>
-            {summary.nextStart.format(dateFormat)}
-            {' '}· {handoffCountdown}
-          </strong>
+          <div className={styles.exchangeDateRow}>
+            <div className={styles.exchangeDate}>
+              <strong>{summary.currentTo.format('D')}</strong>
+              <span>
+                {isEnglish
+                  ? summary.currentTo.locale('en').format('MMMM, YYYY')
+                  : `${POLISH_MONTHS_GENITIVE[summary.currentTo.month()]} ${summary.currentTo.format('YYYY')}`}
+              </span>
+            </div>
+            <span className={styles.exchangeCountdown}>
+              {handoffCountdown}
+            </span>
+          </div>
+          <div
+            className={styles.exchangeProgress}
+            role='progressbar'
+            aria-label={isEnglish ? 'Current care progress' : 'Postęp bieżącej opieki'}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress * 100)}
+          >
+            <span style={{ width: `${progress * 100}%` }} />
+          </div>
+          <small className={styles.exchangeProgressLabel}>
+            {isEnglish
+              ? `${currentDay} of ${totalDays} care days`
+              : `${currentDay} z ${totalDays} dni opieki`}
+          </small>
         </div>
       </div>
 
       <div className={styles.upcoming}>
         <span className={styles.upcomingTitle}>
-          {isEnglish ? 'Next handoffs' : 'Kolejne wymiany'}
+          {isEnglish
+            ? 'Planned care handoffs'
+            : 'Zaplanowane wymiany opieki'}
         </span>
         {summary.ranges.slice(1, upcomingLimit).map((range) => {
           const duration = range.to.diff(range.from, 'day') + 1;
+          const rangeAvatar = range.isMine
+            ? avatars.mine
+            : getAvatar('other', range.subjectId.split(':').slice(1).join(':'));
 
           return (
             <div
@@ -224,10 +365,30 @@ export const CareSummary = ({
               key={`${range.from.format(dateFormat)}-${range.isMine}`}
             >
               <span className={`${styles.upcomingAvatar} ${range.isMine ? styles.upcomingAvatarMine : ''}`} aria-hidden>
-                {range.isMine ? (firstName.charAt(0) || 'J').toUpperCase() : 'D'}
+                {rangeAvatar ? (
+                  <img src={rangeAvatar} alt='' />
+                ) : range.isMine ? (
+                  (firstName.charAt(0) || 'J').toUpperCase()
+                ) : (
+                  (otherParent.name.charAt(0) || 'D').toUpperCase()
+                )}
               </span>
               <div className={styles.upcomingRangeText}>
-                <strong>{rangeLabel(range.isMine)}</strong>
+                <div>
+                  <strong>
+                    {rangeLabel(range.subjectId, range.isMine).replace(
+                      / · .+$/,
+                      ''
+                    )}
+                    <small className={styles.upcomingCaregiverRole}>
+                      {' '}·{' '}
+                      {caregiversBySubject[range.subjectId]?.role ||
+                        (range.isMine
+                          ? (isEnglish ? 'Parent' : 'Rodzic')
+                          : (isEnglish ? 'Parent' : 'Rodzic'))}
+                    </small>
+                  </strong>
+                </div>
                 <span className={styles.upcomingRangeMeta}>
                   <span>
                     {range.openEnded ? '≥ ' : ''}

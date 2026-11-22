@@ -1,6 +1,5 @@
 import { dateFormat } from '@components/Calendar/Calendar.helpers';
 import { Button, ButtonProps } from '@nextui-org/button';
-import '@styles/globals.css';
 import { useScrollToId } from '@utils/useScrollTo';
 import classNames from 'classnames';
 import dayjs from 'dayjs';

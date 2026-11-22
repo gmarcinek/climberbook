@@ -1,0 +1,18 @@
+export const CAREGIVER_ROLES = [
+  'rodzic',
+  'tata',
+  'ojciec',
+  'mama',
+  'matka',
+  'macocha',
+  'ojczym',
+  'opiekun prawny',
+  'brat',
+  'siostra',
+  'rodzina',
+  'babcia',
+  'dziadek',
+  'niania',
+  'opiekunka',
+  'inny',
+] as const;

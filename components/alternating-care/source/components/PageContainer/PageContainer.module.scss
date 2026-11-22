@@ -1,5 +1,16 @@
-.pageContainer {
+﻿.pageContainer {
   margin-top: 1rem;
+}
+
+.scrollable {
+  width: 100%;
+  height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  > .pageContainer {
+    margin-top: 0;
+  }
 }
 
 @media (min-width: 768px) {
@@ -18,5 +29,10 @@
       width: 100%;
       max-width: 100%;
     }
+  }
+
+  .scrollable > .pageContainer {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 }

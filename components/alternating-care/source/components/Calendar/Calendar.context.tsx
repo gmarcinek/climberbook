@@ -23,6 +23,7 @@ export interface CalenderContextData {
   isTodayVisible: boolean;
   isPlanVisible: boolean;
   isAlternatingVisible: boolean;
+  isOtherCareVisible: boolean;
   isWeekendsVisible: boolean;
   isEventsVisible: boolean;
   events: CalendarEvent[];
@@ -41,6 +42,7 @@ export const CalenderContext = createContext<CalenderContextData>({
   isTodayVisible: true,
   isPlanVisible: false,
   isAlternatingVisible: true,
+  isOtherCareVisible: true,
   isWeekendsVisible: true,
   isEventsVisible: true,
   events: [],

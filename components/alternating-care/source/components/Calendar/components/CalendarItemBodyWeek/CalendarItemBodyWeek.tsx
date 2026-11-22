@@ -7,6 +7,7 @@ import { useDayContainetRwd } from '@components/Calendar/hooks/useDayContainetRw
 import { Stack } from '@components/Stack/Stack';
 import { getTextColor } from '@utils/color';
 import { capitalizeFirstLetter } from '@utils/string';
+import { caregiverBackground } from '@utils/caregiverColors';
 import classNames from 'classnames';
 import dayjs, { Dayjs } from 'dayjs';
 import { useMemo } from 'react';
@@ -24,6 +25,7 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
   const currentDate = dayjs(day.date);
   const {
     isAlternatingVisible,
+    isOtherCareVisible,
     isWeekendsVisible,
     isTodayVisible,
     isPlanVisible,
@@ -52,13 +54,24 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
   }, [currentDate]);
 
   const isWeekend = isWeekendsVisible && [6, 0].includes(currentDate.day());
+  const careEvent = events.find(
+    (item) =>
+      item.type === CalendarEventType.Alternating && item.date === day.date
+  );
   const isAlternating =
     isAlternatingVisible &&
-    events
-      .map((item) => {
-        return item.type === CalendarEventType.Alternating && item.date;
-      })
-      .includes(day.date);
+    Boolean(
+      careEvent &&
+        (careEvent.groupId === CalendarEventType.Alternating ||
+          careEvent.groupId.startsWith('CARE:self:'))
+    );
+  const caregiverCare =
+    isOtherCareVisible &&
+    careEvent &&
+    careEvent.groupId.startsWith('CARE:') &&
+    !careEvent.groupId.startsWith('CARE:self:')
+      ? careEvent
+      : null;
 
   const event = events.find((item) => {
     return (
@@ -83,16 +96,31 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
   }, [currentDate]);
 
   const itemStyle = useMemo(() => {
+    const caregiverColor = caregiverCare
+      ? caregiverCare.style?.background ??
+        caregiverBackground(caregiverCare.groupId)
+      : undefined;
     if (isEventsVisible) {
       return {
         ...style.style,
-        backgroundColor: event?.style?.background,
-        color: getTextColor(event?.style?.background),
+        backgroundColor: caregiverColor ?? event?.style?.background,
+        color: getTextColor(caregiverColor ?? event?.style?.background),
       };
     }
 
-    return style.style;
-  }, [style.style, isPlanVisible, isEventsVisible, events]);
+    return caregiverColor
+      ? {
+          ...style.style,
+          backgroundColor: caregiverColor,
+          color: getTextColor(caregiverColor),
+        }
+      : style.style;
+  }, [
+    caregiverCare,
+    event?.style?.background,
+    style.style,
+    isEventsVisible,
+  ]);
 
   return (
     <CalendarItemStatusContainer

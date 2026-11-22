@@ -8,12 +8,14 @@ import {
   Dispatch,
   SetStateAction,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 import { CareSummary } from '../CareSummary/CareSummary';
 import { DashboardEventForm } from '../DashboardEventForm/DashboardEventForm';
 import { IncomingEventList } from '../IncomingEventList/IncomingEventList';
+import { CarePlanner } from '../CarePlanner/CarePlanner';
 import styles from './CalendarFormSection.module.scss';
 
 interface CalendarFormSectionProps {
@@ -30,6 +32,7 @@ interface CalendarFormSectionProps {
     start: () => void;
     cancel: () => void;
     save: () => void;
+    toggledDates: Set<string>;
   };
 }
 
@@ -44,6 +47,11 @@ export const CalendarFormSection = (props: CalendarFormSectionProps) => {
     endDate,
   } = props;
   const [activeTab, setActiveTab] = useState<'events' | 'care'>('care');
+  const [isPlannerOpen, setIsPlannerOpen] = useState(false);
+
+  useEffect(() => {
+    if (selection.size > 0) setActiveTab('events');
+  }, [selection]);
 
   const onAddEventSuccess = useCallback(() => {
     setIsMultiSelectionMode(false);
@@ -99,39 +107,85 @@ export const CalendarFormSection = (props: CalendarFormSectionProps) => {
 
       {activeTab === 'care' && (
         <section className={styles.carePanel}>
-          {!careEdit.isActive ? (
-            <button
-              type='button'
-              className={styles.editCareButton}
-              onClick={careEdit.start}
-            >
-              Edytuj opiekę
-            </button>
-          ) : (
-            <div className={styles.careEditActions}>
-              <span>
-                {careEdit.isSaving
-                  ? 'Zapisywanie…'
-                  : `Zmienione dni: ${careEdit.changedCount}`}
-              </span>
-              <button
-                type='button'
-                onClick={careEdit.cancel}
-                disabled={careEdit.isSaving}
-              >
-                Anuluj
-              </button>
-              <button
-                type='button'
-                className={styles.confirmCareEdit}
-                onClick={careEdit.save}
-                disabled={careEdit.isSaving}
-              >
-                Zatwierdź
-              </button>
-            </div>
+          {careEdit.isActive && (
+            <section className={styles.manualCorrections}>
+              <header>
+                <div>
+                  <span>Korekty ręczne</span>
+                  <h3>Kliknij dni w kalendarzu</h3>
+                </div>
+                <span>
+                  {careEdit.isSaving
+                    ? 'Zapisywanie…'
+                    : `Zmienione dni: ${careEdit.changedCount}`}
+                </span>
+              </header>
+              {careEdit.changedCount > 0 ? (
+                <ul>
+                  {Array.from(careEdit.toggledDates)
+                    .sort()
+                    .map((date) => (
+                      <li key={date}>
+                        <span>{date}</span>
+                        <small>Moja opieka</small>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p>Lista zmian jest pusta. Wybierz dni po lewej.</p>
+              )}
+              <footer>
+                <button
+                  type='button'
+                  onClick={() => {
+                    careEdit.cancel();
+                    setIsPlannerOpen(true);
+                  }}
+                  disabled={careEdit.isSaving}
+                >
+                  Zaplanuj cykl
+                </button>
+                <button
+                  type='button'
+                  onClick={careEdit.cancel}
+                  disabled={careEdit.isSaving}
+                >
+                  Anuluj
+                </button>
+                <button
+                  type='button'
+                  className={styles.confirmCareEdit}
+                  onClick={careEdit.save}
+                  disabled={careEdit.isSaving}
+                >
+                  Zatwierdź
+                </button>
+              </footer>
+            </section>
           )}
-          <CareSummary windowDays={365} upcomingCount='all' endDate={endDate} />
+          <CareSummary
+            windowDays={365}
+            upcomingCount='all'
+            endDate={endDate}
+            action={
+              <button
+                type='button'
+                className={styles.editCareButton}
+                onClick={careEdit.start}
+                disabled={careEdit.isActive}
+              >
+                Edytuj opiekę
+              </button>
+            }
+          />
+          {isPlannerOpen && (
+            <CarePlanner
+              onClose={() => setIsPlannerOpen(false)}
+              onSaved={async () => {
+                await fetchEventsQuery.refetch();
+              }}
+            />
+          )}
         </section>
       )}
     </Stack>

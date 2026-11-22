@@ -1,5 +1,9 @@
-.page {
-  min-height: 100vh;
+﻿.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background:
     radial-gradient(circle at 12% 10%, rgba(210, 126, 77, 0.16), transparent 30rem),
     radial-gradient(circle at 88% 80%, rgba(61, 124, 104, 0.2), transparent 34rem),
@@ -9,12 +13,12 @@
 
 .header {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  width: min(1180px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: 24px 0;
+  padding: 16px clamp(16px, 2.5vw, 32px);
+  border-bottom: 1px solid rgba(25, 54, 45, 0.1);
 }
 
 .brand {
@@ -27,13 +31,13 @@
 
 .brandMark {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   place-items: center;
   border-radius: 12px;
   background: #19362d;
   color: #fff;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
@@ -50,19 +54,34 @@
 }
 
 .content {
-  width: min(1040px, calc(100% - 40px));
-  margin: 0 auto;
-  padding: clamp(40px, 8vh, 90px) 0 60px;
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
 }
 
-.intro {
-  max-width: 670px;
+.sidebar {
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(20px, 3vh, 32px) clamp(16px, 2vw, 28px);
+  border-right: 1px solid rgba(25, 54, 45, 0.1);
+}
+
+.main {
+  min-height: 0;
+  overflow-y: auto;
+  padding: clamp(20px, 3vh, 32px) clamp(16px, 2.5vw, 40px);
+}
+
+.main > * {
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .intro p {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   color: #8b4b2f;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -70,46 +89,36 @@
 
 .intro h1 {
   margin: 0;
-  font-size: clamp(2.25rem, 6vw, 4.4rem);
-  line-height: 1.02;
-  letter-spacing: -0.045em;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
 }
 
-.intro > span {
-  display: block;
-  max-width: 620px;
-  margin-top: 18px;
-  color: #53635d;
-  font-size: 1.05rem;
-  line-height: 1.65;
-}
-
-.grid {
+.list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  margin-top: 48px;
+  gap: 10px;
+  margin-top: 22px;
 }
 
 .card {
   display: grid;
-  min-height: 310px;
-  grid-template-rows: auto 1fr auto;
-  gap: 28px;
-  padding: 28px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
   border: 1px solid rgba(25, 54, 45, 0.14);
-  border-radius: 20px;
+  border-radius: 14px;
   color: #fff;
   text-decoration: none;
-  box-shadow: 0 20px 45px rgba(32, 50, 43, 0.12);
+  box-shadow: 0 10px 24px rgba(32, 50, 43, 0.1);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 28px 55px rgba(32, 50, 43, 0.18);
+  transform: translateX(3px);
+  box-shadow: 0 14px 30px rgba(32, 50, 43, 0.16);
 }
 
 .climberbook {
@@ -130,46 +139,43 @@
 
 .icon {
   display: grid;
-  width: 54px;
-  height: 54px;
+  width: 42px;
+  height: 42px;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 15px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.12);
 }
 
 .cardText {
   display: grid;
-  align-content: start;
-  gap: 10px;
+  gap: 3px;
 }
 
 .cardText strong {
-  font-size: 1.75rem;
+  font-size: 1.05rem;
 }
 
 .cardText span {
-  max-width: 400px;
   color: rgba(255, 255, 255, 0.82);
-  line-height: 1.55;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
-.action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.24);
+.arrow {
+  font-size: 1.2rem;
   font-weight: 750;
 }
 
-.action > span {
-  font-size: 1.3rem;
+.main > section {
+  margin-top: 0;
 }
 
-@media (max-width: 720px) {
-  .header {
-    width: min(100% - 28px, 1180px);
+@media (max-width: 860px) {
+  .page {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
   }
 
   .brand small {
@@ -177,16 +183,16 @@
   }
 
   .content {
-    width: min(100% - 28px, 1040px);
-    padding-top: 32px;
-  }
-
-  .grid {
     grid-template-columns: 1fr;
-    margin-top: 34px;
   }
 
-  .card {
-    min-height: 280px;
+  .sidebar,
+  .main {
+    overflow: visible;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(25, 54, 45, 0.1);
   }
 }

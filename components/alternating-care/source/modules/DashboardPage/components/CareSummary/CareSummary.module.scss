@@ -9,19 +9,36 @@
   background: #fff;
 }
 
-.dayBadge {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  display: grid;
-  min-width: 42px;
-  height: 28px;
-  place-items: center;
-  border-radius: 6px;
-  background: #edf1f3;
-  color: #2d5465;
-  font-size: 0.78rem;
-  font-weight: 800;
+.emptyCare {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px dashed #ccd6db;
+  border-radius: 16px;
+  padding: 20px;
+  background: #f8fafb;
+
+  > div {
+    display: grid;
+    gap: 5px;
+  }
+
+  > div > strong {
+    color: #263d45;
+    font-size: 1.05rem;
+  }
+
+  p {
+    margin: 0;
+    color: #778188;
+    font-size: 0.78rem;
+  }
+
+  > button {
+    min-width: 148px;
+    min-height: 40px;
+  }
 }
 
 .label {
@@ -33,7 +50,8 @@
 }
 
 .holder {
-  font-size: 1.6rem;
+  color: #1e1916;
+  font-size: 1.8rem;
   line-height: 1.15;
 }
 
@@ -46,20 +64,95 @@
   font-size: 0.82rem;
 }
 
-.progressTrack {
-  overflow: hidden;
-  height: 8px;
-  margin-top: 10px;
-  border-radius: 999px;
-  background: #e2e7ea;
+.holder small {
+  color: #6b7280;
+  font-size: 0.72em;
+  font-weight: 500;
 }
 
-.progressValue {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: #2d5465;
-  transition: width 180ms ease;
+.currentCare {
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(45, 84, 101, 0.12);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.62), transparent 34%), linear-gradient(120deg, #8c23db 0%, #484bb1 48%, #4dadcb 100%);
+  box-shadow:
+    0 10px 28px rgba(97, 57, 30, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+
+  .label {
+    color: rgba(255, 248, 237, 0.82);
+  }
+
+  .currentCarePerson {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .currentCareCopy {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 5px;
+  }
+
+  .caregiverRole,
+  .upcomingCaregiverRole {
+    display: inline;
+    color: rgba(255, 250, 242, 0.78);
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+
+  .currentCareAvatar {
+    display: grid;
+    width: 64px;
+    height: 64px;
+    flex: none;
+    place-items: center;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.72);
+    border-radius: 50%;
+    background: rgba(31, 52, 61, 0.22);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .holder {
+    color: #fffaf2;
+    text-shadow: 0 1px 2px rgba(73, 35, 18, 0.16);
+  }
+
+  .holder small {
+    color: rgba(255, 244, 225, 0.82);
+  }
+
+  .range {
+    color: rgba(255, 250, 242, 0.88);
+  }
+}
+
+.currentCareAction {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
 }
 
 .exchangeSection,
@@ -71,6 +164,29 @@
   border-top: 1px solid #e6eaed;
 }
 
+.exchangeSection {
+  overflow: hidden;
+  position: relative;
+  margin-top: 20px;
+  border: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(125deg, #173d4a 0%, #2d6570 48%, #5ca08d 78%, #b4c987 100%);
+  box-shadow: 0 14px 32px rgba(18, 57, 66, 0.22);
+
+  &::after {
+    position: absolute;
+    top: -48px;
+    right: -34px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    content: '';
+    pointer-events: none;
+  }
+}
+
 .upcomingTitle {
   color: #6b7280;
   font-size: 0.78rem;
@@ -80,14 +196,96 @@
 }
 
 .exchange {
+  position: relative;
+  z-index: 1;
   display: grid;
-  gap: 3px;
-  padding: 4px 0 10px;
+  gap: 7px;
+  border-radius: 15px;
+  padding: 20px 22px;
+  background:
+    radial-gradient(circle at 88% 4%, rgba(255, 255, 255, 0.18), transparent 34%),
+    radial-gradient(circle at 8% 110%, rgba(143, 207, 177, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(20, 53, 65, 0.99), rgba(32, 91, 101, 0.98) 60%, rgba(52, 119, 103, 0.96));
+  color: #fff;
 
   strong {
-    font-size: 1rem;
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    letter-spacing: -0.015em;
     text-transform: capitalize;
   }
+
+  .upcomingTitle {
+    color: rgba(255, 255, 255, 0.72);
+  }
+}
+
+.exchangeIcon {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+}
+
+.exchangeProgress {
+  overflow: hidden;
+  height: 7px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f5d7bd, #fff);
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+  }
+}
+
+.exchangeDateRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.exchangeDate {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+
+  strong {
+    font-size: 1.9em;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  span {
+    font-weight: 400;
+    text-transform: none;
+  }
+}
+
+.exchangeCountdown {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.exchangeProgressLabel {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.74rem;
+  text-align: right;
 }
 
 .upcomingRange {
@@ -114,6 +312,13 @@
     color: #59636b;
     font-size: 0.7rem;
     font-weight: 800;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 
   .upcomingAvatarMine {
@@ -127,6 +332,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+  }
+
+  .upcomingCaregiverRole {
+    color: #788088;
+    font-size: 0.65rem;
+    font-weight: 500;
+    margin-left: 2px;
   }
 
   .upcomingRangeMeta {

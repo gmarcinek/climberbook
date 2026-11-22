@@ -6,6 +6,7 @@ import { CalendarDayType } from '@components/Calendar/Calendar.types';
 import { useDayContainetRwd } from '@components/Calendar/hooks/useDayContainetRwd';
 import { Stack } from '@components/Stack/Stack';
 import { useBreakpoints } from '@utils/useBreakpoints';
+import { caregiverBackground } from '@utils/caregiverColors';
 import classNames from 'classnames';
 import dayjs, { Dayjs } from 'dayjs';
 import { useMemo } from 'react';
@@ -22,6 +23,7 @@ export function CalendarItemBodyMonth(props: CalendarItemBodyMonthProps) {
   const currentDate = dayjs(day.date);
   const {
     isAlternatingVisible,
+    isOtherCareVisible,
     isWeekendsVisible,
     isTodayVisible,
     events,
@@ -51,13 +53,24 @@ export function CalendarItemBodyMonth(props: CalendarItemBodyMonthProps) {
   });
 
   const isWeekend = isWeekendsVisible && [6, 0].includes(currentDate.day());
+  const careEvent = events.find(
+    (item) =>
+      item.type === CalendarEventType.Alternating && item.date === day.date
+  );
   const isAlternating =
     isAlternatingVisible &&
-    events
-      .map((item) => {
-        return item.type === CalendarEventType.Alternating && item.date;
-      })
-      .includes(day.date);
+    Boolean(
+      careEvent &&
+        (careEvent.groupId === CalendarEventType.Alternating ||
+          careEvent.groupId.startsWith('CARE:self:'))
+    );
+  const caregiverCare =
+    isOtherCareVisible &&
+    careEvent &&
+    careEvent.groupId.startsWith('CARE:') &&
+    !careEvent.groupId.startsWith('CARE:self:')
+      ? careEvent
+      : null;
 
   const isSelected = useMemo(() => {
     return (selection ?? []).toString().split(',').includes(day.date);
@@ -83,7 +96,19 @@ export function CalendarItemBodyMonth(props: CalendarItemBodyMonthProps) {
       isFirstOfTheMonth={isFirstOfTheMonth}
       isSelected={isSelected}
     >
-      <div className={itemClasses}>
+      <div
+        className={itemClasses}
+        style={
+          caregiverCare
+            ? {
+                backgroundColor:
+                  caregiverCare.style?.background ??
+                  caregiverBackground(caregiverCare.groupId),
+                color: '#fff',
+              }
+            : undefined
+        }
+      >
         <Stack className={label} gap={2}>
           <div className={textClasses}>{label}</div>
           <Stack

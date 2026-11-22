@@ -83,6 +83,12 @@ export const IncomingEventList = (props: IncomingEventListProps) => {
     return groupByDate(nonAlternatingEvents);
   }, [nonAlternatingEvents]);
 
+  const hasSelectedDayEvents = useMemo(
+    () =>
+      sinceThisMonthGroupedEvents.some((group) => selection.has(group.date)),
+    [sinceThisMonthGroupedEvents, selection]
+  );
+
   const sinceTodayEvents = useMemo(() => {
     const yesterday = dayjs(todayDate).subtract(1, 'day');
     return groupByEventRuns(
@@ -221,6 +227,7 @@ export const IncomingEventList = (props: IncomingEventListProps) => {
             <h3>
               <strong>{i18n.selectedDayRangeEvents}</strong>
             </h3>
+            {!hasSelectedDayEvents && <p>{i18n.selectedDaysEmpty}</p>}
             {Array.from(selection).map((selectedItem, index) => {
               return (
                 <div key={`dayselect-${selectedItem}-${index}`}>

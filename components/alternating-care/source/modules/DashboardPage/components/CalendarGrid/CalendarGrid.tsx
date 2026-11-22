@@ -23,19 +23,10 @@ import {
 import { CalendarPointerHandlers } from '../Dashboard/useSelection';
 import styles from './CalendarGrid.module.scss';
 
-if (
-  process.env.NODE_ENV === 'development' &&
-  typeof window !== 'undefined'
-) {
-  const hotModule = module as NodeModule & {
-    hot?: { dispose: (callback: () => void) => void };
-  };
-  hotModule.hot?.dispose(() => window.location.reload());
-}
-
 interface CalendarGridProps {
   data: CalendarEvent[];
   isAlternatingVisible: boolean;
+  isOtherCareVisible: boolean;
   isEventsVisible: boolean;
   isMultiSelectionMode: boolean;
   handlers: CalendarPointerHandlers;
@@ -68,6 +59,7 @@ export const CalendarGrid = (props: CalendarGridProps) => {
   const {
     data,
     isAlternatingVisible,
+    isOtherCareVisible,
     isMultiSelectionMode,
     selection,
     handlers,
@@ -78,7 +70,9 @@ export const CalendarGrid = (props: CalendarGridProps) => {
   const { startDate, endDate } = useAppSearchParams();
   const startingDate = dayjs(startDate).format(dateFormat);
   const [isMobileViewport, setIsMobileViewport] = useState(
-    () => window.matchMedia('(max-width: 767px)').matches
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 767px)').matches
   );
   const gridLength = normalizeCalendarRange(startDate, endDate).monthCount;
   const [mobileMonthStart, setMobileMonthStart] = useState(-MONTHS_BEFORE);
@@ -445,6 +439,7 @@ export const CalendarGrid = (props: CalendarGridProps) => {
         isWeekendsVisible
         isPlanVisible={false}
         isAlternatingVisible={isAlternatingVisible}
+        isOtherCareVisible={isOtherCareVisible}
         isEventsVisible={isEventsVisible}
         displayStrategy='separateMonths'
         events={data}

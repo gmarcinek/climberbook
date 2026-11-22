@@ -15,6 +15,8 @@ interface CalendarSettingsSectionProps {
 
   isAlternatingVisible: boolean;
   setIsAlternatingVisible: (value: boolean) => void;
+  isOtherCareVisible: boolean;
+  setIsOtherCareVisible: (value: boolean) => void;
 
   isEventsVisible: boolean;
   setIsEventsVisible: (value: boolean) => void;
@@ -28,6 +30,8 @@ export const CalendarSettingsSection = (
     setIsPlanVisible,
     isAlternatingVisible,
     setIsAlternatingVisible,
+    isOtherCareVisible,
+    setIsOtherCareVisible,
     isEventsVisible,
     setIsEventsVisible,
   } = props;
@@ -84,7 +88,17 @@ export const CalendarSettingsSection = (
                 setIsAlternatingVisible(event.target.checked)
               }
             />
-            {i18n.alternating}
+            {i18n.myCare}
+          </label>
+          <label>
+            <input
+              type='checkbox'
+              checked={isOtherCareVisible}
+              onChange={(event) =>
+                setIsOtherCareVisible(event.target.checked)
+              }
+            />
+            {i18n.otherCaregivers}
           </label>
           <label aria-disabled={isPlanVisible}>
             <input

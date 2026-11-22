@@ -11,6 +11,7 @@ export const incomingEventListI18n = {
     deleteDescription: 'Permanentnie usuń wydarzenie w tym dniu',
     approachingEvents: 'Nadchodzące wydarzenia',
     selectedDayRangeEvents: 'Wydarzenia w zaznaczonych dniach',
+    selectedDaysEmpty: 'Brak wydarzeń w zaznaczonych dniach.',
     emptyInfo: (
       <>
         <h3>Brak zaplanowanych wydarzeń</h3>
@@ -35,6 +36,7 @@ export const incomingEventListI18n = {
     deleteDescription: 'Permanently delete the event on this day',
     approachingEvents: 'Approaching Events',
     selectedDayRangeEvents: 'Events in Selected Days',
+    selectedDaysEmpty: 'No events on the selected days.',
     emptyInfo: (
       <>
         <h3>No planned events</h3>

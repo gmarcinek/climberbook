@@ -2,7 +2,8 @@ export const calendarSettingsSectionI18n = {
   pl: {
     displayMode: 'Tryb wyświetlania',
     plan: 'Plan',
-    alternating: 'Opieka',
+    myCare: 'Moja opieka',
+    otherCaregivers: 'Pozostali opiekunowie',
     events: 'Eventy',
     startDate: 'Start',
     endDate: 'Koniec',
@@ -10,7 +11,8 @@ export const calendarSettingsSectionI18n = {
   en: {
     displayMode: 'Display mode',
     plan: 'Plan',
-    alternating: 'Care',
+    myCare: 'My care',
+    otherCaregivers: 'Other caregivers',
     events: 'Events',
     startDate: 'Start date',
     endDate: 'End date',

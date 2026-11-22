@@ -1,14 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const DashboardPage = dynamic(
-  () =>
-    import("@modules/DashboardPage/DashboardPage").then(
-      (module) => module.DashboardPage,
-    ),
-  { ssr: false, loading: () => null },
-);
+import { DashboardPage } from "@modules/DashboardPage/DashboardPage";
 
 export default function AlternatingCarePage() {
   return <DashboardPage />;

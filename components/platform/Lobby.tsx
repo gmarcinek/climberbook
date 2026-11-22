@@ -61,42 +61,43 @@ export function Lobby() {
       </header>
 
       <section className={styles.content}>
-        <div className={styles.intro}>
-          <p>Lobby aplikacji</p>
-          <h1>W czym chcesz dziś pracować?</h1>
-          <span>
-            Wszystkie aplikacje używają tego samego konta i sesji, a dane
-            każdej z nich pozostają odrębne.
-          </span>
-        </div>
+        <aside className={styles.sidebar}>
+          <div className={styles.intro}>
+            <p>Lobby aplikacji</p>
+            <h1>W czym chcesz dziś pracować?</h1>
+          </div>
 
-        <div className={styles.grid}>
-          {apps.map((app) => {
-            const Icon = app.icon;
-            return (
-              <Link
-                key={app.href}
-                href={app.href}
-                className={`${styles.card} ${app.tone}`}
-              >
-                <span className={styles.icon}>
-                  <Icon size={28} aria-hidden />
-                </span>
-                <span className={styles.cardText}>
-                  <strong>{app.title}</strong>
-                  <span>{app.description}</span>
-                </span>
-                <span className={styles.action}>
-                  {app.action}
-                  <span aria-hidden>→</span>
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+          <nav className={styles.list} aria-label="Aplikacje">
+            {apps.map((app) => {
+              const Icon = app.icon;
+              return (
+                <Link
+                  key={app.href}
+                  href={app.href}
+                  className={`${styles.card} ${app.tone}`}
+                  aria-label={app.action}
+                >
+                  <span className={styles.icon}>
+                    <Icon size={22} aria-hidden />
+                  </span>
+                  <span className={styles.cardText}>
+                    <strong>{app.title}</strong>
+                    <span>{app.description}</span>
+                  </span>
+                  <span className={styles.arrow} aria-hidden>
+                    →
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
 
-        <PlatformNotifications />
-        <PlatformWall />
+          <PlatformNotifications />
+        </aside>
+
+        <div className={styles.main}>
+          <PlatformWall />
+        </div>
       </section>
     </main>
   );

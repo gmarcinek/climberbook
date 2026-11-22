@@ -122,5 +122,6 @@ export const useCareEditMode = ({ events, onSaved }: UseCareEditModeProps) => {
     isError: mutation.isError,
     handlers,
     previewEvents,
+    toggledDates,
   };
 };

@@ -5,10 +5,11 @@ import styles from './PageContainer.module.scss';
 
 interface PageContainerProps extends PropsWithChildren {
   isFullWidth?: boolean;
+  scrollable?: boolean;
 }
 
 export default function PageContainer(props: PageContainerProps) {
-  const { isFullWidth, children } = props;
+  const { isFullWidth, scrollable, children } = props;
   const pageContainerClasses = classNames(
     styles.pageContainer,
     'container mx-auto mb-10 flex flex-col px-4',
@@ -17,9 +18,13 @@ export default function PageContainer(props: PageContainerProps) {
     }
   );
 
-  return (
+  const content = (
     <div className={pageContainerClasses}>
       <Stack>{children}</Stack>
     </div>
   );
+
+  if (!scrollable) return content;
+
+  return <div className={styles.scrollable}>{content}</div>;
 }
