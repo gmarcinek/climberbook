@@ -18,8 +18,9 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import dashboardStyles from '@modules/DashboardPage/components/Dashboard/Dashboard.module.scss';
 import styles from './settings.module.scss';
-import { PlatformFriendsSettings } from './PlatformFriendsSettings';
 
 const handoffModes = ['simplified', 'half-day', 'hourly'] as const;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
@@ -267,7 +268,7 @@ export default function UserForm() {
     const defaults: Caregiver[] = [
       {
         subjectId: `self:${user.id}`,
-        name: user.name,
+        name: user.name.trim() || (isEnglish ? 'Me' : 'Ja'),
         role:
           caregivers.find((item) => item.subjectId === `self:${user.id}`)
             ?.role || 'rodzic',
@@ -293,12 +294,15 @@ export default function UserForm() {
       });
     }
     return [
-      ...defaults.map(
-        (item) =>
-          caregivers.find(
-            (saved) => saved.subjectId === item.subjectId
-          ) || item
-      ),
+      ...defaults.map((item) => {
+        const saved = caregivers.find(
+          (entry) => entry.subjectId === item.subjectId
+        );
+        if (!saved) return item;
+        return item.subjectId === `self:${user.id}`
+          ? { ...saved, name: item.name }
+          : saved;
+      }),
       ...caregivers.filter(
         (item) => !defaults.some((entry) => entry.subjectId === item.subjectId)
       ),
@@ -337,6 +341,23 @@ export default function UserForm() {
 
   return (
     <PageContainer scrollable>
+      <nav
+        className={dashboardStyles.mobileTabs}
+        aria-label={isEnglish ? 'Mobile view' : 'Widok mobilny'}
+      >
+        <Link href='/alternating-care'>{isEnglish ? 'Care' : 'Opieka'}</Link>
+        <Link href='/alternating-care/calendar'>
+          {isEnglish ? 'Calendar' : 'Kalendarz'}
+        </Link>
+        <Link href='/alternating-care/add'>Event</Link>
+        <Link
+          href='/alternating-care/settings'
+          className={dashboardStyles.activeTab}
+          aria-current='page'
+        >
+          {isEnglish ? 'Settings' : 'Ustawienia'}
+        </Link>
+      </nav>
       <main className={styles.page}>
         <header className={styles.header}>
           <span className={styles.eyebrow}>
@@ -349,8 +370,6 @@ export default function UserForm() {
               : 'Dostosuj liczenie okresów opieki i zachowaj przenośną kopię swoich danych.'}
           </p>
         </header>
-
-        <PlatformFriendsSettings />
 
         <section className={styles.card}>
           <div className={styles.cardHeader}>

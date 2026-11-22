@@ -69,11 +69,7 @@ export const CalendarGrid = (props: CalendarGridProps) => {
 
   const { startDate, endDate } = useAppSearchParams();
   const startingDate = dayjs(startDate).format(dateFormat);
-  const [isMobileViewport, setIsMobileViewport] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(max-width: 767px)').matches
-  );
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const gridLength = normalizeCalendarRange(startDate, endDate).monthCount;
   const [mobileMonthStart, setMobileMonthStart] = useState(-MONTHS_BEFORE);
   const [mobileMonthCount, setMobileMonthCount] = useState(INITIAL_MONTH_COUNT);

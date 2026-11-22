@@ -116,6 +116,8 @@
     display: block;
     height: auto;
     overflow: visible;
+    // Full-bleed so the scrollbar sits at the screen edge; padding moves inside.
+    margin: 0 -0.5rem;
   }
 
   .calendarContainer {
@@ -124,7 +126,7 @@
   }
 
   .calendarContent {
-    padding: 0;
+    padding: 0 0.5rem;
   }
 
   .calendarPane {

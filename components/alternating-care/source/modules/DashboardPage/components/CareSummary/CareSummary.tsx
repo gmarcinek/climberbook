@@ -237,10 +237,6 @@ export const CareSummary = ({
   const handoffCountdown = isEnglish
     ? `in ${daysUntilHandoff} ${daysUntilHandoff === 1 ? 'day' : 'days'}`
     : `za ${daysUntilHandoff} ${daysUntilHandoff === 1 ? 'dzień' : 'dni'}`;
-  const rangeDurationLabel = (days: number) =>
-    isEnglish
-      ? `${days} ${days === 1 ? 'day' : 'days'}`
-      : `${days} ${days === 1 ? 'dzień' : 'dni'}`;
   const formatDateRange = (
     from: dayjs.Dayjs,
     to: dayjs.Dayjs,
@@ -288,7 +284,7 @@ export const CareSummary = ({
           <div className={styles.currentCareCopy}>
             <strong className={styles.holder}>
               {holder.replace(/ · .+$/, '')}
-              <small> · {currentRole}</small>
+              {currentRole && <small>{currentRole}</small>}
             </strong>
           </div>
         </div>
@@ -391,12 +387,14 @@ export const CareSummary = ({
                 </div>
                 <span className={styles.upcomingRangeMeta}>
                   <span>
-                    {range.openEnded ? '≥ ' : ''}
-                    {rangeDurationLabel(duration)}{' '}
                     {formatDateRange(range.from, range.to, range.openEnded)}
                   </span>
                 </span>
               </div>
+              <span className={styles.upcomingRangeDays}>
+                {range.openEnded ? '≥' : ''}
+                {duration}
+              </span>
             </div>
           );
         })}

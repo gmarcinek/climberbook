@@ -1,12 +1,17 @@
 .mobileEventForm {
   padding-top: 4px;
+
+  // Date pickers live inside the animated form, so its height cap must go.
+  form {
+    max-height: none !important;
+  }
 }
 
 .dateRange {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
-  margin-bottom: 16px;
+  margin-top: 16px;
 }
 
 .mobileEventForm {

@@ -65,8 +65,10 @@
 }
 
 .holder small {
+  display: block;
+  margin-top: 4px;
   color: #6b7280;
-  font-size: 0.72em;
+  font-size: 0.5em;
   font-weight: 500;
 }
 
@@ -290,7 +292,7 @@
 
 .upcomingRange {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
   border-radius: 8px;
@@ -344,6 +346,14 @@
   .upcomingRangeMeta {
     display: grid;
     gap: 1px;
+    text-align: right;
+  }
+
+  .upcomingRangeDays {
+    min-width: 18px;
+    color: #788088;
+    font-size: 0.65rem;
+    font-weight: 600;
     text-align: right;
   }
 }

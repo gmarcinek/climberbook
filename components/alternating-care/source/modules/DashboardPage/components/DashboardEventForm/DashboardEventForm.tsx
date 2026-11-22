@@ -14,6 +14,7 @@ import classNames from 'classnames';
 import dayjs from 'dayjs';
 import {
   Dispatch,
+  ReactNode,
   SetStateAction,
   useEffect,
   useMemo,
@@ -40,6 +41,7 @@ interface DashboardEventFormProps {
   initialDates?: string[];
   confirmBeforeSave?: boolean;
   redirectAfterSave?: string;
+  afterActions?: ReactNode;
 }
 
 export const DashboardEventForm = (props: DashboardEventFormProps) => {
@@ -56,6 +58,7 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     initialDates = [],
     confirmBeforeSave = false,
     redirectAfterSave,
+    afterActions,
   } = props;
   const { language } = useAppContext();
   const i18n = dashboardEventFormI18n[language];
@@ -206,6 +209,8 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
               : submitLabel ?? i18n.addEvent}
           </Button>
         </Stack>
+
+        {afterActions}
 
         <Divider className='my-4' />
 

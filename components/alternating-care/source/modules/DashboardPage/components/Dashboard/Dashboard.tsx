@@ -5,7 +5,6 @@ import { useAppContext } from '@app/AppContext';
 import { Calendar } from '@components/Calendar/Calendar';
 import { dateFormat } from '@components/Calendar/Calendar.helpers';
 import type { CareEventsQuery } from '@api/db/events/useGetAllEventsQuery';
-import { listCareEvents } from '@api/db/events/careEventsApi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sortBy } from '@utils/array';
 import { useAppSearchParams } from '@utils/useAppSearchParams';
@@ -23,8 +22,10 @@ import { CalendarFormSection } from '../CalendarFormSection/CalendarFormSection'
 import { CalendarGrid } from '../CalendarGrid/CalendarGrid';
 import { CalendarSettingsSection } from '../CalendarSettingsSection/CalendarSettingsSection';
 import { CareSummary } from '../CareSummary/CareSummary';
-import { IncomingEventList } from '../IncomingEventList/IncomingEventList';
-import { MobileEventForm } from '../MobileEventForm/MobileEventForm';
+import {
+  MOBILE_SELECTION_STORAGE_KEY,
+  MobileEventForm,
+} from '../MobileEventForm/MobileEventForm';
 import { useCareEditMode } from './useCareEditMode';
 import { useRowSize } from './useRowSize';
 import { useSelection } from './useSelection';
@@ -58,11 +59,7 @@ export const Dashboard = (props: DashboardProps) => {
   const { profile: otherParent } = useOtherParent();
   const userFirstName = user.name.trim().split(/\s+/)[0] || 'Moja';
   const { is1280 } = useBreakpoints();
-  const [isMobileLayout, setIsMobileLayout] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(max-width: 767px)').matches
-  );
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
   const { countEvents } = useEventCounter({
     events: fetchEventsQuery.data,
   });
@@ -84,15 +81,6 @@ export const Dashboard = (props: DashboardProps) => {
   const [isOtherCareVisible, setIsOtherCareVisible] = useState(true);
   const [isEventsVisible, setIsEventsVisible] = useState(true);
   const [formWidth, setFormWidth] = useState(520);
-  const upcomingQuery = useQuery({
-    queryKey: ['careUpcoming', dayjs().format(dateFormat)],
-    queryFn: () =>
-      listCareEvents({
-        start: dayjs().format(dateFormat),
-        end: dayjs().add(180, 'day').format(dateFormat),
-      }),
-    enabled: isMobileLayout && mobileView === 'care',
-  });
   const queryClient = useQueryClient();
   const { updateAllEvents } = useDashboardPageContext();
   const careEdit = useCareEditMode({
@@ -107,6 +95,18 @@ export const Dashboard = (props: DashboardProps) => {
   useEffect(() => {
     setIsPlanVisible(isPlanInUrl);
   }, [isPlanInUrl]);
+
+  useEffect(() => {
+    if (!isMobileLayout || mobileView !== 'calendar') return;
+    if (selection.size > 0) {
+      window.sessionStorage.setItem(
+        MOBILE_SELECTION_STORAGE_KEY,
+        JSON.stringify(Array.from(selection))
+      );
+    } else {
+      window.sessionStorage.removeItem(MOBILE_SELECTION_STORAGE_KEY);
+    }
+  }, [isMobileLayout, mobileView, selection]);
 
   const mobileHref = useCallback(
     (view: DashboardMobileView, plan = isPlanVisible) => {
@@ -250,9 +250,9 @@ export const Dashboard = (props: DashboardProps) => {
               className={mobileView === 'add' ? styles.activeTab : undefined}
               aria-current={mobileView === 'add' ? 'page' : undefined}
             >
-              {language === 'en' ? 'Add' : 'Dodaj'}
+              Event
             </Link>
-            <Link href='/settings'>
+            <Link href='/alternating-care/settings'>
               {language === 'en' ? 'Settings' : 'Ustawienia'}
             </Link>
             {false && mobileView === 'calendar' && (
@@ -381,11 +381,7 @@ export const Dashboard = (props: DashboardProps) => {
 
         {isMobileLayout && mobileView === 'care' && (
           <div className={styles.mobileCareView}>
-            <CareSummary />
-            <IncomingEventList
-              data={upcomingQuery.data ?? []}
-              selection={new Set()}
-            />
+            <CareSummary upcomingCount={11} endDate={endDate} />
           </div>
         )}
         {isMobileLayout && mobileView === 'add' && (

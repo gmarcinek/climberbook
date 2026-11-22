@@ -48,7 +48,8 @@ export async function PUT(request: Request) {
     role?: string;
     linkedUserId?: string | null;
   };
-  const name = body.name?.trim();
+  const isSelf = body.subjectId?.trim() === `self:${actorId}`;
+  const name = body.name?.trim() || (isSelf ? 'Ja' : '');
   const role = body.role?.trim();
   if (!name || name.length > 120 || !role || role.length > 80) {
     return Response.json(
