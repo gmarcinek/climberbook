@@ -809,16 +809,24 @@ function ClimberbookDataProvider({ children }: { children: ReactNode }) {
     setStatus(trainingItems.length || ascentItems.length ? "" : "");
   }
   useEffect(() => {
+    const isPlatformRoute =
+      pathname === "/" ||
+      pathname === "/settings" ||
+      pathname.startsWith("/alternating-care") ||
+      pathname.startsWith("/modele") ||
+      pathname.startsWith("/maps");
+
     if (
       isExperimentalPostgresUiEnabled() &&
-      [
-        "/login",
-        "/rejestracja",
-        "/privacy",
-        "/support",
-        "/terms",
-        "/warunki-wspin",
-      ].includes(pathname)
+      (isPlatformRoute ||
+        [
+          "/login",
+          "/rejestracja",
+          "/privacy",
+          "/support",
+          "/terms",
+          "/warunki-wspin",
+        ].includes(pathname))
     )
       return;
 

@@ -1,0 +1,64 @@
+.page {
+  min-height: 100vh;
+  background: #edf0eb;
+  color: #17271e;
+}
+
+.header {
+  position: sticky;
+  z-index: 50;
+  top: 0;
+  display: flex;
+  height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 18px;
+  border-bottom: 1px solid rgba(23, 39, 30, 0.18);
+  background: rgba(255, 255, 252, 0.94);
+  box-shadow: 0 4px 18px rgba(23, 39, 30, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.brand {
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.separator {
+  width: 1px;
+  height: 22px;
+  background: rgba(23, 39, 30, 0.2);
+}
+
+.content {
+  min-height: calc(100vh - 64px);
+}
+
+.content[data-app='maps'] {
+  height: calc(100vh - 64px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: 0 12px;
+  }
+
+  .brand,
+  .separator {
+    display: none;
+  }
+}

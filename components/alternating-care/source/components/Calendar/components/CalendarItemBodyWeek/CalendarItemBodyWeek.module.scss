@@ -1,0 +1,117 @@
+@import '@styles/color.module.scss';
+@import '@styles/transition.module.scss';
+@import '@styles/spacer.module.scss';
+@import '@styles/mixins.module.scss';
+
+@keyframes loopGlow {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 28px 0; /* Przesunięcie o 100px, dopasuj według potrzeb */
+  }
+}
+
+.calendarItemBodyWeek {
+  display: flex;
+  flex: 1;
+  color: $neutral-gray-900;
+  padding: 5px 0 5px $spacer-8;
+  background: $neutral-gray-100;
+
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 15px),
+    calc(100% - 15px) 100%,
+    0 100%
+  );
+
+  &.smallPolygon {
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      0 100%
+    );
+  }
+
+  &.isWeekend {
+    background: $neutral-gray-200;
+  }
+
+  &.isToday {
+    background: $red-500;
+    color: $neutral-gray-100;
+  }
+
+  &.isAlternating {
+    background-image: url(../../../../assets/pas02.png) !important;
+    background-color: $blue-green-700 !important;
+    background-repeat: repeat;
+    color: $neutral-gray-100 !important;
+
+    &.isWeekend {
+      background-color: $blue-green-700;
+    }
+
+    &.isToday {
+      background-color: $red-500;
+      color: $neutral-gray-100;
+    }
+
+    &.isSelected {
+      background-color: $red-600 !important;
+      color: $neutral-gray-100 !important;
+
+      background-image: repeating-linear-gradient(
+        135deg,
+        $red-600,
+        $red-600 10px,
+        black 10px,
+        black 20px
+      ) !important;
+
+      background-size: 28px 28px; /* Rozmiar jednego cyklu pasków */
+      background-repeat: repeat;
+      animation: loopGlow 1s linear infinite !important;
+    }
+  }
+
+  &.isToday {
+    background-color: $red-500 !important;
+    color: $neutral-gray-100 !important;
+  }
+
+  &.isFirstOfTheMonth {
+    color: $red-600;
+    padding-left: 10px;
+  }
+
+  &.isLastOfTheMnth {
+    position: relative;
+  }
+
+  &.isSelected {
+    background-color: $turquoise-600 !important;
+    color: $neutral-gray-100 !important;
+
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.8),
+      rgba(0, 0, 0, 0.8) 10px,
+      $turquoise-600 10px,
+      $turquoise-600 20px
+    );
+    box-shadow: inset 0px -12px 16px #000000;
+    background-size: 28px 28px; /* Rozmiar jednego cyklu pasków */
+    background-repeat: repeat;
+    animation: loopGlow 1s linear infinite !important;
+  }
+
+  transition:
+    background $transition-duration,
+    color $transition-duration,
+    filter $transition-duration $transition-timing-function;
+}

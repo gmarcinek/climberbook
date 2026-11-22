@@ -67,3 +67,9 @@ databaseChangeLog:
       file: changelog/changes/033-add-public-training-shares.sql
   - include:
       file: changelog/changes/034-add-public-training-share-image.sql
+  - include:
+      file: changelog/changes/035-add-map-records.sql
+  - include:
+      file: changelog/changes/036-add-care-event-ranges.sql
+  - include:
+      file: changelog/changes/037-add-platform-friendships-and-wall.sql

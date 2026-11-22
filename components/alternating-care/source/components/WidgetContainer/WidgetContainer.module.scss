@@ -1,0 +1,38 @@
+.widgetGrid {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 0;
+
+  // Mobile: 1 column
+  grid-template-columns: 1fr;
+}
+
+// Tablet: 2 columns
+@media (min-width: 768px) {
+  .widgetGrid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .widgetGrid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .widgetGrid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .widgetGrid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+  }
+}

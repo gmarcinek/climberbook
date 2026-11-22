@@ -1,10 +1,13 @@
 import { DefaultAzureCredential } from "@azure/identity";
 import {
   Pool,
+  types,
   type PoolClient,
   type PoolConfig,
   type QueryResultRow,
 } from "pg";
+
+types.setTypeParser(types.builtins.DATE, (value) => value);
 
 const ENTRA_SCOPE = "https://ossrdbms-aad.database.windows.net/.default";
 

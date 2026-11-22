@@ -1,0 +1,211 @@
+@tailwind components;
+@tailwind utilities;
+
+html.alternating-care-mobile-scroll,
+body.alternating-care-mobile-scroll {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.alternatingCareRoot,
+.alternatingCareRoot *,
+.alternatingCareRoot *::before,
+.alternatingCareRoot *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
+
+/* Opcjonalnie można również dodać: */
+/* Wyłączenie gestów, np. zoomowania na iPhone */
+.alternatingCareRoot {
+  position: relative;
+  line-height: 1.5;
+  -webkit-touch-callout: none; /* Wyłączenie kontekstowego menu przy long press */
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0); /* Wyłączenie podświetlania */
+}
+
+.alternatingCareRoot button,
+.alternatingCareRoot input,
+.alternatingCareRoot optgroup,
+.alternatingCareRoot select,
+.alternatingCareRoot textarea {
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+}
+
+.alternatingCareRoot button,
+.alternatingCareRoot select {
+  text-transform: none;
+}
+
+.alternatingCareRoot button,
+.alternatingCareRoot [type='button'],
+.alternatingCareRoot [type='reset'],
+.alternatingCareRoot [type='submit'] {
+  appearance: button;
+  background-color: transparent;
+  background-image: none;
+  cursor: pointer;
+}
+
+.alternatingCareRoot button:disabled {
+  cursor: default;
+}
+
+.alternatingCareRoot ol,
+.alternatingCareRoot ul,
+.alternatingCareRoot menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alternatingCareRoot h1,
+.alternatingCareRoot h2,
+.alternatingCareRoot h3,
+.alternatingCareRoot h4,
+.alternatingCareRoot h5,
+.alternatingCareRoot h6,
+.alternatingCareRoot p {
+  margin: 0;
+  font: inherit;
+}
+
+.alternatingCareRoot img,
+.alternatingCareRoot svg,
+.alternatingCareRoot video,
+.alternatingCareRoot canvas,
+.alternatingCareRoot iframe {
+  display: block;
+  vertical-align: middle;
+}
+
+.alternatingCareRoot {
+  min-height: 100vh;
+  background: #f3f4f6;
+  color: #333333;
+  color-scheme: light;
+}
+
+@media (min-width: 768px) {
+  .alternatingCareRoot {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+.alternatingCareRoot h1,
+.alternatingCareRoot h2,
+.alternatingCareRoot h3,
+.alternatingCareRoot h4,
+.alternatingCareRoot p {
+  color: #333333;
+}
+
+.alternatingCareRoot h1,
+.alternatingCareRoot h2,
+.alternatingCareRoot h3 {
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+  margin-bottom: 0.25rem;
+  font-weight: 300 !important;
+}
+.alternatingCareRoot h4,
+.alternatingCareRoot p {
+  font-size: 1rem;
+  line-height: 20px;
+  margin-bottom: 0.25rem;
+  font-weight: inherit;
+}
+
+@media (min-width: 1024px) {
+  .alternatingCareRoot h1 {
+    font-size: 2.5rem;
+    line-height: 2.75rem;
+  }
+  .alternatingCareRoot h2 {
+    font-size: 2rem;
+    line-height: 2.25rem;
+  }
+  .alternatingCareRoot h3 {
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+  }
+}
+
+/*  RETHEME */
+.alternatingCareRoot .bg-danger {
+  background-color: #ff4f4f;
+}
+
+.alternatingCareRoot .border-s-danger {
+  border-inline-start-color: #ff4f4f;
+}
+
+/* SCROLL */
+.alternatingCareRoot ::-webkit-scrollbar {
+  width: 6px;
+  position: absolute;
+  right: 0;
+}
+.alternatingCareRoot ::-webkit-scrollbar-thumb {
+  background-color: #ff4f4f;
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+.alternatingCareRoot ::-webkit-scrollbar-track {
+  background: transparent; /* Przezroczyste tło scrolla */
+}
+
+.alternatingCareRoot .scrollSmall::-webkit-scrollbar {
+  width: 4px;
+  position: absolute;
+  right: 0;
+}
+
+.alternatingCareRoot .scrollSmall::-webkit-scrollbar-thumb {
+  background-color: #00000011;
+  border-radius: 10px;
+  transition: background-color 500ms;
+}
+.alternatingCareRoot .scrollSmall:hover::-webkit-scrollbar-thumb {
+  background-color: #00000066;
+  transition: background-color 500ms;
+}
+
+.alternatingCareRoot .scrollSmall::-webkit-scrollbar-track {
+  background: transparent; /* Przezroczyste tło scrolla */
+}
+
+/* HIGHLIGHT */
+.alternatingCareRoot .highlight {
+  background-color: yellow;
+  transition: background-color 0.3s ease;
+}
+
+.alternatingCareRoot .zoomIn {
+  transform: scale(2);
+  z-index: 5;
+  filter: drop-shadow(0 0 12px rgb(66, 66, 66));
+
+  transition:
+    transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+    filter 0.2s ease-out;
+}
+
+.alternatingCareRoot .zoomOut {
+  transform: scale(1);
+  z-index: 5;
+  filter: drop-shadow(0 0 0px rgba(0, 0, 0, 0));
+
+  transition:
+    transform 0.3s ease-out,
+    filter 0.2s ease-out;
+}

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { moduleConfig } from "@/components/climberbook/common/modules";
 import { Panel } from "@/components/climberbook/common/Panel";
 import { LayoutMaxWidthContent } from "@/components/climberbook/layout/LayoutMaxWidthContent";
 import {
@@ -12,15 +11,15 @@ import {
 import styles from "./ModelsModule.module.css";
 
 export function ModelsModule() {
-  const moduleMeta = moduleConfig.find((module) => module.key === "modele")!;
-
   return (
     <LayoutMaxWidthContent className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p style={eyebrowStyle}>{moduleMeta.eyebrow}</p>
-          <h1 style={pageTitleStyle}>{moduleMeta.title}</h1>
-          <p style={mutedParagraphStyle}>{moduleMeta.description}</p>
+          <p style={eyebrowStyle}>Laboratorium danych</p>
+          <h1 style={pageTitleStyle}>Modele</h1>
+          <p style={mutedParagraphStyle}>
+            Modele predykcyjne wspierające planowanie wspinania.
+          </p>
         </div>
         <p className={styles.modelCount}>1 dostępny model</p>
       </header>

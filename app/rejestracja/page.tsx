@@ -52,7 +52,7 @@ export default function RegistrationPage() {
       const loginResult = await signIn("credentials", {
         email: formData.get("email"),
         password,
-        callbackUrl: "/trening",
+        callbackUrl: "/",
         redirect: false,
       });
       if (loginResult?.error) {
@@ -61,7 +61,7 @@ export default function RegistrationPage() {
         );
         return;
       }
-      window.location.assign(loginResult?.url ?? "/trening");
+      window.location.assign(loginResult?.url ?? "/");
     } catch {
       setError("Nie udało się połączyć z serwerem. Spróbuj ponownie.");
     } finally {
@@ -80,7 +80,7 @@ export default function RegistrationPage() {
           Utwórz konto
         </h1>
         <p style={{ margin: "0 0 24px", color: "#4e5954", lineHeight: 1.5 }}>
-          Zacznij prowadzić swój dziennik treningowy.
+          Jedno konto daje dostęp do Climberbooka i opieki naprzemiennej.
         </p>
         <form onSubmit={submitRegistration}>
           <fieldset disabled={isSubmitting} style={formFieldsetStyle}>

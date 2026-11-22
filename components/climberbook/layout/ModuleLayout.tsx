@@ -16,10 +16,12 @@ export function ModuleLayout({
 }) {
   const { isMobileTrainingLayout, isReady } = useViewport();
   const moduleContainer =
-    activeModule === "raportowy" || activeModule === "analityka"
+    activeModule === "raportowy" ||
+    activeModule === "analityka"
       ? {
           height:
-            activeModule === "analityka" && !isMobileTrainingLayout
+            activeModule === "analityka" &&
+            !isMobileTrainingLayout
               ? "100%"
               : undefined,
           margin: 0,
@@ -33,7 +35,8 @@ export function ModuleLayout({
     return null;
   }
 
-  const usesDashboardLayout = activeModule === "analityka";
+  const usesDashboardLayout =
+    activeModule === "analityka";
 
   return (
     <main

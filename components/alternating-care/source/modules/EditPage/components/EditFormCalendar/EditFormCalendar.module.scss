@@ -1,0 +1,116 @@
+@import '@styles/color.module.scss';
+
+.editFormCalendarPage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 13px var(--form-width, 520px);
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.editCalendarColumn {
+  min-width: 0;
+  height: 100%;
+  padding: 0 1.5rem 2rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #aeb6bd transparent;
+}
+
+.editFormPanel {
+  min-width: 0;
+  height: 100%;
+  padding: 24px;
+  overflow-y: auto;
+  border-left: 1px solid #e4e9ee;
+  background: $white;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.05);
+  scrollbar-width: thin;
+  scrollbar-color: #aeb6bd transparent;
+}
+
+.columnAdjuster {
+  position: relative;
+  z-index: 20;
+  height: 100%;
+  border-right: 1px solid #e4e9ee;
+  border-left: 1px solid #e4e9ee;
+  background: #f5f7f9;
+  cursor: col-resize;
+  touch-action: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.columnAdjuster::after {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 3px;
+  height: 44px;
+  border-radius: 2px;
+  background: #a9b1b9;
+  content: '';
+  transform: translateY(-50%);
+}
+
+.columnAdjuster:hover,
+.columnAdjuster:focus-visible {
+  border-color: #6d9fc4;
+  background: #eef5fa;
+  outline: none;
+}
+
+.editCalendarColumn::-webkit-scrollbar,
+.editFormPanel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editCalendarColumn::-webkit-scrollbar-track,
+.editFormPanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.editCalendarColumn::-webkit-scrollbar-thumb,
+.editFormPanel::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #aeb6bd;
+  background-clip: padding-box;
+}
+
+.editFormCalendar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 500px));
+  gap: 1.5rem;
+  align-items: start;
+  justify-content: center;
+}
+
+.calendar {
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .editFormCalendarPage {
+    display: block;
+    overflow: visible;
+  }
+
+  .editCalendarColumn {
+    height: auto;
+    overflow: visible;
+  }
+
+  .editFormPanel {
+    height: auto;
+    overflow: visible;
+    border-top: 1px solid #e4e9ee;
+    border-left: 0;
+  }
+
+  .columnAdjuster {
+    display: none;
+  }
+}

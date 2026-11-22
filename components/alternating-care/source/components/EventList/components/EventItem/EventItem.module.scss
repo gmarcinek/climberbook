@@ -1,0 +1,29 @@
+.eventItem {
+  display: grid;
+  grid-template-columns: auto minmax(100px, 30%);
+  grid-template-rows: 1fr;
+  column-gap: 2rem;
+  flex: 1;
+  color: #494949;
+  padding: 1rem;
+  background: rgb(236, 236, 236);
+
+  &.isNoPadding {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .eventItem {
+    display: flex;
+    flex: 1;
+    color: #494949;
+    background: rgb(236, 236, 236);
+
+    &.isNoPadding {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+  }
+}

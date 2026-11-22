@@ -327,13 +327,13 @@ export function ConditionsStudy() {
 
   if (!scenario) {
     return (
-      <main className={styles.page}>
+      <div className={styles.page}>
         <section className={styles.study}>
           <p className={styles.weatherStatus} role="status">
             Przygotowujemy warunki outdoor...
           </p>
         </section>
-      </main>
+      </div>
     );
   }
 
@@ -351,7 +351,7 @@ export function ConditionsStudy() {
     : null;
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <section className={styles.study} aria-busy={status === "saving"}>
         <header className={styles.header}>
           <p className={styles.brand}>CLIMBERBOOK / BADANIE WARUNKÓW</p>
@@ -864,6 +864,6 @@ export function ConditionsStudy() {
           ) : null}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

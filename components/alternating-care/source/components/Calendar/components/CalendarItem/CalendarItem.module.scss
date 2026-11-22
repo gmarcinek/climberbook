@@ -1,0 +1,40 @@
+.calendarItem {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: 1fr;
+  column-gap: 2rem;
+
+  flex: 1;
+  color: #494949;
+  padding: 1rem;
+  background: rgb(236, 236, 236);
+
+  &.isNoPadding {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .calendarItem {
+    display: flex;
+    flex: 1;
+    color: #494949;
+    background: rgb(236, 236, 236);
+
+    &.isNoPadding {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    &.isClipped {
+      clip-path: polygon(
+        0 0,
+        100% 0,
+        100% calc(100% - 15px),
+        calc(100% - 15px) 100%,
+        0 100%
+      );
+    }
+  }
+}

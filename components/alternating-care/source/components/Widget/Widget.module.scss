@@ -1,0 +1,139 @@
+.chartItem1 {
+  min-height: 400px;
+  background: white;
+  border-radius: 12px;
+  padding: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chartItem2 {
+  @extend .chartItem1;
+  min-height: 300px;
+}
+
+.chartItem3 {
+  @extend .chartItem1;
+  min-height: 300px;
+}
+
+.chartItem4 {
+  @extend .chartItem1;
+  min-height: 300px;
+}
+.chartItem5 {
+  @extend .chartItem1;
+  min-height: 300px;
+}
+.chartItem6 {
+  @extend .chartItem1;
+  min-height: 300px;
+}
+
+// Tablet: 2 columns
+@media (min-width: 768px) {
+  .chartItem1 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem2 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem3 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem4 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem5 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem6 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chartItem1 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem2 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem3 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem4 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem5 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem6 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .chartItem1 {
+    grid-column: span 3;
+    padding: 1rem;
+  }
+  .chartItem2 {
+    grid-column: span 3;
+    padding: 1rem;
+  }
+  .chartItem3 {
+    grid-column: span 3;
+    padding: 1rem;
+  }
+  .chartItem4 {
+    grid-column: span 3;
+    padding: 1rem;
+  }
+  .chartItem5 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+  .chartItem6 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .chartItem1 {
+    grid-column: span 1;
+    padding: 1rem;
+  }
+  .chartItem2 {
+    grid-column: span 2;
+    padding: 1rem;
+  }
+  .chartItem3 {
+    grid-column: span 3;
+    padding: 1rem;
+  }
+  .chartItem4 {
+    grid-column: span 4;
+    padding: 1rem;
+  }
+  .chartItem5 {
+    grid-column: span 5;
+    padding: 1rem;
+  }
+  .chartItem6 {
+    grid-column: span 6;
+    padding: 1rem;
+  }
+}

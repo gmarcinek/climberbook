@@ -9,6 +9,13 @@ import type {
   FacilityKind,
   TrainingSurface,
 } from "@/lib/climbs-db";
+import {
+  mapRecordKinds,
+  type MapRecordConfidence,
+  type MapRecordInput,
+  type MapRecordKind,
+  type MapRecordSource,
+} from "@/lib/map-records";
 import type { TrainingRecord, TrainingSummaryRecord } from "@/lib/climbs-db";
 import {
   getObjectiveStimulusActivities,
@@ -28,11 +35,13 @@ import {
   getPostgresDatabaseSnapshot,
   getTrainingFromPostgres,
   listAgentActionsFromPostgres,
+  listMapRecordsFromPostgres,
   listTrainingSummariesFromPostgres,
   listTrainingsFromPostgres,
   listWeightEntriesFromPostgres,
   searchFacilitiesFromPostgres,
   summarizeTrainingsInPostgres,
+  upsertMapRecordInPostgres,
 } from "@/lib/server/climberbook-repository";
 import { getEntraActorId } from "@/lib/server/experimental-actor";
 import { getPublicOrigin } from "@/lib/server/public-url";
@@ -187,6 +196,107 @@ function getFacilityCapabilities(value: unknown): FacilityCapabilities | null {
     activities: input.activities,
     ropeWalls: input.ropeWalls as FacilityCapabilities["ropeWalls"],
     hasAirConditioning: input.hasAirConditioning === true,
+  };
+}
+
+function isMapRecordKind(value: unknown): value is MapRecordKind {
+  return (
+    typeof value === "string" && mapRecordKinds.includes(value as MapRecordKind)
+  );
+}
+
+function getMapRecordSources(value: unknown): MapRecordSource[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const sources: MapRecordSource[] = [];
+  for (const source of value) {
+    if (!source || typeof source !== "object") return null;
+    const candidate = source as {
+      title?: unknown;
+      url?: unknown;
+      publishedAt?: unknown;
+    };
+    if (
+      typeof candidate.title !== "string" ||
+      !candidate.title.trim() ||
+      typeof candidate.url !== "string"
+    )
+      return null;
+    try {
+      const url = new URL(candidate.url);
+      if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    } catch {
+      return null;
+    }
+    if (candidate.publishedAt !== undefined && !isDate(candidate.publishedAt))
+      return null;
+    sources.push({
+      title: candidate.title.trim(),
+      url: candidate.url,
+      publishedAt: isDate(candidate.publishedAt)
+        ? candidate.publishedAt
+        : undefined,
+    });
+  }
+  return sources;
+}
+
+function getMapRecordInput(
+  args: Record<string, unknown>,
+): MapRecordInput | null {
+  const hasLatitude = args.latitude !== undefined && args.latitude !== null;
+  const hasLongitude = args.longitude !== undefined && args.longitude !== null;
+  const validCoordinates =
+    (!hasLatitude && !hasLongitude) ||
+    (typeof args.latitude === "number" &&
+      Number.isFinite(args.latitude) &&
+      args.latitude >= -90 &&
+      args.latitude <= 90 &&
+      typeof args.longitude === "number" &&
+      Number.isFinite(args.longitude) &&
+      args.longitude >= -180 &&
+      args.longitude <= 180);
+  const sources = getMapRecordSources(args.sources);
+  const confidence: MapRecordConfidence | null =
+    args.confidence === "high" ||
+    args.confidence === "medium" ||
+    args.confidence === "low"
+      ? args.confidence
+      : null;
+  if (
+    !isMapRecordKind(args.kind) ||
+    typeof args.slug !== "string" ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(args.slug) ||
+    typeof args.name !== "string" ||
+    !args.name.trim() ||
+    typeof args.countryCode !== "string" ||
+    !/^[A-Za-z]{2}$/.test(args.countryCode) ||
+    typeof args.summary !== "string" ||
+    args.summary.trim().length < 24 ||
+    !validCoordinates ||
+    !sources ||
+    !confidence
+  )
+    return null;
+  return {
+    kind: args.kind,
+    slug: args.slug,
+    name: args.name.trim(),
+    countryCode: args.countryCode.toUpperCase(),
+    regionId:
+      typeof args.regionId === "string" && args.regionId.trim()
+        ? args.regionId.trim()
+        : undefined,
+    latitude: hasLatitude ? (args.latitude as number) : null,
+    longitude: hasLongitude ? (args.longitude as number) : null,
+    summary: args.summary.trim(),
+    details:
+      args.details &&
+      typeof args.details === "object" &&
+      !Array.isArray(args.details)
+        ? (args.details as Record<string, unknown>)
+        : {},
+    sources,
+    confidence,
   };
 }
 
@@ -536,6 +646,70 @@ function createServer(request: Request) {
                 capabilities: { type: "object" },
               },
               required: ["name", "kind", "coordinates", "capabilities"],
+            },
+            annotations: write,
+            securitySchemes,
+          },
+          {
+            name: "search_map_records",
+            title: "Wyszukaj dane map ratownictwa",
+            description:
+              "Wyszukuje zapisane rejony wspinaczkowe, regiony i służby ratownicze oraz historyczne akcje. Użyj przed dodaniem lub aktualizacją rekordu.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                kind: { type: "string", enum: [...mapRecordKinds] },
+                query: { type: "string" },
+              },
+            },
+            annotations: readOnly,
+            securitySchemes,
+          },
+          {
+            name: "upsert_map_record",
+            title: "Dodaj lub zaktualizuj dane mapy",
+            description:
+              "Zapisuje źródłowany rekord mapy po wyraźnym potwierdzeniu użytkownika. Dla rescue_incident umieść w details co najmniej date, peopleCount, activity, outcome i agencies, jeśli źródła je podają. Nie zgaduj brakujących wartości.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                kind: { type: "string", enum: [...mapRecordKinds] },
+                slug: { type: "string" },
+                name: { type: "string" },
+                countryCode: { type: "string" },
+                regionId: { type: "string" },
+                latitude: { type: ["number", "null"] },
+                longitude: { type: ["number", "null"] },
+                summary: { type: "string" },
+                details: { type: "object" },
+                sources: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string" },
+                      url: { type: "string" },
+                      publishedAt: { type: "string" },
+                    },
+                    required: ["title", "url"],
+                  },
+                },
+                confidence: {
+                  type: "string",
+                  enum: ["high", "medium", "low"],
+                },
+                confirmed: { type: "boolean" },
+              },
+              required: [
+                "kind",
+                "slug",
+                "name",
+                "countryCode",
+                "summary",
+                "sources",
+                "confidence",
+                "confirmed",
+              ],
             },
             annotations: write,
             securitySchemes,
@@ -917,6 +1091,28 @@ function createServer(request: Request) {
               ...coordinates,
             }),
           );
+        }
+        case "search_map_records":
+          return args.kind === undefined || isMapRecordKind(args.kind)
+            ? result(
+                await listMapRecordsFromPostgres(actorId, {
+                  kind: args.kind as MapRecordKind | undefined,
+                  query:
+                    typeof args.query === "string" ? args.query : undefined,
+                }),
+              )
+            : error("Nieprawidłowy typ rekordu mapy.");
+        case "upsert_map_record": {
+          if (args.confirmed !== true)
+            return error(
+              "Zapis danych mapy wymaga wyraźnego potwierdzenia użytkownika (confirmed: true).",
+            );
+          const input = getMapRecordInput(args);
+          if (!input)
+            return error(
+              "Wymagane są poprawne kind, slug, name, countryCode, summary, confidence i co najmniej jedno źródło HTTP(S); współrzędne podaj jako pełną parę albo pomiń.",
+            );
+          return result(await upsertMapRecordInPostgres(actorId, input));
         }
         case "get_weight_entries": {
           const snapshot = await getPostgresDatabaseSnapshot(actorId);

@@ -104,6 +104,7 @@ export function ScrollPane({
     >
       <div
         ref={viewportRef}
+        data-scroll-viewport
         className={joinClasses(styles.viewport, viewportClassName)}
         style={viewportStyle}
         onScroll={onViewportScroll}

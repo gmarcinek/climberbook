@@ -1,0 +1,45 @@
+@import '@styles/color.module.scss';
+@import '@styles/spacer.module.scss';
+
+.calendarMonth {
+  padding-top: 0;
+  margin-top: 0.5rem;
+  margin-bottom: $spacer-2;
+
+  .heading {
+    padding: 0;
+    padding-bottom: 5px;
+    padding-top: $spacer-2;
+    margin-bottom: $spacer-2;
+    display: flex;
+    justify-content: center;
+    font-weight: 300;
+    align-items: center;
+    font-size: 1rem;
+    border-top: 1px solid $neutral-gray-300; /* #cfcfcf -> $neutral-gray-300 */
+    border-bottom: 1px solid $neutral-gray-300; /* #cfcfcf -> $neutral-gray-300 */
+  }
+
+  .year {
+    font-size: $spacer-16;
+    color: $red-500; /* #ff4f4f -> $red-500 */
+    font-weight: 600;
+  }
+}
+
+@media (min-width: 768px) {
+  .calendarMonth {
+    margin-bottom: $spacer-4;
+
+    .heading {
+      padding-bottom: $spacer-4;
+      padding-top: $spacer-4;
+      margin-bottom: $spacer-2;
+      font-size: 1.25rem;
+    }
+
+    .year {
+      font-size: 1.25rem;
+    }
+  }
+}

@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+import { Lobby } from "@/components/platform/Lobby";
+import { requireAuthenticatedUser } from "@/lib/server/require-auth";
 
-export default function HomePage() {
-  redirect("/trening");
+export default async function HomePage() {
+  await requireAuthenticatedUser();
+  return <Lobby />;
 }

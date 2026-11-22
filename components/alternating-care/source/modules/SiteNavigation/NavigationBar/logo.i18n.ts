@@ -1,0 +1,18 @@
+export const logoI18n = {
+  pl: 'Opieka Naprzemienna ',
+  en: 'Alternating Care',
+  de: 'Wechselnde Betreuung',
+  es: 'Cuidado Alternante',
+  ru: 'Чередующаяся опека',
+  zh: '交替护理',
+  pt: 'Cuidados Alternados',
+  it: 'Assistenza Alternata',
+  fr: 'Soins Alternés',
+  cs: 'Alternativní péče',
+  no: 'Vekslende omsorg',
+  sv: 'Växlande vård',
+  lt: 'Kaitališka priežiūra',
+  uk: 'Чередуюча опіка',
+  lv: 'Aizvietojoša aprūpe',
+  qu: 'Wasiq ayllu',
+};

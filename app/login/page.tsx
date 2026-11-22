@@ -40,7 +40,7 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      callbackUrl: "/trening",
+      callbackUrl: "/",
       redirect: false,
     });
     setIsSubmitting(false);
@@ -49,7 +49,7 @@ export default function LoginPage() {
       setError("Nieprawidłowy e-mail lub hasło.");
       return;
     }
-    window.location.assign(result?.url ?? "/trening");
+    window.location.assign(result?.url ?? "/");
   }
 
   return (
@@ -81,7 +81,7 @@ export default function LoginPage() {
           Zaloguj się
         </h1>
         <p style={{ margin: "0 0 24px", color: "#4e5954", lineHeight: 1.5 }}>
-          Zaloguj się, aby przejść do swoich treningów.
+          Zaloguj się, aby przejść do swoich aplikacji.
         </p>
         <div style={{ display: "grid", gap: "10px" }}>
           <form
@@ -119,7 +119,7 @@ export default function LoginPage() {
               key={provider.id}
               type="button"
               onClick={() =>
-                void signIn(provider.id, { callbackUrl: "/trening" })
+                void signIn(provider.id, { callbackUrl: "/" })
               }
               style={{
                 minHeight: "44px",

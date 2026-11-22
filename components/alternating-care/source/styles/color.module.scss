@@ -1,0 +1,20 @@
+// Neutralne szarości (neutral grays)
+$white: hsl(0, 0%, 100%); // #ffffff (white)
+$white-50: hsla(0, 0%, 100%, 0.533); /* #ffffff88 -> $white-50 */
+$neutral-gray-100: hsl(0, 0%, 100%); // #ffffff (white)
+$neutral-gray-150: hsl(0, 0%, 98%); // #ffffff (white)
+$neutral-gray-200: hsl(0, 0%, 84%); // #d7d7d7 (light gray)
+$neutral-gray-300: hsl(0, 0%, 81%); /* #cfcfcf -> $neutral-gray-300 */
+$neutral-gray-900: hsl(0, 0%, 28%); // #494949 (dark gray)
+
+$gray-200: hsl(0, 0%, 88%);
+
+// Odcienie czerwieni (red tones)
+$red-500: hsl(0, 100%, 66%); // #ff4f4f (primary red)
+$red-600: hsl(0, 76%, 60%); // #e94646 (light red)
+
+// Odcienie zieleni i niebieskiego (green/blue tones)
+$turquoise-500: hsl(170, 100%, 44%);
+$turquoise-600: hsl(170, 100%, 36%);
+$turquoise-700: hsl(170, 100%, 22%);
+$blue-green-700: hsl(194, 39%, 29%); // #2d5465 (dark blue-green)

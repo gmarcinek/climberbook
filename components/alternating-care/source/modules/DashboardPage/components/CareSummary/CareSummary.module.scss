@@ -1,0 +1,137 @@
+.card {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 20px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: #fff;
+}
+
+.dayBadge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  min-width: 42px;
+  height: 28px;
+  place-items: center;
+  border-radius: 6px;
+  background: #edf1f3;
+  color: #2d5465;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.label {
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.holder {
+  font-size: 1.6rem;
+  line-height: 1.15;
+}
+
+.range {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  color: #59636b;
+  font-size: 0.82rem;
+}
+
+.progressTrack {
+  overflow: hidden;
+  height: 8px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #e2e7ea;
+}
+
+.progressValue {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2d5465;
+  transition: width 180ms ease;
+}
+
+.exchangeSection,
+.upcoming {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e6eaed;
+}
+
+.upcomingTitle {
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.exchange {
+  display: grid;
+  gap: 3px;
+  padding: 4px 0 10px;
+
+  strong {
+    font-size: 1rem;
+    text-transform: capitalize;
+  }
+}
+
+.upcomingRange {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #f3f4f6;
+  font-size: 0.82rem;
+
+  &.upcomingMine {
+    background: #e8eff2;
+  }
+
+  .upcomingAvatar {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 50%;
+    background: #dfe4e8;
+    color: #59636b;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  .upcomingAvatarMine {
+    background: #2d5465;
+    color: #fff;
+  }
+
+  .upcomingRangeText {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .upcomingRangeMeta {
+    display: grid;
+    gap: 1px;
+    text-align: right;
+  }
+}

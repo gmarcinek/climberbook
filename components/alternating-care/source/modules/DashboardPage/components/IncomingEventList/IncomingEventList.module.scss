@@ -1,0 +1,67 @@
+.actionsMenu {
+  position: absolute;
+  z-index: 30;
+  right: 0;
+  display: grid;
+  width: min(280px, calc(100vw - 32px));
+  gap: 2px;
+  border: 1px solid #e2e5e9;
+  border-radius: 10px;
+  padding: 6px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.actionItem {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  color: #333;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  text-align: left;
+  white-space: normal;
+
+  &:hover,
+  &:focus-visible {
+    background: #f1f4f5;
+    outline: none;
+  }
+
+  svg {
+    margin-top: 1px;
+  }
+
+  span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  small {
+    color: #6b7280;
+    font-size: 0.75rem;
+  }
+}
+
+.actionItem.danger {
+  color: #c2185b;
+
+  small {
+    color: #c2185b;
+    opacity: 0.8;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: #fdecf2;
+  }
+}

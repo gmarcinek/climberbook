@@ -45,7 +45,6 @@ import { SettingsHeaderWidget } from "./SettingsHeaderWidget";
 import { SettingsTabsWidget } from "./SettingsTabsWidget";
 import { SharingConfigWidget } from "./SharingConfigWidget";
 import { TeamRosterSettingsWidget } from "./TeamRosterSettingsWidget";
-import { ThemeSelector } from "@/components/climberbook/providers/ThemeSelector";
 import { LayoutMaxWidthContent } from "@/components/climberbook/layout/LayoutMaxWidthContent";
 import styles from "./SettingsAssembly.module.css";
 import type {
@@ -315,7 +314,6 @@ export function SettingsAssembly(props: SettingsAssemblyProps) {
                   <p style={moduleEyebrowStyle}>WYGLĄD</p>
                   <h2 style={sectionTitleStyle}>Motyw aplikacji</h2>
                 </div>
-                <ThemeSelector />
               </Panel>
               <div className={styles.profileMetrics}>
                 <ProfileMetricsWidget

@@ -1,0 +1,72 @@
+.mobileEventForm {
+  padding-top: 4px;
+}
+
+.dateRange {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mobileEventForm {
+  :global([data-slot='input-wrapper']) {
+    min-height: 52px;
+    height: auto;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    overflow: visible;
+    border-width: 1px !important;
+    border-color: #d5dbe0 !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    transition: border-color 120ms ease;
+  }
+
+  :global([data-slot='input-wrapper'][data-focus='true']),
+  :global([data-slot='input-wrapper']:focus-within) {
+    border-color: #667785 !important;
+    box-shadow: none !important;
+  }
+
+  :global([data-slot='label']) {
+    position: static !important;
+    display: block;
+    margin: 0 0 4px;
+    padding: 0;
+    color: #59636b;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    overflow: visible !important;
+    white-space: normal !important;
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: none;
+  }
+
+  input,
+  textarea {
+    color: #333;
+    font-size: 16px;
+    box-shadow: none !important;
+  }
+
+  :global([data-slot='inner-wrapper']) {
+    min-height: 20px;
+    padding-top: 1px;
+    overflow: visible;
+  }
+
+  input:focus,
+  textarea:focus {
+    outline: none;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .dateRange {
+    grid-template-columns: 1fr;
+  }
+}

@@ -30,6 +30,11 @@ import { queryPostgres, withPostgresTransaction } from "@/lib/server/postgres";
 import { hashPassword, verifyPassword } from "@/lib/server/passwords";
 import type { PoolClient } from "pg";
 import { createHash, randomBytes } from "node:crypto";
+import type {
+  MapRecord,
+  MapRecordInput,
+  MapRecordKind,
+} from "@/lib/map-records";
 
 type AthleteRow = {
   id: string;
@@ -194,6 +199,23 @@ type AgentFeedItemRow = {
   body: string;
   training_id: string | null;
   published_at: Date;
+};
+
+type MapRecordRow = {
+  id: string;
+  kind: MapRecordKind;
+  slug: string;
+  name: string;
+  country_code: string;
+  region_id: string | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
+  summary: string;
+  details: Record<string, unknown>;
+  sources: MapRecord["sources"];
+  confidence: MapRecord["confidence"];
+  created_at: Date;
+  updated_at: Date;
 };
 
 function mapPostgresNumeric(value: number | string | null) {
@@ -374,6 +396,25 @@ function mapAgentFeedItem(row: AgentFeedItemRow): AgentFeedItemRecord {
     body: row.body,
     trainingId: row.training_id ?? undefined,
     publishedAt: row.published_at.toISOString(),
+  };
+}
+
+function mapMapRecord(row: MapRecordRow): MapRecord {
+  return {
+    id: row.id,
+    kind: row.kind,
+    slug: row.slug,
+    name: row.name,
+    countryCode: row.country_code,
+    regionId: row.region_id ?? undefined,
+    latitude: mapPostgresNumeric(row.latitude),
+    longitude: mapPostgresNumeric(row.longitude),
+    summary: row.summary,
+    details: row.details,
+    sources: row.sources,
+    confidence: row.confidence,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
   };
 }
 
@@ -1237,6 +1278,73 @@ export async function searchFacilitiesFromPostgres(
     [ownerUserId, normalizedQuery],
   );
   return result.rows.map(mapFacility);
+}
+
+export async function listMapRecordsFromPostgres(
+  ownerUserId: string,
+  filters: { kind?: MapRecordKind; query?: string } = {},
+) {
+  const result = await queryPostgres<MapRecordRow>(
+    `
+    select id, kind, slug, name, country_code, region_id, latitude, longitude,
+      summary, details, sources, confidence, created_at, updated_at
+    from map_records
+    where owner_user_id = $1
+      and ($2::text is null or kind = $2::text)
+      and ($3::text = '' or name ilike '%' || $3 || '%'
+        or slug ilike '%' || $3 || '%'
+        or country_code ilike '%' || $3 || '%'
+        or coalesce(region_id, '') ilike '%' || $3 || '%')
+    order by updated_at desc, name asc
+    limit 250
+  `,
+    [ownerUserId, filters.kind ?? null, filters.query?.trim() ?? ""],
+  );
+  return result.rows.map(mapMapRecord);
+}
+
+export async function upsertMapRecordInPostgres(
+  ownerUserId: string,
+  input: MapRecordInput,
+) {
+  const result = await queryPostgres<MapRecordRow>(
+    `
+    insert into map_records (
+      id, owner_user_id, kind, slug, name, country_code, region_id,
+      latitude, longitude, summary, details, sources, confidence
+    )
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    on conflict (owner_user_id, kind, slug) do update set
+      name = excluded.name,
+      country_code = excluded.country_code,
+      region_id = excluded.region_id,
+      latitude = excluded.latitude,
+      longitude = excluded.longitude,
+      summary = excluded.summary,
+      details = excluded.details,
+      sources = excluded.sources,
+      confidence = excluded.confidence,
+      updated_at = now()
+    returning id, kind, slug, name, country_code, region_id, latitude, longitude,
+      summary, details, sources, confidence, created_at, updated_at
+  `,
+    [
+      crypto.randomUUID(),
+      ownerUserId,
+      input.kind,
+      input.slug,
+      input.name,
+      input.countryCode,
+      input.regionId ?? null,
+      input.latitude,
+      input.longitude,
+      input.summary,
+      input.details,
+      JSON.stringify(input.sources),
+      input.confidence,
+    ],
+  );
+  return mapMapRecord(result.rows[0]);
 }
 
 export async function getDefaultFacilityFromPostgres(ownerUserId: string) {

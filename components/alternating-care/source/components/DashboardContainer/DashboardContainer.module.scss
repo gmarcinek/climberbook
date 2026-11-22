@@ -1,0 +1,30 @@
+.dashboardContainer {
+  margin: 0;
+
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+
+  &.thin {
+    padding-left: 0rem;
+    padding-right: 0rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .dashboardContainer {
+    height: calc(100vh - 48px);
+    gap: 0 !important;
+    padding-left: 0;
+    padding-right: 0;
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboardContainer {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}

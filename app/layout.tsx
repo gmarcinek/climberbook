@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
 import "./theme.scss";
-import { ClimberbookProvider } from "@/components/climberbook/providers/ClimberbookProvider";
+import { ClimberbookRouteProvider } from "@/components/climberbook/providers/ClimberbookRouteProvider";
 import { ThemeProvider } from "@/components/climberbook/providers/ThemeProvider";
+import { PlatformLanguageProvider } from "@/components/platform/PlatformLanguageProvider";
 
 export const metadata: Metadata = {
-  title: "Climberbook",
-  description: "Climberbook training journal",
+  title: "Personal Platform",
+  description: "Climberbook i opieka naprzemienna w jednym koncie",
 };
 
 export default function RootLayout({
@@ -19,7 +20,9 @@ export default function RootLayout({
     <html lang="pl">
       <body className="theme-default">
         <ThemeProvider>
-          <ClimberbookProvider>{children}</ClimberbookProvider>
+          <PlatformLanguageProvider>
+            <ClimberbookRouteProvider>{children}</ClimberbookRouteProvider>
+          </PlatformLanguageProvider>
         </ThemeProvider>
       </body>
       <Script

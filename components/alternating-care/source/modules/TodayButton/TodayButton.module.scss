@@ -1,0 +1,38 @@
+.todayButton {
+  position: fixed !important;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  z-index: 10;
+
+  &.isTl {
+    top: 16px;
+    left: 16px;
+  }
+
+  &.isTr {
+    top: 16px;
+    right: 16px;
+  }
+
+  &.isBl {
+    bottom: 16px;
+    left: 16px;
+  }
+
+  &.isBr {
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .todayButton.mobileHidden {
+    display: none !important;
+  }
+}

@@ -1,0 +1,131 @@
+@import '@styles/color.module.scss';
+@import '@styles/transition.module.scss';
+@import '@styles/spacer.module.scss';
+
+.calendarItemBodyMonthItem {
+  display: flex;
+  flex: 1;
+  color: $neutral-gray-900; /* #494949 -> $neutral-gray-900 */
+  font-size: 8px;
+  line-height: 10px;
+  background: $neutral-gray-100; /* rgb(255, 255, 255) -> $neutral-gray-100 */
+  padding: 0px;
+  text-align: center;
+
+  .hiden {
+    display: none;
+  }
+
+  &.isWeekend {
+    background: $neutral-gray-200;
+  }
+
+  &.isAlternating {
+    background-image: url(../../../../assets/pas02.png) !important;
+    background-color: $blue-green-700;
+    background-repeat: repeat;
+    color: $neutral-gray-100 !important;
+
+    &.isWeekend {
+      background: $blue-green-700;
+    }
+
+    &.isToday {
+      background: $red-500;
+      color: $neutral-gray-100;
+    }
+  }
+
+  &.isToday {
+    background: $red-500 !important;
+    color: $neutral-gray-100 !important;
+  }
+
+  &.isFirstOfTheMonth {
+    color: $red-600;
+    padding-left: 10px;
+  }
+
+  &.isLastOfTheMnth {
+    position: relative;
+  }
+
+  &.isSelected {
+    background: $turquoise-500 !important;
+    color: $neutral-gray-100 !important;
+  }
+
+  transition:
+    background $transition-duration,
+    color $transition-duration,
+    filter $transition-duration $transition-timing-function;
+}
+
+@media (min-width: 768px) {
+  .calendarItemBodyMonthItem {
+    font-size: 12px;
+    padding: 0.25rem;
+    text-align: left;
+
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      0 100%
+    );
+    &.smallPolygon {
+      clip-path: polygon(
+        0 0,
+        100% 0,
+        100% calc(100% - 6px),
+        calc(100% - 6px) 100%,
+        0 100%
+      );
+    }
+
+    .content {
+      align-items: baseline;
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .calendarItemBodyMonthItem {
+    font-size: 12px;
+    padding: 0.25rem;
+
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 12px),
+      calc(100% - 12px) 100%,
+      0 100%
+    );
+    &.smallPolygon {
+      clip-path: polygon(
+        0 0,
+        100% 0,
+        100% calc(100% - 6px),
+        calc(100% - 6px) 100%,
+        0 100%
+      );
+    }
+  }
+}
+
+@media (min-width: 1920px) {
+  .calendarItemBodyMonthItem {
+    font-size: 12px;
+    padding: 0.5rem;
+    padding-right: 0.25rem;
+
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 12px),
+      calc(100% - 12px) 100%,
+      0 100%
+    );
+  }
+}

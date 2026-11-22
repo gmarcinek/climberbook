@@ -1,4 +1,5 @@
 import { ConditionsStudy } from "./ConditionsStudy";
+import { PlatformAppShell } from "@/components/platform/PlatformAppShell";
 
 export const metadata = {
   title: "Ocena warunków wspinaczkowych | Climberbook",
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function ConditionsStudyPage() {
-  return <ConditionsStudy />;
+  return (
+    <PlatformAppShell app="climberbook" title="Warunki wspin">
+      <ConditionsStudy />
+    </PlatformAppShell>
+  );
 }

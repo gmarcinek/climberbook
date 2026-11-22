@@ -3,8 +3,6 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
-import { Power } from "lucide-react";
 import {
   moduleConfig,
   type ModuleKey,
@@ -14,7 +12,7 @@ import { Select } from "@/components/climberbook/common/FormControls";
 import { Modal } from "@/components/climberbook/common/Modal";
 import { useViewport } from "@/components/climberbook/hooks/useViewport";
 import { useClimberbook } from "@/components/climberbook/providers/ClimberbookProvider";
-import { ThemeSelector } from "@/components/climberbook/providers/ThemeSelector";
+import { PlatformAccountMenu } from "@/components/platform/PlatformAccountMenu";
 import styles from "./MainHeader.module.scss";
 
 type MainHeaderProps = {
@@ -140,7 +138,6 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                 ))}
               </Select>
             </label>
-            {width >= 1200 ? <ThemeSelector compact /> : null}
           </div>
 
           {!isMobileHeader ? (
@@ -153,18 +150,13 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
                 .join(" ")}
             >
               {navLinks}
-              <Button
-                className={[styles.logoutButton, styles.logoutButtonIcon].join(
-                  " ",
-                )}
-                onClick={() => void signOut({ callbackUrl: "/login" })}
-                variant="quadrary"
-                aria-label="Wyloguj"
-                title="Wyloguj"
-              >
-                <Power aria-hidden size={20} />
-              </Button>
+              <PlatformAccountMenu currentApp="climberbook" />
             </nav>
+          ) : null}
+          {isMobileHeader ? (
+            <div className={styles.platformMenuMobile}>
+              <PlatformAccountMenu currentApp="climberbook" />
+            </div>
           ) : null}
         </div>
       </header>
@@ -189,12 +181,6 @@ export function MainHeader({ activeModule }: MainHeaderProps) {
               {navLinks}
             </nav>
             <div className={styles.mobileNavigationSpacer} />
-            <Button
-              onClick={() => void signOut({ callbackUrl: "/login" })}
-              variant="quadrary"
-            >
-              Wyloguj
-            </Button>
           </div>
         </Modal>
       ) : null}

@@ -10,4 +10,6 @@ export async function requireAuthenticatedUser() {
 
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
+
+  return session.user;
 }

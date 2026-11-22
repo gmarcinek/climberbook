@@ -131,7 +131,11 @@ ENTRA_REQUIRED_SCOPE=climberbook.access
 
 Domyślny issuer jest przeznaczony dla Microsoft Entra ID: `https://login.microsoftonline.com/<tenant-id>/v2.0`. Dla tenant'a External ID ustaw dodatkowo `ENTRA_ISSUER` na issuer podany w jego dokumencie OpenID Connect oraz `ENTRA_OPENID_CONFIGURATION_URL` na pełny adres tego dokumentu. API pobiera z niego `jwks_uri` do weryfikacji podpisu tokenu.
 
-MCP udostępnia obecnie tylko narzędzie odczytu `get_climbing_snapshot`. Token jest mapowany na istniejące konto Climberbook przez `auth_identities`. Dla ręcznie utworzonego użytkownika dodaj jednorazowo powiązanie w bazie:
+MCP udostępnia narzędzia treningowe oraz źródłowane dane map. `search_map_records` wyszukuje rejony, służby i historyczne akcje, a `upsert_map_record` dodaje lub aktualizuje rekord po jawnym potwierdzeniu użytkownika. Zapis wymaga co najmniej jednego źródła HTTP(S).
+
+Workspace zawiera serwer `climberbook-local` w `.vscode/mcp.json` oraz agenta `Map Research` w `.github/agents/map-research.agent.md`. Agent łączy się z `http://localhost:3000/api/mcp`, bada system ratowniczy i historyczne akcje, a następnie po potwierdzeniu może uzupełniać bazę. Po pierwszym dodaniu konfiguracji MCP może być wymagane ponowne załadowanie okna VS Code oraz logowanie Entra.
+
+Token jest mapowany na istniejące konto Climberbook przez `auth_identities`. Dla ręcznie utworzonego użytkownika dodaj jednorazowo powiązanie w bazie:
 
 ```sql
 insert into auth_identities (id, user_id, provider, provider_subject, email_at_login)

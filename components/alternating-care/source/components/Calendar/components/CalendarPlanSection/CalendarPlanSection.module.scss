@@ -1,0 +1,33 @@
+@import '@styles/color.module.scss';
+@import '@styles/spacer.module.scss';
+
+.calendarPlanSection {
+  display: flex;
+  flex: 1;
+  padding: 0;
+  margin-bottom: $spacer-24;
+
+  .calendarPlanItem {
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+    border-right: 1px solid #00000015;
+
+    .calendarPlanSectionItem {
+      margin: 0;
+      height: 18px;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      border: 1px solid #00000015;
+      border-right: none;
+
+      small {
+        font-size: 11px;
+        height: 18px;
+        margin: 0;
+        padding: 0;
+        position: absolute;
+      }
+    }
+  }
+}

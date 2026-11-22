@@ -19,9 +19,21 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@components/*": ["./components/alternating-care/source/components/*"],
+      "@modules/*": ["./components/alternating-care/source/modules/*"],
+      "@utils/*": ["./components/alternating-care/source/utils/*"],
+      "@assets/*": ["./components/alternating-care/source/assets/*"],
+      "@app/*": ["./components/alternating-care/source/app/*"],
+      "@api/*": ["./components/alternating-care/source/api/*"],
+      "@styles/*": ["./components/alternating-care/source/styles/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next-env.d.ts"
+  ],
   "exclude": ["node_modules"]
 }

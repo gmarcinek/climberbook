@@ -1,0 +1,13 @@
+@mixin animate-bg($color1, $color2, $duration) {
+  background: $color1;
+  animation: bg-animation $duration infinite alternate;
+
+  @keyframes bg-animation {
+    0% {
+      background-color: $color1 !important;
+    }
+    100% {
+      background-color: $color2 !important;
+    }
+  }
+}
