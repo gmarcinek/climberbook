@@ -81,3 +81,5 @@ databaseChangeLog:
       file: changelog/changes/040-add-care-plans.sql
   - include:
       file: changelog/changes/041-grant-care-planning-access.sql
+  - include:
+      file: changelog/changes/042-add-care-caregiver-color.sql

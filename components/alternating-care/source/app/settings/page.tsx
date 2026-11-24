@@ -4,25 +4,40 @@ import ExportButton from '@api/db/export/ExportButton';
 import ImportButton from '@api/db/import/ImportButton';
 import PageContainer from '@components/PageContainer/PageContainer';
 import { useAppContext } from '@app/AppContext';
+import { CalendarEvent, CalendarEventType } from '@api/db/types';
+import { Calendar } from '@components/Calendar/Calendar';
+import { dateFormat } from '@components/Calendar/Calendar.helpers';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  CARE_COLORS_QUERY_KEY,
+  CaregiverColors,
+  caregiverBackground,
+} from '@utils/caregiverColors';
+import { colorBlueGreen700 } from '@utils/color';
 import { useCareHandoffMode } from '@utils/useCareHandoffMode';
 import { CareAvatarRole, useCareAvatars } from '@utils/useCareAvatars';
 import { CAREGIVER_ROLES } from '@utils/caregiverRoles';
-import { useOtherParent } from '@utils/useOtherParent';
+import { otherParentSubjectId, useOtherParent } from '@utils/useOtherParent';
+import dayjs from 'dayjs';
 import {
   Camera,
   Clock3,
   Download,
+  RotateCcw,
+  ShieldAlert,
   ShieldCheck,
   Trash2,
   Upload,
-  UserRound,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dashboardStyles from '@modules/DashboardPage/components/Dashboard/Dashboard.module.scss';
 import styles from './settings.module.scss';
 
 const handoffModes = ['simplified', 'half-day', 'hourly'] as const;
+const PREVIEW_MONTH_MIN_WIDTH = 360;
+const PREVIEW_MONTH_GAP = 16;
+const PREVIEW_MONTH_MAX_COLUMNS = 5;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 const resizeAvatar = (file: File) =>
@@ -76,38 +91,75 @@ type Caregiver = {
   name: string;
   role: string;
   linkedUserId?: string | null;
+  color?: string | null;
 };
+
+const defaultCareColor = (subjectId: string) =>
+  subjectId.startsWith('self:')
+    ? colorBlueGreen700
+    : caregiverBackground(subjectId);
 
 export default function UserForm() {
   const { language, user } = useAppContext();
   const { mode, setMode } = useCareHandoffMode();
   const { profile, setProfile } = useOtherParent();
   const isEnglish = language === 'en';
-  const [parentName, setParentName] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState(profile.userId ?? '');
-  const { avatars, setAvatar, getAvatar } = useCareAvatars(
-    selectedUserId || profile.userId
-  );
+  const otherParentSubject = otherParentSubjectId(profile);
+  const hasOtherParent = Boolean(profile.subjectId || profile.name);
+  // Platform account picked in the "add caregiver" form.
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const { avatars, setAvatar, getAvatar } = useCareAvatars(profile.userId);
   const [platformUsers, setPlatformUsers] = useState<PlatformUser[]>([]);
   const [usersError, setUsersError] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isUserListVisible, setIsUserListVisible] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
   const [isAddingCaregiver, setIsAddingCaregiver] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [resetInput, setResetInput] = useState('');
   const [newCaregiverName, setNewCaregiverName] = useState('');
   const [newCaregiverRole, setNewCaregiverRole] = useState('rodzina');
   const [caregiverError, setCaregiverError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [colorDrafts, setColorDrafts] = useState<Record<string, string | null>>(
+    {}
+  );
+  const colorSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>(
+    {}
+  );
+  const queryClient = useQueryClient();
+  const previewMonth = dayjs().startOf('month');
+  const [previewGrid, setPreviewGrid] = useState<HTMLDivElement | null>(null);
+  const [previewColumns, setPreviewColumns] = useState(1);
+
+  // Same month sizing as the dashboard grid: 360–500px per month, up to 5.
+  useEffect(() => {
+    if (!previewGrid) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width;
+      setPreviewColumns(
+        Math.min(
+          PREVIEW_MONTH_MAX_COLUMNS,
+          Math.max(
+            1,
+            Math.floor(
+              (width + PREVIEW_MONTH_GAP) /
+                (PREVIEW_MONTH_MIN_WIDTH + PREVIEW_MONTH_GAP)
+            )
+          )
+        )
+      );
+    });
+    observer.observe(previewGrid);
+    return () => observer.disconnect();
+  }, [previewGrid]);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsHydrated(true);
-    setParentName(profile.name);
-    setSelectedUserId(profile.userId ?? '');
     const loadCaregivers = async () => {
       const response = await fetch('/api/alternating-care/caregivers', {
         cache: 'no-store',
@@ -261,6 +313,7 @@ export default function UserForm() {
     setCaregivers((current) =>
       current.filter((item) => item.id !== caregiver.id)
     );
+    if (caregiver.subjectId === profile.subjectId) setProfile({ name: '' });
     await setAvatar('other', null, caregiver.subjectId.replace(/^caregiver:/, ''));
   };
 
@@ -275,22 +328,15 @@ export default function UserForm() {
         linkedUserId: user.id,
       },
     ];
-    const otherName =
-      profile.name || parentName || (isEnglish ? 'Other parent' : 'Drugi rodzic');
-    if (otherName.trim()) {
+    // Legacy other parent (not one of the saved caregivers).
+    if (!profile.subjectId && profile.name.trim()) {
       defaults.push({
-        subjectId:
-          (selectedUserId || profile.userId)
-            ? `other:${selectedUserId || profile.userId}`
-            : 'other:manual',
-        name: otherName,
+        subjectId: otherParentSubject,
+        name: profile.name,
         role:
-          caregivers.find(
-            (item) =>
-              item.subjectId ===
-              `other:${selectedUserId || profile.userId || 'manual'}`
-          )?.role || 'rodzic',
-        linkedUserId: selectedUserId || profile.userId || null,
+          caregivers.find((item) => item.subjectId === otherParentSubject)
+            ?.role || 'rodzic',
+        linkedUserId: profile.userId || null,
       });
     }
     return [
@@ -310,13 +356,98 @@ export default function UserForm() {
   }, [
     caregivers,
     isEnglish,
-    parentName,
+    otherParentSubject,
     profile.name,
+    profile.subjectId,
     profile.userId,
-    selectedUserId,
     user.id,
     user.name,
   ]);
+
+  const markOtherParent = (caregiver: Caregiver) =>
+    setProfile({
+      name: caregiver.name,
+      userId: caregiver.linkedUserId || undefined,
+      subjectId: caregiver.subjectId.startsWith('other:')
+        ? undefined
+        : caregiver.subjectId,
+    });
+
+  const careColorOf = (caregiver: Caregiver) =>
+    caregiver.subjectId in colorDrafts
+      ? colorDrafts[caregiver.subjectId]
+      : caregiver.color ?? null;
+
+  const previewColors = useMemo<CaregiverColors>(
+    () =>
+      Object.fromEntries(
+        displayedCaregivers.flatMap((caregiver) => {
+          const color =
+            caregiver.subjectId in colorDrafts
+              ? colorDrafts[caregiver.subjectId]
+              : caregiver.color;
+          return color ? [[caregiver.subjectId, color]] : [];
+        })
+      ),
+    [colorDrafts, displayedCaregivers]
+  );
+
+  // Sample months: in every month consecutive blocks of days, one per caregiver.
+  const previewMonths = useMemo(
+    () =>
+      Array.from({ length: previewColumns }, (_, index) =>
+        previewMonth.add(index, 'month')
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [previewColumns, previewMonth.format(dateFormat)]
+  );
+  const previewEvents = useMemo<CalendarEvent[]>(() => {
+    if (!displayedCaregivers.length) return [];
+    return previewMonths.flatMap((month) => {
+      const daysInMonth = month.daysInMonth();
+      const blockSize = Math.ceil(daysInMonth / displayedCaregivers.length);
+      return Array.from({ length: daysInMonth }, (_, index) => {
+        const caregiver =
+          displayedCaregivers[Math.floor(index / blockSize)] ??
+          displayedCaregivers[displayedCaregivers.length - 1];
+        const date = month.add(index, 'day').format(dateFormat);
+        return {
+          id: `sample-${date}`,
+          groupId: `CARE:${caregiver.subjectId}`,
+          date,
+          type: CalendarEventType.Alternating,
+          issuer: caregiver.subjectId,
+          creationTime: 0,
+          name: caregiver.subjectId,
+          description: '',
+        };
+      });
+    });
+  }, [displayedCaregivers, previewMonths]);
+
+  // `null` resets the caregiver to the default colour.
+  const changeCareColor = (caregiver: Caregiver, color: string | null) => {
+    setColorDrafts((current) => ({ ...current, [caregiver.subjectId]: color }));
+    clearTimeout(colorSaveTimers.current[caregiver.subjectId]);
+    colorSaveTimers.current[caregiver.subjectId] = setTimeout(() => {
+      void saveCaregiver({ ...caregiver, color })
+        .then(() => {
+          setColorDrafts((current) => {
+            const next = { ...current };
+            delete next[caregiver.subjectId];
+            return next;
+          });
+          return queryClient.invalidateQueries({
+            queryKey: CARE_COLORS_QUERY_KEY,
+          });
+        })
+        .catch((error) =>
+          setCaregiverError(
+            error instanceof Error ? error.message : 'Nie udało się zapisać koloru.'
+          )
+        );
+    }, 400);
+  };
 
   const copy = {
     simplified: {
@@ -340,7 +471,7 @@ export default function UserForm() {
   };
 
   return (
-    <PageContainer scrollable>
+    <PageContainer scrollable isFullWidth>
       <nav
         className={dashboardStyles.mobileTabs}
         aria-label={isEnglish ? 'Mobile view' : 'Widok mobilny'}
@@ -359,7 +490,7 @@ export default function UserForm() {
         </Link>
       </nav>
       <main className={styles.page}>
-        <header className={styles.header}>
+        <header className={`${styles.header} ${styles.fullRow}`}>
           <span className={styles.eyebrow}>
             {isEnglish ? 'Care calendar' : 'Kalendarz opieki'}
           </span>
@@ -371,7 +502,7 @@ export default function UserForm() {
           </p>
         </header>
 
-        <section className={styles.card}>
+        <section className={`${styles.card} ${styles.fullRow}`}>
           <div className={styles.cardHeader}>
             <span className={styles.icon}>
               <Camera size={20} aria-hidden />
@@ -380,12 +511,14 @@ export default function UserForm() {
               <h2>{isEnglish ? 'Caregivers' : 'Opiekunowie'}</h2>
               <p>
                 {isEnglish
-                  ? 'Manage the people who provide care, their roles and avatars.'
-                  : 'Zarządzaj osobami sprawującymi opiekę, ich rolami i avatarami.'}
+                  ? 'Manage the people who provide care, their roles and avatars. Mark one of them as the other parent — the main additional user (platform account or virtual user).'
+                  : 'Zarządzaj osobami sprawującymi opiekę, ich rolami i avatarami. Jedną z nich oznacz jako drugiego rodzica — głównego dodatkowego użytkownika (konto z platformy lub użytkownik wirtualny).'}
               </p>
             </div>
           </div>
 
+          <div className={styles.caregiversLayout}>
+          <div className={styles.caregiversColumn}>
           <div className={styles.avatarGrid}>
             {(isHydrated ? displayedCaregivers : []).map((caregiver) => {
               const avatarRole: CareAvatarRole =
@@ -419,11 +552,31 @@ export default function UserForm() {
                       : caregiver.linkedUserId
                         ? isEnglish
                           ? 'Platform account'
-                          : 'Konto platformy'
+                          : 'Konto z platformy'
                         : isEnglish
-                          ? 'Manual caregiver'
-                          : 'Opiekun dodany ręcznie'}
+                          ? 'Virtual user'
+                          : 'Użytkownik wirtualny'}
                   </small>
+                  {caregiver.subjectId !== `self:${user.id}` && (
+                    <button
+                      type='button'
+                      className={styles.otherParentToggle}
+                      data-active={
+                        hasOtherParent &&
+                        caregiver.subjectId === otherParentSubject
+                      }
+                      onClick={() => markOtherParent(caregiver)}
+                    >
+                      {hasOtherParent &&
+                      caregiver.subjectId === otherParentSubject
+                        ? isEnglish
+                          ? '★ Other parent'
+                          : '★ Drugi rodzic'
+                        : isEnglish
+                          ? 'Set as other parent'
+                          : 'Ustaw jako drugiego rodzica'}
+                    </button>
+                  )}
                 </div>
                 <select
                   className={styles.caregiverRoleSelect}
@@ -511,6 +664,36 @@ export default function UserForm() {
                     <Trash2 size={15} aria-hidden />
                   </button>
                 )}
+                <div className={styles.careColorRow}>
+                  <span>
+                    {isEnglish
+                      ? 'Care day colour in the calendar'
+                      : 'Kolor dni opieki w kalendarzu'}
+                  </span>
+                  <input
+                    type='color'
+                    aria-label={
+                      isEnglish
+                        ? `Day colour for ${caregiver.name}`
+                        : `Kolor dni: ${caregiver.name}`
+                    }
+                    value={
+                      careColorOf(caregiver) ?? defaultCareColor(caregiver.subjectId)
+                    }
+                    onChange={(event) =>
+                      changeCareColor(caregiver, event.target.value)
+                    }
+                  />
+                  <button
+                    type='button'
+                    disabled={!careColorOf(caregiver)}
+                    onClick={() => changeCareColor(caregiver, null)}
+                    title={isEnglish ? 'Reset to default' : 'Przywróć domyślny'}
+                  >
+                    <RotateCcw size={13} aria-hidden />
+                    {isEnglish ? 'Default' : 'Domyślny'}
+                  </button>
+                </div>
               </div>
             );})}
           </div>
@@ -520,10 +703,83 @@ export default function UserForm() {
                 <span>{isEnglish ? 'Name' : 'Imię i nazwisko'}</span>
                 <input
                   value={newCaregiverName}
-                  onChange={(event) => setNewCaregiverName(event.target.value)}
+                  onChange={(event) => {
+                    setNewCaregiverName(event.target.value);
+                    setSelectedUserId('');
+                  }}
                   placeholder={isEnglish ? 'e.g. Anna Kowalska' : 'np. Anna Kowalska'}
                 />
               </label>
+              <div className={styles.searchField} ref={searchContainerRef}>
+                <label className={styles.field}>
+                  <span>
+                    {isEnglish
+                      ? 'Platform account (optional)'
+                      : 'Konto z platformy (opcjonalnie)'}
+                  </span>
+                  <input
+                    type='search'
+                    value={userSearch}
+                    autoComplete='off'
+                    placeholder={isEnglish ? 'Search name or e-mail…' : 'Szukaj po imieniu lub e-mailu…'}
+                    aria-controls='entra-user-results'
+                    aria-expanded={isUserListVisible}
+                    onFocus={() => setIsUserListVisible(true)}
+                    onChange={(event) => {
+                      setUserSearch(event.target.value);
+                      setSelectedUserId('');
+                      setIsUserListVisible(true);
+                    }}
+                  />
+                </label>
+
+                {isUserListVisible && userSearch.trim().length >= 2 && (
+                  <div
+                    id='entra-user-results'
+                    className={styles.searchResults}
+                    role='listbox'
+                  >
+                    {isSearching && (
+                      <span className={styles.searchMessage}>
+                        {isEnglish ? 'Searching…' : 'Wyszukiwanie…'}
+                      </span>
+                    )}
+                    {!isSearching && usersError && (
+                      <span className={styles.searchMessage}>
+                        {isEnglish
+                          ? 'Platform search is unavailable. You can still add a virtual user by name.'
+                          : 'Wyszukiwanie jest niedostępne. Możesz dodać użytkownika wirtualnego po imieniu.'}
+                      </span>
+                    )}
+                    {!isSearching &&
+                      !usersError &&
+                      availableUsers.length === 0 && (
+                        <span className={styles.searchMessage}>
+                          {isEnglish ? 'No matching accounts' : 'Brak pasujących kont'}
+                        </span>
+                      )}
+                    {!isSearching &&
+                      availableUsers.map((platformUser) => (
+                        <button
+                          key={platformUser.id}
+                          type='button'
+                          role='option'
+                          aria-selected={platformUser.id === selectedUserId}
+                          className={styles.searchResult}
+                          onClick={() => {
+                            setSelectedUserId(platformUser.id);
+                            setNewCaregiverName(platformUser.displayName);
+                            setUserSearch(platformUser.displayName);
+                            setIsUserListVisible(false);
+                          }}
+                        >
+                          <strong>{platformUser.displayName}</strong>
+                          {platformUser.email && <small>{platformUser.email}</small>}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
               <label className={styles.field}>
                 <span>{isEnglish ? 'Role' : 'Rola'}</span>
                 <select
@@ -544,10 +800,13 @@ export default function UserForm() {
                     subjectId: `caregiver:${crypto.randomUUID()}`,
                     name: newCaregiverName,
                     role: newCaregiverRole,
+                    linkedUserId: selectedUserId || null,
                   })
                     .then(() => {
                       setNewCaregiverName('');
                       setNewCaregiverRole('rodzina');
+                      setSelectedUserId('');
+                      setUserSearch('');
                       setIsAddingCaregiver(false);
                       setCaregiverError(null);
                     })
@@ -587,138 +846,41 @@ export default function UserForm() {
               {avatarError}
             </p>
           )}
-        </section>
-
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.icon}>
-              <UserRound size={20} aria-hidden />
-            </span>
-            <div>
-              <h2>
-                {isEnglish ? 'Other parent' : 'Drugi rodzic'}
-              </h2>
-              <p>
-                {isEnglish
-                  ? 'Enter their details or connect a person from the platform.'
-                  : 'Wpisz dane lub wybierz osobę z platformy.'}
-              </p>
-            </div>
           </div>
-
-          <div className={styles.parentGrid}>
-            <label className={styles.field}>
-              <span>{isEnglish ? 'Name' : 'Imię lub nazwa'}</span>
-              <input
-                type='text'
-                value={parentName}
-                placeholder={isEnglish ? 'Other parent' : 'np. Anna Kowalska'}
-                onChange={(event) => {
-                  setParentName(event.target.value);
-                  setSelectedUserId('');
-                  setIsSaved(false);
-                }}
-              />
-            </label>
-
-            <div className={styles.searchField} ref={searchContainerRef}>
-              <label className={styles.field}>
-                <span>{isEnglish ? 'Microsoft Entra account' : 'Konto Microsoft Entra'}</span>
-                <input
-                  type='search'
-                  value={userSearch}
-                  autoComplete='off'
-                  placeholder={isEnglish ? 'Search name or e-mail…' : 'Szukaj po imieniu lub e-mailu…'}
-                  aria-controls='entra-user-results'
-                  aria-expanded={isUserListVisible}
-                  onFocus={() => setIsUserListVisible(true)}
-                  onChange={(event) => {
-                    setUserSearch(event.target.value);
-                    setSelectedUserId('');
-                    setIsSaved(false);
-                    setIsUserListVisible(true);
-                  }}
-                />
-              </label>
-
-              {isUserListVisible && userSearch.trim().length >= 2 && (
-                <div
-                  id='entra-user-results'
-                  className={styles.searchResults}
-                  role='listbox'
-                >
-                  {isSearching && (
-                    <span className={styles.searchMessage}>
-                      {isEnglish ? 'Searching…' : 'Wyszukiwanie…'}
-                    </span>
-                  )}
-                  {!isSearching && usersError && (
-                    <span className={styles.searchMessage}>
-                      {isEnglish
-                        ? 'Entra search is unavailable. You can still enter a name manually.'
-                        : 'Wyszukiwanie Entra jest niedostępne. Możesz wpisać imię ręcznie.'}
-                    </span>
-                  )}
-                  {!isSearching &&
-                    !usersError &&
-                    availableUsers.length === 0 && (
-                      <span className={styles.searchMessage}>
-                        {isEnglish ? 'No matching accounts' : 'Brak pasujących kont'}
-                      </span>
-                    )}
-                  {!isSearching &&
-                    availableUsers.map((platformUser) => (
-                      <button
-                        key={platformUser.id}
-                        type='button'
-                        role='option'
-                        aria-selected={platformUser.id === selectedUserId}
-                        className={styles.searchResult}
-                        onClick={() => {
-                          setSelectedUserId(platformUser.id);
-                          setParentName(platformUser.displayName);
-                          setUserSearch(platformUser.displayName);
-                          setIsUserListVisible(false);
-                          setIsSaved(false);
-                        }}
-                      >
-                        <strong>{platformUser.displayName}</strong>
-                        {platformUser.email && <small>{platformUser.email}</small>}
-                      </button>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.parentActions}>
-            <span aria-live='polite'>
-              {isSaved
-                ? isEnglish
-                  ? 'Saved'
-                  : 'Zapisano'
-                : selectedUserId
-                  ? isEnglish
-                    ? 'This person will be available for calendar sharing later.'
-                    : 'Ta osoba będzie mogła zostać wykorzystana przy udostępnieniu kalendarza.'
-                  : isEnglish
-                    ? 'Saved only for this calendar.'
-                    : 'Dane będą używane w tym kalendarzu.'}
+          <div className={styles.careColorPreview}>
+            <span>
+              {isEnglish ? 'Preview' : 'Podgląd'} ·{' '}
+              {previewMonths[0].locale(isEnglish ? 'en' : 'pl').format('MMMM YYYY')}
+              {previewMonths.length > 1 &&
+                ` – ${previewMonths[previewMonths.length - 1]
+                  .locale(isEnglish ? 'en' : 'pl')
+                  .format('MMMM YYYY')}`}
             </span>
-            <button
-              type='button'
-              className={styles.actionButton}
-              disabled={!parentName.trim()}
-              onClick={() => {
-                setProfile({
-                  name: parentName,
-                  userId: selectedUserId || undefined,
-                });
-                setIsSaved(true);
-              }}
+            <div
+              ref={setPreviewGrid}
+              className={styles.careColorPreviewGrid}
+              style={{ '--preview-columns': previewColumns } as CSSProperties}
             >
-              {isEnglish ? 'Save parent' : 'Zapisz dane'}
-            </button>
+              {isHydrated &&
+                previewMonths.map((month) => (
+                  <Calendar
+                    key={month.format(dateFormat)}
+                    startDate={month.format(dateFormat)}
+                    endDate={month.endOf('month').add(1, 'day').format(dateFormat)}
+                    rowSize={7}
+                    isTodayVisible
+                    isWeekendsVisible
+                    isPlanVisible={false}
+                    isAlternatingVisible
+                    isOtherCareVisible
+                    isEventsVisible
+                    displayStrategy='separateMonths'
+                    events={previewEvents}
+                    caregiverColors={previewColors}
+                  />
+                ))}
+            </div>
+          </div>
           </div>
         </section>
 
@@ -817,7 +979,25 @@ export default function UserForm() {
                 label={isEnglish ? 'Download backup' : 'Pobierz kopię'}
               />
             </div>
+          </div>
+        </section>
 
+        <section className={`${styles.card} ${styles.dangerZone}`}>
+          <div className={styles.cardHeader}>
+            <span className={`${styles.icon} ${styles.dangerIcon}`}>
+              <ShieldAlert size={20} aria-hidden />
+            </span>
+            <div>
+              <h2>{isEnglish ? 'Danger zone' : 'Strefa niebezpieczna'}</h2>
+              <p>
+                {isEnglish
+                  ? 'Irreversible operations on your calendar data.'
+                  : 'Nieodwracalne operacje na danych kalendarza.'}
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.dangerActions}>
             <div className={`${styles.actionCard} ${styles.dangerActionCard}`}>
               <span className={styles.actionIcon}>
                 <Trash2 size={22} aria-hidden />
@@ -830,55 +1010,102 @@ export default function UserForm() {
                     : 'Usuń wszystkie wydarzenia i plany opieki. Opiekunowie i ustawienia pozostaną.'}
                 </p>
               </div>
-              <button
-                type='button'
-                className={styles.dangerActionButton}
-                disabled={isResetting}
-                onClick={() => {
-                  const confirmed = window.confirm(
-                    isEnglish
-                      ? 'Delete all calendar events and care plans? This cannot be undone.'
-                      : 'Usunąć wszystkie wydarzenia i plany opieki? Tej operacji nie można cofnąć.'
-                  );
-                  if (!confirmed) return;
-                  setIsResetting(true);
-                  void fetch('/api/alternating-care/reset', { method: 'DELETE' })
-                    .then(async (response) => {
-                      if (!response.ok) {
-                        const data = (await response.json().catch(() => null)) as
-                          | { error?: string }
-                          | null;
-                        throw new Error(
-                          data?.error ||
-                            (isEnglish
-                              ? 'Could not reset calendar.'
-                              : 'Nie udało się zresetować kalendarza.')
-                        );
+              {resetCode ? (
+                <div className={styles.resetConfirm}>
+                  <p>
+                    {isEnglish
+                      ? 'This cannot be undone. Type the code to confirm:'
+                      : 'Tej operacji nie mo?na cofn??. Wpisz kod, aby potwierdzi?:'}
+                  </p>
+                  <code>{resetCode}</code>
+                  <input
+                    value={resetInput}
+                    maxLength={6}
+                    autoComplete='off'
+                    spellCheck={false}
+                    placeholder={isEnglish ? 'Code' : 'Kod'}
+                    aria-label={isEnglish ? 'Confirmation code' : 'Kod potwierdzenia'}
+                    onChange={(event) => setResetInput(event.target.value)}
+                  />
+                  <div>
+                    <button
+                      type='button'
+                      className={styles.secondaryActionButton}
+                      disabled={isResetting}
+                      onClick={() => {
+                        setResetCode('');
+                        setResetInput('');
+                      }}
+                    >
+                      {isEnglish ? 'Cancel' : 'Anuluj'}
+                    </button>
+                    <button
+                      type='button'
+                      className={styles.dangerActionButton}
+                      disabled={
+                        isResetting ||
+                        resetInput.trim().toUpperCase() !== resetCode
                       }
-                      window.alert(
-                        isEnglish
-                          ? 'Calendar has been reset.'
-                          : 'Kalendarz został zresetowany.'
-                      );
-                    })
-                    .catch((error) =>
-                      window.alert(
-                        error instanceof Error
-                          ? error.message
-                          : 'Nie udało się zresetować kalendarza.'
-                      )
-                    )
-                    .finally(() => setIsResetting(false));
-                }}
-              >
-                {isResetting
-                  ? isEnglish
-                    ? 'Resetting…'
-                    : 'Resetowanie…'
-                  : isEnglish
-                    ? 'Reset all events'
-                    : 'Resetuj wszystkie wydarzenia'}
-              </button>
+                      onClick={() => {
+                        setIsResetting(true);
+                        void fetch('/api/alternating-care/reset', { method: 'DELETE' })
+                          .then(async (response) => {
+                            if (!response.ok) {
+                              const data = (await response.json().catch(() => null)) as
+                                | { error?: string }
+                                | null;
+                              throw new Error(
+                                data?.error ||
+                                  (isEnglish
+                                    ? 'Could not reset calendar.'
+                                    : 'Nie uda?o si? zresetowa? kalendarza.')
+                              );
+                            }
+                            setResetCode('');
+                            setResetInput('');
+                            await queryClient.invalidateQueries();
+                            window.alert(
+                              isEnglish
+                                ? 'Calendar has been reset.'
+                                : 'Kalendarz zosta? zresetowany.'
+                            );
+                          })
+                          .catch((error) =>
+                            window.alert(
+                              error instanceof Error
+                                ? error.message
+                                : 'Nie uda?o si? zresetowa? kalendarza.'
+                            )
+                          )
+                          .finally(() => setIsResetting(false));
+                      }}
+                    >
+                      <Trash2 size={15} aria-hidden />
+                      {isResetting
+                        ? isEnglish
+                          ? 'Resetting?'
+                          : 'Resetowanie?'
+                        : isEnglish
+                          ? 'Reset all events'
+                          : 'Resetuj wszystkie wydarzenia'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type='button'
+                  className={styles.dangerActionButton}
+                  onClick={() => {
+                    setResetInput('');
+                    setResetCode(
+                      crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase()
+                    );
+                  }}
+                >
+                  <Trash2 size={15} aria-hidden />
+                  {isEnglish ? 'Reset all events' : 'Resetuj wszystkie wydarzenia'}
+                </button>
+              )}
             </div>
           </div>
         </section>

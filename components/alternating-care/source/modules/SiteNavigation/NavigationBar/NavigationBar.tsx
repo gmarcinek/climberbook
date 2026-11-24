@@ -31,6 +31,10 @@ export const NavigationBar = (props: NavbarProps) => {
                 <span>{i18n.home}</span>
               </Link>
 
+              <Link href='/alternating-care/plan'>
+                <span>{i18n.care}</span>
+              </Link>
+
               <Link href='/alternating-care/settings'>
                 <span>{i18n.settings}</span>
               </Link>

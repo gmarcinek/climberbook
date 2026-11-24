@@ -22,12 +22,12 @@
 
   &.isAlternating {
     background-image: url(../../../../assets/pas02.png) !important;
-    background-color: $blue-green-700;
+    background-color: var(--care-self-color, #{$blue-green-700});
     background-repeat: repeat;
     color: $neutral-gray-100 !important;
 
     &.isWeekend {
-      background: $blue-green-700;
+      background: var(--care-self-color, #{$blue-green-700});
     }
 
     &.isToday {

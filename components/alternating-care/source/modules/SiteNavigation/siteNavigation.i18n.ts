@@ -1,11 +1,13 @@
 export const siteNavigationI18n = {
   pl: {
-    home: 'Start',
+    home: 'Mój Świat',
+    care: 'Opieka',
     settings: 'Ustawienia',
     menu: 'Menu',
   },
   en: {
-    home: 'Home',
+    home: 'My World',
+    care: 'Care',
     settings: 'Settings',
     menu: 'Menu',
   },

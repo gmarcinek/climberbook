@@ -35,6 +35,7 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
     containerWidth,
     displayStrategy,
     selection,
+    caregiverColors,
   } = useCalenderContext();
 
   const { style } = useDayContainerBreakPointStyles(rowSize, containerWidth);
@@ -97,8 +98,7 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
 
   const itemStyle = useMemo(() => {
     const caregiverColor = caregiverCare
-      ? caregiverCare.style?.background ??
-        caregiverBackground(caregiverCare.groupId)
+      ? caregiverBackground(caregiverCare.groupId, caregiverColors)
       : undefined;
     if (isEventsVisible) {
       return {
@@ -117,6 +117,7 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
       : style.style;
   }, [
     caregiverCare,
+    caregiverColors,
     event?.style?.background,
     style.style,
     isEventsVisible,

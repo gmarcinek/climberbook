@@ -1,4 +1,5 @@
 import { CalendarEvent } from '@api/db/types';
+import type { CaregiverColors } from '@utils/caregiverColors';
 import { createContext, MouseEvent, PointerEvent, useContext } from 'react';
 import { CalendarDayType } from './Calendar.types';
 
@@ -34,6 +35,9 @@ export interface CalenderContextData {
   selection?: string | string[];
   isMultiSelectionMode?: boolean;
   hideSelectionCheckbox?: boolean;
+  isDayDimmed?: (date: string) => boolean;
+  isDayMarked?: (date: string) => boolean;
+  caregiverColors?: CaregiverColors;
 }
 
 export const CalenderContext = createContext<CalenderContextData>({

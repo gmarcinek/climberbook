@@ -59,6 +59,34 @@ export async function toggleCareEventDates(
   });
 }
 
+export async function assignCareDates(
+  assignments: Array<{
+    date: string;
+    groupId: string;
+    style?: CalendarEvent['style'];
+  }>
+) {
+  return careRequest('/api/care/ranges/assign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignments }),
+  });
+}
+
+export async function clearCareRange(start: string, end: string) {
+  const response = await fetch('/api/care/ranges/clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ start, end }),
+    cache: 'no-store',
+  });
+  const payload = (await response.json()) as { removed?: number; error?: string };
+  if (!response.ok) {
+    throw new Error(payload.error ?? 'Nie udało się usunąć opieki.');
+  }
+  return payload.removed ?? 0;
+}
+
 export async function deleteCareEvent(event: CalendarEvent) {
   return careRequest(
     `/api/care/ranges?id=${encodeURIComponent(event.id)}&date=${encodeURIComponent(event.date)}`,

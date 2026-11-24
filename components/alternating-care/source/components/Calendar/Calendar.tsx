@@ -3,9 +3,11 @@
 import useElementSize from '@custom-react-hooks/use-element-size';
 
 import { CalendarEvent } from '@api/db/types';
+import type { CaregiverColors } from '@utils/caregiverColors';
 import { splitEvenly } from '@utils/array';
 import { NUMBER_SEVEN } from '@utils/number';
-import { useMemo } from 'react';
+import { useCaregiverColors } from '@utils/useCaregiverColors';
+import { CSSProperties, useMemo } from 'react';
 import {
   CalenderContext,
   CalenderContextData,
@@ -42,6 +44,11 @@ interface CalendarProps {
   onTouchEnd?: OnDayTouchHandler;
   isMultiSelectionMode?: boolean;
   hideSelectionCheckbox?: boolean;
+  isDayDimmed?: (date: string) => boolean;
+  /** Days drawn with a red cross (e.g. scheduled for removal). */
+  isDayMarked?: (date: string) => boolean;
+  /** Overrides saved caregiver colours (e.g. for a live settings preview). */
+  caregiverColors?: CaregiverColors;
 }
 
 export function Calendar(props: CalendarProps) {
@@ -64,7 +71,16 @@ export function Calendar(props: CalendarProps) {
     onPointerUp,
     onPointerDown,
     selection,
+    isDayDimmed,
+    isDayMarked,
+    caregiverColors: caregiverColorsOverride,
   } = props;
+
+  const savedCaregiverColors = useCaregiverColors();
+  const caregiverColors = caregiverColorsOverride ?? savedCaregiverColors;
+  const selfColor = Object.entries(caregiverColors).find(([subjectId]) =>
+    subjectId.startsWith('self:')
+  )?.[1];
 
   const isSeparateMonthsMode =
     displayStrategy === 'separateMonths' && rowSize === 7;
@@ -107,6 +123,9 @@ export function Calendar(props: CalendarProps) {
       selection,
       isMultiSelectionMode,
       hideSelectionCheckbox,
+      isDayDimmed,
+      isDayMarked,
+      caregiverColors,
     };
   }, [
     isTodayVisible,
@@ -125,6 +144,9 @@ export function Calendar(props: CalendarProps) {
     selection,
     isMultiSelectionMode,
     hideSelectionCheckbox,
+    isDayDimmed,
+    isDayMarked,
+    caregiverColors,
   ]);
 
   return (
@@ -132,7 +154,12 @@ export function Calendar(props: CalendarProps) {
       <div
         ref={setRef}
         className={className}
-        style={{ visibility: size.width > 0 ? 'visible' : 'hidden' }}
+        style={
+          {
+            visibility: size.width > 0 ? 'visible' : 'hidden',
+            ...(selfColor ? { '--care-self-color': selfColor } : {}),
+          } as CSSProperties
+        }
         aria-busy={size.width <= 0}
       >
         {isSeparateMonthsMode ? (

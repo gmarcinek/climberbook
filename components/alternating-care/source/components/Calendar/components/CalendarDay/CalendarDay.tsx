@@ -41,6 +41,8 @@ export default function CalendarDay(props: CalendarDayProps) {
     onPointerUp,
     onPointerDown,
     hideSelectionCheckbox,
+    isDayDimmed,
+    isDayMarked,
   } = useCalenderContext();
 
   const { is380 } = useDayContainetRwd(containerWidth);
@@ -93,6 +95,7 @@ export default function CalendarDay(props: CalendarDayProps) {
       [styles.isMultiEventDay5]: filteredDayEvents.length >= 5,
       [styles.isMultiEventDay7]: filteredDayEvents.length >= 7,
       [styles.isMultiEventDay9]: filteredDayEvents.length >= 9,
+      [styles.isDimmed]: isDayDimmed?.(day.date) ?? false,
     },
     className
   );
@@ -134,6 +137,9 @@ export default function CalendarDay(props: CalendarDayProps) {
       id={`day-${day.date}`}
       style={{ position: 'relative' }}
     >
+      {isDayMarked?.(day.date) && (
+        <span className={styles.markedCross} aria-hidden='true' />
+      )}
       {filteredDayEvents && filteredDayEvents.length >= 1 && (
         <div className={styles.eventCounter}>
           <BiSolidLayer size={is380 ? 14 : 17} />

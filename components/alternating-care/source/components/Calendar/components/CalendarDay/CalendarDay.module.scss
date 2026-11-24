@@ -98,3 +98,36 @@
     0 100%
   );
 }
+
+.isDimmed {
+  opacity: var(--calendar-dimmed-opacity, 0.3);
+  filter: saturate(var(--calendar-dimmed-saturation, 0.5));
+}
+
+.markedCross {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70%;
+    height: 3px;
+    border-radius: 2px;
+    background: #e03b3b;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+  }
+
+  &::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  &::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+}

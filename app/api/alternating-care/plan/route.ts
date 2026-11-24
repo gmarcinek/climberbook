@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { getExperimentalActorId } from '@/lib/server/experimental-actor';
 import { queryPostgres, withPostgresTransaction } from '@/lib/server/postgres';
+import { caregiverBackground } from '@utils/caregiverColors';
 
 export const runtime = 'nodejs';
 
@@ -105,47 +106,26 @@ export async function PUT(request: Request) {
   }
 
   const cycleDays = phases.reduce((sum, phase) => sum + phase.days, 0);
+  if (cycleDays < 1) {
+    return Response.json({ error: 'Cykl jest pusty.' }, { status: 400 });
+  }
   const assignments = new Map<string, { name: string; dates: string[] }>();
-  let phaseIndex = 0;
-  let phaseElapsed = 0;
   for (let offset = 0; offset < days; offset += 1) {
     const date = addDays(startDate, offset);
-    const phase = phases[phaseIndex];
+    let cycleOffset = offset % cycleDays;
+    const phase =
+      phases.find((item) => {
+        if (cycleOffset < item.days) return true;
+        cycleOffset -= item.days;
+        return false;
+      }) ?? phases[0];
     const assignment = assignments.get(phase.caregiverId) ?? {
       name: phase.caregiverId,
       dates: [],
     };
     assignment.dates.push(date);
     assignments.set(phase.caregiverId, assignment);
-    phaseElapsed += 1;
-    if (phaseElapsed >= phase.days) {
-      phaseIndex = (phaseIndex + 1) % phases.length;
-      phaseElapsed = 0;
-    }
   }
-
-  if (cycleDays < 1) {
-    return Response.json({ error: 'Cykl jest pusty.' }, { status: 400 });
-  }
-
-  const palette = [
-    '#9b8d9b',
-    '#8b6f9f',
-    '#b06f65',
-    '#6f8b78',
-    '#8c7a55',
-    '#5f8796',
-  ];
-  const otherSubjects = [
-    ...new Set(
-      phases
-        .map((phase) => phase.caregiverId)
-        .filter((subjectId) => !subjectId.startsWith('self:'))
-    ),
-  ];
-  const positionBySubject = new Map(
-    otherSubjects.map((subjectId, index) => [subjectId, index + 1])
-  );
 
   await withPostgresTransaction(async (client) => {
     await client.query(
@@ -245,10 +225,7 @@ export async function PUT(request: Request) {
             JSON.stringify({
               background: subjectId.startsWith('self:')
                 ? undefined
-                : palette[
-                    Math.max(0, (positionBySubject.get(subjectId) ?? 1) - 1) %
-                      palette.length
-                  ],
+                : caregiverBackground(subjectId),
               color: '#ffffff',
             }),
           ]

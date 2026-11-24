@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useCareHandoffMode } from '@utils/useCareHandoffMode';
 import { useCareAvatars } from '@utils/useCareAvatars';
-import { useOtherParent } from '@utils/useOtherParent';
+import { otherParentSubjectId, useOtherParent } from '@utils/useOtherParent';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { ArrowLeftRight } from 'lucide-react';
 import styles from './CareSummary.module.scss';
@@ -104,7 +104,7 @@ export const CareSummary = ({
   const summary = useMemo(() => {
     if (!query.data) return null;
     const ownSubject = `self:${user.id}`;
-    const otherSubject = `other:${otherParent.userId || 'manual'}`;
+    const otherSubject = otherParentSubjectId(otherParent);
     const subjectsByDate = new Map(
       query.data
         .filter((event) => event.type === CalendarEventType.Alternating)
@@ -165,6 +165,7 @@ export const CareSummary = ({
   }, [
     futureWindowDays,
     otherParent.userId,
+    otherParent.subjectId,
     query.data,
     today,
     upcomingLimit,
@@ -225,6 +226,12 @@ export const CareSummary = ({
     (isMine
       ? mineLabel
       : otherParent.name || (isEnglish ? 'Other parent' : 'Drugi rodzic'));
+  const nextRange = summary.ranges[1];
+  const nextAvatar = nextRange
+    ? nextRange.isMine
+      ? avatars.mine
+      : getAvatar('other', nextRange.subjectId.split(':').slice(1).join(':'))
+    : undefined;
   const daysUntilHandoff = summary.currentTo.diff(dayjs(today), 'day');
   const elapsedDays = dayjs(today).diff(summary.startDate, 'day');
   const currentDay =
@@ -268,11 +275,12 @@ export const CareSummary = ({
 
   return (
     <section className={styles.card}>
+      {action && <div className={styles.cardActions}>{action}</div>}
       <div className={styles.currentCare}>
         <span className={styles.label}>
           {isEnglish ? 'Care provided by' : 'Opiekę sprawuje teraz'}
+          {currentRole && ` - ${currentRole}`}
         </span>
-        <div className={styles.currentCareAction}>{action}</div>
         <div className={styles.currentCarePerson}>
           <span className={styles.currentCareAvatar} aria-hidden>
             {currentAvatar ? (
@@ -284,7 +292,6 @@ export const CareSummary = ({
           <div className={styles.currentCareCopy}>
             <strong className={styles.holder}>
               {holder.replace(/ · .+$/, '')}
-              {currentRole && <small>{currentRole}</small>}
             </strong>
           </div>
         </div>
@@ -304,13 +311,45 @@ export const CareSummary = ({
         </div>
       </div>
 
+      <div className={styles.todayPanel}>
+        <div className={styles.todayRow}>
+          <div className={styles.todayCopy}>
+            <span className={styles.todayLabel}>
+              {isEnglish ? 'Today is' : 'Dzisiaj jest'}
+            </span>
+            <div className={styles.todayDate}>
+              <strong>{dayjs(today).format('D')}</strong>
+              <span>
+                {isEnglish
+                  ? dayjs(today).locale('en').format('MMMM YYYY')
+                  : `${POLISH_MONTHS_GENITIVE[dayjs(today).month()]} ${dayjs(today).format('YYYY')}`}
+              </span>
+            </div>
+          </div>
+          <span className={styles.todayDivider} aria-hidden />
+          <span className={styles.todayCounter}>
+            <strong>
+              {currentDay}/{totalDays}
+            </strong>
+            <small>{isEnglish ? 'care days' : 'dni opieki'}</small>
+          </span>
+        </div>
+        <div
+          className={styles.exchangeProgress}
+          role='progressbar'
+          aria-label={isEnglish ? 'Current care progress' : 'Postęp bieżącej opieki'}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress * 100)}
+        >
+          <span style={{ width: `${progress * 100}%` }} />
+        </div>
+      </div>
+
       <div className={styles.exchangeSection}>
         <div className={styles.exchange}>
-          <span className={styles.exchangeIcon} aria-hidden>
-            <ArrowLeftRight size={19} />
-          </span>
           <span className={styles.upcomingTitle}>
-            {isEnglish ? 'Next handoff' : 'Wymiana'}
+            {isEnglish ? 'Next handoff' : 'Wymiana'} {handoffCountdown}
           </span>
           <div className={styles.exchangeDateRow}>
             <div className={styles.exchangeDate}>
@@ -321,25 +360,30 @@ export const CareSummary = ({
                   : `${POLISH_MONTHS_GENITIVE[summary.currentTo.month()]} ${summary.currentTo.format('YYYY')}`}
               </span>
             </div>
-            <span className={styles.exchangeCountdown}>
-              {handoffCountdown}
-            </span>
+            <div className={styles.exchangeParties} aria-hidden>
+              <span className={styles.exchangeAvatar}>
+                {currentAvatar ? (
+                  <img src={currentAvatar} alt='' />
+                ) : (
+                  holder.charAt(0).toUpperCase()
+                )}
+              </span>
+              <span className={styles.exchangeIcon}>
+                <ArrowLeftRight size={19} />
+              </span>
+              {nextRange && (
+                <span className={styles.exchangeAvatar}>
+                  {nextAvatar ? (
+                    <img src={nextAvatar} alt='' />
+                  ) : (
+                    rangeLabel(nextRange.subjectId, nextRange.isMine)
+                      .charAt(0)
+                      .toUpperCase()
+                  )}
+                </span>
+              )}
+            </div>
           </div>
-          <div
-            className={styles.exchangeProgress}
-            role='progressbar'
-            aria-label={isEnglish ? 'Current care progress' : 'Postęp bieżącej opieki'}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(progress * 100)}
-          >
-            <span style={{ width: `${progress * 100}%` }} />
-          </div>
-          <small className={styles.exchangeProgressLabel}>
-            {isEnglish
-              ? `${currentDay} of ${totalDays} care days`
-              : `${currentDay} z ${totalDays} dni opieki`}
-          </small>
         </div>
       </div>
 

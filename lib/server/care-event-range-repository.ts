@@ -416,3 +416,177 @@ export async function deleteProjectedCareEvent(
     }
   });
 }
+
+const CARE_GROUP_PATTERN = /^CARE:\S{1,250}$/;
+
+// Sets one caregiver per date: every care range (legacy ALTERNATING or
+// CARE:*) covering a given date is cut around it before the new days are
+// inserted, so each day ends up with exactly one caregiver.
+export async function assignCareDates(ownerUserId: string, input: unknown) {
+  if (!input || typeof input !== "object") {
+    throw new CareEventValidationError("Brakuje danych przypisania.");
+  }
+  const candidate = input as Record<string, unknown>;
+  if (!Array.isArray(candidate.assignments) || !candidate.assignments.length) {
+    throw new CareEventValidationError("Lista dni jest pusta.");
+  }
+  if (candidate.assignments.length > 3660) {
+    throw new CareEventValidationError("Za dużo dni w jednym zapisie.");
+  }
+
+  const byDate = new Map<string, StoredEvent>();
+  for (const item of candidate.assignments) {
+    const entry =
+      item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+    if (!isoDate(entry.date)) {
+      throw new CareEventValidationError("Nieprawidłowa data.");
+    }
+    if (
+      typeof entry.groupId !== "string" ||
+      !CARE_GROUP_PATTERN.test(entry.groupId)
+    ) {
+      throw new CareEventValidationError("Nieprawidłowy opiekun.");
+    }
+    const styleValue =
+      entry.style && typeof entry.style === "object"
+        ? (entry.style as Record<string, unknown>)
+        : null;
+    byDate.set(entry.date, {
+      date: entry.date,
+      groupId: entry.groupId,
+      type: "ALTERNATING" as CalendarEvent["type"],
+      issuer: entry.groupId.slice("CARE:".length),
+      name: entry.groupId.slice("CARE:".length),
+      description: "",
+      style:
+        typeof styleValue?.background === "string" &&
+        typeof styleValue.color === "string"
+          ? { background: styleValue.background, color: styleValue.color }
+          : undefined,
+    });
+  }
+
+  const dates = [...byDate.keys()].sort();
+  const blocks: Array<{ start: string; endExclusive: string }> = [];
+  for (const date of dates) {
+    const previous = blocks[blocks.length - 1];
+    if (previous && previous.endExclusive === date) {
+      previous.endExclusive = addDays(date, 1);
+    } else {
+      blocks.push({ start: date, endExclusive: addDays(date, 1) });
+    }
+  }
+
+  await withPostgresTransaction(async (client) => {
+    for (const block of blocks) {
+      await cutCareRanges(client, ownerUserId, block.start, block.endExclusive);
+    }
+
+    for (const range of rowsForEvents([...byDate.values()])) {
+      await client.query(
+        `
+          insert into care_event_ranges (
+            id, owner_user_id, group_id, start_date, end_date, event_type,
+            issuer, name, description, style
+          )
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `,
+        [
+          randomUUID(),
+          ownerUserId,
+          range.groupId,
+          range.date,
+          range.endDate,
+          range.type,
+          range.issuer,
+          range.name ?? "",
+          range.description ?? "",
+          range.style ?? {},
+        ],
+      );
+    }
+  });
+
+  return listCareEvents(ownerUserId, undefined, "ALTERNATING", dates[0], dates[dates.length - 1]);
+}
+
+// Removes care (self and caregivers) on [start, endExclusive), keeping the
+// parts of overlapping ranges that fall outside it.
+async function cutCareRanges(
+  client: PoolClient,
+  ownerUserId: string,
+  start: string,
+  endExclusive: string,
+) {
+  const overlaps = await client.query<CareRangeRow>(
+    `
+      select id, group_id, start_date, end_date, event_type, issuer, name,
+        description, style, created_at, updated_at
+      from care_event_ranges
+      where owner_user_id = $1
+        and (group_id = 'ALTERNATING' or group_id like 'CARE:%')
+        and start_date < $3::date
+        and end_date > $2::date
+      for update
+    `,
+    [ownerUserId, start, endExclusive],
+  );
+  for (const row of overlaps.rows) {
+    await client.query("delete from care_event_ranges where id = $1", [row.id]);
+    const remainders = [
+      row.start_date < start ? { start: row.start_date, end: start } : null,
+      row.end_date > endExclusive
+        ? { start: endExclusive, end: row.end_date }
+        : null,
+    ];
+    for (const remainder of remainders) {
+      if (!remainder) continue;
+      await client.query(
+        `
+          insert into care_event_ranges (
+            id, owner_user_id, group_id, start_date, end_date, event_type,
+            issuer, name, description, style, created_at
+          )
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `,
+        [
+          randomUUID(),
+          ownerUserId,
+          row.group_id,
+          remainder.start,
+          remainder.end,
+          row.event_type,
+          row.issuer,
+          row.name,
+          row.description,
+          row.style ?? {},
+          row.created_at,
+        ],
+      );
+    }
+  }
+  return overlaps.rowCount ?? 0;
+}
+
+export async function clearCareRange(ownerUserId: string, input: unknown) {
+  const candidate =
+    input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  if (!isoDate(candidate.start) || !isoDate(candidate.end)) {
+    throw new CareEventValidationError("Nieprawidłowy zakres dat.");
+  }
+  if (candidate.end < candidate.start) {
+    throw new CareEventValidationError("Data końca jest przed datą startu.");
+  }
+  const today = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Warsaw",
+  }).format(new Date());
+  if (candidate.start <= today) {
+    throw new CareEventValidationError("Można usuwać tylko przyszłą opiekę.");
+  }
+  const start = candidate.start;
+  const endExclusive = addDays(candidate.end, 1);
+  const removed = await withPostgresTransaction((client) =>
+    cutCareRanges(client, ownerUserId, start, endExclusive),
+  );
+  return { removed };
+}

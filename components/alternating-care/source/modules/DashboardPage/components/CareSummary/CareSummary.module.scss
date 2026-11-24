@@ -147,14 +147,89 @@
   }
 }
 
-.currentCareAction {
-  position: absolute;
-  top: 14px;
-  right: 16px;
+.cardActions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 16px;
+  margin-bottom: 8px;
+}
+
+.todayPanel {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  border-radius: 16px;
+  padding: 18px 20px;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.28), transparent 38%),
+    linear-gradient(120deg, #7f1023 0%, #c0262d 52%, #ef5a3c 100%);
+  box-shadow: 0 10px 28px rgba(140, 22, 32, 0.22);
+  color: #fffaf2;
+}
+
+.todayRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.todayCopy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.todayLabel {
+  color: rgba(255, 248, 237, 0.82);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.todayDate {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #fffaf2;
+  text-shadow: 0 1px 2px rgba(73, 18, 18, 0.18);
+
+  strong {
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  span {
+    font-size: 1.1rem;
+    font-weight: 400;
+  }
+}
+
+.todayDivider {
+  width: 1px;
+  align-self: stretch;
+  margin-left: auto;
+  background: rgba(255, 250, 242, 0.35);
+}
+
+.todayCounter {
+  display: grid;
+  justify-items: end;
+
+  strong {
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  small {
+    color: rgba(255, 248, 237, 0.82);
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
 }
 
 .exchangeSection,
@@ -221,10 +296,34 @@
   }
 }
 
+.exchangeParties {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exchangeAvatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
 .exchangeIcon {
-  position: absolute;
-  top: 16px;
-  right: 18px;
   display: grid;
   width: 32px;
   height: 32px;
@@ -240,6 +339,7 @@
   overflow: hidden;
   height: 7px;
   margin-top: 7px;
+  margin-bottom: 0.5rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.18);
 
@@ -254,7 +354,7 @@
 
 .exchangeDateRow {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
@@ -266,7 +366,7 @@
   font-size: clamp(1.05rem, 2vw, 1.25rem);
 
   strong {
-    font-size: 1.9em;
+    font-size: 1.4em;
     font-weight: 800;
     line-height: 1;
   }
@@ -277,18 +377,7 @@
   }
 }
 
-.exchangeCountdown {
-  flex: 0 0 auto;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 0.88rem;
-  font-weight: 500;
-}
 
-.exchangeProgressLabel {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.74rem;
-  text-align: right;
-}
 
 .upcomingRange {
   display: grid;

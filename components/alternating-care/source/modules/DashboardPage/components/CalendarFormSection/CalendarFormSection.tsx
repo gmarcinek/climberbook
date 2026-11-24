@@ -4,6 +4,8 @@ import { CalendarEvent } from '@api/db/types';
 import type { CareEventsQuery } from '@api/db/events/useGetAllEventsQuery';
 import { Stack } from '@components/Stack/Stack';
 import { sortBy } from '@utils/array';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Dispatch,
   SetStateAction,
@@ -15,8 +17,9 @@ import {
 import { CareSummary } from '../CareSummary/CareSummary';
 import { DashboardEventForm } from '../DashboardEventForm/DashboardEventForm';
 import { IncomingEventList } from '../IncomingEventList/IncomingEventList';
-import { CarePlanner } from '../CarePlanner/CarePlanner';
 import styles from './CalendarFormSection.module.scss';
+
+const CARE_PLAN_URL = '/alternating-care/plan';
 
 interface CalendarFormSectionProps {
   fetchEventsQuery: CareEventsQuery;
@@ -47,7 +50,7 @@ export const CalendarFormSection = (props: CalendarFormSectionProps) => {
     endDate,
   } = props;
   const [activeTab, setActiveTab] = useState<'events' | 'care'>('care');
-  const [isPlannerOpen, setIsPlannerOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (selection.size > 0) setActiveTab('events');
@@ -107,6 +110,11 @@ export const CalendarFormSection = (props: CalendarFormSectionProps) => {
 
       {activeTab === 'care' && (
         <section className={styles.carePanel}>
+          <div className={styles.carePanelActions}>
+            <Link href={CARE_PLAN_URL} className={styles.editCareButton}>
+              Edytuj opiekę
+            </Link>
+          </div>
           {careEdit.isActive && (
             <section className={styles.manualCorrections}>
               <header>
@@ -139,7 +147,7 @@ export const CalendarFormSection = (props: CalendarFormSectionProps) => {
                   type='button'
                   onClick={() => {
                     careEdit.cancel();
-                    setIsPlannerOpen(true);
+                    router.push(CARE_PLAN_URL);
                   }}
                   disabled={careEdit.isSaving}
                 >
@@ -167,25 +175,7 @@ export const CalendarFormSection = (props: CalendarFormSectionProps) => {
             windowDays={365}
             upcomingCount='all'
             endDate={endDate}
-            action={
-              <button
-                type='button'
-                className={styles.editCareButton}
-                onClick={careEdit.start}
-                disabled={careEdit.isActive}
-              >
-                Edytuj opiekę
-              </button>
-            }
           />
-          {isPlannerOpen && (
-            <CarePlanner
-              onClose={() => setIsPlannerOpen(false)}
-              onSaved={async () => {
-                await fetchEventsQuery.refetch();
-              }}
-            />
-          )}
         </section>
       )}
     </Stack>

@@ -30,6 +30,7 @@ export function CalendarItemBodyTwoWeeks(
     displayStrategy,
     containerWidth,
     selection,
+    caregiverColors,
   } = useCalenderContext();
   const { isTablet, isMobile } = useBreakpoints();
   const { is608, is1024 } = useDayContainetRwd(containerWidth);
@@ -102,9 +103,7 @@ export function CalendarItemBodyTwoWeeks(
         style={
           caregiverCare
             ? {
-                backgroundColor:
-                  caregiverCare.style?.background ??
-                  caregiverBackground(caregiverCare.groupId),
+                backgroundColor: caregiverBackground(caregiverCare.groupId, caregiverColors),
                 color: '#fff',
               }
             : undefined

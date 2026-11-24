@@ -1,9 +1,9 @@
 import type { CalendarEvent } from '@api/db/types';
 import { normalizeCalendarRange } from '@components/Calendar/Calendar.helpers';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useAppSearchParams } from '@utils/useAppSearchParams';
 import dayjs from 'dayjs';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listCareEvents } from './careEventsApi';
 
 export type CareEventsQuery = {
@@ -13,7 +13,9 @@ export type CareEventsQuery = {
   refetch: () => Promise<unknown>;
 };
 
-const getMonthRange = (date: string) => {
+type LoadedRange = { key: string; start: string; end: string };
+
+const getMonthRange = (date: string): LoadedRange => {
   const month = dayjs(date);
 
   return {
@@ -23,77 +25,53 @@ const getMonthRange = (date: string) => {
   };
 };
 
-const mergeEvents = (
-  current: CalendarEvent[],
-  incoming: CalendarEvent[]
-) => {
-  const events = new Map<string, CalendarEvent>();
+const rangeQuery = (range: LoadedRange) => ({
+  queryKey: ['careEvents', 'month', range.key],
+  queryFn: () => listCareEvents({ start: range.start, end: range.end }),
+  retry: 3,
+  retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 8000),
+});
 
-  current.forEach((event) => {
-    events.set(`${event.groupId}:${event.date}:${event.type}`, event);
-  });
-  incoming.forEach((event) => {
-    events.set(`${event.groupId}:${event.date}:${event.type}`, event);
-  });
-
-  return [...events.values()];
-};
-
+// Every loaded range stays an active query, so invalidation refetches it and the
+// merged list is rebuilt from the latest responses instead of accumulating stale
+// events (e.g. a caregiver that was replaced on a day).
 export const useGetAllEventsQuery = (options?: { lazy?: boolean }) => {
   const lazy = options?.lazy ?? false;
   const { startDate, endDate } = useAppSearchParams();
   const queryClient = useQueryClient();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [edgeError, setEdgeError] = useState(false);
-  const [rangeVersion, setRangeVersion] = useState(0);
-  const loadedRangesRef = useRef(new Map<string, { start: string; end: string }>());
-  const pendingRangesRef = useRef(new Map<string, Promise<CalendarEvent[]>>());
 
-  const initialRange = useMemo(() => {
+  const initialRange = useMemo<LoadedRange>(() => {
     const normalized = normalizeCalendarRange(startDate, endDate);
     return {
       key: `${normalized.start}:${normalized.end}`,
       start: normalized.start,
       end: normalized.end,
     };
-  }, [endDate, lazy, startDate]);
+  }, [endDate, startDate]);
+
+  const [ranges, setRanges] = useState<LoadedRange[]>([initialRange]);
 
   useEffect(() => {
-    setEvents([]);
-    setEdgeError(false);
-    loadedRangesRef.current = new Map([
-      [initialRange.key, { start: initialRange.start, end: initialRange.end }],
-    ]);
-    pendingRangesRef.current.clear();
-    setRangeVersion((version) => version + 1);
-  }, [initialRange.end, initialRange.start]);
+    setRanges([initialRange]);
+  }, [initialRange]);
 
-  const initialQuery = useQuery({
-    queryKey: ['careEvents', 'month', initialRange.key],
-    queryFn: () =>
-      listCareEvents({
-        start: initialRange.start,
-        end: initialRange.end,
-      }),
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
-  });
+  const results = useQueries({ queries: ranges.map(rangeQuery) });
 
-  useEffect(() => {
-    if (initialQuery.data) {
-      setEvents((current) => mergeEvents(current, initialQuery.data ?? []));
-    }
-  }, [initialQuery.data, rangeVersion]);
+  const events = useMemo(() => {
+    const merged = new Map<string, CalendarEvent>();
+    results.forEach((result) => {
+      result.data?.forEach((event) => {
+        merged.set(`${event.groupId}:${event.date}:${event.type}`, event);
+      });
+    });
+    return [...merged.values()];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results.map((result) => result.dataUpdatedAt).join(',')]);
 
   const loadMonth = useCallback(
     async (date: string, ignoreBounds = false) => {
       if (!lazy) return;
       const range = getMonthRange(date);
-      const isAlreadyLoaded = [...loadedRangesRef.current.values()].some(
-        (loadedRange) =>
-          !dayjs(range.start).isBefore(dayjs(loadedRange.start)) &&
-          !dayjs(range.end).isAfter(dayjs(loadedRange.end))
-      );
 
       const normalized = normalizeCalendarRange(startDate, endDate);
       if (
@@ -104,65 +82,31 @@ export const useGetAllEventsQuery = (options?: { lazy?: boolean }) => {
         return;
       }
 
-      if (
-        isAlreadyLoaded ||
-        pendingRangesRef.current.has(range.key)
-      ) {
-        return pendingRangesRef.current.get(range.key);
-      }
+      const isCovered = (loaded: LoadedRange) =>
+        loaded.key === range.key ||
+        (!dayjs(range.start).isBefore(dayjs(loaded.start)) &&
+          !dayjs(range.end).isAfter(dayjs(loaded.end)));
+      const covering = ranges.find(isCovered);
+      if (covering) return queryClient.ensureQueryData(rangeQuery(covering));
 
-      const request = queryClient
-        .fetchQuery({
-          queryKey: ['careEvents', 'month', range.key],
-          queryFn: () => listCareEvents({ start: range.start, end: range.end }),
-        })
-        .then((monthEvents) => {
-          loadedRangesRef.current.set(range.key, {
-            start: range.start,
-            end: range.end,
-          });
-          setEvents((current) => mergeEvents(current, monthEvents));
-          setEdgeError(false);
-          return monthEvents;
-        })
-        .catch((error) => {
-          if (error instanceof DOMException && error.name === 'AbortError') {
-            return [];
-          }
-          setEdgeError(true);
-          throw error;
-        })
-        .finally(() => {
-          pendingRangesRef.current.delete(range.key);
-        });
-
-      pendingRangesRef.current.set(range.key, request);
-      return request;
+      setRanges((current) =>
+        current.some(isCovered) ? current : [...current, range]
+      );
+      return queryClient.ensureQueryData(rangeQuery(range));
     },
-    [endDate, lazy, queryClient, startDate]
+    [endDate, lazy, queryClient, ranges, startDate]
   );
 
-  const refetch = useCallback(async () => {
-    const ranges = [...loadedRangesRef.current.values()];
-    const responses = await Promise.all(
-      ranges.map((range) =>
-        queryClient.fetchQuery({
-          queryKey: ['careEvents', 'month', dayjs(range.start).format('YYYY-MM')],
-          queryFn: () => listCareEvents(range),
-          staleTime: 0,
-        })
-      )
-    );
-
-    setEvents(responses.flat());
-    setEdgeError(false);
-  }, [queryClient]);
+  const refetch = useCallback(
+    () => Promise.all(results.map((result) => result.refetch())),
+    [results]
+  );
 
   return {
     query: {
       data: events,
-      isError: initialQuery.isError || edgeError,
-      isPending: initialQuery.isPending,
+      isError: results.some((result) => result.isError),
+      isPending: results[0]?.isPending ?? true,
       refetch,
     } satisfies CareEventsQuery,
     refetch,

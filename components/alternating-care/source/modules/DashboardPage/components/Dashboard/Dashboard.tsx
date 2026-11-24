@@ -13,7 +13,10 @@ import dayjs from 'dayjs';
 
 import { CalendarRange, PencilLine } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCaregiverColors, useCaregivers } from '@utils/useCaregiverColors';
+import { caregiverBackground } from '@utils/caregiverColors';
+import { colorBlueGreen700 } from '@utils/color';
 import { createPortal } from 'react-dom';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import { useLongPress } from 'use-long-press';
@@ -32,8 +35,7 @@ import { useSelection } from './useSelection';
 
 import { ScrollPane } from '@/components/climberbook/common/ScrollPane';
 import { useBreakpoints } from '@utils/useBreakpoints';
-import { useEventCounter } from '@utils/useEventCounter';
-import { useOtherParent } from '@utils/useOtherParent';
+import { otherParentSubjectId, useOtherParent } from '@utils/useOtherParent';
 import styles from './Dashboard.module.scss';
 
 interface DashboardProps {
@@ -60,9 +62,6 @@ export const Dashboard = (props: DashboardProps) => {
   const userFirstName = user.name.trim().split(/\s+/)[0] || 'Moja';
   const { is1280 } = useBreakpoints();
   const [isMobileLayout, setIsMobileLayout] = useState(false);
-  const { countEvents } = useEventCounter({
-    events: fetchEventsQuery.data,
-  });
 
   const { groupId, startDate, endDate, searchParams } = useAppSearchParams();
   const isPlanInUrl = searchParams.get('plan') === '1';
@@ -200,11 +199,82 @@ export const Dashboard = (props: DashboardProps) => {
   });
 
   const startingDate = dayjs(startDate).format(dateFormat);
-  const alternatingCount = countEvents({
+  const savedCaregivers = useCaregivers();
+  const caregiverColors = useCaregiverColors();
+  // Mirrors the calendar: the first care entry of a day decides who has it,
+  // and days without care belong to the other parent.
+  const careStats = useMemo(() => {
+    if (!startDate || !endDate) return { days: 0, rows: [] };
+    const rangeStart = dayjs(startDate).startOf('month').format(dateFormat);
+    const rangeEnd = dayjs(endDate).endOf('month').format(dateFormat);
+    const days = dayjs(rangeEnd).diff(rangeStart, 'day') + 1;
+    const otherSubject = otherParentSubjectId(otherParent);
+    const ownerByDate = new Map<string, string>();
+    const groupBySubject = new Map<string, string>();
+    for (const event of fetchEventsQuery.data ?? []) {
+      if (
+        event.type !== CalendarEventType.Alternating ||
+        event.date < rangeStart ||
+        event.date > rangeEnd ||
+        ownerByDate.has(event.date)
+      ) {
+        continue;
+      }
+      const subjectId =
+        event.groupId === 'ALTERNATING' || event.groupId?.startsWith('CARE:self:')
+          ? 'self'
+          : event.groupId?.startsWith('CARE:other:') ||
+              event.groupId === `CARE:${otherSubject}`
+            ? 'other'
+            : event.groupId?.replace(/^CARE:/, '') ?? 'other';
+      ownerByDate.set(event.date, subjectId);
+      if (!groupBySubject.has(subjectId)) groupBySubject.set(subjectId, event.groupId);
+    }
+    const counts = new Map<string, number>([['self', 0]]);
+    ownerByDate.forEach((subjectId) =>
+      counts.set(subjectId, (counts.get(subjectId) ?? 0) + 1)
+    );
+    // Days without any care entry are shown separately, not as the other parent's.
+    const unassigned = days - ownerByDate.size;
+    if (unassigned > 0) counts.set('unassigned', unassigned);
+    const nameOf = (subjectId: string) =>
+      subjectId === 'self'
+        ? `Opieka ${userFirstName}`
+        : subjectId === 'other'
+          ? otherParent.name || 'Drugi rodzic'
+          : subjectId === 'unassigned'
+            ? 'Bez opieki'
+            : savedCaregivers.find((item) => item.subjectId === subjectId)
+                ?.name || 'Opiekun';
+    const selfColor =
+      Object.entries(caregiverColors).find(([key]) => key.startsWith('self:'))?.[1] ??
+      colorBlueGreen700;
+    const colorOf = (subjectId: string) => {
+      if (subjectId === 'self') return selfColor;
+      if (subjectId === 'unassigned') return '#c3cbd0';
+      const groupId = groupBySubject.get(subjectId);
+      return groupId ? caregiverBackground(groupId, caregiverColors) : '#9b8d9b';
+    };
+    return {
+      days,
+      rows: [...counts.entries()]
+        .filter(([subjectId, count]) => count > 0 || subjectId === 'self')
+        .map(([subjectId, count]) => ({
+          subjectId,
+          name: nameOf(subjectId),
+          color: colorOf(subjectId),
+          count,
+        })),
+    };
+  }, [
+    caregiverColors,
     endDate,
+    fetchEventsQuery.data,
+    otherParent,
+    savedCaregivers,
     startDate,
-    eventType: CalendarEventType.Alternating,
-  });
+    userFirstName,
+  ]);
 
   return (
     <div
@@ -251,6 +321,9 @@ export const Dashboard = (props: DashboardProps) => {
               aria-current={mobileView === 'add' ? 'page' : undefined}
             >
               Event
+            </Link>
+            <Link href='/alternating-care/plan'>
+              {language === 'en' ? 'Care' : 'Opieka'}
             </Link>
             <Link href='/alternating-care/settings'>
               {language === 'en' ? 'Settings' : 'Ustawienia'}
@@ -400,21 +473,28 @@ export const Dashboard = (props: DashboardProps) => {
 
         {is1280 && !isMobileLayout && (
           <div className={styles.careStatsBar}>
-            <span>
-              Opieka {userFirstName}:{' '}
-              <strong>{alternatingCount.eventCount}</strong>/
-              {alternatingCount.days} dni
-            </span>
-            <span className={styles.careStatsDivider} aria-hidden>
-              ·
-            </span>
-            <span>
-              {otherParent.name || 'Drugi rodzic'}:{' '}
-              <strong>
-                {alternatingCount.days - alternatingCount.eventCount}
-              </strong>
-              /{alternatingCount.days} dni
-            </span>
+            {careStats.rows.map((row, index) => (
+              <Fragment key={row.subjectId}>
+                {index > 0 && (
+                  <span className={styles.careStatsDivider} aria-hidden>
+                    ·
+                  </span>
+                )}
+                <span className={styles.careStatsItem}>
+                  <span
+                    className={styles.careStatsSwatch}
+                    style={{ background: row.color }}
+                  />
+                  {row.name}:{' '}
+                  <strong
+                    style={{
+                      color: `color-mix(in srgb, ${row.color} 70%, #1e1916)`,
+                    }}
+                  >{row.count}</strong>/
+                  {careStats.days} dni
+                </span>
+              </Fragment>
+            ))}
           </div>
         )}
       </div>

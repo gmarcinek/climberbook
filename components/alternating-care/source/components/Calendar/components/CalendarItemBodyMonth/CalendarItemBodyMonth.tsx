@@ -30,6 +30,7 @@ export function CalendarItemBodyMonth(props: CalendarItemBodyMonthProps) {
     selection,
     containerWidth,
     displayStrategy,
+    caregiverColors,
   } = useCalenderContext();
   const { isTablet, isMobile } = useBreakpoints();
   const { is1280, is1024, is1504 } = useDayContainetRwd(containerWidth);
@@ -101,9 +102,7 @@ export function CalendarItemBodyMonth(props: CalendarItemBodyMonthProps) {
         style={
           caregiverCare
             ? {
-                backgroundColor:
-                  caregiverCare.style?.background ??
-                  caregiverBackground(caregiverCare.groupId),
+                backgroundColor: caregiverBackground(caregiverCare.groupId, caregiverColors),
                 color: '#fff',
               }
             : undefined
