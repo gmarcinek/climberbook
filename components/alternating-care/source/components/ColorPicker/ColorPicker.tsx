@@ -1,4 +1,5 @@
 import { hslToHex, reduceSaturation } from '@utils/color';
+import { cssZoom } from '@utils/cssZoom';
 import React, { useState } from 'react';
 import { getHueColor } from './ColorPicker.helpers';
 import HueAndSaturationBar from './HueAndSaturationBar';
@@ -27,7 +28,8 @@ export const ColorPicker = (props: ColorPickerProps) => {
   ) => {
     const isTouchEvent = 'touches' in e;
     const position = isTouchEvent
-      ? e.touches[0].clientX - e.currentTarget.getBoundingClientRect().left
+      ? (e.touches[0].clientX - e.currentTarget.getBoundingClientRect().left) /
+        cssZoom(e.currentTarget)
       : e.nativeEvent.offsetX;
     const width = e.currentTarget.clientWidth;
     updateColor(position, width);

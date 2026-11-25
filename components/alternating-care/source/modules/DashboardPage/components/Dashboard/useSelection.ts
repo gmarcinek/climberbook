@@ -175,10 +175,19 @@ export const useSelection = (props: UseSelectionProps) => {
     onTouchEnd: handleTouchEnd,
   };
 
+  // An empty selection always leaves multi-selection mode.
+  const updateSelection = useCallback((next: Set<string>) => {
+    setSelection(next);
+    if (next.size === 0) {
+      setIsMultiSelectionMode(false);
+      setLastClickedDay(null);
+    }
+  }, []);
+
   return {
     selection,
-    setSelection,
-    handleCancelMultiSelect: () => setSelection(new Set()),
+    setSelection: updateSelection,
+    handleCancelMultiSelect: () => updateSelection(new Set()),
     isMultiSelectionMode,
     setIsMultiSelectionMode,
     lastClickedDay,

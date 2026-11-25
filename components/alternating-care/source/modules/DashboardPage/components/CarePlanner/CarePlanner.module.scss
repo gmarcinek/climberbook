@@ -1,7 +1,7 @@
 .page {
   display: grid;
   overflow: hidden;
-  height: calc(100vh - 48px);
+  height: calc(var(--app-viewport-height) - 48px);
   grid-template-rows: minmax(0, 1fr) auto;
   background: #f8fafb;
 }
@@ -551,7 +551,7 @@
 .save:disabled, .cancel:disabled { opacity: .45; cursor: default; }
 
 @media (max-width: 767px) {
-  .page { overflow: visible; height: auto; min-height: calc(100dvh - 48px); }
+  .page { overflow: visible; height: auto; min-height: calc(var(--app-viewport-height) - 48px); }
   .body { grid-template-columns: 1fr; }
   .summaryPanel { overflow: visible; border-right: 0; border-bottom: 1px solid #e0e7ea; }
   .phase { grid-template-columns: 22px 28px minmax(0, 1fr) 72px 32px; }

@@ -16,6 +16,7 @@ import { DateRangePicker } from '@nextui-org/react';
 import { caregiverBackground } from '@utils/caregiverColors';
 import { useCaregiverColors } from '@utils/useCaregiverColors';
 import { colorBlueGreen700, white } from '@utils/color';
+import { cssZoom } from '@utils/cssZoom';
 import { otherParentSubjectId, useOtherParent } from '@utils/useOtherParent';
 import dayjs from 'dayjs';
 import {
@@ -630,6 +631,7 @@ export function CarePlanner() {
     hoveredDate.current = date;
     hoverTimer.current = setTimeout(() => {
       const rect = dayElement.getBoundingClientRect();
+      const zoom = cssZoom(dayElement);
       const dayEvents = previewEvents.filter((item) => item.date === date);
       const careSubjects = [
         ...new Set(
@@ -644,8 +646,11 @@ export function CarePlanner() {
       ];
       setDayDetails({
         date,
-        top: rect.bottom + 6,
-        left: Math.max(8, Math.min(rect.left, window.innerWidth - 288)),
+        top: rect.bottom / zoom + 6,
+        left: Math.max(
+          8,
+          Math.min(rect.left / zoom, window.innerWidth / zoom - 288)
+        ),
         careSubjects,
         events: dayEvents.filter(
           (item) => item.type !== CalendarEventType.Alternating

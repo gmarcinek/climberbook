@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { mainNavbar } from './constants';
+import { cssZoom } from './cssZoom';
 
 /**
  * Niestandardowy hak `useScrollToId` dostarcza funkcję do przewijania do elementu o określonym identyfikatorze
@@ -52,7 +53,7 @@ export const useScrollToId = () => {
 
       if (element) {
         const position =
-          element.getBoundingClientRect().top +
+          element.getBoundingClientRect().top / cssZoom(element) +
           window.scrollY -
           navbarHeight -
           offset;

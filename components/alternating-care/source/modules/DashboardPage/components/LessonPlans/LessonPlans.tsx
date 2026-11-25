@@ -12,20 +12,24 @@ import {
   schoolSubjectColor,
   wardAge,
 } from '@utils/careWards';
+import { cssZoom } from '@utils/cssZoom';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import {
   Baby,
+  CalendarDays,
   Check,
   Clock3,
   Copy,
-  Eye,
+  Download,
   GraduationCap,
   Lock,
   MapPin,
   Pencil,
   Plus,
+  Search,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -33,6 +37,7 @@ import {
   CSSProperties,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from 'react';
@@ -46,7 +51,9 @@ interface LessonPlansProps {
   loadError: string | null;
   isEnglish: boolean;
   selectedWardId?: string;
-  onSelectWard: (wardId: string) => void;
+  selectedWardAvatar?: string | null;
+  mode: Mode;
+  onModeChange: (mode: Mode) => void;
   onSave: (ward: CareWard) => Promise<unknown>;
 }
 
@@ -130,13 +137,6 @@ const lessonsLabel = (count: number, isEnglish: boolean) => {
     : 'lekcji';
 };
 
-const formatDuration = (minutes: number, isEnglish: boolean) => {
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (!hours) return `${rest} min`;
-  return `${hours} ${isEnglish ? 'h' : 'godz.'}${rest ? ` ${rest} min` : ''}`;
-};
-
 const sameSubject = (left: string, right: string) =>
   left.trim().toLocaleLowerCase('pl') === right.trim().toLocaleLowerCase('pl');
 
@@ -152,13 +152,47 @@ const isPlanActive = (plan: LessonPlan, date: string) =>
 const colorStyle = (color: string) =>
   ({ '--lesson-color': color }) as CSSProperties;
 
+const isLessonPlan = (value: unknown): value is LessonPlan => {
+  if (!value || typeof value !== 'object') return false;
+  const plan = value as Record<string, unknown>;
+  if (!Array.isArray(plan.lessons)) return false;
+  const validOptionalDate = (date: unknown) =>
+    date === undefined ||
+    date === null ||
+    (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date));
+  if (!validOptionalDate(plan.validFrom) || !validOptionalDate(plan.validTo)) {
+    return false;
+  }
+  return plan.lessons.every((value) => {
+    if (!value || typeof value !== 'object') return false;
+    const lesson = value as Record<string, unknown>;
+    return (
+      typeof lesson.id === 'string' &&
+      Number.isInteger(lesson.weekday) &&
+      Number(lesson.weekday) >= 1 &&
+      Number(lesson.weekday) <= 7 &&
+      Number.isInteger(lesson.start) &&
+      Number.isInteger(lesson.end) &&
+      Number(lesson.start) >= 0 &&
+      Number(lesson.end) <= 1440 &&
+      Number(lesson.start) < Number(lesson.end) &&
+      typeof lesson.subject === 'string' &&
+      lesson.subject.trim().length > 0 &&
+      (lesson.room === undefined || typeof lesson.room === 'string') &&
+      (lesson.color === undefined || typeof lesson.color === 'string')
+    );
+  });
+};
+
 export function LessonPlans({
   wards,
   isLoading,
   loadError,
   isEnglish,
   selectedWardId,
-  onSelectWard,
+  selectedWardAvatar,
+  mode,
+  onModeChange,
   onSave,
 }: LessonPlansProps) {
   const children = useMemo(
@@ -168,11 +202,17 @@ export function LessonPlans({
   const selectedWard =
     children.find((ward) => ward.id === selectedWardId) ?? children[0];
   const plan = selectedWard?.lessonPlan ?? EMPTY_LESSON_PLAN;
-  const [mode, setMode] = useState<Mode>('preview');
   const [showWeekend, setShowWeekend] = useState(false);
   const [draft, setDraft] = useState<LessonDraft | null>(null);
+  const [isSubjectOpen, setIsSubjectOpen] = useState(false);
+  const [activeSubjectIndex, setActiveSubjectIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [now, setNow] = useState(() => dayjs());
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [hoverBlock, setHoverBlock] = useState<{
+    weekday: number;
+    start: number;
+  } | null>(null);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(dayjs()), 60_000);
@@ -180,7 +220,7 @@ export function LessonPlans({
   }, []);
 
   useEffect(() => {
-    setMode(plan.lessons.length ? 'preview' : 'edit');
+    onModeChange(plan.lessons.length ? 'preview' : 'edit');
     setShowWeekend(plan.lessons.some((lesson) => lesson.weekday > 5));
     setDraft(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,6 +255,15 @@ export function LessonPlans({
       ].sort((a, b) => a.localeCompare(b, 'pl')),
     [plan.lessons],
   );
+  const matchingSubjects = useMemo(() => {
+    const query = draft?.subject.trim().toLocaleLowerCase('pl') ?? '';
+    return subjects
+      .filter(
+        (subject) =>
+          !query || subject.toLocaleLowerCase('pl').includes(query),
+      )
+      .slice(0, 10);
+  }, [draft?.subject, subjects]);
 
   if (isLoading) {
     return (
@@ -278,10 +327,6 @@ export function LessonPlans({
     : nextLesson
       ? { ...nextLesson, isNow: false }
       : null;
-  const weeklyMinutes = plan.lessons.reduce(
-    (sum, lesson) => sum + lesson.end - lesson.start,
-    0,
-  );
   const visibleWeekdays = WEEKDAYS.filter(
     (day) =>
       day <= 5 || showWeekend || (lessonsByDay.get(day)?.length ?? 0) > 0,
@@ -295,21 +340,16 @@ export function LessonPlans({
     GRID_MIN_END,
     ...plan.lessons.map((lesson) => lesson.end),
   );
-  const gridStart = Math.floor(earliestStart / 60) * 60;
+  const gridStart = Math.max(0, Math.floor(earliestStart / 60) * 60 - 10);
   const gridEnd = Math.min(1440, Math.ceil(latestEnd / 60) * 60);
   const gridHeight = (gridEnd - gridStart) * PX_PER_MINUTE;
+  const firstGridHour = Math.ceil(gridStart / 60);
+  const lastGridHour = Math.floor(gridEnd / 60);
   const gridHours = Array.from(
-    { length: (gridEnd - gridStart) / 60 + 1 },
-    (_, index) => gridStart / 60 + index,
+    { length: lastGridHour - firstGridHour + 1 },
+    (_, index) => firstGridHour + index,
   );
   const age = wardAge(selectedWard.birthDate);
-  const formatShortDate = (date: string) =>
-    new Intl.DateTimeFormat(isEnglish ? 'en-GB' : 'pl-PL', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(dayjs(date).toDate());
-
   const persist = async (nextPlan: LessonPlan, message?: string) => {
     setIsSaving(true);
     try {
@@ -349,9 +389,11 @@ export function LessonPlans({
       subject: '',
       room: '',
     });
+    setIsSubjectOpen(false);
+    setActiveSubjectIndex(0);
   };
 
-  const openLesson = (lesson: Lesson) =>
+  const openLesson = (lesson: Lesson) => {
     setDraft({
       id: lesson.id,
       weekday: lesson.weekday,
@@ -361,6 +403,22 @@ export function LessonPlans({
       room: lesson.room ?? '',
       color: lesson.color,
     });
+    setIsSubjectOpen(false);
+    setActiveSubjectIndex(0);
+  };
+
+  const updateDraftSubject = (subject: string) => {
+    if (!draft) return;
+    const existing = plan.lessons.find(
+      (lesson) =>
+        lesson.id !== draft.id && sameSubject(lesson.subject, subject),
+    );
+    setDraft({
+      ...draft,
+      subject,
+      color: existing ? existing.color : draft.color,
+    });
+  };
 
   const draftStart = draft ? fromTime(draft.start) : null;
   const draftEnd = draft ? fromTime(draft.end) : null;
@@ -474,17 +532,74 @@ export function LessonPlans({
     );
   };
 
-  const updateValidity = (patch: Partial<LessonPlan>) => {
-    const next = { ...plan, ...patch };
-    if (next.validFrom && next.validTo && next.validFrom > next.validTo) {
+  const exportPlan = () => {
+    const fileName = `${selectedWard.name
+      .trim()
+      .toLocaleLowerCase('pl')
+      .replace(/[^a-ząćęłńóśźż0-9]+/gi, '-')}-plan-lekcji.json`;
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            format: 'climberbook-lesson-plan',
+            version: 1,
+            childName: selectedWard.name,
+            plan,
+          },
+          null,
+          2,
+        ),
+      ],
+      { type: 'application/json' },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importPlan = async (file: File) => {
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      const imported =
+        parsed &&
+        typeof parsed === 'object' &&
+        'plan' in parsed &&
+        (parsed as { plan: unknown }).plan
+          ? (parsed as { plan: unknown }).plan
+          : parsed;
+      if (!isLessonPlan(imported)) {
+        toast.error(
+          isEnglish
+            ? 'This file is not a valid lesson plan.'
+            : 'Ten plik nie zawiera poprawnego planu lekcji.',
+        );
+        return;
+      }
+      if (
+        !window.confirm(
+          isEnglish
+            ? 'Replace the current lesson plan with the imported one?'
+            : 'Zastąpić obecny plan lekcji planem z pliku?',
+        )
+      ) {
+        return;
+      }
+      await persist(
+        imported,
+        isEnglish ? 'Lesson plan imported.' : 'Plan lekcji zaimportowany.',
+      );
+    } catch {
       toast.error(
         isEnglish
-          ? 'The end date must be after the start date.'
-          : 'Data końca musi być po dacie początku.',
+          ? 'Could not read the lesson plan file.'
+          : 'Nie udało się odczytać pliku planu lekcji.',
       );
-      return;
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = '';
     }
-    void persist(next);
   };
 
   const renderLessonCard = (
@@ -506,7 +621,12 @@ export function LessonPlans({
           <span>
             {index + 1}. {isEnglish ? 'lesson' : 'lekcja'}
           </span>
-          <span>
+          <span className={styles.lessonMetaTime}>
+            {isNow && (
+              <span className={styles.nowBadge}>
+                {isEnglish ? 'Now' : 'Teraz'}
+              </span>
+            )}
             {toTime(lesson.start)}–{toTime(lesson.end)}
           </span>
         </span>
@@ -522,9 +642,6 @@ export function LessonPlans({
             {lesson.end - lesson.start} min
           </span>
         </span>
-        {isNow && (
-          <span className={styles.nowBadge}>{isEnglish ? 'Now' : 'Teraz'}</span>
-        )}
         {isEditing && (
           <span className={styles.editHint} aria-hidden>
             <Pencil size={14} />
@@ -551,70 +668,27 @@ export function LessonPlans({
 
   return (
     <div className={styles.lessonPlans}>
-      <div className={styles.toolbar}>
-        <div
-          className={styles.childTabs}
-          role="tablist"
-          aria-label={isEnglish ? 'Children' : 'Dzieci'}
-        >
-          {children.map((child) => {
-            const childAge = wardAge(child.birthDate);
-            return (
-              <button
-                key={child.id}
-                type="button"
-                role="tab"
-                aria-selected={child.id === selectedWard.id}
-                className={styles.childTab}
-                onClick={() => onSelectWard(child.id!)}
-              >
-                <span className={styles.childInitial}>
-                  {child.name.trim().charAt(0).toUpperCase()}
-                </span>
-                <span>
-                  <strong>{child.name}</strong>
-                  {childAge !== null && (
-                    <small>{formatAge(childAge, isEnglish)}</small>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <div
-          className={styles.modeSwitch}
-          role="radiogroup"
-          aria-label={isEnglish ? 'Mode' : 'Tryb'}
-        >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={!isEditing}
-            onClick={() => setMode('preview')}
-          >
-            <Eye size={15} aria-hidden />
-            {isEnglish ? 'Preview' : 'Podgląd'}
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={isEditing}
-            onClick={() => setMode('edit')}
-          >
-            <Pencil size={15} aria-hidden />
-            {isEnglish ? 'Edit' : 'Edycja'}
-          </button>
-        </div>
-      </div>
-
       <div className={styles.body}>
-        <section className={styles.widgets}>
-          <div className={styles.widget}>
+        <section className={styles.widget}>
+          <div className={classNames(styles.summarySection, styles.childSummary)}>
+            <span className={styles.summaryAvatar} aria-hidden>
+              {selectedWardAvatar ? (
+                <img src={selectedWardAvatar} alt="" />
+              ) : (
+                selectedWard.name.trim().charAt(0).toUpperCase()
+              )}
+            </span>
+            <div>
+              <strong>{selectedWard.name}</strong>
+              {age !== null && (
+                <span>{formatAge(age, isEnglish)}</span>
+              )}
+            </div>
+          </div>
+          <div className={styles.summarySection}>
             <span className={styles.widgetLabel}>
               {isEnglish ? 'Today' : 'Dzisiaj'} ·{' '}
               {weekdayName(todayWeekday, isEnglish)}
-              {age !== null &&
-                ` · ${selectedWard.name}, ${formatAge(age, isEnglish)}`}
             </span>
             <div className={styles.widgetRow}>
               <div className={styles.widgetValue}>
@@ -656,7 +730,7 @@ export function LessonPlans({
           </div>
 
           <div
-            className={classNames(styles.widget, styles.nextWidget)}
+            className={classNames(styles.summarySection, styles.nextWidget)}
             style={
               spotlight ? colorStyle(lessonColor(spotlight.lesson)) : undefined
             }
@@ -698,81 +772,45 @@ export function LessonPlans({
               </strong>
             )}
           </div>
-
-          <div className={styles.widget}>
-            <span className={styles.widgetLabel}>
-              {isEnglish ? 'Weekly' : 'W tygodniu'}
-            </span>
-            <div className={styles.widgetValue}>
-              <strong>{plan.lessons.length}</strong>
-              <span>
-                {lessonsLabel(plan.lessons.length, isEnglish)} ·{' '}
-                {formatDuration(weeklyMinutes, isEnglish)}
-              </span>
-            </div>
-            {isEditing ? (
-              <div className={styles.validityInputs}>
-                <label>
-                  <span>{isEnglish ? 'from' : 'od'}</span>
-                  <input
-                    type="date"
-                    value={plan.validFrom ?? ''}
-                    disabled={isSaving}
-                    onChange={(event) =>
-                      updateValidity({ validFrom: event.target.value || null })
-                    }
-                  />
-                </label>
-                <label>
-                  <span>{isEnglish ? 'to' : 'do'}</span>
-                  <input
-                    type="date"
-                    value={plan.validTo ?? ''}
-                    disabled={isSaving}
-                    onChange={(event) =>
-                      updateValidity({ validTo: event.target.value || null })
-                    }
-                  />
-                </label>
-              </div>
-            ) : (
-              <span className={styles.widgetFootnote}>
-                {plan.validFrom || plan.validTo
-                  ? `${isEnglish ? 'Valid' : 'Obowiązuje'} ${
-                      plan.validFrom
-                        ? `${isEnglish ? 'from' : 'od'} ${formatShortDate(plan.validFrom)}`
-                        : ''
-                    } ${
-                      plan.validTo
-                        ? `${isEnglish ? 'to' : 'do'} ${formatShortDate(plan.validTo)}`
-                        : ''
-                    }`
-                  : isEnglish
-                    ? 'Valid all year'
-                    : 'Obowiązuje cały rok'}
-              </span>
-            )}
+          <div className={styles.summarySettings}>
+            <button
+              type="button"
+              aria-pressed={showWeekend}
+              aria-label={isEnglish ? 'Show weekend' : 'Pokaż weekend'}
+              title={isEnglish ? 'Show weekend' : 'Pokaż weekend'}
+              onClick={() => setShowWeekend((current) => !current)}
+            >
+              <CalendarDays size={19} aria-hidden />
+            </button>
+            <button
+              type="button"
+              aria-label={isEnglish ? 'Export plan' : 'Eksportuj plan'}
+              title={isEnglish ? 'Export plan' : 'Eksportuj plan'}
+              onClick={exportPlan}
+            >
+              <Download size={19} aria-hidden />
+            </button>
+            <button
+              type="button"
+              disabled={isSaving}
+              aria-label={isEnglish ? 'Import plan' : 'Importuj plan'}
+              title={isEnglish ? 'Import plan' : 'Importuj plan'}
+              onClick={() => importInputRef.current?.click()}
+            >
+              <Upload size={19} aria-hidden />
+            </button>
+            <input
+              ref={importInputRef}
+              className={styles.planFileInput}
+              type="file"
+              accept=".json,application/json"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void importPlan(file);
+              }}
+            />
           </div>
         </section>
-
-        {isEditing && (
-          <div className={styles.editBar}>
-            <span>
-              <Pencil size={14} aria-hidden />
-              {isEnglish
-                ? 'Click a lesson to edit it. Changes are saved immediately.'
-                : 'Kliknij lekcję, aby ją edytować. Zmiany zapisują się od razu.'}
-            </span>
-            <label className={styles.weekendToggle}>
-              <input
-                type="checkbox"
-                checked={showWeekend}
-                onChange={(event) => setShowWeekend(event.target.checked)}
-              />
-              {isEnglish ? 'Show weekend' : 'Pokaż weekend'}
-            </label>
-          </div>
-        )}
 
         {!isEditing && plan.lessons.length === 0 ? (
           <div className={styles.empty}>
@@ -784,7 +822,7 @@ export function LessonPlans({
                 ? `${selectedWard.name} has no lessons yet.`
                 : `${selectedWard.name} nie ma jeszcze lekcji.`}
             </p>
-            <button type="button" onClick={() => setMode('edit')}>
+            <button type="button" onClick={() => onModeChange('edit')}>
               {isEnglish ? 'Create lesson plan' : 'Utwórz plan lekcji'}
             </button>
           </div>
@@ -793,7 +831,20 @@ export function LessonPlans({
             className={styles.timetable}
             style={
               {
-                '--lesson-days': visibleWeekdays.length,
+                '--lesson-columns': visibleWeekdays
+                  .map((weekday) =>
+                    !isEditing && weekday === todayWeekday
+                      ? 'minmax(180px, 1.5fr)'
+                      : 'minmax(180px, 1fr)',
+                  )
+                  .join(' '),
+                '--lesson-columns-compact': visibleWeekdays
+                  .map((weekday) =>
+                    !isEditing && weekday === todayWeekday
+                      ? 'minmax(150px, 1.5fr)'
+                      : 'minmax(150px, 1fr)',
+                  )
+                  .join(' '),
               } as CSSProperties
             }
           >
@@ -807,6 +858,7 @@ export function LessonPlans({
                   key={`header-${weekday}`}
                   className={classNames(styles.dayHeader, {
                     [styles.todayHeader]: isToday,
+                    [styles.previewTodayHeader]: isToday && !isEditing,
                   })}
                 >
                   <div>
@@ -872,12 +924,16 @@ export function LessonPlans({
             {visibleWeekdays.map((weekday) => {
               const dayLessons = lessonsByDay.get(weekday) ?? [];
               const lanes = layoutLessons(dayLessons);
+              const isPaddedTrack =
+                weekday === todayWeekday && !isEditing;
               return (
                 <ol
                   key={`track-${weekday}`}
                   className={classNames(styles.dayTrack, {
                     [styles.editableTrack]: isEditing,
                     [styles.todayTrack]: weekday === todayWeekday,
+                    [styles.previewTodayTrack]:
+                      weekday === todayWeekday && !isEditing,
                   })}
                   style={
                     {
@@ -891,16 +947,79 @@ export function LessonPlans({
                       ? (event) => {
                           if (event.target !== event.currentTarget) return;
                           const offset =
-                            event.clientY -
-                            event.currentTarget.getBoundingClientRect().top;
-                          const minute =
-                            gridStart +
-                            Math.floor(offset / PX_PER_MINUTE / 5) * 5;
+                            (event.clientY -
+                              event.currentTarget.getBoundingClientRect().top) /
+                            cssZoom(event.currentTarget);
+                          const minute = Math.min(
+                            gridEnd - DEFAULT_LESSON_LENGTH,
+                            Math.max(
+                              gridStart,
+                              gridStart +
+                                Math.floor(offset / PX_PER_MINUTE / 5) * 5,
+                            ),
+                          );
                           openNewLesson(weekday, minute);
                         }
                       : undefined
                   }
+                  onMouseMove={
+                    isEditing
+                      ? (event) => {
+                          if (event.target !== event.currentTarget) {
+                            setHoverBlock(null);
+                            return;
+                          }
+                          const offset =
+                            (event.clientY -
+                              event.currentTarget.getBoundingClientRect().top) /
+                            cssZoom(event.currentTarget);
+                          const start = Math.min(
+                            gridEnd - DEFAULT_LESSON_LENGTH,
+                            Math.max(
+                              gridStart,
+                              gridStart +
+                                Math.floor(offset / PX_PER_MINUTE / 5) * 5,
+                            ),
+                          );
+                          setHoverBlock((current) =>
+                            current?.weekday === weekday &&
+                            current.start === start
+                              ? current
+                              : { weekday, start },
+                          );
+                        }
+                      : undefined
+                  }
+                  onMouseLeave={
+                    isEditing ? () => setHoverBlock(null) : undefined
+                  }
                 >
+                  {nowMinute >= gridStart && nowMinute <= gridEnd && (
+                    <li
+                      className={classNames(styles.currentTimeLine, {
+                        [styles.todayTimeLine]: weekday === todayWeekday,
+                      })}
+                      style={{
+                        top: (nowMinute - gridStart) * PX_PER_MINUTE,
+                      }}
+                      aria-hidden
+                    />
+                  )}
+                  {hoverBlock?.weekday === weekday && (
+                    <li
+                      className={styles.hoverLessonBlock}
+                      style={{
+                        top: (hoverBlock.start - gridStart) * PX_PER_MINUTE,
+                        height: DEFAULT_LESSON_LENGTH * PX_PER_MINUTE - 3,
+                      }}
+                      aria-hidden
+                    >
+                      <span>
+                        {toTime(hoverBlock.start)}–
+                        {toTime(hoverBlock.start + DEFAULT_LESSON_LENGTH)}
+                      </span>
+                    </li>
+                  )}
                   {dayLessons.map((lesson, index) => {
                     const lane = lanes.get(lesson.id) ?? {
                       lane: 0,
@@ -917,8 +1036,12 @@ export function LessonPlans({
                         style={{
                           top: (lesson.start - gridStart) * PX_PER_MINUTE,
                           height,
-                          left: `calc(${(lane.lane / lane.columns) * 100}% + 2px)`,
-                          width: `calc(${100 / lane.columns}% - 4px)`,
+                          left: `calc(${(lane.lane / lane.columns) * 100}% + ${
+                            isPaddedTrack ? 16 : 2
+                          }px)`,
+                          width: `calc(${100 / lane.columns}% - ${
+                            isPaddedTrack ? 32 : 4
+                          }px)`,
                         }}
                       >
                         {renderLessonCard(lesson, index, weekday, height)}
@@ -1005,37 +1128,114 @@ export function LessonPlans({
               </header>
 
               <div className={styles.modalBody}>
-                <label className={styles.field}>
-                  <span>{isEnglish ? 'Subject' : 'Przedmiot'}</span>
-                  <input
-                    className={styles.subjectInput}
-                    value={draft.subject}
-                    maxLength={80}
-                    autoFocus
-                    list="lesson-subjects"
-                    placeholder={
-                      isEnglish ? 'e.g. Mathematics' : 'np. Matematyka'
+                <div
+                  className={styles.field}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) {
+                      setIsSubjectOpen(false);
                     }
-                    onChange={(event) => {
-                      const subject = event.target.value;
-                      const existing = plan.lessons.find(
-                        (lesson) =>
-                          lesson.id !== draft.id &&
-                          sameSubject(lesson.subject, subject),
-                      );
-                      setDraft({
-                        ...draft,
-                        subject,
-                        color: existing ? existing.color : draft.color,
-                      });
-                    }}
-                  />
-                  <datalist id="lesson-subjects">
-                    {subjects.map((subject) => (
-                      <option key={subject} value={subject} />
-                    ))}
-                  </datalist>
-                </label>
+                  }}
+                >
+                  <label htmlFor="lesson-subject">
+                    {isEnglish ? 'Subject' : 'Przedmiot'}
+                  </label>
+                  <div className={styles.subjectCombobox}>
+                    <Search size={18} aria-hidden />
+                    <input
+                      id="lesson-subject"
+                      className={styles.subjectInput}
+                      value={draft.subject}
+                      maxLength={80}
+                      autoFocus
+                      autoComplete="off"
+                      role="combobox"
+                      aria-expanded={isSubjectOpen}
+                      aria-controls="lesson-subject-options"
+                      aria-autocomplete="list"
+                      aria-activedescendant={
+                        isSubjectOpen && matchingSubjects[activeSubjectIndex]
+                          ? `lesson-subject-option-${activeSubjectIndex}`
+                          : undefined
+                      }
+                      placeholder={
+                        isEnglish ? 'e.g. Mathematics' : 'np. Matematyka'
+                      }
+                      onFocus={() => {
+                        setIsSubjectOpen(true);
+                        setActiveSubjectIndex(0);
+                      }}
+                      onChange={(event) => {
+                        updateDraftSubject(event.target.value);
+                        setIsSubjectOpen(true);
+                        setActiveSubjectIndex(0);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'ArrowDown') {
+                          event.preventDefault();
+                          setIsSubjectOpen(true);
+                          setActiveSubjectIndex((current) =>
+                            Math.min(
+                              matchingSubjects.length - 1,
+                              current + 1,
+                            ),
+                          );
+                        } else if (event.key === 'ArrowUp') {
+                          event.preventDefault();
+                          setActiveSubjectIndex((current) =>
+                            Math.max(0, current - 1),
+                          );
+                        } else if (event.key === 'Enter' && isSubjectOpen) {
+                          const selected = matchingSubjects[activeSubjectIndex];
+                          if (selected) {
+                            event.preventDefault();
+                            updateDraftSubject(selected);
+                            setIsSubjectOpen(false);
+                          }
+                        } else if (event.key === 'Escape' && isSubjectOpen) {
+                          event.stopPropagation();
+                          setIsSubjectOpen(false);
+                        }
+                      }}
+                    />
+                    {isSubjectOpen && (
+                      <div
+                        id="lesson-subject-options"
+                        className={styles.subjectDropdown}
+                        role="listbox"
+                      >
+                        {matchingSubjects.length ? (
+                          matchingSubjects.map((subject, index) => (
+                            <button
+                              id={`lesson-subject-option-${index}`}
+                              key={subject}
+                              type="button"
+                              role="option"
+                              aria-selected={index === activeSubjectIndex}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onMouseEnter={() => setActiveSubjectIndex(index)}
+                              onClick={() => {
+                                updateDraftSubject(subject);
+                                setIsSubjectOpen(false);
+                              }}
+                            >
+                              <span
+                                className={styles.subjectDot}
+                                style={colorStyle(lessonColor({ subject }))}
+                              />
+                              <span>{subject}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <span className={styles.subjectEmpty}>
+                            {isEnglish
+                              ? 'No suggestions — use your own subject'
+                              : 'Brak podpowiedzi — możesz wpisać własny przedmiot'}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 <fieldset className={styles.field}>
                   <legend>{isEnglish ? 'Day' : 'Dzień'}</legend>
@@ -1058,6 +1258,7 @@ export function LessonPlans({
                     <span>{isEnglish ? 'Start' : 'Początek'}</span>
                     <input
                       type="time"
+                      step={300}
                       value={draft.start}
                       onChange={(event) => {
                         const start = fromTime(event.target.value);
@@ -1082,6 +1283,7 @@ export function LessonPlans({
                     <span>{isEnglish ? 'End' : 'Koniec'}</span>
                     <input
                       type="time"
+                      step={300}
                       value={draft.end}
                       onChange={(event) =>
                         setDraft({ ...draft, end: event.target.value })

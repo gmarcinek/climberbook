@@ -3,12 +3,24 @@
 import { useGetAllEventsQuery } from '@api/db/events/useGetAllEventsQuery';
 import { useAppContext } from '@app/AppContext';
 import { ErrorMessage } from '@components/ErrorMessage/ErrorMessage';
+import {
+  formatAge,
+  wardAge,
+  wardAvatarSubject,
+} from '@utils/careWards';
 import { useAppSearchParams } from '@utils/useAppSearchParams';
+import { useCareAvatars } from '@utils/useCareAvatars';
 import { useCareWards } from '@utils/useCareWards';
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, CalendarDays, GraduationCap } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarDays,
+  Eye,
+  GraduationCap,
+  Pencil,
+} from 'lucide-react';
 import {
   DayPlanPanel,
   monthsInRange,
@@ -25,6 +37,7 @@ export function FullScreenDayPlanPage() {
   const { query, refetch, loadMonth } = useGetAllEventsQuery({ lazy: true });
   const { wards, isLoading: isLoadingWards, error: wardsError, saveWard } =
     useCareWards();
+  const { getAvatar } = useCareAvatars();
   const loadVisibleRange = useCallback(
     (start: string, end: string) => {
       monthsInRange(start, end).forEach((month) => {
@@ -39,6 +52,13 @@ export function FullScreenDayPlanPage() {
   const tab: PlanningTab =
     searchParams.get('tab') === 'lessons' ? 'lessons' : 'plan';
   const selectedWardId = searchParams.get('ward') ?? undefined;
+  const [lessonMode, setLessonMode] = useState<'preview' | 'edit'>('preview');
+  const children = useMemo(
+    () => wards.filter((ward) => ward.kind === 'child' && ward.id),
+    [wards],
+  );
+  const selectedWard =
+    children.find((ward) => ward.id === selectedWardId) ?? children[0];
   const navigate = useCallback(
     (nextTab: PlanningTab, wardId?: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -100,6 +120,70 @@ export function FullScreenDayPlanPage() {
               {isEnglish ? 'Lesson plans' : 'Plany lekcji'}
             </button>
           </nav>
+          {tab === 'lessons' && selectedWard && (
+            <div className={styles.lessonControls}>
+              <div
+                className={styles.childTabs}
+                role="tablist"
+                aria-label={isEnglish ? 'Children' : 'Dzieci'}
+              >
+                {children.map((child) => {
+                  const childAge = wardAge(child.birthDate);
+                  const childAvatar = child.id
+                    ? getAvatar('other', wardAvatarSubject(child.id))
+                    : null;
+                  return (
+                    <button
+                      key={child.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={child.id === selectedWard.id}
+                      className={styles.childTab}
+                      onClick={() => navigate('lessons', child.id)}
+                    >
+                      <span className={styles.childInitial}>
+                        {childAvatar ? (
+                          <img src={childAvatar} alt="" />
+                        ) : (
+                          child.name.trim().charAt(0).toUpperCase()
+                        )}
+                      </span>
+                      <span className={styles.childIdentity}>
+                        <strong>{child.name}</strong>
+                        {childAge !== null && (
+                          <small>{formatAge(childAge, isEnglish)}</small>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div
+                className={styles.modeSwitch}
+                role="radiogroup"
+                aria-label={isEnglish ? 'Mode' : 'Tryb'}
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={lessonMode === 'preview'}
+                  onClick={() => setLessonMode('preview')}
+                >
+                  <Eye size={15} aria-hidden />
+                  {isEnglish ? 'Preview' : 'Podgląd'}
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={lessonMode === 'edit'}
+                  onClick={() => setLessonMode('edit')}
+                >
+                  <Pencil size={15} aria-hidden />
+                  {isEnglish ? 'Edit' : 'Edycja'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         <div className={styles.plan}>
           {tab === 'lessons' ? (
@@ -109,7 +193,13 @@ export function FullScreenDayPlanPage() {
               loadError={wardsError}
               isEnglish={isEnglish}
               selectedWardId={selectedWardId}
-              onSelectWard={(wardId) => navigate('lessons', wardId)}
+              selectedWardAvatar={
+                selectedWard?.id
+                  ? getAvatar('other', wardAvatarSubject(selectedWard.id))
+                  : null
+              }
+              mode={lessonMode}
+              onModeChange={setLessonMode}
               onSave={saveWard}
             />
           ) : (

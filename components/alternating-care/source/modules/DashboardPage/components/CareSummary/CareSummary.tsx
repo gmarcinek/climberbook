@@ -10,7 +10,8 @@ import { useCareHandoffMode } from '@utils/useCareHandoffMode';
 import { useCareAvatars } from '@utils/useCareAvatars';
 import { otherParentSubjectId, useOtherParent } from '@utils/useOtherParent';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight, ChevronLeft } from 'lucide-react';
+import { CareDate } from '../CareDate/CareDate';
 import styles from './CareSummary.module.scss';
 
 const DEFAULT_WINDOW_DAYS = 120;
@@ -34,12 +35,16 @@ const formatPolishDate = (date: dayjs.Dayjs, withYear = true) =>
     withYear ? ` ${date.format('YYYY')}` : ''
   }`;
 
+const formatNumericDate = (date: dayjs.Dayjs) => date.format('DD.MM.YYYY');
+
 interface CareSummaryProps {
   windowDays?: number;
   upcomingCount?: number | 'all';
   endDate?: string;
   action?: ReactNode;
-  section?: 'all' | 'overview' | 'upcoming';
+  section?: 'all' | 'overview' | 'upcoming' | 'micro';
+  /** Micro variant: called when any button is clicked. */
+  onExpand?: () => void;
 }
 
 export const CareSummary = ({
@@ -48,6 +53,7 @@ export const CareSummary = ({
   endDate,
   action,
   section = 'all',
+  onExpand,
 }: CareSummaryProps) => {
   const { user, language } = useAppContext();
   const isEnglish = language === 'en';
@@ -175,6 +181,23 @@ export const CareSummary = ({
     windowDays,
   ]);
 
+  const expandLabel = isEnglish ? 'Expand widgets' : 'Rozwiń widżety';
+  const microExpandButton = (
+    <button
+      type='button'
+      className={`${styles.microButton} ${styles.microControl}`}
+      onClick={onExpand}
+      title={expandLabel}
+      aria-label={expandLabel}
+    >
+      <ChevronLeft size={18} aria-hidden />
+    </button>
+  );
+
+  if (section === 'micro' && (query.isLoading || !summary)) {
+    return <section className={styles.micro}>{microExpandButton}</section>;
+  }
+
   if (query.isLoading) {
     return (
       <section className={styles.card}>
@@ -246,6 +269,71 @@ export const CareSummary = ({
   const handoffCountdown = isEnglish
     ? `in ${daysUntilHandoff} ${daysUntilHandoff === 1 ? 'day' : 'days'}`
     : `za ${daysUntilHandoff} ${daysUntilHandoff === 1 ? 'dzień' : 'dni'}`;
+
+  if (section === 'micro') {
+    const holderName = holder.replace(/ · .+$/, '');
+    return (
+      <section className={styles.micro}>
+        {microExpandButton}
+        <button
+          type='button'
+          className={`${styles.microButton} ${styles.microAvatar}`}
+          onClick={onExpand}
+          title={holderName}
+          aria-label={`${expandLabel}: ${holderName}`}
+        >
+          {currentAvatar ? (
+            <img src={currentAvatar} alt='' />
+          ) : (
+            holder.charAt(0).toUpperCase()
+          )}
+        </button>
+        <button
+          type='button'
+          className={`${styles.microButton} ${styles.microToday}`}
+          onClick={onExpand}
+          title={isEnglish ? 'Care days' : 'Dni opieki'}
+          aria-label={`${expandLabel}: ${currentDay}/${totalDays}`}
+        >
+          <span className={styles.microValue}>
+            <strong>
+              {currentDay}/{totalDays}
+            </strong>
+            <small>{isEnglish ? 'days' : 'dni'}</small>
+          </span>
+        </button>
+        <button
+          type='button'
+          className={`${styles.microButton} ${styles.microExchange}`}
+          onClick={onExpand}
+          title={`${isEnglish ? 'Next handoff' : 'Wymiana'} ${handoffCountdown}`}
+          aria-label={`${expandLabel}: ${daysUntilHandoff}d`}
+        >
+          <span className={styles.microValue}>
+            <strong>{daysUntilHandoff}</strong>
+            <small>
+              {isEnglish
+                ? daysUntilHandoff === 1
+                  ? 'day'
+                  : 'days'
+                : daysUntilHandoff === 1
+                  ? 'dzień'
+                  : 'dni'}
+            </small>
+          </span>
+        </button>
+        <button
+          type='button'
+          className={styles.microDate}
+          onClick={onExpand}
+          title={isEnglish ? 'Today' : 'Dzisiaj'}
+          aria-label={expandLabel}
+        >
+          <CareDate date={dayjs(today)} isEnglish={isEnglish} />
+        </button>
+      </section>
+    );
+  }
   const formatDateRange = (
     from: dayjs.Dayjs,
     to: dayjs.Dayjs,
@@ -282,8 +370,14 @@ export const CareSummary = ({
         <>
       <div className={styles.currentCare}>
         <span className={styles.label}>
-          {isEnglish ? 'Care provided by' : 'Opiekę sprawuje teraz'}
-          {currentRole && ` - ${currentRole}`}
+          <span className={styles.full}>
+            {isEnglish ? 'Care provided by' : 'Opiekę sprawuje teraz'}
+            {currentRole && ` - ${currentRole}`}
+          </span>
+          <span className={styles.short}>
+            {isEnglish ? 'Care by' : 'Opiekę sprawuje'}
+            {currentRole && ` ${currentRole}`}
+          </span>
         </span>
         <div className={styles.currentCarePerson}>
           <span className={styles.currentCareAvatar} aria-hidden>
@@ -295,22 +389,33 @@ export const CareSummary = ({
           </span>
           <div className={styles.currentCareCopy}>
             <strong className={styles.holder}>
-              {holder.replace(/ · .+$/, '')}
+              <span className={styles.full}>
+                {holder.replace(/ · .+$/, '')}
+              </span>
+              <span className={styles.short}>
+                {holder.replace(/ · .+$/, '').trim().split(/\s+/)[0]}
+              </span>
             </strong>
           </div>
         </div>
         <div className={styles.range}>
-          <span>
+          <span className={styles.full}>
             {isEnglish ? 'From ' : 'Od '}
             {isEnglish
               ? summary.startDate.locale('en').format('MMM D, YYYY')
               : formatPolishDate(summary.startDate)}
           </span>
-          <span>
+          <span className={styles.full}>
             {isEnglish ? 'to ' : 'do '}
             {isEnglish
               ? summary.currentTo.locale('en').format('MMM D, YYYY')
               : formatPolishDate(summary.currentTo)}
+          </span>
+          <span className={styles.short}>
+            {formatNumericDate(summary.startDate)}
+          </span>
+          <span className={styles.short}>
+            {formatNumericDate(summary.currentTo)}
           </span>
         </div>
       </div>
@@ -321,14 +426,7 @@ export const CareSummary = ({
             <span className={styles.todayLabel}>
               {isEnglish ? 'Today is' : 'Dzisiaj jest'}
             </span>
-            <div className={styles.todayDate}>
-              <strong>{dayjs(today).format('D')}</strong>
-              <span>
-                {isEnglish
-                  ? dayjs(today).locale('en').format('MMMM YYYY')
-                  : `${POLISH_MONTHS_GENITIVE[dayjs(today).month()]} ${dayjs(today).format('YYYY')}`}
-              </span>
-            </div>
+            <CareDate date={dayjs(today)} isEnglish={isEnglish} />
           </div>
           <span className={styles.todayDivider} aria-hidden />
           <span className={styles.todayCounter}>
@@ -357,12 +455,7 @@ export const CareSummary = ({
           </span>
           <div className={styles.exchangeDateRow}>
             <div className={styles.exchangeDate}>
-              <strong>{summary.currentTo.format('D')}</strong>
-              <span>
-                {isEnglish
-                  ? summary.currentTo.locale('en').format('MMMM, YYYY')
-                  : `${POLISH_MONTHS_GENITIVE[summary.currentTo.month()]} ${summary.currentTo.format('YYYY')}`}
-              </span>
+              <CareDate date={summary.currentTo} isEnglish={isEnglish} />
             </div>
             <div className={styles.exchangeParties} aria-hidden>
               <span className={styles.exchangeAvatar}>

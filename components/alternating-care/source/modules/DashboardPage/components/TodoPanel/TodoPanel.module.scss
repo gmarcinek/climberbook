@@ -148,7 +148,7 @@
 
 .modal {
   width: min(520px, 100%);
-  max-height: min(640px, calc(100vh - 48px));
+  max-height: min(640px, calc(var(--app-viewport-height) - 48px));
   overflow-y: auto;
   border: 1px solid #dce4e8;
   border-radius: 14px;

@@ -6,11 +6,19 @@ import { dateFormat } from '@components/Calendar/Calendar.helpers';
 import type { CareEventsQuery } from '@api/db/events/useGetAllEventsQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { sortBy } from '@utils/array';
+import { cssZoom } from '@utils/cssZoom';
 import { useAppSearchParams } from '@utils/useAppSearchParams';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 
-import { PencilLine } from 'lucide-react';
+import {
+  Expand,
+  ChevronLeft,
+  ChevronRight,
+  PencilLine,
+  Plus,
+  Shrink,
+} from 'lucide-react';
 import Link from 'next/link';
 import {
   Fragment,
@@ -65,6 +73,26 @@ const mobileViewPaths: Record<DashboardMobileView, string> = {
 const MIN_CALENDAR_WIDTH = 420;
 const MIN_PLAN_WIDTH = 470;
 const ADJUSTER_WIDTH = 11;
+const COMPACT_FORM_WIDTH = 320;
+const WIDE_FORM_WIDTH = 520;
+const MICRO_FORM_WIDTH = 50;
+
+// Keeps the minimized day plan mounted (its modal editor can still open) but out of layout.
+const HIDDEN_PLAN_STYLE: CSSProperties = {
+  position: 'absolute',
+  width: 0,
+  height: 0,
+  overflow: 'hidden',
+  visibility: 'hidden',
+};
+
+// Dashboard width in CSS pixels (rect sizes include the desktop zoom).
+const getDashboardWidth = () => {
+  const dashboard = document.getElementById('dashboard');
+  return dashboard
+    ? dashboard.getBoundingClientRect().width / cssZoom(dashboard)
+    : window.innerWidth / cssZoom(document.documentElement);
+};
 
 export const Dashboard = (props: DashboardProps) => {
   const { fetchEventsQuery, loadMonth, mobileView } = props;
@@ -88,13 +116,25 @@ export const Dashboard = (props: DashboardProps) => {
   const [isOtherCareVisible, setIsOtherCareVisible] = useState(true);
   const [isEventsVisible, setIsEventsVisible] = useState(true);
   const [formWidth, setFormWidth] = useState(520);
+  const [isWidgetsMinimized, setIsWidgetsMinimized] = useState(false);
+  const layoutFormWidth = isWidgetsMinimized ? MICRO_FORM_WIDTH : formWidth;
   const [planWidth, setPlanWidth] = useState(650);
+  const [isPlanMinimized, setIsPlanMinimized] = useState(false);
+  const layoutPlanWidth = isPlanMinimized ? MICRO_FORM_WIDTH : planWidth;
   const [noteRequest, setNoteRequest] = useState(0);
   const [noteEditRequest, setNoteEditRequest] = useState<{
     event: CalendarEvent;
     key: number;
   }>();
   const planResizeRef = useRef<{ startX: number; width: number } | null>(null);
+  const [eventRequest, setEventRequest] = useState(0);
+
+  // Note requests bring the minimized plan back.
+  useEffect(() => {
+    if (noteRequest > 0 || noteEditRequest) {
+      setIsPlanMinimized(false);
+    }
+  }, [noteRequest, noteEditRequest]);
   const queryClient = useQueryClient();
   const { updateAllEvents } = useDashboardPageContext();
   const careEdit = useCareEditMode({
@@ -119,16 +159,14 @@ export const Dashboard = (props: DashboardProps) => {
     if (!isDayPlanVisible) return;
 
     const fitColumns = () => {
-      const dashboardWidth =
-        document.getElementById('dashboard')?.getBoundingClientRect().width ??
-        window.innerWidth;
+      const dashboardWidth = getDashboardWidth();
       setPlanWidth((currentPlanWidth) =>
         Math.min(
           currentPlanWidth,
           Math.max(
             MIN_PLAN_WIDTH,
             dashboardWidth -
-              formWidth -
+              layoutFormWidth -
               MIN_CALENDAR_WIDTH -
               ADJUSTER_WIDTH * 2
           )
@@ -139,7 +177,7 @@ export const Dashboard = (props: DashboardProps) => {
     fitColumns();
     window.addEventListener('resize', fitColumns);
     return () => window.removeEventListener('resize', fitColumns);
-  }, [formWidth, isDayPlanVisible]);
+  }, [layoutFormWidth, isDayPlanVisible]);
 
   useEffect(() => {
     if (!isMobileLayout || mobileView !== 'calendar') return;
@@ -219,14 +257,23 @@ export const Dashboard = (props: DashboardProps) => {
       const maxWidth = Math.max(
         minWidth,
         dashboardWidth -
-          planWidth -
+          layoutPlanWidth -
           MIN_CALENDAR_WIDTH -
           ADJUSTER_WIDTH * 2
       );
       return Math.min(Math.max(width, minWidth), maxWidth);
     },
-    [planWidth]
+    [layoutPlanWidth]
   );
+
+  const changeFormWidth = useCallback(
+    (width: number) => {
+      setIsWidgetsMinimized(false);
+      setFormWidth(clampFormWidth(width, getDashboardWidth()));
+    },
+    [clampFormWidth]
+  );
+  const isFormWide = formWidth > (COMPACT_FORM_WIDTH + WIDE_FORM_WIDTH) / 2;
 
   const resizeColumns = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -234,8 +281,13 @@ export const Dashboard = (props: DashboardProps) => {
       const dashboard = event.currentTarget.parentElement;
       if (!dashboard) return;
       const bounds = dashboard.getBoundingClientRect();
+      const zoom = cssZoom(dashboard);
+      setIsWidgetsMinimized(false);
       setFormWidth(
-        clampFormWidth(bounds.right - event.clientX, bounds.width)
+        clampFormWidth(
+          (bounds.right - event.clientX) / zoom,
+          bounds.width / zoom
+        )
       );
     },
     [clampFormWidth]
@@ -243,23 +295,22 @@ export const Dashboard = (props: DashboardProps) => {
 
   const clampPlanWidth = useCallback(
     (width: number) => {
-      const dashboardWidth =
-        document.getElementById('dashboard')?.getBoundingClientRect().width ??
-        window.innerWidth;
+      const dashboardWidth = getDashboardWidth();
       const maxWidth = Math.max(
         MIN_PLAN_WIDTH,
         dashboardWidth -
-          formWidth -
+          layoutFormWidth -
           MIN_CALENDAR_WIDTH -
           ADJUSTER_WIDTH * 2
       );
       return Math.min(Math.max(width, MIN_PLAN_WIDTH), maxWidth);
     },
-    [formWidth]
+    [layoutFormWidth]
   );
 
   const changePlanWidth = useCallback(
     (width: number) => {
+      setIsPlanMinimized(false);
       setPlanWidth(clampPlanWidth(width));
     },
     [clampPlanWidth]
@@ -271,7 +322,13 @@ export const Dashboard = (props: DashboardProps) => {
       if (!event.currentTarget.hasPointerCapture(event.pointerId) || !resize) {
         return;
       }
-      setPlanWidth(clampPlanWidth(resize.width + resize.startX - event.clientX));
+      setIsPlanMinimized(false);
+      setPlanWidth(
+        clampPlanWidth(
+          resize.width +
+            (resize.startX - event.clientX) / cssZoom(event.currentTarget)
+        )
+      );
     },
     [clampPlanWidth]
   );
@@ -375,8 +432,8 @@ export const Dashboard = (props: DashboardProps) => {
       id='dashboard'
       style={
         {
-          '--form-width': `${formWidth}px`,
-          '--plan-width': `${planWidth}px`,
+          '--form-width': `${layoutFormWidth}px`,
+          '--plan-width': `${layoutPlanWidth}px`,
         } as CSSProperties
       }
     >
@@ -600,12 +657,40 @@ export const Dashboard = (props: DashboardProps) => {
               }
             }}
           />
-          <div className={styles.dayPlanContainer}>
+          {isPlanMinimized && (
+            <div className={`${styles.dayPlanContainer} ${styles.microBar}`}>
+              <button
+                type="button"
+                className={styles.microBarButton}
+                onClick={() => setIsPlanMinimized(false)}
+                title={language === 'en' ? 'Expand day plan' : 'Rozwiń plan dnia'}
+                aria-label={
+                  language === 'en' ? 'Expand day plan' : 'Rozwiń plan dnia'
+                }
+              >
+                <ChevronLeft size={18} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className={`${styles.microBarButton} ${styles.microBarAdd}`}
+                onClick={() => setEventRequest((value) => value + 1)}
+                title={language === 'en' ? 'Add event' : 'Dodaj wydarzenie'}
+                aria-label={language === 'en' ? 'Add event' : 'Dodaj wydarzenie'}
+              >
+                <Plus size={20} aria-hidden />
+              </button>
+            </div>
+          )}
+          <div
+            className={styles.dayPlanContainer}
+            style={isPlanMinimized ? HIDDEN_PLAN_STYLE : undefined}
+          >
             <DayPlanPanel
               events={filteredEvents}
               selectedDates={selection}
               planWidth={planWidth}
               onChangeWidth={changePlanWidth}
+              onMinimize={() => setIsPlanMinimized(true)}
               onDatesChange={(dates) =>
                 setSelection(new Set(dates))
               }
@@ -615,6 +700,7 @@ export const Dashboard = (props: DashboardProps) => {
               }}
               noteRequest={noteRequest}
               noteEditRequest={noteEditRequest}
+              eventRequest={eventRequest}
               allowPastNavigation
               onVisibleRangeChange={loadDayPlanRange}
               weekListView
@@ -636,9 +722,10 @@ export const Dashboard = (props: DashboardProps) => {
               event.currentTarget.releasePointerCapture(event.pointerId);
             }}
             onKeyDown={(event) => {
-              const dashboardWidth =
-                event.currentTarget.parentElement?.getBoundingClientRect().width ??
-                0;
+              const parent = event.currentTarget.parentElement;
+              const dashboardWidth = parent
+                ? parent.getBoundingClientRect().width / cssZoom(parent)
+                : 0;
               if (event.key === 'ArrowLeft') {
                 setFormWidth((width) =>
                   clampFormWidth(width + 20, dashboardWidth)
@@ -651,10 +738,60 @@ export const Dashboard = (props: DashboardProps) => {
               }
             }}
           />
+          {isWidgetsMinimized ? (
+            <div className={`${styles.formContainer} ${styles.widgetsMicro}`}>
+              <CareSummary
+                windowDays={365}
+                endDate={endDate}
+                section="micro"
+                onExpand={() => setIsWidgetsMinimized(false)}
+              />
+            </div>
+          ) : (
+          <div className={`${styles.formContainer} ${styles.widgetsColumn}`}>
+            <div className={styles.widgetsHeader}>
+              <span className={styles.widgetsEyebrow}>
+                {language === 'en' ? 'Widgets' : 'Widżety'}
+              </span>
+              <div
+                className={styles.widthToggle}
+                aria-label={
+                  language === 'en' ? 'Widgets width' : 'Szerokość widżetów'
+                }
+              >
+                <button
+                  type="button"
+                  className={!isFormWide ? styles.active : undefined}
+                  onClick={() => changeFormWidth(COMPACT_FORM_WIDTH)}
+                  aria-pressed={!isFormWide}
+                  title={language === 'en' ? 'Narrow panel' : 'Wąski panel'}
+                >
+                  <Shrink size={17} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={isFormWide ? styles.active : undefined}
+                  onClick={() => changeFormWidth(WIDE_FORM_WIDTH)}
+                  aria-pressed={isFormWide}
+                  title={language === 'en' ? 'Wide panel' : 'Szeroki panel'}
+                >
+                  <Expand size={17} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsWidgetsMinimized(true)}
+                  title={
+                    language === 'en' ? 'Minimize widgets' : 'Zminimalizuj widżety'
+                  }
+                >
+                  <ChevronRight size={18} aria-hidden />
+                </button>
+              </div>
+            </div>
           <ScrollPane
-            className={styles.formContainer}
+            className={styles.widgetsScroll}
             contentClassName={styles.formContent}
-            style={{ height: '100%' }}
+            style={{ flex: 1, minHeight: 0 }}
             viewportStyle={{ height: '100%', overflowY: 'auto' }}
           >
             <CareSummary
@@ -678,6 +815,8 @@ export const Dashboard = (props: DashboardProps) => {
               }
             />
           </ScrollPane>
+          </div>
+          )}
         </>
       )}
     </div>

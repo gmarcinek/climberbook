@@ -4,7 +4,7 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  height: calc(100vh - 48px);
+  height: calc(var(--app-viewport-height) - 48px);
   overflow: hidden;
 }
 
@@ -103,6 +103,103 @@
   padding: 24px;
 }
 
+.widgetsMicro {
+  overflow: hidden auto;
+}
+
+.microBar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  // Centers the first 44px button on the expanded header's toggle row (12px + 3px + 30px / 2).
+  padding: 8px 2px 2px;
+}
+
+.microBarButton {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #2d5465;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f4f7;
+  }
+}
+
+.microBarAdd {
+  background: #2d6f8d;
+  color: #fff;
+
+  &:hover {
+    background: #245b74;
+  }
+}
+
+.widgetsColumn {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.widgetsScroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.widgetsHeader {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+}
+
+.widgetsColumn .formContent {
+  padding-top: 0;
+}
+
+.widgetsEyebrow {
+  color: #6b7280;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.widthToggle {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #f1f4f7;
+
+  button {
+    display: grid;
+    width: 34px;
+    height: 30px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #65717c;
+    cursor: pointer;
+    place-items: center;
+  }
+
+  .active {
+    background: #fff;
+    color: #246f91;
+    box-shadow: 0 1px 4px rgba(31, 45, 61, 0.12);
+  }
+}
+
 .columnAdjuster {
   position: relative;
   z-index: 20;
@@ -128,7 +225,7 @@
 .columnAdjuster::after {
   position: absolute;
   top: 50%;
-  left: 4px;
+  left: 3px;
   width: 3px;
   height: 44px;
   border-radius: 2px;
@@ -154,7 +251,7 @@
   }
 
   .calendarContainer {
-    height: calc(100dvh - 48px) !important;
+    height: calc(var(--app-viewport-height) - 48px) !important;
     overflow: hidden;
   }
 

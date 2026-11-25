@@ -7,7 +7,114 @@
   border-radius: 0;
   padding: 0;
   background: #fff;
+  container: care-summary / inline-size;
 }
+
+.short {
+  display: none;
+}
+
+.micro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  // Same top offset as the minimized day plan bar.
+  padding: 8px 2px 2px;
+}
+
+.microButton {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f4f7;
+  color: #2d5465;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.microValue {
+  display: grid;
+  justify-items: center;
+  line-height: 1.05;
+
+  strong {
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  small {
+    opacity: 0.82;
+    font-size: 0.725rem;
+    font-weight: 500;
+  }
+}
+
+.microDate {
+  display: grid;
+  width: 44px;
+  place-items: center;
+  margin-top: 6px;
+  padding: 10px 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #2d5465;
+  cursor: pointer;
+  // Rotates the date 90° clockwise so it reads top to bottom.
+  writing-mode: vertical-rl;
+  text-align: left;
+
+  &:hover {
+    background: #f1f4f7;
+  }
+}
+
+.microControl {
+  background: transparent;
+
+  &:hover {
+    background: #f1f4f7;
+    filter: none;
+  }
+}
+
+.microAvatar {
+  padding: 3px;
+  background: linear-gradient(120deg, #8c23db 0%, #484bb1 48%, #4dadcb 100%);
+  color: #fff;
+
+  img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+}
+
+.microToday {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.28), transparent 38%),
+    linear-gradient(120deg, #7f1023 0%, #c0262d 52%, #ef5a3c 100%);
+  color: #fffaf2;
+}
+
+.microExchange {
+  background: linear-gradient(135deg, #143541, #205b65 60%, #347767);
+  color: #fff;
+}
+
 
 .emptyCare {
   display: flex;
@@ -53,6 +160,10 @@
   color: #1e1916;
   font-size: 1.8rem;
   line-height: 1.15;
+
+  @media (max-width: 1919.98px) {
+    font-size: 1.6rem;
+  }
 }
 
 .range {
@@ -188,25 +299,6 @@
   letter-spacing: 0.04em;
 }
 
-.todayDate {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  color: #fffaf2;
-  text-shadow: 0 1px 2px rgba(73, 18, 18, 0.18);
-
-  strong {
-    font-size: 2.6rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  span {
-    font-size: 1.1rem;
-    font-weight: 400;
-  }
-}
-
 .todayDivider {
   width: 1px;
   align-self: stretch;
@@ -229,6 +321,7 @@
     color: rgba(255, 248, 237, 0.82);
     font-size: 0.72rem;
     font-weight: 500;
+    white-space: nowrap;
   }
 }
 
@@ -360,21 +453,7 @@
 }
 
 .exchangeDate {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  font-size: clamp(1.05rem, 2vw, 1.25rem);
-
-  strong {
-    font-size: 1.4em;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  span {
-    font-weight: 400;
-    text-transform: none;
-  }
+  min-width: 0;
 }
 
 
@@ -444,5 +523,73 @@
     font-size: 0.65rem;
     font-weight: 600;
     text-align: right;
+  }
+}
+
+@container care-summary (max-width: 400px) {
+  .full {
+    display: none;
+  }
+
+  .short {
+    display: inline;
+  }
+
+  .currentCare,
+  .todayPanel {
+    padding: 14px 16px;
+  }
+
+  .currentCare .currentCareAvatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .holder {
+    font-size: 1.35rem;
+  }
+
+  .range {
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .todayPanel {
+    margin-top: 10px;
+  }
+
+  .exchangeSection {
+    margin-top: 14px;
+  }
+
+  .exchange {
+    padding: 14px 16px;
+  }
+
+  .exchangeDateRow {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-self: stretch;
+    gap: 10px;
+  }
+
+  .currentCare,
+  .exchange {
+    justify-items: end;
+    text-align: right;
+  }
+
+  .currentCare .range {
+    justify-self: stretch;
+    justify-content: space-between;
+  }
+
+  .currentCare .label,
+  .currentCare .currentCarePerson,
+  .exchange .upcomingTitle,
+  .exchange .exchangeDate {
+    justify-self: start;
+    align-self: flex-start;
+    text-align: left;
   }
 }

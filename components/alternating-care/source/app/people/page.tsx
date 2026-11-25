@@ -79,6 +79,7 @@ type WardDraft = {
   kind: WardKind;
   note: string;
   birthDate: string;
+  birthDateInput: string;
 };
 
 const EMPTY_WARD_DRAFT: WardDraft = {
@@ -86,6 +87,25 @@ const EMPTY_WARD_DRAFT: WardDraft = {
   kind: 'child',
   note: '',
   birthDate: '',
+  birthDateInput: '',
+};
+
+const parsePolishDate = (value: string) => {
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+  if (!match) return '';
+  const [, day, month, year] = match;
+  const iso = `${year}-${month}-${day}`;
+  const parsed = dayjs(iso);
+  return parsed.isValid() &&
+    parsed.format('YYYY-MM-DD') === iso &&
+    iso <= dayjs().format('YYYY-MM-DD')
+    ? iso
+    : '';
+};
+
+const formatBirthDateInput = (value: string, isEnglish: boolean) => {
+  if (!value || isEnglish) return value;
+  return dayjs(value).format('DD.MM.YYYY');
 };
 
 const defaultCareColor = (subjectId: string) =>
@@ -465,6 +485,18 @@ export default function PeoplePage() {
   }, []);
 
   const saveWard = async (draft: WardDraft) => {
+    if (
+      draft.kind === 'child' &&
+      draft.birthDateInput &&
+      !draft.birthDate
+    ) {
+      setWardError(
+        isEnglish
+          ? 'Enter a valid date in YYYY-MM-DD format.'
+          : 'Wpisz poprawną datę w formacie DD.MM.RRRR.'
+      );
+      return;
+    }
     setIsSavingWard(true);
     try {
       const response = await fetch('/api/alternating-care/wards', {
@@ -573,12 +605,24 @@ export default function PeoplePage() {
             {draftAge !== null && ` ? ${formatAge(draftAge, isEnglish)}`}
           </span>
           <input
-            type='date'
-            value={wardDraft.birthDate}
-            max={dayjs().format('YYYY-MM-DD')}
-            onChange={(event) =>
-              setWardDraft({ ...wardDraft, birthDate: event.target.value })
+            type={isEnglish ? 'date' : 'text'}
+            value={
+              isEnglish ? wardDraft.birthDate : wardDraft.birthDateInput
             }
+            max={isEnglish ? dayjs().format('YYYY-MM-DD') : undefined}
+            inputMode={isEnglish ? undefined : 'numeric'}
+            placeholder={isEnglish ? undefined : 'DD.MM.RRRR'}
+            maxLength={isEnglish ? undefined : 10}
+            onChange={(event) => {
+              const birthDateInput = event.target.value;
+              setWardDraft({
+                ...wardDraft,
+                birthDateInput,
+                birthDate: isEnglish
+                  ? birthDateInput
+                  : parsePolishDate(birthDateInput),
+              });
+            }}
           />
         </label>
       )}
@@ -1096,6 +1140,10 @@ export default function PeoplePage() {
                             kind: ward.kind,
                             note: ward.note ?? '',
                             birthDate: ward.birthDate ?? '',
+                            birthDateInput: formatBirthDateInput(
+                              ward.birthDate ?? '',
+                              isEnglish
+                            ),
                           })
                         }
                       >

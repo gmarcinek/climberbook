@@ -1,8 +1,7 @@
 // The app navbar (h-12) stays above the page, so the page fills the rest.
 .page {
   display: flex;
-  height: calc(100vh - 48px);
-  height: calc(100dvh - 48px);
+  height: calc(var(--app-viewport-height) - 48px);
   min-height: 420px;
   flex-direction: column;
   padding: 16px;
@@ -61,6 +60,118 @@
   }
 }
 
+.lessonControls {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.childTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.childTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #dce3e7;
+  border-radius: 8px;
+  padding: 4px 14px 4px 8px;
+  background: #fff;
+  color: #33454d;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f5f7;
+  }
+
+  &[aria-selected='true'] {
+    border-color: transparent;
+    background: #2d5465;
+    color: #fff;
+
+    .childInitial {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    small {
+      color: rgba(255, 248, 237, 0.82);
+    }
+  }
+}
+
+.childInitial {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8f0f2;
+  color: #2d5465;
+  font-size: 0.72rem;
+  font-weight: 800;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.childIdentity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+
+  strong {
+    font-size: inherit;
+  }
+
+  small {
+    color: #788088;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+}
+
+.modeSwitch {
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid #dfe6eb;
+  border-radius: 10px;
+  padding: 3px;
+  background: #fff;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 7px;
+    padding: 6px 12px;
+    background: transparent;
+    color: #4f5960;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &[aria-checked='true'] {
+      background: #2d5465;
+      color: #fff;
+    }
+  }
+}
+
 .plan {
   display: grid;
   min-height: 0;
@@ -87,5 +198,9 @@
   .plan {
     border: 0;
     border-radius: 0;
+  }
+
+  .lessonControls {
+    flex-basis: 100%;
   }
 }

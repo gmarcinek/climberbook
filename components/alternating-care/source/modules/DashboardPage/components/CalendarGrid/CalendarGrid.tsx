@@ -8,6 +8,7 @@ import {
 } from '@components/Calendar/Calendar.helpers';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { generateAbsArray } from '@utils/array';
+import { cssZoom } from '@utils/cssZoom';
 import { useAppSearchParams } from '@utils/useAppSearchParams';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
@@ -148,7 +149,8 @@ export const CalendarGrid = (props: CalendarGridProps) => {
     if (!container) return;
 
     const updateColumns = () => {
-      const availableWidth = container.getBoundingClientRect().width;
+      const availableWidth =
+        container.getBoundingClientRect().width / cssZoom(container);
       const columns = Math.max(
         1,
         Math.min(

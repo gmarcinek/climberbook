@@ -3,6 +3,7 @@
 import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import { deleteCareEvent } from '@api/db/events/careEventsApi';
 import { useAppContext } from '@app/AppContext';
+import { cssZoom } from '@utils/cssZoom';
 import { useAppSearchParams } from '@utils/useAppSearchParams';
 import {
   useEffect,
@@ -43,9 +44,13 @@ interface DayPlanPanelProps {
   onEventsUpdated: () => void;
   onChangeWidth: (width: number) => void;
   noteRequest?: number;
+  /** Incrementing value opens the new event form. */
+  eventRequest?: number;
   noteEditRequest?: { event: CalendarEvent; key: number };
   saveRedirectPath?: string;
   showWidthControls?: boolean;
+  /** Shows a minimize button next to the width toggle. */
+  onMinimize?: () => void;
   modalEventEditor?: boolean;
   weekListView?: boolean;
   monthWeekColumns?: boolean;
@@ -243,9 +248,11 @@ export function DayPlanPanel({
   onEventsUpdated,
   onChangeWidth,
   noteRequest = 0,
+  eventRequest = 0,
   noteEditRequest,
   saveRedirectPath,
   showWidthControls = true,
+  onMinimize,
   modalEventEditor = false,
   weekListView = false,
   monthWeekColumns = false,
@@ -408,8 +415,9 @@ export function DayPlanPanel({
       const target = Math.max(
         0,
         body.scrollTop +
-          scale.getBoundingClientRect().top -
-          body.getBoundingClientRect().top +
+          (scale.getBoundingClientRect().top -
+            body.getBoundingClientRect().top) /
+            cssZoom(body) +
           defaultStart.offsetTop -
           stickyOffset,
       );
@@ -560,6 +568,11 @@ export function DayPlanPanel({
   };
 
   useEffect(() => {
+    if (eventRequest <= 0) return;
+    openEventForm();
+  }, [eventRequest]);
+
+  useEffect(() => {
     if (noteRequest <= 0) return;
     const date = currentDate;
     setEditingEvent(undefined);
@@ -651,7 +664,7 @@ export function DayPlanPanel({
       onClick={() => openEventForm()}
     >
       <Plus size={17} aria-hidden />
-      {isPolish ? 'Dodaj wydarzenie' : 'Add event'}
+      Event
     </button>
   );
   const rangeLabel =
@@ -1195,6 +1208,17 @@ export function DayPlanPanel({
                     >
                       <Expand size={17} aria-hidden />
                     </button>
+                    {onMinimize && (
+                      <button
+                        type="button"
+                        onClick={onMinimize}
+                        title={
+                          isPolish ? 'Zminimalizuj plan dnia' : 'Minimize day plan'
+                        }
+                      >
+                        <ChevronRight size={18} aria-hidden />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

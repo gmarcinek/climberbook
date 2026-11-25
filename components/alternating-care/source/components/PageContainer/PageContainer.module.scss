@@ -4,7 +4,7 @@
 
 .scrollable {
   width: 100%;
-  height: calc(100dvh - 48px);
+  height: calc(var(--app-viewport-height) - 48px);
   overflow-y: auto;
   overscroll-behavior: contain;
 

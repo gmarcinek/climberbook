@@ -7,6 +7,7 @@ import { RangeNavigation } from '@components/RangeNavigation/RangeNavigation';
 import { DashboardEventForm } from '@modules/DashboardPage/components/DashboardEventForm/DashboardEventForm';
 import { UseQueryResult } from '@tanstack/react-query';
 import { generateAbsArray } from '@utils/array';
+import { cssZoom } from '@utils/cssZoom';
 import { useAppSearchParams } from '@utils/useAppSearchParams';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
@@ -83,10 +84,12 @@ export const EditFormCalendar = (props: EventFormCalendarProps) => {
       const page = event.currentTarget.parentElement;
       if (!page) return;
       const bounds = page.getBoundingClientRect();
+      const zoom = cssZoom(page);
+      const width = bounds.width / zoom;
       setFormWidth(
         Math.min(
-          Math.max(bounds.width * 0.15, bounds.right - event.clientX),
-          bounds.width * 0.75
+          Math.max(width * 0.15, (bounds.right - event.clientX) / zoom),
+          width * 0.75
         )
       );
     },
@@ -149,7 +152,7 @@ export const EditFormCalendar = (props: EventFormCalendarProps) => {
         onKeyDown={(event) => {
           const page = event.currentTarget.parentElement;
           if (!page) return;
-          const width = page.getBoundingClientRect().width;
+          const width = page.getBoundingClientRect().width / cssZoom(page);
           if (event.key === 'ArrowLeft') {
             setFormWidth((current) => Math.min(width * 0.75, current + 20));
           }
