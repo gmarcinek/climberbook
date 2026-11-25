@@ -110,7 +110,9 @@ export const IncomingEventList = (props: IncomingEventListProps) => {
         .format(dateFormat);
 
       router.push(
-        `/alternating-care/edit?groupId=${event.groupId}&startDate=${startDate}&endDate=${endDate}`
+        `/alternating-care/edit?groupId=${event.groupId}&startDate=${startDate}&endDate=${endDate}&returnUrl=${encodeURIComponent(
+          `${window.location.pathname}${window.location.search}`
+        )}`
       );
     }, [event.date, event.groupId]);
 

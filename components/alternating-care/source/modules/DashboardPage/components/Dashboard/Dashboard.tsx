@@ -2,7 +2,6 @@
 
 import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import { useAppContext } from '@app/AppContext';
-import { Calendar } from '@components/Calendar/Calendar';
 import { dateFormat } from '@components/Calendar/Calendar.helpers';
 import type { CareEventsQuery } from '@api/db/events/useGetAllEventsQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,9 +10,16 @@ import { useAppSearchParams } from '@utils/useAppSearchParams';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 
-import { CalendarRange, PencilLine } from 'lucide-react';
+import { PencilLine } from 'lucide-react';
 import Link from 'next/link';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useCaregiverColors, useCaregivers } from '@utils/useCaregiverColors';
 import { caregiverBackground } from '@utils/caregiverColors';
 import { colorBlueGreen700 } from '@utils/color';
@@ -21,16 +27,17 @@ import { createPortal } from 'react-dom';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import { useLongPress } from 'use-long-press';
 import { useDashboardPageContext } from '@modules/DashboardPage/DashboardPage.context';
-import { CalendarFormSection } from '../CalendarFormSection/CalendarFormSection';
 import { CalendarGrid } from '../CalendarGrid/CalendarGrid';
 import { CalendarSettingsSection } from '../CalendarSettingsSection/CalendarSettingsSection';
 import { CareSummary } from '../CareSummary/CareSummary';
+import { AllDayEventsPanel } from '../AllDayEventsPanel/AllDayEventsPanel';
+import { TodoPanel } from '../TodoPanel/TodoPanel';
+import { DayPlanPanel, monthsInRange } from '../DayPlanPanel/DayPlanPanel';
 import {
   MOBILE_SELECTION_STORAGE_KEY,
   MobileEventForm,
 } from '../MobileEventForm/MobileEventForm';
 import { useCareEditMode } from './useCareEditMode';
-import { useRowSize } from './useRowSize';
 import { useSelection } from './useSelection';
 
 import { ScrollPane } from '@/components/climberbook/common/ScrollPane';
@@ -55,6 +62,10 @@ const mobileViewPaths: Record<DashboardMobileView, string> = {
   add: '/alternating-care/add',
 };
 
+const MIN_CALENDAR_WIDTH = 420;
+const MIN_PLAN_WIDTH = 470;
+const ADJUSTER_WIDTH = 11;
+
 export const Dashboard = (props: DashboardProps) => {
   const { fetchEventsQuery, loadMonth, mobileView } = props;
   const { user, language } = useAppContext();
@@ -64,22 +75,26 @@ export const Dashboard = (props: DashboardProps) => {
   const [isMobileLayout, setIsMobileLayout] = useState(false);
 
   const { groupId, startDate, endDate, searchParams } = useAppSearchParams();
-  const isPlanInUrl = searchParams.get('plan') === '1';
   const {
     selection,
     handlers,
     isMultiSelectionMode,
     setIsMultiSelectionMode,
-    handleCancelMultiSelect,
     setSelection,
   } = useSelection({
     isMultiSelectionAvailable: true,
   });
-  const [isPlanVisible, setIsPlanVisible] = useState(isPlanInUrl);
   const [isAlternatingVisible, setIsAlternatingVisible] = useState(true);
   const [isOtherCareVisible, setIsOtherCareVisible] = useState(true);
   const [isEventsVisible, setIsEventsVisible] = useState(true);
   const [formWidth, setFormWidth] = useState(520);
+  const [planWidth, setPlanWidth] = useState(650);
+  const [noteRequest, setNoteRequest] = useState(0);
+  const [noteEditRequest, setNoteEditRequest] = useState<{
+    event: CalendarEvent;
+    key: number;
+  }>();
+  const planResizeRef = useRef<{ startX: number; width: number } | null>(null);
   const queryClient = useQueryClient();
   const { updateAllEvents } = useDashboardPageContext();
   const careEdit = useCareEditMode({
@@ -89,11 +104,42 @@ export const Dashboard = (props: DashboardProps) => {
   const isCareEditActive =
     careEdit.isActive &&
     ((!isMobileLayout) || mobileView === 'calendar');
+  const isDayPlanVisible = is1280 && !isMobileLayout;
   const emptySelection = useMemo(() => new Set<string>(), []);
+  const loadDayPlanRange = useCallback(
+    (start: string, end: string) => {
+      monthsInRange(start, end).forEach((month) => {
+        void loadMonth(month, true);
+      });
+    },
+    [loadMonth]
+  );
 
   useEffect(() => {
-    setIsPlanVisible(isPlanInUrl);
-  }, [isPlanInUrl]);
+    if (!isDayPlanVisible) return;
+
+    const fitColumns = () => {
+      const dashboardWidth =
+        document.getElementById('dashboard')?.getBoundingClientRect().width ??
+        window.innerWidth;
+      setPlanWidth((currentPlanWidth) =>
+        Math.min(
+          currentPlanWidth,
+          Math.max(
+            MIN_PLAN_WIDTH,
+            dashboardWidth -
+              formWidth -
+              MIN_CALENDAR_WIDTH -
+              ADJUSTER_WIDTH * 2
+          )
+        )
+      );
+    };
+
+    fitColumns();
+    window.addEventListener('resize', fitColumns);
+    return () => window.removeEventListener('resize', fitColumns);
+  }, [formWidth, isDayPlanVisible]);
 
   useEffect(() => {
     if (!isMobileLayout || mobileView !== 'calendar') return;
@@ -108,14 +154,23 @@ export const Dashboard = (props: DashboardProps) => {
   }, [isMobileLayout, mobileView, selection]);
 
   const mobileHref = useCallback(
-    (view: DashboardMobileView, plan = isPlanVisible) => {
+    (view: DashboardMobileView) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (plan) params.set('plan', '1');
-      else params.delete('plan');
+      params.delete('returnUrl');
+      params.delete('plan');
+      if (view === 'add') {
+        const returnParams = new URLSearchParams(params);
+        params.set(
+          'returnUrl',
+          `${mobileViewPaths[mobileView]}${
+            returnParams.toString() ? `?${returnParams.toString()}` : ''
+          }`
+        );
+      }
       const query = params.toString();
       return `${mobileViewPaths[view]}${query ? `?${query}` : ''}`;
     },
-    [isPlanVisible, searchParams]
+    [mobileView, searchParams]
   );
 
   useEffect(() => {
@@ -143,10 +198,8 @@ export const Dashboard = (props: DashboardProps) => {
   }, []);
 
   const dashboardClasses = classNames(styles.dashboard, {
-    [styles.isPlanVisible]: isPlanVisible,
+    [styles.withDayPlan]: isDayPlanVisible,
   });
-
-  const formClasses = classNames(styles.formContainer);
 
   const handleLongPress = useCallback(() => {
     setIsMultiSelectionMode(true);
@@ -160,22 +213,67 @@ export const Dashboard = (props: DashboardProps) => {
     cancelOutsideElement: true,
   });
 
-  // Resize limits stay identical for pointer and keyboard input.
+  const clampFormWidth = useCallback(
+    (width: number, dashboardWidth: number) => {
+      const minWidth = 320;
+      const maxWidth = Math.max(
+        minWidth,
+        dashboardWidth -
+          planWidth -
+          MIN_CALENDAR_WIDTH -
+          ADJUSTER_WIDTH * 2
+      );
+      return Math.min(Math.max(width, minWidth), maxWidth);
+    },
+    [planWidth]
+  );
+
   const resizeColumns = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
       const dashboard = event.currentTarget.parentElement;
       if (!dashboard) return;
       const bounds = dashboard.getBoundingClientRect();
-      const minWidth = bounds.width * 0.15;
-      const maxWidth = bounds.width * 0.75;
-      const nextWidth = Math.min(
-        Math.max(minWidth, bounds.right - event.clientX),
-        maxWidth
+      setFormWidth(
+        clampFormWidth(bounds.right - event.clientX, bounds.width)
       );
-      setFormWidth(nextWidth);
     },
-    []
+    [clampFormWidth]
+  );
+
+  const clampPlanWidth = useCallback(
+    (width: number) => {
+      const dashboardWidth =
+        document.getElementById('dashboard')?.getBoundingClientRect().width ??
+        window.innerWidth;
+      const maxWidth = Math.max(
+        MIN_PLAN_WIDTH,
+        dashboardWidth -
+          formWidth -
+          MIN_CALENDAR_WIDTH -
+          ADJUSTER_WIDTH * 2
+      );
+      return Math.min(Math.max(width, MIN_PLAN_WIDTH), maxWidth);
+    },
+    [formWidth]
+  );
+
+  const changePlanWidth = useCallback(
+    (width: number) => {
+      setPlanWidth(clampPlanWidth(width));
+    },
+    [clampPlanWidth]
+  );
+
+  const resizePlanColumn = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const resize = planResizeRef.current;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId) || !resize) {
+        return;
+      }
+      setPlanWidth(clampPlanWidth(resize.width + resize.startX - event.clientX));
+    },
+    [clampPlanWidth]
   );
 
   const filteredEvents = useMemo(() => {
@@ -194,11 +292,6 @@ export const Dashboard = (props: DashboardProps) => {
     return sortBy(data, 'creationTime');
   }, [fetchEventsQuery.data, filteredEvents]);
 
-  const { automaticRowSize } = useRowSize({
-    isPlanVisible,
-  });
-
-  const startingDate = dayjs(startDate).format(dateFormat);
   const savedCaregivers = useCaregivers();
   const caregiverColors = useCaregiverColors();
   // Mirrors the calendar: the first care entry of a day decides who has it,
@@ -280,7 +373,12 @@ export const Dashboard = (props: DashboardProps) => {
     <div
       className={dashboardClasses}
       id='dashboard'
-      style={{ '--form-width': `${formWidth}px` } as CSSProperties}
+      style={
+        {
+          '--form-width': `${formWidth}px`,
+          '--plan-width': `${planWidth}px`,
+        } as CSSProperties
+      }
     >
       <div className={styles.calendarPane}>
         <ScrollPane
@@ -328,19 +426,6 @@ export const Dashboard = (props: DashboardProps) => {
             <Link href='/alternating-care/settings'>
               {language === 'en' ? 'Settings' : 'Ustawienia'}
             </Link>
-            {false && mobileView === 'calendar' && (
-              <Link
-                href={mobileHref('calendar', !isPlanVisible)}
-                className={classNames(styles.planToggle, {
-                  [styles.planToggleActive]: isPlanVisible,
-                })}
-                aria-pressed={isPlanVisible}
-                aria-label={language === 'en' ? 'Plan view' : 'Widok planu'}
-                title={language === 'en' ? 'Plan view' : 'Widok planu'}
-              >
-                <CalendarRange size={20} aria-hidden />
-              </Link>
-            )}
             {mobileView === 'calendar' && (
               <button
                 type='button'
@@ -403,8 +488,6 @@ export const Dashboard = (props: DashboardProps) => {
           <div className={styles.mobileCalendarView}>
             <div className={styles.desktopOnly}>
               <CalendarSettingsSection
-                isPlanVisible={isPlanVisible}
-                setIsPlanVisible={setIsPlanVisible}
                 isAlternatingVisible={isAlternatingVisible}
                 setIsAlternatingVisible={setIsAlternatingVisible}
                 isOtherCareVisible={isOtherCareVisible}
@@ -415,39 +498,18 @@ export const Dashboard = (props: DashboardProps) => {
             </div>
 
             <div {...(isCareEditActive ? {} : bind())}>
-              {!isPlanVisible && (
-                <CalendarGrid
-                  data={
-                    isCareEditActive ? careEdit.previewEvents : sortedEvents
-                  }
-                  handlers={isCareEditActive ? careEdit.handlers : handlers}
-                  isAlternatingVisible={isAlternatingVisible}
-                  isOtherCareVisible={isOtherCareVisible}
-                  isMultiSelectionMode={
-                    isCareEditActive ? false : isMultiSelectionMode
-                  }
-                  isEventsVisible={isEventsVisible}
-                  selection={isCareEditActive ? emptySelection : selection}
-                  onMonthVisible={loadMonth}
-                />
-              )}
-
-              {isPlanVisible && (
-                <Calendar
-                  startDate={startingDate}
-                  rowSize={automaticRowSize}
-                  isTodayVisible
-                  isPlanVisible={isPlanVisible}
-                  isAlternatingVisible={isAlternatingVisible}
-                  isOtherCareVisible={isOtherCareVisible}
-                  isEventsVisible={false}
-                  displayStrategy={'continous'}
-                  events={sortedEvents}
-                  {...handlers}
-                  selection={Array.from(selection)}
-                  isMultiSelectionMode={isMultiSelectionMode}
-                />
-              )}
+              <CalendarGrid
+                data={isCareEditActive ? careEdit.previewEvents : sortedEvents}
+                handlers={isCareEditActive ? careEdit.handlers : handlers}
+                isAlternatingVisible={isAlternatingVisible}
+                isOtherCareVisible={isOtherCareVisible}
+                isMultiSelectionMode={
+                  isCareEditActive ? false : isMultiSelectionMode
+                }
+                isEventsVisible={isEventsVisible}
+                selection={isCareEditActive ? emptySelection : selection}
+                onMonthVisible={loadMonth}
+              />
             </div>
           </div>
         )}
@@ -499,52 +561,125 @@ export const Dashboard = (props: DashboardProps) => {
         )}
       </div>
 
-      <div
-        className={styles.columnAdjuster}
-        role='separator'
-        aria-label='Zmień szerokość kolumn'
-        aria-orientation='vertical'
-        tabIndex={0}
-        onPointerDown={(event) => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-        }}
-        onPointerMove={resizeColumns}
-        onPointerUp={(event) => {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }}
-        onKeyDown={(event) => {
-          const dashboardWidth =
-            event.currentTarget.parentElement?.getBoundingClientRect().width ??
-            0;
-          if (event.key === 'ArrowLeft') {
-            setFormWidth((width) =>
-              Math.min(dashboardWidth * 0.75, width + 20)
-            );
-          }
-          if (event.key === 'ArrowRight') {
-            setFormWidth((width) =>
-              Math.max(dashboardWidth * 0.15, width - 20)
-            );
-          }
-        }}
-      />
-
-      <ScrollPane
-        className={formClasses}
-        contentClassName={styles.formContent}
-        style={{ height: '100%' }}
-        viewportStyle={{ height: '100%', overflowY: 'auto' }}
-      >
-        <CalendarFormSection
-          handleCancelMultiSelect={handleCancelMultiSelect}
-          fetchEventsQuery={fetchEventsQuery}
-          setIsMultiSelectionMode={setIsMultiSelectionMode}
-          selection={selection}
-          setSelection={setSelection}
-          careEdit={careEdit}
-          endDate={endDate}
-        />
-      </ScrollPane>
+      {isDayPlanVisible && (
+        <>
+          <div
+            className={`${styles.columnAdjuster} ${styles.planAdjuster}`}
+            role='separator'
+            aria-label='Zmień szerokość planu dnia'
+            aria-orientation='vertical'
+            aria-valuenow={Math.round(planWidth)}
+            aria-valuemin={MIN_PLAN_WIDTH}
+            tabIndex={0}
+            onDoubleClick={() =>
+              changePlanWidth(planWidth < 500 ? 650 : MIN_PLAN_WIDTH)
+            }
+            onPointerDown={(event) => {
+              planResizeRef.current = {
+                startX: event.clientX,
+                width: planWidth,
+              };
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={resizePlanColumn}
+            onPointerUp={(event) => {
+              planResizeRef.current = null;
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onPointerCancel={() => {
+              planResizeRef.current = null;
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                changePlanWidth(planWidth + 20);
+              }
+              if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                changePlanWidth(planWidth - 20);
+              }
+            }}
+          />
+          <div className={styles.dayPlanContainer}>
+            <DayPlanPanel
+              events={filteredEvents}
+              selectedDates={selection}
+              planWidth={planWidth}
+              onChangeWidth={changePlanWidth}
+              onDatesChange={(dates) =>
+                setSelection(new Set(dates))
+              }
+              onEventsUpdated={() => {
+                void fetchEventsQuery.refetch();
+                setIsMultiSelectionMode(false);
+              }}
+              noteRequest={noteRequest}
+              noteEditRequest={noteEditRequest}
+              allowPastNavigation
+              onVisibleRangeChange={loadDayPlanRange}
+              weekListView
+              modalEventEditor
+            />
+          </div>
+          <div
+            className={`${styles.columnAdjuster} ${styles.formAdjuster}`}
+            role='separator'
+            aria-label='Zmień szerokość panelu widżetów'
+            aria-orientation='vertical'
+            aria-valuenow={Math.round(formWidth)}
+            tabIndex={0}
+            onPointerDown={(event) => {
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={resizeColumns}
+            onPointerUp={(event) => {
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onKeyDown={(event) => {
+              const dashboardWidth =
+                event.currentTarget.parentElement?.getBoundingClientRect().width ??
+                0;
+              if (event.key === 'ArrowLeft') {
+                setFormWidth((width) =>
+                  clampFormWidth(width + 20, dashboardWidth)
+                );
+              }
+              if (event.key === 'ArrowRight') {
+                setFormWidth((width) =>
+                  clampFormWidth(width - 20, dashboardWidth)
+                );
+              }
+            }}
+          />
+          <ScrollPane
+            className={styles.formContainer}
+            contentClassName={styles.formContent}
+            style={{ height: '100%' }}
+            viewportStyle={{ height: '100%', overflowY: 'auto' }}
+          >
+            <CareSummary
+              windowDays={365}
+              upcomingCount="all"
+              endDate={endDate}
+              section="overview"
+            />
+            <AllDayEventsPanel
+              events={fetchEventsQuery.data ?? []}
+              onEdit={(event) =>
+                setNoteEditRequest({ event, key: Date.now() })
+              }
+            />
+            <TodoPanel
+              events={fetchEventsQuery.data ?? []}
+              onUpdated={() => void fetchEventsQuery.refetch()}
+              onAdd={() => setNoteRequest((value) => value + 1)}
+              onEdit={(event) =>
+                setNoteEditRequest({ event, key: Date.now() })
+              }
+            />
+          </ScrollPane>
+        </>
+      )}
     </div>
   );
 };

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { CareSummary } from '../CareSummary/CareSummary';
 import {
   CSSProperties,
   MouseEvent as ReactMouseEvent,
@@ -60,6 +61,7 @@ type Phase = {
 };
 
 type PlannerTab = 'manual' | 'cycles' | 'remove';
+type PlannerView = 'planning' | 'upcoming';
 type WizardStep = 1 | 2 | 3;
 
 const confirmationCode = () =>
@@ -102,6 +104,7 @@ export function CarePlanner() {
   const locale = isEnglish ? 'en' : 'pl';
 
   const [tab, setTab] = useState<PlannerTab>('manual');
+  const [view, setView] = useState<PlannerView>('planning');
   const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
   const [viewStart, setViewStart] = useState(
     dayjs().subtract(1, 'month').startOf('month')
@@ -372,6 +375,7 @@ export function CarePlanner() {
 
   const isDayDimmed = useCallback(
     (date: string) => {
+      if (view === 'upcoming') return false;
       if (tab === 'manual') {
         return manualCount > 0 && !(date in manualAssignments);
       }
@@ -392,12 +396,14 @@ export function CarePlanner() {
       startDate,
       tab,
       today,
+      view,
     ]
   );
 
   const handleDayClick = useCallback<OnDayClickHandler>(
     (day, event) => {
       if (day.isOffset) return;
+      if (view === 'upcoming') return;
       const isShift = Boolean(event?.shiftKey);
       if (isShift) window.getSelection()?.removeAllRanges();
       if (tab === 'remove') {
@@ -453,7 +459,16 @@ export function CarePlanner() {
       }
       if (step === 1) setStartDate(day.date);
     },
-    [manualAssignments, manualCaregiver, removeEnd, removeStart, step, tab, today]
+    [
+      manualAssignments,
+      manualCaregiver,
+      removeEnd,
+      removeStart,
+      step,
+      tab,
+      today,
+      view,
+    ]
   );
 
   const isRemoveConfirmed =
@@ -568,7 +583,9 @@ export function CarePlanner() {
       ? manualEvents
       : tab === 'remove'
         ? eventsQuery.data ?? []
-        : cycleEvents;
+        : view === 'upcoming'
+          ? eventsQuery.data ?? []
+          : cycleEvents;
   const previewEvents = useMemo(
     () =>
       hiddenSubjects.size
@@ -654,7 +671,28 @@ export function CarePlanner() {
             </Link>
             <h1 id='care-planner-title'>{isEnglish ? 'Care plan' : 'Plan opieki'}</h1>
           </div>
-          <div className={styles.tabs} role='tablist'>
+          <div className={styles.primaryTabs} role='tablist'>
+            <button
+              type='button'
+              role='tab'
+              aria-selected={view === 'planning'}
+              data-active={view === 'planning'}
+              onClick={() => setView('planning')}
+            >
+              {isEnglish ? 'Care planning' : 'Planowanie opieki'}
+            </button>
+            <button
+              type='button'
+              role='tab'
+              aria-selected={view === 'upcoming'}
+              data-active={view === 'upcoming'}
+              onClick={() => setView('upcoming')}
+            >
+              {isEnglish ? 'Planned care' : 'Zaplanowana opieka'}
+            </button>
+          </div>
+
+          {view === 'planning' && <div className={styles.tabs} role='tablist'>
             <button
               type='button'
               role='tab'
@@ -682,8 +720,20 @@ export function CarePlanner() {
             >
               {isEnglish ? 'Remove' : 'Usuwanie'}
             </button>
-          </div>
+          </div>}
 
+          {view === 'upcoming' && (
+            <div className={styles.upcomingPanel}>
+              <CareSummary
+                windowDays={365}
+                upcomingCount='all'
+                endDate={viewEnd.subtract(1, 'day').format(dateFormat)}
+                section='upcoming'
+              />
+            </div>
+          )}
+
+          {view === 'planning' && <>
           {tab === 'remove' && (
             <div className={styles.stepBody}>
               <p className={styles.hint}>
@@ -1029,6 +1079,7 @@ export function CarePlanner() {
           )}
 
           {error && <p className={styles.error}>{error}</p>}
+          </>}
         </aside>
 
         <main className={styles.previewPanel} onScroll={clearDayDetails}>
@@ -1217,7 +1268,7 @@ export function CarePlanner() {
         </main>
       </div>
 
-      <footer className={styles.footer}>
+      {view !== 'upcoming' && <footer className={styles.footer}>
         <span>
           {tab === 'manual'
             ? isEnglish
@@ -1278,7 +1329,7 @@ export function CarePlanner() {
             </button>
           )}
         </div>
-      </footer>
+      </footer>}
     </section>
   );
 }

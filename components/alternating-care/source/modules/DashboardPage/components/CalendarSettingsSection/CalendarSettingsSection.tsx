@@ -4,15 +4,11 @@ import { useAppContext } from '@app/AppContext';
 import { RangeNavigation } from '@components/RangeNavigation/RangeNavigation';
 import { Stack } from '@components/Stack/Stack';
 import { useBreakpoints } from '@utils/useBreakpoints';
-import { useEffect, useRef } from 'react';
-import { useRowSize } from '../Dashboard/useRowSize';
+import { MdEvent, MdGroups, MdPerson } from 'react-icons/md';
 import { calendarSettingsSectionI18n } from './calendarSettingsSection.i18n';
 import styles from './CalendarSettingsSection.module.scss';
 
 interface CalendarSettingsSectionProps {
-  isPlanVisible: boolean;
-  setIsPlanVisible: (value: boolean) => void;
-
   isAlternatingVisible: boolean;
   setIsAlternatingVisible: (value: boolean) => void;
   isOtherCareVisible: boolean;
@@ -26,8 +22,6 @@ export const CalendarSettingsSection = (
   props: CalendarSettingsSectionProps
 ) => {
   const {
-    isPlanVisible,
-    setIsPlanVisible,
     isAlternatingVisible,
     setIsAlternatingVisible,
     isOtherCareVisible,
@@ -38,88 +32,60 @@ export const CalendarSettingsSection = (
   const { language } = useAppContext();
   const i18n = calendarSettingsSectionI18n[language];
   const { isMax1280 } = useBreakpoints();
-  const { automaticRowSize } = useRowSize({
-    isPlanVisible,
-  });
-  const displayModeRef = useRef<HTMLDetailsElement>(null);
-
-  useEffect(() => {
-    const closeDisplayMode = (event: PointerEvent) => {
-      if (!displayModeRef.current?.contains(event.target as Node)) {
-        displayModeRef.current?.removeAttribute('open');
-      }
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        displayModeRef.current?.removeAttribute('open');
-      }
-    };
-
-    document.addEventListener('pointerdown', closeDisplayMode);
-    document.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeDisplayMode);
-      document.removeEventListener('keydown', closeOnEscape);
-    };
-  }, []);
 
   return (
-    <Stack
-      direction='horizontal'
-      className='wrap flex-wrap py-4'
-      itemsAlignment='between'
-    >
-      <details ref={displayModeRef} className={styles.displayMode}>
-        <summary>{i18n.displayMode}</summary>
-        <div className={styles.options}>
-          <label>
-            <input
-              type='checkbox'
-              checked={isPlanVisible}
-              onChange={(event) => setIsPlanVisible(event.target.checked)}
-            />
-            {i18n.plan}
-          </label>
-          <label>
-            <input
-              type='checkbox'
-              checked={isAlternatingVisible}
-              onChange={(event) =>
-                setIsAlternatingVisible(event.target.checked)
-              }
-            />
-            {i18n.myCare}
-          </label>
-          <label>
-            <input
-              type='checkbox'
-              checked={isOtherCareVisible}
-              onChange={(event) =>
-                setIsOtherCareVisible(event.target.checked)
-              }
-            />
-            {i18n.otherCaregivers}
-          </label>
-          <label aria-disabled={isPlanVisible}>
-            <input
-              type='checkbox'
-              checked={isEventsVisible}
-              disabled={isPlanVisible}
-              onChange={(event) => setIsEventsVisible(event.target.checked)}
-            />
-            {i18n.events}
-          </label>
+    <div className={styles.settingsContainer}>
+      <Stack
+        direction='horizontal'
+        className={styles.settings}
+        itemsAlignment='between'
+      >
+        <div
+          className={styles.viewToggles}
+          role='group'
+          aria-label={i18n.displayMode}
+        >
+        <button
+          type='button'
+          className={isAlternatingVisible ? styles.active : undefined}
+          aria-pressed={isAlternatingVisible}
+          aria-label={i18n.myCare}
+          title={i18n.myCare}
+          onClick={() => setIsAlternatingVisible(!isAlternatingVisible)}
+        >
+          <MdPerson size={19} aria-hidden />
+        </button>
+        <button
+          type='button'
+          className={isOtherCareVisible ? styles.active : undefined}
+          aria-pressed={isOtherCareVisible}
+          aria-label={i18n.otherCaregivers}
+          title={i18n.otherCaregivers}
+          onClick={() => setIsOtherCareVisible(!isOtherCareVisible)}
+        >
+          <MdGroups size={19} aria-hidden />
+        </button>
+        <button
+          type='button'
+          className={isEventsVisible ? styles.active : undefined}
+          aria-pressed={isEventsVisible}
+          aria-label={i18n.events}
+          title={i18n.events}
+          onClick={() => setIsEventsVisible(!isEventsVisible)}
+        >
+          <MdEvent size={19} aria-hidden />
+        </button>
         </div>
-      </details>
 
-      <RangeNavigation
-        className={styles.rangeNavigation}
-        alignItems={'center'}
-        contentAlignment={isMax1280 ? 'between' : 'end'}
-        fastGranulation={isPlanVisible ? 'day' : 'year'}
-        slowGranulation={isPlanVisible ? 'day' : 'month'}
-        count={isPlanVisible ? automaticRowSize : 1}
-      />
-    </Stack>
+        <RangeNavigation
+          className={styles.rangeNavigation}
+          alignItems={'center'}
+          contentAlignment={isMax1280 ? 'between' : 'end'}
+          fastGranulation='year'
+          slowGranulation='month'
+          count={1}
+        />
+      </Stack>
+    </div>
   );
 };

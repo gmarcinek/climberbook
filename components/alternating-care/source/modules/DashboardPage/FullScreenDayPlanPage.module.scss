@@ -1,0 +1,91 @@
+// The app navbar (h-12) stays above the page, so the page fills the rest.
+.page {
+  display: flex;
+  height: calc(100vh - 48px);
+  height: calc(100dvh - 48px);
+  min-height: 420px;
+  flex-direction: column;
+  padding: 16px;
+  background: #f3f6f8;
+}
+
+.topBar {
+  display: flex;
+  min-height: 38px;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin-bottom: 10px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #2d6f8d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid #dfe6eb;
+  border-radius: 10px;
+  padding: 3px;
+  background: #fff;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 7px;
+  padding: 6px 12px;
+  background: transparent;
+  color: #4f5960;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f5f7;
+  }
+
+  &[aria-selected='true'] {
+    background: #2d5465;
+    color: #fff;
+  }
+}
+
+.plan {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid #dfe6eb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgba(35, 55, 65, 0.08);
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 0;
+  }
+
+  .topBar {
+    margin: 0;
+    padding: 8px 14px;
+  }
+
+  .plan {
+    border: 0;
+    border-radius: 0;
+  }
+}

@@ -1,70 +1,87 @@
-.displayMode {
-  position: relative;
-  flex: 0 0 auto;
+.settingsContainer {
+  min-width: 0;
+  container-type: inline-size;
+}
 
-  summary {
-    display: flex;
-    min-height: 32px;
-    align-items: center;
-    border: 2px solid #e4e4e7;
-    border-radius: 8px;
-    padding: 0 12px;
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 16px 0;
+}
+
+.viewToggles {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  background: #f7f8fa;
+
+  button {
+    display: grid;
+    width: 32px;
+    height: 30px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #8a949d;
     cursor: pointer;
-    font-size: 0.875rem;
-    line-height: 1;
-    list-style: none;
-    user-select: none;
+    place-items: center;
   }
 
-  summary::marker,
-  summary::-webkit-details-marker {
-    display: none;
+  button:hover {
+    color: #315d70;
   }
 
-  summary::after {
-    margin-left: 10px;
-    border-top: 5px solid currentColor;
-    border-right: 4px solid transparent;
-    border-left: 4px solid transparent;
-    content: '';
+  .active {
+    background: #fff;
+    color: #246f91;
+    box-shadow: 0 1px 4px rgba(31, 45, 61, 0.12);
   }
 }
 
-.options {
-  position: absolute;
-  z-index: 40;
-  top: calc(100% + 6px);
-  left: 0;
-  display: grid;
-  min-width: 180px;
-  gap: 2px;
-  border: 1px solid #e4e4e7;
-  border-radius: 10px;
-  padding: 6px;
-  background: #fff;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
-
-  label {
+.rangeNavigation {
+  :global([data-range-controls]),
+  :global([data-range-quick-actions]) {
     display: flex;
     align-items: center;
-    gap: 9px;
-    border-radius: 7px;
-    padding: 8px;
-    cursor: pointer;
-    font-size: 0.875rem;
+    gap: 16px;
+  }
+}
+
+@container (max-width: 760px) {
+  .settings {
+    display: grid !important;
+    grid-template-areas:
+      'navigation navigation'
+      'filters actions';
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px 12px !important;
   }
 
-  label:hover {
-    background: #f1f4f5;
+  .viewToggles {
+    grid-area: filters;
+    width: fit-content;
+    justify-self: start;
   }
 
-  label[aria-disabled='true'] {
-    cursor: not-allowed;
-    opacity: 0.5;
+  .rangeNavigation {
+    display: contents !important;
   }
 
-  input {
-    accent-color: #2d5465;
+  .rangeNavigation :global([data-range-controls]) {
+    grid-area: navigation;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .rangeNavigation :global([data-range-quick-actions]) {
+    grid-area: actions;
+    width: fit-content;
+    justify-self: end;
+    justify-content: flex-end;
+    gap: 8px;
   }
 }
 

@@ -1,0 +1,158 @@
+.wardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.wardCard {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 12px;
+  border: 1px solid #e2e7ea;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fafbfb;
+}
+
+.wardAvatar {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  grid-row: span 2;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #e9f0f2;
+  box-shadow: 0 0 0 1px #dce3e7;
+  color: #2d5465;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.wardInfo {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+
+  strong {
+    overflow: hidden;
+    color: #26383f;
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: #788088;
+    font-size: 0.74rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+.wardKind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #2d5465;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wardActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  > label {
+    grid-column: auto;
+  }
+}
+
+.iconButton {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid #e0e4e7;
+  border-radius: 7px;
+  background: #fff;
+  color: #7c858b;
+  cursor: pointer;
+
+  &:hover {
+    color: #2d5465;
+  }
+}
+
+.emptyWards {
+  margin: 0;
+  color: #788088;
+  font-size: 0.84rem;
+}
+
+.addWardButton {
+  margin-top: 14px;
+}
+
+.wardForm {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  border-top: 1px solid #e7ebed;
+  padding-top: 14px;
+}
+
+.kindGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 0;
+  border: 0;
+  padding: 0;
+
+  legend {
+    margin-bottom: 7px;
+    padding: 0;
+    color: #4f5960;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+}
+
+.kindOption {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  border: 1px solid #dce3e7;
+  border-radius: 10px;
+  padding: 12px 8px;
+  background: #fff;
+  color: #4f5960;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #9fb4bd;
+  }
+
+  &[aria-pressed='true'] {
+    border-color: #2d5465;
+    background: #2d5465;
+    color: #fff;
+  }
+}
+
+.wardFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

@@ -20,6 +20,50 @@ import { dashboardEventFormI18n } from './dashboardEventForm.i18n';
 const defaultBgColor = '#E57373';
 const defaultTextColor = '#ffffff';
 
+function minutesToTime(minutes?: number) {
+  if (minutes === undefined) return '';
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(
+    minutes % 60
+  ).padStart(2, '0')}`;
+}
+
+function timeToMinutes(value: string) {
+  if (!value) return undefined;
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+// Non-consecutive selections are separate days sharing the same hours.
+export function isScatteredSelection(dates: string[]) {
+  const ordered = [...new Set(dates)].sort();
+  return ordered.some(
+    (date, index) =>
+      index > 0 &&
+      dayjs(ordered[index - 1]).add(1, 'day').format('YYYY-MM-DD') !== date,
+  );
+}
+
+function rangeDurationMinutes(
+  dates: string[],
+  startTime: string,
+  endTime: string,
+  rangeStartDate?: string,
+  rangeEndDate?: string,
+) {
+  const orderedDates = [...dates].sort();
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+  if (start === undefined || end === undefined || orderedDates.length === 0) {
+    return undefined;
+  }
+  if (isScatteredSelection(orderedDates)) return end - start;
+  const daySpan = dayjs(rangeEndDate ?? orderedDates.at(-1)).diff(
+    dayjs(rangeStartDate ?? orderedDates[0]),
+    'day',
+  );
+  return daySpan * 24 * 60 + end - start;
+}
+
 interface useDashboardEventFormProps {
   setIsRadioGroupVisible: Dispatch<SetStateAction<boolean>>;
   selection: string[];
@@ -27,8 +71,13 @@ interface useDashboardEventFormProps {
   onSuccess: () => void;
   setIsMultiSelectionMode: (value: boolean) => void;
   initialEvent?: CalendarEvent;
+  initialType?: CalendarEventType;
+  initialStartTime?: number;
+  initialEndTime?: number;
   preserveGroupId?: boolean;
   redirectAfterSave?: string;
+  rangeStartDate?: string;
+  rangeEndDate?: string;
 }
 
 export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
@@ -39,14 +88,19 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
     setIsMultiSelectionMode,
     setSelection,
     initialEvent,
+    initialType,
+    initialStartTime,
+    initialEndTime,
     preserveGroupId = false,
     redirectAfterSave,
+    rangeStartDate,
+    rangeEndDate,
   } = props;
 
   const router = useRouter();
   const [date, setDate] = useState('');
   const [type, setType] = useState<CalendarEventType | undefined>(
-    initialEvent?.type
+    initialEvent?.type ?? initialType ?? CalendarEventType.Event
   );
   const [name, setName] = useState(initialEvent?.name ?? '');
   const [description, setDescription] = useState(
@@ -57,6 +111,15 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
   );
   const [textColor, setTextColor] = useState(
     initialEvent?.style?.color ?? defaultTextColor
+  );
+  const [isAllDay, setIsAllDay] = useState(
+    initialEvent?.startTime === undefined && initialStartTime === undefined,
+  );
+  const [startTime, setStartTime] = useState(
+    minutesToTime(initialEvent?.startTime ?? initialStartTime) || '09:00'
+  );
+  const [endTime, setEndTime] = useState(
+    minutesToTime(initialEvent?.endTime ?? initialEndTime) || '10:00'
   );
 
   const { language } = useAppContext();
@@ -76,13 +139,38 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
       style: {
         background: backgroundColor,
         color: getTextColor(backgroundColor),
+        completed: initialEvent?.completed ?? false,
       },
       creationTime: 0,
       groupId: '',
       id: '',
       issuer: '',
+      startTime: isAllDay ? undefined : timeToMinutes(startTime),
+      endTime: isAllDay ? undefined : timeToMinutes(endTime),
+      duration:
+        isAllDay || !startTime || !endTime
+          ? undefined
+          : rangeDurationMinutes(
+              selection,
+              startTime,
+              endTime,
+              rangeStartDate,
+              rangeEndDate,
+            ),
     };
-  }, [backgroundColor, description, name, type, exampleDate.date]);
+  }, [
+    backgroundColor,
+    description,
+    endTime,
+    exampleDate.date,
+    isAllDay,
+    name,
+    startTime,
+    selection,
+    rangeStartDate,
+    rangeEndDate,
+    type,
+  ]);
 
   const formPutEventMutation = useFormPutEventMutation({
     onSuccess: (data) => {
@@ -95,6 +183,9 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
       setDescription('');
       setBackgroundColor('#E57373');
       setTextColor('#ffffff');
+      setIsAllDay(true);
+      setStartTime('09:00');
+      setEndTime('10:00');
       toast(i18n.eventAddedSuccessfully, {
         type: 'success',
         className: 'bg-green-100',
@@ -115,6 +206,24 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
 
       if (!name) {
         toast(i18n.pleaseFillInAllRequiredFields, { type: 'info' });
+        return;
+      }
+      const orderedDates = [...selection].sort();
+      const effectiveStartDate = rangeStartDate ?? orderedDates[0];
+      const effectiveEndDate = rangeEndDate ?? orderedDates.at(-1);
+      const isSingleDayRange =
+        !effectiveStartDate ||
+        effectiveStartDate === effectiveEndDate ||
+        isScatteredSelection(orderedDates);
+      if (
+        !isAllDay &&
+        (!startTime ||
+          !endTime ||
+          (isSingleDayRange && endTime <= startTime))
+      ) {
+        toast('Godzina zakończenia musi być późniejsza niż rozpoczęcia.', {
+          type: 'info',
+        });
         return;
       }
 
@@ -143,7 +252,20 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
               : backgroundColor,
           color:
             typeToSave === CalendarEventType.Alternating ? white : textColor,
+          completed: initialEvent?.completed ?? false,
         },
+        startTime: isAllDay ? undefined : timeToMinutes(startTime),
+        endTime: isAllDay ? undefined : timeToMinutes(endTime),
+        duration:
+          isAllDay
+            ? undefined
+            : rangeDurationMinutes(
+                selection,
+                startTime,
+                endTime,
+                rangeStartDate,
+                rangeEndDate,
+              ),
       }));
 
       try {
@@ -165,6 +287,11 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
       initialEvent,
       preserveGroupId,
       redirectAfterSave,
+      rangeStartDate,
+      rangeEndDate,
+      isAllDay,
+      startTime,
+      endTime,
     ]
   );
 
@@ -177,6 +304,9 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
     setDate('');
     setName('');
     setDescription('');
+    setIsAllDay(true);
+    setStartTime('09:00');
+    setEndTime('10:00');
   }, [setSelection]);
 
   const handleReset = useCallback(() => {
@@ -204,6 +334,12 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
     setBackgroundColor,
     textColor,
     setTextColor,
+    isAllDay,
+    setIsAllDay,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
     newEvent,
     handleReset,
   };

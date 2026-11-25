@@ -1,13 +1,19 @@
 export const siteNavigationI18n = {
   pl: {
-    home: 'Mój Świat',
+    home: 'Start',
     care: 'Opieka',
+    dayPlan: 'Plan dnia',
+    planning: 'Planowanie',
+    people: 'Opiekunowie i podopieczni',
     settings: 'Ustawienia',
     menu: 'Menu',
   },
   en: {
-    home: 'My World',
+    home: 'Start',
     care: 'Care',
+    dayPlan: 'Day plan',
+    planning: 'Planning',
+    people: 'Caregivers & wards',
     settings: 'Settings',
     menu: 'Menu',
   },

@@ -1,0 +1,62 @@
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.typeTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 78px;
+  border: 1px solid #dde4e9;
+  border-radius: 12px;
+  padding: 12px 8px;
+  background: #fff;
+  color: #4a5862;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  svg {
+    flex: none;
+    color: #7b8891;
+    transition: color 0.15s ease;
+  }
+
+  &:hover {
+    border-color: #b9c6cf;
+    background: #f6f9fa;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--theme-focus-ring, 0 0 0 3px rgba(45, 111, 141, 0.3));
+  }
+}
+
+.selected {
+  border-color: #c0262d;
+  background: #fff4f2;
+  color: #8f1621;
+  box-shadow: 0 0 0 1px #c0262d inset;
+
+  svg {
+    color: #c0262d;
+  }
+
+  &:hover {
+    border-color: #c0262d;
+    background: #ffece8;
+  }
+}

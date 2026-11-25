@@ -147,61 +147,65 @@ export const RangeNavigation = (props: RangeNavigationProps) => {
       className={className}
       gap={isMobile ? 0 : 16}
     >
-      {!isMobile && (
-        <MdKeyboardDoubleArrowLeft
-          onClick={() => handleUpdateRange('back', fastGranulation, count)}
+      <div data-range-controls>
+        {!isMobile && (
+          <MdKeyboardDoubleArrowLeft
+            onClick={() => handleUpdateRange('back', fastGranulation, count)}
+            size={buttonSize}
+          />
+        )}
+
+        <MdKeyboardArrowLeft
+          onClick={() => handleUpdateRange('back', slowGranulation, count)}
           size={buttonSize}
         />
-      )}
 
-      <MdKeyboardArrowLeft
-        onClick={() => handleUpdateRange('back', slowGranulation, count)}
-        size={buttonSize}
-      />
+        <div>
+          <DateRangePicker
+            variant='bordered'
+            size={isMax768 ? 'lg' : 'sm'}
+            value={parsedDates}
+            onChange={handlePickerOnChangeDates}
+            onKeyDown={(event) => event.preventDefault()}
+          />
+        </div>
 
-      <div>
-        <DateRangePicker
-          variant='bordered'
-          size={isMax768 ? 'lg' : 'sm'}
-          value={parsedDates}
-          onChange={handlePickerOnChangeDates}
-          onKeyDown={(event) => event.preventDefault()}
+        <MdKeyboardArrowRight
+          onClick={() => handleUpdateRange('forward', slowGranulation, count)}
+          size={buttonSize}
         />
+
+        {!isMobile && (
+          <MdKeyboardDoubleArrowRight
+            onClick={() => handleUpdateRange('forward', fastGranulation, count)}
+            size={buttonSize}
+          />
+        )}
       </div>
 
-      <MdKeyboardArrowRight
-        onClick={() => handleUpdateRange('forward', slowGranulation, count)}
-        size={buttonSize}
-      />
+      <div data-range-quick-actions>
+        {!isMax1024 && (
+          <Button
+            size='sm'
+            variant='ghost'
+            onClick={handleCurrentYear}
+            className='min-w-unit-12 px-2'
+          >
+            {dayjs().year()}
+          </Button>
+        )}
 
-      {!isMobile && (
-        <MdKeyboardDoubleArrowRight
-          onClick={() => handleUpdateRange('forward', fastGranulation, count)}
-          size={buttonSize}
-        />
-      )}
-
-      {!isMax1024 && (
-        <Button
-          size='sm'
-          variant='ghost'
-          onClick={handleCurrentYear}
-          className='min-w-unit-12 px-2'
-        >
-          {dayjs().year()}
-        </Button>
-      )}
-
-      {!isMax1024 && (
-        <Button
-          size='sm'
-          variant='ghost'
-          onClick={handleResetDates}
-          className='min-w-unit-12 px-2'
-        >
-          Reset
-        </Button>
-      )}
+        {!isMax1024 && (
+          <Button
+            size='sm'
+            variant='ghost'
+            onClick={handleResetDates}
+            className='min-w-unit-12 px-2'
+          >
+            Reset
+          </Button>
+        )}
+      </div>
     </Stack>
   );
 };

@@ -29,8 +29,19 @@ export async function getPlatformUserById(
     ? {
         id: user.id,
         email: user.email,
-        name: user.display_name,
+        name: user.display_name?.trim() || nameFromEmail(user.email),
         role: user.access_role,
       }
     : null;
+}
+
+// "grzegorz.marcinek+tag@example.com" -> "Grzegorz Marcinek"
+export function nameFromEmail(email: string) {
+  const localPart = (email ?? "").split("@")[0]?.split("+")[0] ?? "";
+  return localPart
+    .split(/[._-]+/)
+    .map((part) => part.replace(/\d+/g, ""))
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 }

@@ -20,6 +20,7 @@ import {
 } from 'react';
 import styles from './EditFormCalendar.module.scss';
 import { useEditSelection } from './useEditSelection';
+import { useRouter } from 'next/navigation';
 
 interface EventFormCalendarProps {
   fetchEventsMutation: UseQueryResult<CalendarEvent[], Error>;
@@ -27,7 +28,13 @@ interface EventFormCalendarProps {
 
 export const EditFormCalendar = (props: EventFormCalendarProps) => {
   const { fetchEventsMutation } = props;
-  const { startDate, endDate, groupId } = useAppSearchParams();
+  const router = useRouter();
+  const { startDate, endDate, groupId, searchParams } = useAppSearchParams();
+  const requestedReturnUrl = searchParams.get('returnUrl');
+  const returnUrl =
+    requestedReturnUrl?.startsWith('/alternating-care') === true
+      ? requestedReturnUrl
+      : `/alternating-care/calendar?startDate=${startDate}&endDate=${endDate}`;
 
   const {
     selection,
@@ -163,8 +170,11 @@ export const EditFormCalendar = (props: EventFormCalendarProps) => {
             submitLabel='Zapisz wydarzenie'
             staticLayout
             initialDates={eventDates}
+            rangeStartDate={eventDates[0]}
+            rangeEndDate={eventDates.at(-1)}
             confirmBeforeSave
-            redirectAfterSave={`/alternating-care/calendar?startDate=${startDate}&endDate=${endDate}`}
+            redirectAfterSave={returnUrl}
+            onCancel={() => router.push(returnUrl)}
             onDraftChange={setDraftEvent}
             onSuccess={() => {
               void fetchEventsMutation.refetch();

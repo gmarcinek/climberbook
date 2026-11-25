@@ -52,6 +52,16 @@ function normalizeEvents(input: unknown) {
     throw new CareEventValidationError("Lista wydarzeń jest pusta.");
   }
 
+  const groupDates = new Map<string, Set<string>>();
+  for (const candidate of value.events) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const { groupId, date } = candidate as Record<string, unknown>;
+    if (typeof groupId !== "string" || typeof date !== "string") continue;
+    const dates = groupDates.get(groupId.trim()) ?? new Set<string>();
+    dates.add(date);
+    groupDates.set(groupId.trim(), dates);
+  }
+
   return value.events.map((candidate): StoredEvent => {
     if (!candidate || typeof candidate !== "object") {
       throw new CareEventValidationError("Nieprawidłowe wydarzenie.");
@@ -71,12 +81,41 @@ function normalizeEvents(input: unknown) {
       event.style && typeof event.style === "object"
         ? (event.style as Record<string, unknown>)
         : null;
+    const startTime = event.startTime;
+    const endTime = event.endTime;
+    if (
+      (startTime !== undefined &&
+        (typeof startTime !== "number" ||
+          !Number.isInteger(startTime) ||
+          startTime < 0 ||
+          startTime >= 1440)) ||
+      (endTime !== undefined &&
+        (typeof endTime !== "number" ||
+          !Number.isInteger(endTime) ||
+          endTime < 0 ||
+          endTime >= 1440)) ||
+      ((startTime === undefined) !== (endTime === undefined)) ||
+      (typeof startTime === "number" &&
+        typeof endTime === "number" &&
+        endTime <= startTime &&
+        (groupDates.get(event.groupId.trim())?.size ?? 1) < 2)
+    ) {
+      throw new CareEventValidationError(
+        "Nieprawidłowy zakres godzin wydarzenia.",
+      );
+    }
     const style =
       typeof styleValue?.background === "string" &&
       typeof styleValue.color === "string"
         ? {
             background: styleValue.background,
             color: styleValue.color,
+            startTime: typeof startTime === "number" ? startTime : undefined,
+            endTime: typeof endTime === "number" ? endTime : undefined,
+            completed:
+              typeof styleValue.completed === "boolean"
+                ? styleValue.completed
+                : undefined,
           }
         : undefined;
 
@@ -114,6 +153,17 @@ function projectRow(row: CareRangeRow): CalendarEvent[] {
       name: row.name,
       description: row.description,
       style: row.style ?? undefined,
+      startTime: row.style?.startTime,
+      endTime: row.style?.endTime,
+      duration:
+        row.style?.startTime === undefined || row.style?.endTime === undefined
+          ? undefined
+          : row.style.endTime -
+            row.style.startTime +
+            (Date.parse(row.end_date) - Date.parse(row.start_date) -
+              86_400_000) /
+              60_000,
+      completed: row.style?.completed ?? false,
       creationTime: row.created_at.getTime(),
       unsynced: false,
       lastEditTime: row.updated_at.getTime(),

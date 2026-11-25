@@ -7,7 +7,7 @@ import { PropsWithChildren } from 'react';
 import { BiTrip } from 'react-icons/bi';
 import { FaCampground } from 'react-icons/fa';
 import { IoMdCalendar } from 'react-icons/io';
-import { MdCake, MdLocalHospital, MdSchool } from 'react-icons/md';
+import { MdCake, MdLocalHospital, MdOutlineTaskAlt, MdSchool } from 'react-icons/md';
 interface CalendarEventAvatarProps extends PropsWithChildren {
   event?: CalendarEvent;
   className?: string;
@@ -59,6 +59,12 @@ export default function CalendarEventAvatar(props: CalendarEventAvatarProps) {
       )}
       {event.type === CalendarEventType.Camp && (
         <FaCampground
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Todo && (
+        <MdOutlineTaskAlt
           color={getTextColor(event.style?.background)}
           size={iconSize}
         />

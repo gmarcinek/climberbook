@@ -39,6 +39,7 @@ interface CareSummaryProps {
   upcomingCount?: number | 'all';
   endDate?: string;
   action?: ReactNode;
+  section?: 'all' | 'overview' | 'upcoming';
 }
 
 export const CareSummary = ({
@@ -46,6 +47,7 @@ export const CareSummary = ({
   upcomingCount = 4,
   endDate,
   action,
+  section = 'all',
 }: CareSummaryProps) => {
   const { user, language } = useAppContext();
   const isEnglish = language === 'en';
@@ -276,6 +278,8 @@ export const CareSummary = ({
   return (
     <section className={styles.card}>
       {action && <div className={styles.cardActions}>{action}</div>}
+      {section !== 'upcoming' && (
+        <>
       <div className={styles.currentCare}>
         <span className={styles.label}>
           {isEnglish ? 'Care provided by' : 'Opiekę sprawuje teraz'}
@@ -386,7 +390,10 @@ export const CareSummary = ({
           </div>
         </div>
       </div>
+        </>
+      )}
 
+      {section !== 'overview' && (
       <div className={styles.upcoming}>
         <span className={styles.upcomingTitle}>
           {isEnglish
@@ -443,6 +450,7 @@ export const CareSummary = ({
           );
         })}
       </div>
+      )}
     </section>
   );
 };

@@ -12,6 +12,7 @@ export enum CalendarEventType {
   Medical = 'MEDICAL',
   School = 'SCHOOL',
   Camp = 'CAMP',
+  Todo = 'TODO',
 }
 
 export interface CalendarEvent {
@@ -26,9 +27,13 @@ export interface CalendarEvent {
   endTime?: number;
   duration?: number;
   description?: string;
+  completed?: boolean;
   style?: {
     background: string;
     color: string;
+    startTime?: number;
+    endTime?: number;
+    completed?: boolean;
   };
   // Sync-related fields
   unsynced?: boolean; // User edited offline

@@ -2,8 +2,6 @@
 import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import { useAppContext } from '@app/AppContext';
 import { Button } from '@components/Button/Button';
-import ColorPicker from '@components/ColorPicker/ColorPicker';
-import EventListItem from '@components/EventList/components/EventListItem/EventListItem';
 import { Stack } from '@components/Stack/Stack';
 import AddIcon from '@mui/icons-material/Add';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
@@ -16,12 +14,19 @@ import {
   Dispatch,
   ReactNode,
   SetStateAction,
+  type CSSProperties,
   useEffect,
   useMemo,
   useState,
 } from 'react';
 import { BsTags } from 'react-icons/bs';
-import { MdOutlineVisibility } from 'react-icons/md';
+import {
+  MdOutlineNotes,
+  MdOutlineSchedule,
+  MdOutlineTitle,
+  MdOutlineVisibility,
+} from 'react-icons/md';
+import CalendarEventAvatar from '@components/Calendar/components/CalendarEventAvatar/CalendarEventAvatar';
 import { dashboardEventFormI18n } from './dashboardEventForm.i18n'; // Import your i18n file
 import styles from './dashboardEventForm.module.scss';
 import { DashboardEventFormTypeSelectInput } from './DashboardEventFormTypeSelectInput';
@@ -34,14 +39,30 @@ interface DashboardEventFormProps {
   onSuccess: () => void;
   setIsMultiSelectionMode: (value: boolean) => void;
   initialEvent?: CalendarEvent;
+  initialType?: CalendarEventType;
+  initialStartTime?: number;
+  initialEndTime?: number;
   preserveGroupId?: boolean;
   submitLabel?: string;
   staticLayout?: boolean;
   onDraftChange?: (event: CalendarEvent) => void;
+  onCancel?: () => void;
   initialDates?: string[];
   confirmBeforeSave?: boolean;
   redirectAfterSave?: string;
+  rangeStartDate?: string;
+  rangeEndDate?: string;
   afterActions?: ReactNode;
+  hideCancel?: boolean;
+  footerActions?: ReactNode;
+  hideSelectionSummary?: boolean;
+  renderRangeFields?: (fields: {
+    isAllDay: boolean;
+    startTime: string;
+    endTime: string;
+    setStartTime: (value: string) => void;
+    setEndTime: (value: string) => void;
+  }) => ReactNode;
 }
 
 export const DashboardEventForm = (props: DashboardEventFormProps) => {
@@ -51,17 +72,30 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     setSelection,
     setIsMultiSelectionMode,
     initialEvent,
+    initialType,
+    initialStartTime,
+    initialEndTime,
     preserveGroupId,
     submitLabel,
     staticLayout = false,
     onDraftChange,
+    onCancel,
     initialDates = [],
     confirmBeforeSave = false,
     redirectAfterSave,
+    rangeStartDate,
+    rangeEndDate,
     afterActions,
+    renderRangeFields,
+    hideCancel = false,
+    footerActions,
+    hideSelectionSummary = false,
   } = props;
   const { language } = useAppContext();
   const i18n = dashboardEventFormI18n[language];
+  const isNote =
+    initialEvent?.type === CalendarEventType.Todo ||
+    initialType === CalendarEventType.Todo;
   const [isConfirming, setIsConfirming] = useState(false);
 
   // Animation state
@@ -82,11 +116,18 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     handleReset,
     handleCancel,
     handleSubmit,
+    backgroundColor,
     setBackgroundColor,
     setDescription,
     setName,
     setTextColor,
     setType,
+    isAllDay,
+    setIsAllDay,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
   } = useDashboardEventForm({
     onSuccess,
     selection,
@@ -94,8 +135,13 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     setIsRadioGroupVisible,
     setSelection,
     initialEvent,
+    initialType,
+    initialStartTime,
+    initialEndTime,
     preserveGroupId,
     redirectAfterSave,
+    rangeStartDate,
+    rangeEndDate,
   });
 
   useEffect(() => {
@@ -158,47 +204,55 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
         onAnimationStart={handleAnimationOpenStart}
         onAnimationEnd={handleAnimationColapseEnd}
       >
-        <Stack direction='horizontal' gap={8}>
-          <AddIcon />
-          {selection.length !== 0 && (
-            <h3>
-              Wybrano{' '}
-              <strong>
-                {`${selection.length} ${selection.length === 1 ? 'dzień' : 'dni'}`}
-              </strong>
-              {' - '}
-              {selection.length === 1 ? (
-                <small>{selectedDaysHelper.first}</small>
-              ) : (
-                <small>
-                  {selectedDaysHelper.first}
-                  {' / '}
-                  {selectedDaysHelper.last}
-                </small>
-              )}
-            </h3>
-          )}
-        </Stack>
+        {!isNote && !hideSelectionSummary && (
+          <Stack direction='horizontal' gap={8}>
+            <AddIcon />
+            {selection.length !== 0 && (
+              <h3>
+                Wybrano{' '}
+                <strong>
+                  {`${selection.length} ${selection.length === 1 ? 'dzień' : 'dni'}`}
+                </strong>
+                {' - '}
+                {selection.length === 1 ? (
+                  <small>{selectedDaysHelper.first}</small>
+                ) : (
+                  <small>
+                    {selectedDaysHelper.first}
+                    {' / '}
+                    {selectedDaysHelper.last}
+                  </small>
+                )}
+              </h3>
+            )}
+          </Stack>
+        )}
 
-        <Stack direction='horizontal'>
-          <Button
-            onClick={handleCancel}
-            isDisabled={selection.length === 0}
-            className='mt-2'
-            radius='sm'
-            variant='flat'
-            color='default'
-          >
-            <EventBusyIcon />
-            {i18n.cancel}
-          </Button>
+        <Stack direction='horizontal' className={styles.formActions}>
+          {footerActions}
+          {!hideCancel && (
+            <Button
+              onClick={() => {
+                handleCancel();
+                onCancel?.();
+              }}
+              isDisabled={selection.length === 0}
+              className={styles.actionButton}
+              radius='sm'
+              variant='flat'
+              color='default'
+            >
+              <EventBusyIcon />
+              {i18n.cancel}
+            </Button>
+          )}
 
           <Button
             type='submit'
             isDisabled={
               selection.length === 0 || formPutEventMutation.isPending
             }
-            className='mt-2'
+            className={styles.actionButton}
             radius='sm'
             variant='solid'
             color='danger'
@@ -212,68 +266,192 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
 
         {afterActions}
 
-        <Divider className='my-4' />
-
         <Stack>
           <Stack>
-            {isRadioGroupVisible && (
+            {!isNote && (
               <>
                 <Stack direction='horizontal'>
-                  <BsTags size={24} />
-                  <h3>{i18n.eventType}</h3>
+                  <MdOutlineTitle size={24} />
+                  <h3>{i18n.eventName}</h3>
                 </Stack>
-                <DashboardEventFormTypeSelectInput
-                  value={type}
-                  onValueChange={(value) => {
-                    setType(value as CalendarEventType);
+                <Input
+                  type='text'
+                  aria-label={i18n.eventName}
+                  value={name}
+                  radius='sm'
+                  variant='bordered'
+                  size='lg'
+                  onValueChange={setName}
+                />
+                <Divider className='my-2' />
+                <Stack direction='horizontal'>
+                  <MdOutlineSchedule size={24} />
+                  <h3>{language === 'pl' ? 'Zakres wydarzenia' : 'Event range'}</h3>
+                </Stack>
+                <section className={styles.timeSection}>
+                  <div className={styles.timeMode}>
+                    <label>
+                      <input
+                        type='radio'
+                        name='event-time-mode'
+                        checked={isAllDay}
+                        onChange={() => setIsAllDay(true)}
+                      />
+                      Całodniowe
+                    </label>
+                    <label>
+                      <input
+                        type='radio'
+                        name='event-time-mode'
+                        checked={!isAllDay}
+                        onChange={() => setIsAllDay(false)}
+                      />
+                      Godzinowe
+                    </label>
+                  </div>
+                  {renderRangeFields ? (
+                    renderRangeFields({
+                      isAllDay,
+                      startTime,
+                      endTime,
+                      setStartTime,
+                      setEndTime,
+                    })
+                  ) : !isAllDay ? (
+                    <div className={styles.timeRange}>
+                      <label>
+                        Od
+                        <input
+                          type='time'
+                          value={startTime}
+                          onChange={(event) => setStartTime(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Do
+                        <input
+                          type='time'
+                          min={startTime}
+                          value={endTime}
+                          onChange={(event) => setEndTime(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                  ) : null}
+                </section>
+                {(isRadioGroupVisible || staticLayout) && (
+                  <>
+                    <Divider className='my-2' />
+                    <Stack direction='horizontal'>
+                      <BsTags size={24} />
+                      <h3>{i18n.eventType}</h3>
+                    </Stack>
+                    <DashboardEventFormTypeSelectInput
+                      value={type}
+                      onValueChange={(value) => {
+                        setType(value as CalendarEventType);
+                      }}
+                    />
+                  </>
+                )}
+                <Divider className='my-2' />
+                <Stack direction='horizontal'>
+                  <MdOutlineNotes size={24} />
+                  <h3>{i18n.eventDescription}</h3>
+                </Stack>
+                <Textarea
+                  aria-label={i18n.eventDescription}
+                  value={description}
+                  radius='sm'
+                  variant='bordered'
+                  size='md'
+                  onValueChange={setDescription}
+                />
+                <Divider className='my-2' />
+                <Stack direction='horizontal'>
+                  <MdOutlineVisibility size={24} />
+                  <h3>{i18n.visibility}</h3>
+                </Stack>
+                <section className={styles.visibilitySection}>
+              <label className={styles.colorControl}>
+                <span>Kolor kafelka</span>
+                <input
+                  type='color'
+                  value={backgroundColor}
+                  onChange={(event) => {
+                    setBackgroundColor(event.target.value);
+                    setTextColor(getTextColor(event.target.value));
                   }}
+                />
+                <code>{backgroundColor.toUpperCase()}</code>
+              </label>
+              <div className={styles.visibilityPreview}>
+                <span>Podgląd kafelka</span>
+                <article
+                  className={styles.visibilityTile}
+                  style={
+                    { '--event-color': backgroundColor } as CSSProperties
+                  }
+                >
+                  <span className={styles.visibilityIcon}>
+                    <CalendarEventAvatar event={newEvent} size={64} variant='square' />
+                  </span>
+                  <div className={styles.visibilityTileContent}>
+                    <small>
+                      <strong className={styles.visibilityMetaTime}>
+                        {isAllDay
+                          ? language === 'pl'
+                            ? 'Cały dzień'
+                            : 'All day'
+                          : `${startTime} – ${endTime}`}
+                      </strong>
+                      {' · '}
+                      <span>
+                        {selection[0]
+                          ? new Intl.DateTimeFormat(
+                              language === 'pl' ? 'pl-PL' : 'en-GB',
+                              {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              },
+                            ).format(dayjs(selection[0]).toDate())
+                          : dayjs().locale(language).format('DD MMMM YYYY')}
+                      </span>
+                    </small>
+                    <h4>{name || 'Nowe wydarzenie'}</h4>
+                    {description && <p>{description}</p>}
+                  </div>
+                </article>
+              </div>
+                </section>
+                <Divider className='my-4' />
+              </>
+            )}
+            {isNote && (
+              <>
+                <Input
+                  type='text'
+                  label="Opis zadania"
+                  value={name}
+                  labelPlacement='outside'
+                  radius='sm'
+                  variant='bordered'
+                  size='lg'
+                  onValueChange={setName}
+                />
+                <Textarea
+                  label="Treść zadania"
+                  value={description}
+                  labelPlacement='outside'
+                  radius='sm'
+                  variant='bordered'
+                  size='md'
+                  onValueChange={setDescription}
                 />
               </>
             )}
-
-            <Input
-              type='text'
-              label={i18n.eventName}
-              value={name}
-              labelPlacement='outside'
-              radius='sm'
-              variant='bordered'
-              size='lg'
-              onValueChange={setName}
-            />
-
-            <Textarea
-              label={i18n.eventDescription}
-              value={description}
-              labelPlacement='outside'
-              radius='sm'
-              variant='bordered'
-              size='md'
-              onValueChange={setDescription}
-            />
-
-            <Divider className='my-2' />
-
-            <Stack direction='horizontal'>
-              <MdOutlineVisibility size={24} />
-              <h3>{i18n.visibility}</h3>
-            </Stack>
-
-            <Stack>
-              <EventListItem
-                event={newEvent}
-                paragraphClassName={styles.exampleItemParagraph}
-                titleClassName={styles.exampleItemTitle}
-              />
-
-              <ColorPicker
-                onColorChange={(color) => {
-                  setBackgroundColor(color);
-                  setTextColor(getTextColor(color));
-                }}
-              />
-            </Stack>
-            <Divider className='my-4' />
           </Stack>
         </Stack>
         {confirmBeforeSave && isConfirming && (

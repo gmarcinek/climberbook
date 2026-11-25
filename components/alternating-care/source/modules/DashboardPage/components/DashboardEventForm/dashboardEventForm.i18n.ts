@@ -20,6 +20,7 @@ export const dashboardEventFormI18n = {
     SCHOOL: 'Szkoła',
     SHOPPING: 'Zakupy',
     CAMP: 'Kolonie',
+    TODO: 'Notatka',
   },
   en: {
     eventName: 'Event Name',
@@ -42,5 +43,6 @@ export const dashboardEventFormI18n = {
     SCHOOL: 'School',
     SHOPPING: 'Shopping',
     CAMP: 'Camp',
+    TODO: 'Note',
   },
 };
