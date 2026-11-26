@@ -15,16 +15,22 @@ import {
 import dayjs from 'dayjs';
 import CalendarEventAvatar from '@components/Calendar/components/CalendarEventAvatar/CalendarEventAvatar';
 import {
+  AlignLeft,
   CalendarDays,
   Clock3,
   ChevronLeft,
   ChevronRight,
   Columns2,
   Expand,
+  PencilLine,
   Plus,
   Shrink,
+  Tag,
   Trash2,
+  X,
 } from 'lucide-react';
+import { getTextColor } from '@utils/color';
+import { getEventTypeIcon } from '@utils/eventTypeIcons';
 import classNames from 'classnames';
 import { toast } from 'react-toastify';
 import { createPortal } from 'react-dom';
@@ -285,6 +291,7 @@ export function DayPlanPanel({
   const [isEventFormVisible, setIsEventFormVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent>();
   const [detailEvent, setDetailEvent] = useState<CalendarEvent>();
+  const DetailEventIcon = getEventTypeIcon(detailEvent?.type);
   const [isDeleting, setIsDeleting] = useState(false);
   const [newEventType, setNewEventType] = useState<CalendarEventType>();
   const [draftStartTime, setDraftStartTime] = useState<number>();
@@ -1658,6 +1665,16 @@ export function DayPlanPanel({
               onMouseDown={(mouseEvent) => mouseEvent.stopPropagation()}
             >
               <header>
+                <span
+                  className={styles.eventModalBadge}
+                  style={{
+                    background: detailEvent.style?.background ?? '#2d6f8d',
+                    color: getTextColor(detailEvent.style?.background ?? '#2d6f8d'),
+                  }}
+                  aria-hidden
+                >
+                  <DetailEventIcon size={22} />
+                </span>
                 <div>
                   <small>{isPolish ? 'Szczegóły wydarzenia' : 'Event details'}</small>
                   <h3 id="event-modal-title">{detailEvent.name || detailEvent.type}</h3>
@@ -1667,37 +1684,61 @@ export function DayPlanPanel({
                   onClick={() => setDetailEvent(undefined)}
                   aria-label={isPolish ? 'Zamknij' : 'Close'}
                 >
-                  ×
+                  <X size={17} aria-hidden />
                 </button>
               </header>
               <dl>
                 <div>
-                  <dt>{isPolish ? 'Termin' : 'When'}</dt>
+                  <dt>
+                    <CalendarDays size={15} aria-hidden />
+                    {isPolish ? 'Termin' : 'When'}
+                  </dt>
+                  <dd>{formatDate(detailEvent.date, language)}</dd>
+                </div>
+                <div>
+                  <dt>
+                    <Clock3 size={15} aria-hidden />
+                    {isPolish ? 'Godzina' : 'Time'}
+                  </dt>
                   <dd>
-                    {formatDate(detailEvent.date, language)}
-                    {' · '}
                     {eventTime(detailEvent) ?? (isPolish ? 'Cały dzień' : 'All day')}
                   </dd>
                 </div>
                 <div>
-                  <dt>{isPolish ? 'Typ' : 'Type'}</dt>
+                  <dt>
+                    <Tag size={15} aria-hidden />
+                    {isPolish ? 'Typ' : 'Type'}
+                  </dt>
                   <dd>
                     {typeLabels[detailEvent.type]?.[isPolish ? 'pl' : 'en'] ??
                       detailEvent.type}
                   </dd>
                 </div>
+                {detailEvent.description && (
+                  <div>
+                    <dt>
+                      <AlignLeft size={15} aria-hidden />
+                      {isPolish ? 'Opis' : 'Notes'}
+                    </dt>
+                    <dd className={styles.eventModalDescription}>
+                      {detailEvent.description}
+                    </dd>
+                  </div>
+                )}
               </dl>
-              {detailEvent.description && <p>{detailEvent.description}</p>}
-              <button
-                type="button"
-                className={styles.eventModalEdit}
-                onClick={() => {
-                  setDetailEvent(undefined);
-                  openEventForm(detailEvent);
-                }}
-              >
-                {isPolish ? 'Edytuj' : 'Edit'}
-              </button>
+              <footer>
+                <button
+                  type="button"
+                  className={styles.eventModalEdit}
+                  onClick={() => {
+                    setDetailEvent(undefined);
+                    openEventForm(detailEvent);
+                  }}
+                >
+                  <PencilLine size={15} aria-hidden />
+                  {isPolish ? 'Edytuj' : 'Edit'}
+                </button>
+              </footer>
             </section>
           </div>,
           document.body,

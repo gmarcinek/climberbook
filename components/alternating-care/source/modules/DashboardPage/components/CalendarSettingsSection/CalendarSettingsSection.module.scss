@@ -9,58 +9,159 @@
   padding: 16px 0;
 }
 
-.viewToggles {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.calendarsMenu {
+  position: relative;
 }
 
-.careToggles,
-.eventToggles {
-  display: flex;
-  padding: 3px;
+.calendarsTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  border: 0;
   border-radius: 8px;
+  padding: 4px 10px;
+  background: #fff;
+  color: #4b5560;
+  box-shadow: 0 1px 4px rgba(31, 41, 55, 0.12);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  white-space: nowrap;
+
+  &:hover {
+    color: #1e293b;
+  }
+}
+
+.calendarsCount {
+  color: #8a949e;
+  font-size: 0.72rem;
+}
+
+.calendarsPanel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  min-width: 260px;
+  gap: 2px;
+  border: 1px solid #e4e9ee;
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(25, 39, 46, 0.18);
+}
+
+.calendarsPresets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  padding: 3px;
   background: #f1f4f7;
 
   button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    min-height: 30px;
+    min-height: 28px;
     border: 0;
     border-radius: 6px;
-    padding: 4px 9px;
     background: transparent;
     color: #6b7782;
     cursor: pointer;
     font: inherit;
     font-size: 0.76rem;
-    white-space: nowrap;
-  }
-
-  button:hover {
-    color: #4b5560;
   }
 
   .active {
     background: #fff;
-    color: #4b5560;
+    color: #1e293b;
     box-shadow: 0 1px 4px rgba(31, 41, 55, 0.12);
   }
 }
 
-.eventToggles button {
-  width: 32px;
-  padding-right: 0;
-  padding-left: 0;
+.calendarOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: transparent;
+  color: #1e293b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+
+  &:hover {
+    background: #f1f4f7;
+  }
+
+  &[data-separated] {
+    position: relative;
+    margin-top: 9px;
+
+    &::before {
+      position: absolute;
+      top: -5px;
+      right: 8px;
+      left: 8px;
+      border-top: 1px solid #e4e9ee;
+      content: '';
+    }
+  }
 }
 
-.careToggles .active svg,
-.eventToggles .active svg {
+.calendarSwatch {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.calendarIcon {
+  flex: none;
   color: #4b5560;
 }
 
+.calendarName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.switch {
+  position: relative;
+  width: 30px;
+  height: 17px;
+  flex: none;
+  border-radius: 999px;
+  background: #cfd6dc;
+  transition: background 150ms ease;
+
+  &::after {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    content: '';
+    transition: transform 150ms ease;
+  }
+
+  &[data-on] {
+    background: #009ca8;
+
+    &::after {
+      transform: translateX(13px);
+    }
+  }
+}
 .rangeNavigation {
   :global([data-range-controls]),
   :global([data-range-quick-actions]) {
@@ -81,7 +182,7 @@
     gap: 10px 12px !important;
   }
 
-  .viewToggles {
+  .calendarsMenu {
     grid-area: filters;
     width: fit-content;
     justify-self: start;
@@ -112,43 +213,50 @@
   }
 }
 
-:global(.timepage) .viewToggles {
-  .careToggles,
-  .eventToggles {
+:global(.timepage) {
+  .calendarsTrigger,
+  .calendarsPanel {
+    border-color: var(--tp-plan-line);
+    border-radius: 0;
     background: var(--tp-surface);
-  }
-}
-
-:global(.timepage) .careToggles,
-:global(.timepage) .eventToggles {
-  background: var(--tp-surface);
-
-  button {
-    color: var(--tp-muted);
-  }
-
-  :global(.timepage) .careToggles .active,
-  :global(.timepage) .eventToggles .active {
-    background: var(--tp-plan-line);
     color: var(--tp-text);
     box-shadow: none;
+  }
 
-    svg {
-      color: var(--tp-text);
+  .calendarsPresets {
+    border-radius: 0;
+    background: var(--tp-bg);
+
+    button {
+      border-radius: 0;
+      color: var(--tp-muted);
+    }
+
+    .active {
+      background: var(--tp-teal);
+      color: #fff;
+      box-shadow: none;
     }
   }
 
-  button:hover {
+  .calendarOption {
+    border-radius: 0;
     color: var(--tp-text);
+
+    &:hover {
+      background: var(--tp-plan-line);
+    }
   }
 
-  .active {
+  .calendarIcon,
+  .calendarsCount {
+    color: var(--tp-muted);
+  }
+
+  .switch[data-on] {
     background: var(--tp-teal);
-    color: #fff;
-    box-shadow: none;
   }
 }
-
 // NextUI reads HSL channel variables; retint the date range controls for the black canvas.
 :global(.timepage) .settings {
   --nextui-foreground: 0 0% 96%;
@@ -163,12 +271,4 @@
   --nextui-radius-medium: 0px;
   --nextui-border-width-medium: 1px;
   color: var(--tp-text);
-}
-
-:global(.timepage) .viewToggles {
-  .careToggles,
-  .eventToggles,
-  button {
-    border-radius: 0;
-  }
 }

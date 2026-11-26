@@ -142,6 +142,18 @@
   }
 }
 
+@container (max-width: 49.98px) {
+  .calendarItemBodyWeek > div {
+    position: relative;
+    top: -3px;
+    left: -2px;
+  }
+
+  .calendarItemBodyWeek .dayName {
+    top: 4px;
+  }
+}
+
 // Timepage theme: round days on a black canvas.
 // Inline sizing/colors come from JS, hence the !important overrides.
 // Each state sets --tp-day (user-picked care colours, else teal / dark teal);
@@ -177,6 +189,11 @@
 
   :global(.mt-1) {
     margin-top: 0;
+  }
+
+  > div {
+    top: 0;
+    left: 0;
   }
 
   strong {

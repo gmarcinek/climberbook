@@ -3,6 +3,8 @@
 import { useCalenderContext } from '@components/Calendar/Calendar.context';
 import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import { CalendarDayType } from '@components/Calendar/Calendar.types';
+import { getTextColor } from '@utils/color';
+import { getEventTypeIcon } from '@utils/eventTypeIcons';
 import classNames from 'classnames';
 import {
   MouseEventHandler,
@@ -18,6 +20,11 @@ import { CalendarItemBodySingle } from '../CalendarItemBodySingle/CalendarItemBo
 import { CalendarItemBodyTwoWeeks } from '../CalendarItemBodyTwoWeeks/CalendarItemBodyTwoWeeks';
 import { CalendarItemBodyWeek } from '../CalendarItemBodyWeek/CalendarItemBodyWeek';
 import styles from './CalendarDay.module.scss';
+
+const SingleEventIcon = ({ type }: { type: CalendarEventType }) => {
+  const Icon = getEventTypeIcon(type);
+  return <Icon className={styles.eventIcon} aria-hidden />;
+};
 
 const eventCircleBackground = (events: CalendarEvent[]) => {
   const colors = events
@@ -157,9 +164,20 @@ export default function CalendarDay(props: CalendarDayProps) {
         >
           <span
             className={styles.eventCircle}
-            style={{ background: eventCircleBackground(filteredDayEvents) }}
+            style={{
+              background: eventCircleBackground(filteredDayEvents),
+              ...(filteredDayEvents.length === 1 && {
+                color: getTextColor(
+                  filteredDayEvents[0].style?.background ?? '#fff'
+                ),
+              }),
+            }}
             title={filteredDayEvents.map((event) => event.name).filter(Boolean).join(', ')}
-          />
+          >
+            {filteredDayEvents.length === 1 && (
+              <SingleEventIcon type={filteredDayEvents[0].type} />
+            )}
+          </span>
         </div>
       )}
       {isCheckboxVisible && (

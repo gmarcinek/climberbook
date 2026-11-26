@@ -65,6 +65,12 @@ export const Sidebar = (props: SidebarProps) => {
             </li>
 
             <li>
+              <Link href='/alternating-care/timeline' onClick={toggle}>
+                <h2>{i18n.timeline}</h2>
+              </Link>
+            </li>
+
+            <li>
               <Link href='/alternating-care/people' onClick={toggle}>
                 <h2>{i18n.people}</h2>
               </Link>

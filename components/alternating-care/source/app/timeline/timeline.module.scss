@@ -1,0 +1,338 @@
+.page {
+  display: grid;
+  width: 100%;
+  gap: 18px;
+  padding: 8px clamp(16px, 2vw, 40px) 40px;
+}
+
+@media (min-width: 1920px) {
+  .page {
+    width: min(1760px, 100%);
+    margin: 0 auto;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  h1 {
+    margin: 0;
+    color: #263d45;
+    font-size: 1.35rem;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: #71808a;
+    font-size: 0.8rem;
+  }
+}
+
+.headerIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  background: #eaf3f6;
+  color: #2d6f8d;
+}
+
+// Care | axis | events; every block has the same size regardless of its duration.
+.legend,
+.axis > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+  align-items: center;
+}
+
+.legend {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  width: min(980px, 100%);
+  margin: 0 auto;
+  padding: 8px 0;
+  background: #f5f5f5;
+  color: #6b7782;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  span:first-child {
+    justify-self: end;
+  }
+
+  span:last-child {
+    grid-column: 3;
+  }
+}
+
+.axis {
+  position: relative;
+  display: grid;
+  width: min(980px, 100%);
+  gap: 8px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+
+  &::before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: #d4dde2;
+    content: '';
+    transform: translateX(-50%);
+  }
+
+  > li {
+    position: relative;
+  }
+}
+
+.todayRow,
+.monthRow {
+  span {
+    z-index: 1;
+    grid-column: 1 / -1;
+    justify-self: center;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+}
+
+.todayMarker {
+  padding: 2px 12px;
+  background: #e24b4b;
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.monthRow {
+  margin-top: 10px;
+
+  span {
+    border: 1px solid #d4dde2;
+    padding: 2px 12px;
+    background: #f5f5f5;
+    color: #52616c;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: capitalize;
+  }
+}
+
+.yearRow {
+  margin-top: 18px;
+
+  span {
+    z-index: 1;
+    display: grid;
+    width: 64px;
+    height: 64px;
+    grid-column: 1 / -1;
+    justify-self: center;
+    border: 4px solid #f5f5f5;
+    border-radius: 50%;
+    background: #2d5465;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(25, 39, 46, 0.25);
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    place-items: center;
+  }
+}
+
+// Dot on the axis for every block.
+.careRow::after,
+.eventRow::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #f5f5f5;
+  border-radius: 50%;
+  background: var(--block-color);
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+.careBlock,
+.eventBlock {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 1px 4px rgba(31, 41, 55, 0.1);
+}
+
+.careBlock {
+  grid-column: 1;
+  justify-content: flex-end;
+  background: var(--block-color);
+  color: var(--block-text);
+  text-align: right;
+
+  small {
+    opacity: 0.85;
+  }
+}
+
+.eventBlock {
+  grid-column: 3;
+  border-left: 4px solid var(--block-color);
+  background: #fff;
+  color: #263d45;
+
+  small {
+    color: #6b7782;
+  }
+}
+
+.eventIcon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--block-color);
+  color: var(--block-text);
+  place-items: center;
+}
+
+.blockText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-size: 0.84rem;
+  }
+
+  small {
+    font-size: 0.72rem;
+  }
+}
+// Big "12 dni" counter on the right, separated by a vertical line.
+.blockDays {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 4px;
+  border-left: 1px solid currentColor;
+  padding-left: 12px;
+  text-align: left;
+
+  strong {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  small {
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+}
+
+.eventBlock .blockDays {
+  border-left-color: #e4e9ee;
+  color: var(--block-color);
+}
+
+.careBlock .blockDays {
+  border-left-color: color-mix(in srgb, var(--block-text) 35%, transparent);
+}
+
+.loadMore {
+  justify-self: center;
+  min-height: 38px;
+  border: 1px solid #d7e0e5;
+  border-radius: 8px;
+  padding: 0 18px;
+  background: #fff;
+  color: #2d6f8d;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 767px) {
+  .legend,
+  .axis > li {
+    grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
+  }
+
+  .careBlock,
+  .eventBlock {
+    padding: 6px 8px;
+  }
+}
+
+:global(.timepage) {
+  .header h1 {
+    color: var(--tp-text);
+  }
+
+  .legend,
+  .monthRow span {
+    background: var(--tp-bg);
+  }
+
+  .axis::before,
+  .monthRow span {
+    border-color: var(--tp-plan-line);
+  }
+
+  .axis::before {
+    background: var(--tp-plan-line);
+  }
+
+  .monthRow span {
+    color: var(--tp-muted);
+  }
+
+  .careRow::after,
+  .eventRow::after,
+  .yearRow span {
+    border-color: var(--tp-bg);
+  }
+
+  .yearRow span {
+    background: var(--tp-teal);
+  }
+
+  .eventBlock {
+    background: var(--tp-surface);
+    color: var(--tp-text);
+
+    small {
+      color: var(--tp-muted);
+    }
+  }
+}

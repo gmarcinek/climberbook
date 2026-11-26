@@ -1,37 +1,64 @@
-'use client';
+﻿'use client';
 
 import { useAppContext } from '@app/AppContext';
 import { RangeNavigation } from '@components/RangeNavigation/RangeNavigation';
 import { Stack } from '@components/Stack/Stack';
 import { useBreakpoints } from '@utils/useBreakpoints';
-import { MdEvent, MdGroups, MdPerson } from 'react-icons/md';
+import { CalendarDays, ChevronDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { MdEvent } from 'react-icons/md';
 import { calendarSettingsSectionI18n } from './calendarSettingsSection.i18n';
 import styles from './CalendarSettingsSection.module.scss';
 
-interface CalendarSettingsSectionProps {
-  isAlternatingVisible: boolean;
-  setIsAlternatingVisible: (value: boolean) => void;
-  isOtherCareVisible: boolean;
-  setIsOtherCareVisible: (value: boolean) => void;
+export const EVENTS_CALENDAR_ID = 'events';
 
-  isEventsVisible: boolean;
-  setIsEventsVisible: (value: boolean) => void;
+export interface CalendarOption {
+  id: string;
+  name: string;
+  color?: string;
+  isEvents?: boolean;
+}
+
+interface CalendarSettingsSectionProps {
+  /** The first two entries are the user's own care and events ("mine"). */
+  calendars: CalendarOption[];
+  hiddenCalendars: string[];
+  onHiddenCalendarsChange: (hidden: string[]) => void;
 }
 
 export const CalendarSettingsSection = (
   props: CalendarSettingsSectionProps
 ) => {
-  const {
-    isAlternatingVisible,
-    setIsAlternatingVisible,
-    isOtherCareVisible,
-    setIsOtherCareVisible,
-    isEventsVisible,
-    setIsEventsVisible,
-  } = props;
+  const { calendars, hiddenCalendars, onHiddenCalendarsChange } = props;
   const { language } = useAppContext();
   const i18n = calendarSettingsSectionI18n[language];
   const { isMax1280 } = useBreakpoints();
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    window.addEventListener('pointerdown', close);
+    return () => window.removeEventListener('pointerdown', close);
+  }, [isOpen]);
+
+  const mineIds = calendars.slice(0, 2).map((item) => item.id);
+  const othersIds = calendars.slice(2).map((item) => item.id);
+  const isVisible = (id: string) => !hiddenCalendars.includes(id);
+  const visibleCount = calendars.filter((item) => isVisible(item.id)).length;
+  const isMineMode =
+    mineIds.every(isVisible) && othersIds.every((id) => !isVisible(id));
+  const isAllMode = calendars.every((item) => isVisible(item.id));
+
+  const toggle = (id: string) =>
+    onHiddenCalendarsChange(
+      isVisible(id)
+        ? [...hiddenCalendars, id]
+        : hiddenCalendars.filter((item) => item !== id)
+    );
 
   return (
     <div className={styles.settingsContainer}>
@@ -40,63 +67,80 @@ export const CalendarSettingsSection = (
         className={styles.settings}
         itemsAlignment='between'
       >
-        <div
-          className={styles.viewToggles}
-          role='group'
-          aria-label={i18n.displayMode}
-        >
-          <div
-            className={styles.careToggles}
-            role='radiogroup'
-            aria-label={i18n.plan}
+        <div className={styles.calendarsMenu} ref={rootRef}>
+          <button
+            type='button'
+            className={styles.calendarsTrigger}
+            aria-expanded={isOpen}
+            aria-haspopup='menu'
+            onClick={() => setIsOpen((value) => !value)}
           >
-            <button
-              type='button'
-              role='radio'
-              className={
-                isAlternatingVisible && !isOtherCareVisible
-                  ? styles.active
-                  : undefined
-              }
-              aria-checked={isAlternatingVisible && !isOtherCareVisible}
-              aria-label={i18n.myCare}
-              title={i18n.myCare}
-              onClick={() => {
-                setIsAlternatingVisible(true);
-                setIsOtherCareVisible(false);
-              }}
-            >
-              <MdPerson size={16} aria-hidden />
-              <span>{i18n.myShort}</span>
-            </button>
-            <button
-              type='button'
-              role='radio'
-              className={isOtherCareVisible ? styles.active : undefined}
-              aria-checked={isOtherCareVisible}
-              aria-label={i18n.otherCaregivers}
-              title={i18n.otherCaregivers}
-              onClick={() => {
-                setIsAlternatingVisible(true);
-                setIsOtherCareVisible(true);
-              }}
-            >
-              <MdGroups size={17} aria-hidden />
-              <span>{i18n.shared}</span>
-            </button>
-          </div>
-          <div className={styles.eventToggles}>
-            <button
-              type='button'
-              className={isEventsVisible ? styles.active : undefined}
-              aria-pressed={isEventsVisible}
-              aria-label={i18n.events}
-              title={i18n.events}
-              onClick={() => setIsEventsVisible(!isEventsVisible)}
-            >
-              <MdEvent size={15} aria-hidden />
-            </button>
-          </div>
+            <CalendarDays size={15} aria-hidden />
+            <span>{i18n.calendars}</span>
+            <span className={styles.calendarsCount}>
+              {visibleCount}/{calendars.length}
+            </span>
+            <ChevronDown size={15} aria-hidden />
+          </button>
+          {isOpen && (
+            <div className={styles.calendarsPanel} role='menu'>
+              <div
+                className={styles.calendarsPresets}
+                role='radiogroup'
+                aria-label={i18n.calendars}
+              >
+                <button
+                  type='button'
+                  role='radio'
+                  aria-checked={isMineMode}
+                  className={isMineMode ? styles.active : undefined}
+                  onClick={() => onHiddenCalendarsChange(othersIds)}
+                >
+                  {i18n.mine}
+                </button>
+                <button
+                  type='button'
+                  role='radio'
+                  aria-checked={isAllMode}
+                  className={isAllMode ? styles.active : undefined}
+                  onClick={() => onHiddenCalendarsChange([])}
+                >
+                  {i18n.all}
+                </button>
+              </div>
+              {calendars.map((calendar, index) => (
+                <button
+                  key={calendar.id}
+                  type='button'
+                  role='menuitemcheckbox'
+                  aria-checked={isVisible(calendar.id)}
+                  className={styles.calendarOption}
+                  data-separated={index === 2 || undefined}
+                  onClick={() => toggle(calendar.id)}
+                >
+                  {calendar.isEvents ? (
+                    <MdEvent
+                      className={styles.calendarIcon}
+                      size={16}
+                      aria-hidden
+                    />
+                  ) : (
+                    <span
+                      className={styles.calendarSwatch}
+                      style={{ background: calendar.color }}
+                      aria-hidden
+                    />
+                  )}
+                  <span className={styles.calendarName}>{calendar.name}</span>
+                  <span
+                    className={styles.switch}
+                    data-on={isVisible(calendar.id) || undefined}
+                    aria-hidden
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <RangeNavigation

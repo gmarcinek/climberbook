@@ -3,25 +3,7 @@ import { useAppContext } from '@app/AppContext';
 
 import { CalendarEventType } from '@api/db/types';
 import classNames from 'classnames';
-import { BiTrip } from 'react-icons/bi';
-import { FaCampground } from 'react-icons/fa';
-import { IoMdCalendar } from 'react-icons/io';
-import {
-  MdAssignment,
-  MdBeachAccess,
-  MdCake,
-  MdCelebration,
-  MdLocalCafe,
-  MdLocalHospital,
-  MdLocalMovies,
-  MdMenuBook,
-  MdPhone,
-  MdRestaurant,
-  MdSchool,
-  MdShoppingCart,
-  MdSportsSoccer,
-  MdWork,
-} from 'react-icons/md';
+import { getEventTypeIcon } from '@utils/eventTypeIcons';
 import { dashboardEventFormI18n } from './dashboardEventForm.i18n';
 import styles from './DashboardEventFormTypeSelectInput.module.scss';
 import { getEventTypeColor } from './eventTypeColors';
@@ -50,35 +32,8 @@ export const DashboardEventFormTypeSelectInput = (
   );
 
   const getIcon = (type: CalendarEventType) => {
-    const iconProps = { size: 24, 'aria-hidden': true as const };
-    if (type === CalendarEventType.Trip) return <BiTrip {...iconProps} />;
-    if (type === CalendarEventType.Birthday) return <MdCake {...iconProps} />;
-    if (type === CalendarEventType.Medical)
-      return <MdLocalHospital {...iconProps} />;
-    if (type === CalendarEventType.School) return <MdSchool {...iconProps} />;
-    if (type === CalendarEventType.Camp)
-      return <FaCampground {...iconProps} />;
-    if (type === CalendarEventType.Culinary)
-      return <MdRestaurant {...iconProps} />;
-    if (type === CalendarEventType.Coffee)
-      return <MdLocalCafe {...iconProps} />;
-    if (type === CalendarEventType.Cinema)
-      return <MdLocalMovies {...iconProps} />;
-    if (type === CalendarEventType.Sport)
-      return <MdSportsSoccer {...iconProps} />;
-    if (type === CalendarEventType.Shopping)
-      return <MdShoppingCart {...iconProps} />;
-    if (type === CalendarEventType.Holiday)
-      return <MdCelebration {...iconProps} />;
-    if (type === CalendarEventType.Vacation)
-      return <MdBeachAccess {...iconProps} />;
-    if (type === CalendarEventType.Errands)
-      return <MdAssignment {...iconProps} />;
-    if (type === CalendarEventType.Tutoring)
-      return <MdMenuBook {...iconProps} />;
-    if (type === CalendarEventType.Work) return <MdWork {...iconProps} />;
-    if (type === CalendarEventType.Phone) return <MdPhone {...iconProps} />;
-    return <IoMdCalendar {...iconProps} />;
+    const Icon = getEventTypeIcon(type);
+    return <Icon size={24} aria-hidden />;
   };
 
   return (

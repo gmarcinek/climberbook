@@ -32,14 +32,19 @@ import {
 } from 'react';
 import { useCaregiverColors, useCaregivers } from '@utils/useCaregiverColors';
 import { caregiverBackground } from '@utils/caregiverColors';
-import { colorBlueGreen700 } from '@utils/color';
+import { colorBlueGreen700, getTextColor } from '@utils/color';
+import { getEventTypeIcon } from '@utils/eventTypeIcons';
 import { createPortal } from 'react-dom';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useLongPress } from 'use-long-press';
 import { useDashboardPageContext } from '@modules/DashboardPage/DashboardPage.context';
 import { CalendarGrid } from '../CalendarGrid/CalendarGrid';
-import { CalendarSettingsSection } from '../CalendarSettingsSection/CalendarSettingsSection';
+import {
+  CalendarSettingsSection,
+  EVENTS_CALENDAR_ID,
+  type CalendarOption,
+} from '../CalendarSettingsSection/CalendarSettingsSection';
 import { CareSummary } from '../CareSummary/CareSummary';
 import { AllDayEventsPanel } from '../AllDayEventsPanel/AllDayEventsPanel';
 import { TodoPanel } from '../TodoPanel/TodoPanel';
@@ -119,17 +124,10 @@ export const Dashboard = (props: DashboardProps) => {
   } = useSelection({
     isMultiSelectionAvailable: true,
   });
-  const [isAlternatingVisible, setIsAlternatingVisible] = usePersistentState(
-    'alternating-care:dashboard:alternating-visible',
-    true,
-  );
-  const [isOtherCareVisible, setIsOtherCareVisible] = usePersistentState(
-    'alternating-care:dashboard:other-care-visible',
-    false,
-  );
-  const [isEventsVisible, setIsEventsVisible] = usePersistentState(
-    'alternating-care:dashboard:events-visible',
-    true,
+  // Every caregiver's care and the events are separate calendars; hidden ones are listed here.
+  const [hiddenCalendars, setHiddenCalendars] = usePersistentState<string[]>(
+    'alternating-care:dashboard:hidden-calendars',
+    [],
   );
   const [formWidth, setFormWidth] = usePersistentState(
     'alternating-care:dashboard:widgets-width',
@@ -379,6 +377,75 @@ export const Dashboard = (props: DashboardProps) => {
 
   const savedCaregivers = useCaregivers();
   const caregiverColors = useCaregiverColors();
+  const selfSubject = `self:${user.id}`;
+  const careSubjectOf = useCallback(
+    (event: CalendarEvent) =>
+      event.groupId === CalendarEventType.Alternating ||
+      event.groupId.startsWith('CARE:self:')
+        ? selfSubject
+        : event.groupId.replace(/^CARE:/, ''),
+    [selfSubject],
+  );
+  const isCalendarEventVisible = useCallback(
+    (event: CalendarEvent) =>
+      !hiddenCalendars.includes(
+        event.type === CalendarEventType.Alternating
+          ? careSubjectOf(event)
+          : EVENTS_CALENDAR_ID,
+      ),
+    [careSubjectOf, hiddenCalendars],
+  );
+  const visibleEvents = useMemo(
+    () => sortedEvents.filter(isCalendarEventVisible),
+    [isCalendarEventVisible, sortedEvents],
+  );
+  const calendarOptions = useMemo<CalendarOption[]>(() => {
+    const options: CalendarOption[] = [
+      {
+        id: selfSubject,
+        name: language === 'en' ? 'My care' : 'Moja opieka',
+        color: caregiverColors[selfSubject] ?? colorBlueGreen700,
+      },
+      {
+        id: EVENTS_CALENDAR_ID,
+        name: language === 'en' ? 'My events' : 'Moje eventy',
+        isEvents: true,
+      },
+    ];
+    const addCare = (subjectId: string, name: string) => {
+      if (options.some((item) => item.id === subjectId)) return;
+      options.push({
+        id: subjectId,
+        name,
+        color: caregiverBackground(subjectId, caregiverColors),
+      });
+    };
+    savedCaregivers
+      .filter((item) => !item.subjectId.startsWith('self:'))
+      .forEach((item) => addCare(item.subjectId, item.name));
+    // Care entries of people that are not saved caregivers (e.g. the legacy other parent).
+    sortedEvents.forEach((event) => {
+      if (event.type !== CalendarEventType.Alternating) return;
+      const subjectId = careSubjectOf(event);
+      addCare(
+        subjectId,
+        subjectId.startsWith('other:')
+          ? otherParent.name || (language === 'en' ? 'Other parent' : 'Drugi rodzic')
+          : language === 'en'
+            ? 'Caregiver'
+            : 'Opiekun',
+      );
+    });
+    return options;
+  }, [
+    careSubjectOf,
+    caregiverColors,
+    language,
+    otherParent.name,
+    savedCaregivers,
+    selfSubject,
+    sortedEvents,
+  ]);
   const selectedDatesOrdered = [...selection].sort();
   const selectedDateRange =
     selectedDatesOrdered.length > 0
@@ -424,29 +491,13 @@ export const Dashboard = (props: DashboardProps) => {
         const zoom = cssZoom(dayElement);
         const sourceEvents = isCareEditActive
           ? careEdit.previewEvents
-          : sortedEvents;
-        const eventsForDay = sourceEvents.filter(
-          (item) =>
-            item.date === date &&
-            (item.type !== CalendarEventType.Alternating ||
-              isAlternatingVisible ||
-              isOtherCareVisible),
-        );
+          : visibleEvents;
+        const eventsForDay = sourceEvents.filter((item) => item.date === date);
         const careSubjects = [
           ...new Set(
             eventsForDay
-              .filter((item) => {
-                if (item.type !== CalendarEventType.Alternating) return false;
-                const isOwn =
-                  item.groupId === CalendarEventType.Alternating ||
-                  item.groupId.startsWith('CARE:self:');
-                return isOwn ? isAlternatingVisible : isOtherCareVisible;
-              })
-              .map((item) =>
-                item.groupId.startsWith('CARE:')
-                  ? item.groupId.slice('CARE:'.length)
-                  : `self:${user.id}`,
-              ),
+              .filter((item) => item.type === CalendarEventType.Alternating)
+              .map(careSubjectOf),
           ),
         ];
         setDayDetails({
@@ -457,23 +508,21 @@ export const Dashboard = (props: DashboardProps) => {
             Math.min(rect.left / zoom, window.innerWidth / zoom - 288),
           ),
           careSubjects,
-          events: isEventsVisible
-            ? eventsForDay.filter(
-                (item) => item.type !== CalendarEventType.Alternating,
-              )
-            : [],
+          // The tooltip lists every event of the day, also from hidden calendars.
+          events: (isCareEditActive ? careEdit.previewEvents : sortedEvents).filter(
+            (item) =>
+              item.date === date && item.type !== CalendarEventType.Alternating,
+          ),
         });
       }, 800);
     },
     [
       careEdit.previewEvents,
+      careSubjectOf,
       clearDayDetails,
-      isAlternatingVisible,
       isCareEditActive,
-      isEventsVisible,
-      isOtherCareVisible,
       sortedEvents,
-      user.id,
+      visibleEvents,
     ],
   );
   useEffect(
@@ -702,12 +751,9 @@ export const Dashboard = (props: DashboardProps) => {
           <div className={styles.mobileCalendarView}>
             <div className={styles.desktopOnly}>
               <CalendarSettingsSection
-                isAlternatingVisible={isAlternatingVisible}
-                setIsAlternatingVisible={setIsAlternatingVisible}
-                isOtherCareVisible={isOtherCareVisible}
-                setIsOtherCareVisible={setIsOtherCareVisible}
-                isEventsVisible={isEventsVisible && !isCareEditActive}
-                setIsEventsVisible={setIsEventsVisible}
+                calendars={calendarOptions}
+                hiddenCalendars={hiddenCalendars}
+                onHiddenCalendarsChange={setHiddenCalendars}
               />
             </div>
             {selection.size > 0 && !isCareEditActive && (
@@ -762,14 +808,14 @@ export const Dashboard = (props: DashboardProps) => {
               onMouseLeave={clearDayDetails}
             >
               <CalendarGrid
-                data={isCareEditActive ? careEdit.previewEvents : sortedEvents}
+                data={isCareEditActive ? careEdit.previewEvents : visibleEvents}
                 handlers={isCareEditActive ? careEdit.handlers : handlers}
-                isAlternatingVisible={isAlternatingVisible}
-                isOtherCareVisible={isOtherCareVisible}
+                isAlternatingVisible
+                isOtherCareVisible
                 isMultiSelectionMode={
                   isCareEditActive ? false : isMultiSelectionMode
                 }
-                isEventsVisible={isEventsVisible}
+                isEventsVisible={false}
                 selection={isCareEditActive ? emptySelection : selection}
                 onMonthVisible={loadMonth}
               />
@@ -854,20 +900,32 @@ export const Dashboard = (props: DashboardProps) => {
                     {language === 'en' ? 'Events' : 'Wydarzenia'}
                   </span>
                   <ul>
-                    {dayDetails.events.map((event) => (
-                      <li key={`${event.id}-${event.date}`}>
-                        <span
-                          className={styles.dayDetailsSwatch}
-                          style={{
-                            background: event.style?.background ?? '#9aa5ab',
-                          }}
-                        />
-                        <span>
-                          <b>{event.name || event.type}</b>
-                          {event.description && <small>{event.description}</small>}
-                        </span>
-                      </li>
-                    ))}
+                    {dayDetails.events.map((event) => {
+                      const EventIcon = getEventTypeIcon(event.type);
+                      const background = event.style?.background ?? '#9aa5ab';
+                      return (
+                        <li key={`${event.id}-${event.date}`}>
+                          <span
+                            className={classNames(
+                              styles.dayDetailsSwatch,
+                              styles.dayDetailsEventIcon,
+                            )}
+                            style={{
+                              background,
+                              color: getTextColor(background),
+                            }}
+                          >
+                            <EventIcon size={12} aria-hidden />
+                          </span>
+                          <span>
+                            <b>{event.name || event.type}</b>
+                            {event.description && (
+                              <small>{event.description}</small>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </>
               )}

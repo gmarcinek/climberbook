@@ -260,14 +260,19 @@
 
     li {
       display: grid;
-      grid-template-columns: 12px minmax(0, 1fr);
+      grid-template-columns: 20px minmax(0, 1fr);
       align-items: start;
       gap: 8px;
 
       .dayDetailsSwatch {
-        width: 12px;
-        height: 12px;
-        margin-top: 3px;
+        width: 20px;
+        height: 20px;
+        margin-top: 0;
+      }
+
+      .dayDetailsEventIcon {
+        display: grid;
+        place-items: center;
       }
 
       b {
@@ -298,6 +303,11 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
+
+  .dayDetailsSwatch {
+    width: 20px;
+    height: 20px;
+  }
 
   small {
     color: #8a949b;
