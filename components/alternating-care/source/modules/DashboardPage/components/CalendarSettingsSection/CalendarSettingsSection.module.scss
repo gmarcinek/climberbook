@@ -11,33 +11,54 @@
 
 .viewToggles {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+}
+
+.careToggles,
+.eventToggles {
+  display: flex;
   padding: 3px;
-  border: 1px solid #e4e4e7;
   border-radius: 8px;
-  background: #f7f8fa;
+  background: #f1f4f7;
 
   button {
-    display: grid;
-    width: 32px;
-    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 30px;
     border: 0;
     border-radius: 6px;
+    padding: 4px 9px;
     background: transparent;
-    color: #8a949d;
+    color: #6b7782;
     cursor: pointer;
-    place-items: center;
+    font: inherit;
+    font-size: 0.76rem;
+    white-space: nowrap;
   }
 
   button:hover {
-    color: #315d70;
+    color: #4b5560;
   }
 
   .active {
     background: #fff;
-    color: #246f91;
-    box-shadow: 0 1px 4px rgba(31, 45, 61, 0.12);
+    color: #4b5560;
+    box-shadow: 0 1px 4px rgba(31, 41, 55, 0.12);
   }
+}
+
+.eventToggles button {
+  width: 32px;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.careToggles .active svg,
+.eventToggles .active svg {
+  color: #4b5560;
 }
 
 .rangeNavigation {
@@ -88,5 +109,66 @@
 @media (max-width: 767px) {
   .rangeNavigation {
     display: none !important;
+  }
+}
+
+:global(.timepage) .viewToggles {
+  .careToggles,
+  .eventToggles {
+    background: var(--tp-surface);
+  }
+}
+
+:global(.timepage) .careToggles,
+:global(.timepage) .eventToggles {
+  background: var(--tp-surface);
+
+  button {
+    color: var(--tp-muted);
+  }
+
+  :global(.timepage) .careToggles .active,
+  :global(.timepage) .eventToggles .active {
+    background: var(--tp-plan-line);
+    color: var(--tp-text);
+    box-shadow: none;
+
+    svg {
+      color: var(--tp-text);
+    }
+  }
+
+  button:hover {
+    color: var(--tp-text);
+  }
+
+  .active {
+    background: var(--tp-teal);
+    color: #fff;
+    box-shadow: none;
+  }
+}
+
+// NextUI reads HSL channel variables; retint the date range controls for the black canvas.
+:global(.timepage) .settings {
+  --nextui-foreground: 0 0% 96%;
+  --nextui-default-foreground: 0 0% 96%;
+  --nextui-default: 190 15% 16%;
+  --nextui-default-200: 190 15% 16%;
+  --nextui-default-300: 190 12% 24%;
+  --nextui-default-400: 190 6% 56%;
+  --nextui-default-500: 190 6% 60%;
+  // Sharp corners and hairline borders for buttons and the date range input.
+  --nextui-radius-small: 0px;
+  --nextui-radius-medium: 0px;
+  --nextui-border-width-medium: 1px;
+  color: var(--tp-text);
+}
+
+:global(.timepage) .viewToggles {
+  .careToggles,
+  .eventToggles,
+  button {
+    border-radius: 0;
   }
 }

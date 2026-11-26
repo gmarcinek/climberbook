@@ -43,3 +43,20 @@
     }
   }
 }
+
+// Timepage theme: light uppercase month titles on black, magenta year.
+:global(.timepage) .calendarMonth {
+  .heading {
+    border-color: var(--tp-line);
+    color: var(--tp-text);
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .year {
+    color: var(--tp-teal);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+  }
+}

@@ -80,13 +80,21 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
     );
   });
 
+  // Care always wins over events; events only colour days without care.
+  const eventColor =
+    isEventsVisible && !isAlternating && !caregiverCare
+      ? event?.style?.background
+      : undefined;
+
   const itemClasses = classNames(styles.calendarItemBodyWeek, {
+    [styles.hasEventColor]: Boolean(eventColor),
     [styles.smallPolygon]: is380,
     [styles.isWeekend]: isWeekend,
     [styles.isToday]: isTodayVisible && isToday,
     [styles.isFirstOfTheMonth]:
       displayStrategy === 'continous' && isFirstOfTheMonth,
     [styles.isAlternating]: isAlternating,
+    [styles.isOtherCare]: Boolean(caregiverCare),
     [styles.isSelected]: isSelected,
   });
   const { dayName, dayNumber } = useMemo(() => {
@@ -100,17 +108,33 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
     const caregiverColor = caregiverCare
       ? caregiverBackground(caregiverCare.groupId, caregiverColors)
       : undefined;
+    // Timepage: user-picked caregiver colours win; events fill only free days.
+    const customCareColor = caregiverCare
+      ? caregiverColors?.[caregiverCare.groupId.replace(/^CARE:/, '')]
+      : undefined;
+    const eventVars = {
+      ...(eventColor && {
+        '--tp-event-color': eventColor,
+        '--tp-event-text': getTextColor(eventColor),
+      }),
+      ...(customCareColor && {
+        '--tp-care-color': customCareColor,
+        '--tp-care-text': getTextColor(customCareColor),
+      }),
+    } as React.CSSProperties;
     if (isEventsVisible) {
       return {
         ...style.style,
-        backgroundColor: caregiverColor ?? event?.style?.background,
-        color: getTextColor(caregiverColor ?? event?.style?.background),
+        ...eventVars,
+        backgroundColor: caregiverColor ?? eventColor,
+        color: getTextColor(caregiverColor ?? eventColor),
       };
     }
 
     return caregiverColor
       ? {
           ...style.style,
+          ...eventVars,
           backgroundColor: caregiverColor,
           color: getTextColor(caregiverColor),
         }
@@ -118,7 +142,7 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
   }, [
     caregiverCare,
     caregiverColors,
-    event?.style?.background,
+    eventColor,
     style.style,
     isEventsVisible,
   ]);
@@ -140,13 +164,17 @@ export function CalendarItemBodyWeek(props: CalendarItemBodyWeekProps) {
       >
         <Stack gap={0} direction='horizontal'>
           <Stack gap={0}>
-            <span>{dayName}</span>
+            <span className={styles.dayName}>{dayName}</span>
 
             <span className='mt-1'>
               <big>
                 <strong>{dayNumber}</strong>
               </big>
-              {!is320 && <small>{currentDate.format('.MM')}</small>}
+              {!is320 && (
+                <small className={styles.monthNumber}>
+                  {currentDate.format('.MM')}
+                </small>
+              )}
             </span>
 
             {!is320 && (

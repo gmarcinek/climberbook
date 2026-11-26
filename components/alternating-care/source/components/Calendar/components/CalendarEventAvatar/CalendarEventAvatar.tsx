@@ -7,7 +7,23 @@ import { PropsWithChildren } from 'react';
 import { BiTrip } from 'react-icons/bi';
 import { FaCampground } from 'react-icons/fa';
 import { IoMdCalendar } from 'react-icons/io';
-import { MdCake, MdLocalHospital, MdOutlineTaskAlt, MdSchool } from 'react-icons/md';
+import {
+  MdAssignment,
+  MdBeachAccess,
+  MdCake,
+  MdCelebration,
+  MdLocalCafe,
+  MdLocalHospital,
+  MdLocalMovies,
+  MdMenuBook,
+  MdOutlineTaskAlt,
+  MdPhone,
+  MdRestaurant,
+  MdSchool,
+  MdShoppingCart,
+  MdSportsSoccer,
+  MdWork,
+} from 'react-icons/md';
 interface CalendarEventAvatarProps extends PropsWithChildren {
   event?: CalendarEvent;
   className?: string;
@@ -59,6 +75,72 @@ export default function CalendarEventAvatar(props: CalendarEventAvatarProps) {
       )}
       {event.type === CalendarEventType.Camp && (
         <FaCampground
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Culinary && (
+        <MdRestaurant
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Coffee && (
+        <MdLocalCafe
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Cinema && (
+        <MdLocalMovies
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Sport && (
+        <MdSportsSoccer
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Shopping && (
+        <MdShoppingCart
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Holiday && (
+        <MdCelebration
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Vacation && (
+        <MdBeachAccess
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Errands && (
+        <MdAssignment
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Tutoring && (
+        <MdMenuBook
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Work && (
+        <MdWork
+          color={getTextColor(event.style?.background)}
+          size={iconSize}
+        />
+      )}
+      {event.type === CalendarEventType.Phone && (
+        <MdPhone
           color={getTextColor(event.style?.background)}
           size={iconSize}
         />

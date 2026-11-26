@@ -1,0 +1,220 @@
+.widgets {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #53646c;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.card {
+  --lesson-color: #2d6f8d;
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  border: 1px solid color-mix(in srgb, var(--lesson-color) 24%, #dfe7eb);
+  border-left: 5px solid var(--lesson-color);
+  border-radius: 12px;
+  padding: 14px 15px;
+  background:
+    radial-gradient(circle at 96% 0%, color-mix(in srgb, var(--lesson-color) 12%, transparent), transparent 42%),
+    #fff;
+  color: #263d45;
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+
+  &:hover {
+    box-shadow: 0 7px 20px rgba(30, 57, 68, 0.1);
+    transform: translateY(-1px);
+  }
+
+  > header {
+    display: flex;
+    min-width: 0;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 9px;
+
+    > svg {
+      margin-left: auto;
+      color: var(--lesson-color);
+    }
+
+    > div {
+      display: grid;
+      min-width: 0;
+      gap: 1px;
+
+      > strong {
+        overflow: hidden;
+        font-size: 0.95rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      > span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #718088;
+        font-size: 0.68rem;
+      }
+    }
+  }
+}
+
+.avatar,
+.microAvatar {
+  display: grid;
+  overflow: hidden;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--lesson-color) 18%, #fff);
+  color: var(--lesson-color);
+  font-weight: 800;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 0.85rem;
+}
+
+.counts {
+  display: flex;
+  align-items: flex-end;
+  gap: 15px;
+
+  > span {
+    display: grid;
+    justify-items: center;
+    line-height: 1;
+
+    > strong {
+      color: var(--lesson-color);
+      font-size: 1.5rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    > small {
+      margin-top: 4px;
+      color: #718088;
+      font-size: 0.64rem;
+    }
+  }
+}
+
+.current {
+  display: grid;
+  min-width: 0;
+  align-content: end;
+  gap: 2px;
+  text-align: right;
+
+  > small {
+    color: #718088;
+    font-size: 0.64rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  > strong {
+    overflow: hidden;
+    color: #263d45;
+    font-size: 0.88rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  color: var(--lesson-color);
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.finished {
+  --lesson-color: #718088;
+}
+
+.microCard {
+  display: grid;
+  width: 44px;
+  height: 64px;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  border: 0;
+  border-radius: 10px;
+  padding: 4px 2px;
+  background: color-mix(in srgb, var(--lesson-color, #2d6f8d) 88%, #fff);
+  color: #fff;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+
+  > strong {
+    font-size: 0.82rem;
+    line-height: 1;
+  }
+
+  > small {
+    opacity: 0.84;
+    font-size: 0.58rem;
+    line-height: 1;
+  }
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.microAvatar {
+  width: 21px;
+  height: 21px;
+  margin-bottom: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 0.62rem;
+}
+
+@container (max-width: 360px) {
+  .card {
+    grid-template-columns: 1fr;
+  }
+
+  .counts {
+    justify-content: center;
+  }
+
+  .current {
+    padding-top: 9px;
+    border-top: 1px solid #e5ebee;
+    text-align: left;
+  }
+
+  .meta {
+    justify-content: flex-start;
+  }
+}

@@ -1,8 +1,6 @@
 'use client';
 
 import { useCalenderContext } from '@components/Calendar/Calendar.context';
-import { useDayContainetRwd } from '@components/Calendar/hooks/useDayContainetRwd';
-
 import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import { CalendarDayType } from '@components/Calendar/Calendar.types';
 import classNames from 'classnames';
@@ -15,12 +13,25 @@ import {
   useCallback,
   useMemo,
 } from 'react';
-import { BiSolidLayer } from 'react-icons/bi';
 import { CalendarItemBodyMonth } from '../CalendarItemBodyMonth/CalendarItemBodyMonth';
 import { CalendarItemBodySingle } from '../CalendarItemBodySingle/CalendarItemBodySingle';
 import { CalendarItemBodyTwoWeeks } from '../CalendarItemBodyTwoWeeks/CalendarItemBodyTwoWeeks';
 import { CalendarItemBodyWeek } from '../CalendarItemBodyWeek/CalendarItemBodyWeek';
 import styles from './CalendarDay.module.scss';
+
+const eventCircleBackground = (events: CalendarEvent[]) => {
+  const colors = events
+    .slice(0, 4)
+    .map((event) => event.style?.background ?? '#fff');
+  if (colors.length <= 1) return colors[0] ?? '#fff';
+
+  const step = 100 / colors.length;
+  const stops = colors.map(
+    (color, index) =>
+      `${color} ${index * step}% ${(index + 1) * step}%`,
+  );
+  return `conic-gradient(from -90deg, ${stops.join(', ')})`;
+};
 
 interface CalendarDayProps extends PropsWithChildren {
   day: CalendarDayType;
@@ -37,15 +48,12 @@ export default function CalendarDay(props: CalendarDayProps) {
     onDayClick,
     isMultiSelectionMode,
     selection,
-    containerWidth,
     onPointerUp,
     onPointerDown,
     hideSelectionCheckbox,
     isDayDimmed,
     isDayMarked,
   } = useCalenderContext();
-
-  const { is380 } = useDayContainetRwd(containerWidth);
 
   const isSelected = useMemo(() => {
     return (selection ?? []).toString().split(',').includes(day.date);
@@ -141,8 +149,17 @@ export default function CalendarDay(props: CalendarDayProps) {
         <span className={styles.markedCross} aria-hidden='true' />
       )}
       {filteredDayEvents && filteredDayEvents.length >= 1 && (
-        <div className={styles.eventCounter}>
-          <BiSolidLayer size={is380 ? 14 : 17} />
+        <div
+          className={styles.eventCounter}
+          aria-label={`${filteredDayEvents.length} ${
+            filteredDayEvents.length === 1 ? 'event' : 'events'
+          }`}
+        >
+          <span
+            className={styles.eventCircle}
+            style={{ background: eventCircleBackground(filteredDayEvents) }}
+            title={filteredDayEvents.map((event) => event.name).filter(Boolean).join(', ')}
+          />
         </div>
       )}
       {isCheckboxVisible && (
@@ -151,18 +168,7 @@ export default function CalendarDay(props: CalendarDayProps) {
             [styles.checkboxSelected]: isSelected,
           })}
           aria-hidden='true'
-          style={{
-            position: 'absolute',
-            top: 4,
-            right: 5,
-            zIndex: 3,
-            display: 'grid',
-            width: 16,
-            height: 16,
-          }}
-        >
-          {isSelected && '✓'}
-        </span>
+        />
       )}
       {render}
     </div>

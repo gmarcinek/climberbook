@@ -45,6 +45,7 @@ interface CareSummaryProps {
   section?: 'all' | 'overview' | 'upcoming' | 'micro';
   /** Micro variant: called when any button is clicked. */
   onExpand?: () => void;
+  microContent?: ReactNode;
 }
 
 export const CareSummary = ({
@@ -54,6 +55,7 @@ export const CareSummary = ({
   action,
   section = 'all',
   onExpand,
+  microContent,
 }: CareSummaryProps) => {
   const { user, language } = useAppContext();
   const isEnglish = language === 'en';
@@ -195,7 +197,12 @@ export const CareSummary = ({
   );
 
   if (section === 'micro' && (query.isLoading || !summary)) {
-    return <section className={styles.micro}>{microExpandButton}</section>;
+    return (
+      <section className={styles.micro}>
+        {microExpandButton}
+        {microContent}
+      </section>
+    );
   }
 
   if (query.isLoading) {
@@ -285,8 +292,13 @@ export const CareSummary = ({
           {currentAvatar ? (
             <img src={currentAvatar} alt='' />
           ) : (
-            holder.charAt(0).toUpperCase()
+            <span className={styles.microAvatarInitial}>
+              {holder.charAt(0).toUpperCase()}
+            </span>
           )}
+          <small className={styles.microAvatarLabel}>
+            {isEnglish ? 'CARE' : 'OPIEKA'}
+          </small>
         </button>
         <button
           type='button'
@@ -300,6 +312,9 @@ export const CareSummary = ({
               {currentDay}/{totalDays}
             </strong>
             <small>{isEnglish ? 'days' : 'dni'}</small>
+            <span className={styles.microProgress} aria-hidden>
+              <span style={{ width: `${progress * 100}%` }} />
+            </span>
           </span>
         </button>
         <button
@@ -309,7 +324,8 @@ export const CareSummary = ({
           title={`${isEnglish ? 'Next handoff' : 'Wymiana'} ${handoffCountdown}`}
           aria-label={`${expandLabel}: ${daysUntilHandoff}d`}
         >
-          <span className={styles.microValue}>
+          <span className={`${styles.microValue} ${styles.microExchangeValue}`}>
+            <ArrowLeftRight size={14} aria-hidden />
             <strong>{daysUntilHandoff}</strong>
             <small>
               {isEnglish
@@ -322,6 +338,7 @@ export const CareSummary = ({
             </small>
           </span>
         </button>
+        {microContent}
         <button
           type='button'
           className={styles.microDate}

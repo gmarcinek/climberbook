@@ -30,7 +30,7 @@
 
   svg {
     flex: none;
-    color: #7b8891;
+    color: var(--type-color, #7b8891);
     transition: color 0.15s ease;
   }
 
@@ -46,17 +46,14 @@
 }
 
 .selected {
-  border-color: #c0262d;
-  background: #fff4f2;
-  color: #8f1621;
-  box-shadow: 0 0 0 1px #c0262d inset;
-
-  svg {
-    color: #c0262d;
-  }
+  --selected-color: var(--type-color, #c0262d);
+  border-color: var(--selected-color);
+  background: color-mix(in srgb, var(--selected-color) 9%, #fff);
+  color: color-mix(in srgb, var(--selected-color) 75%, #1e1916);
+  box-shadow: 0 0 0 1px var(--selected-color) inset;
 
   &:hover {
-    border-color: #c0262d;
-    background: #ffece8;
+    border-color: var(--selected-color);
+    background: color-mix(in srgb, var(--selected-color) 14%, #fff);
   }
 }

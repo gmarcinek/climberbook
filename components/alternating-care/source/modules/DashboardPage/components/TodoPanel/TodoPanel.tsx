@@ -4,9 +4,10 @@ import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import {
   createCareEvents,
   deleteCareEvent,
+  listCareEvents,
 } from '@api/db/events/careEventsApi';
 import { useAppContext } from '@app/AppContext';
-import dayjs from 'dayjs';
+import { useQuery } from '@tanstack/react-query';
 import CalendarEventAvatar from '@components/Calendar/components/CalendarEventAvatar/CalendarEventAvatar';
 import { CheckCircle2, CheckSquare2, Clock, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useMemo, useState, type CSSProperties } from 'react';
@@ -25,25 +26,33 @@ export function TodoPanel({ events, onUpdated, onAdd, onEdit }: TodoPanelProps) 
   const { language } = useAppContext();
   const [updatingId, setUpdatingId] = useState<string>();
   const [selectedTodo, setSelectedTodo] = useState<CalendarEvent>();
-  const today = dayjs().format('YYYY-MM-DD');
+  const todosQuery = useQuery({
+    queryKey: ['careTodos'],
+    queryFn: () => listCareEvents({ type: CalendarEventType.Todo }),
+  });
+  const allTodos = todosQuery.data ??
+    events.filter((event) => event.type === CalendarEventType.Todo);
   const todos = useMemo(
-    () =>
-      events
-        .filter(
-          (event) =>
-            event.type === CalendarEventType.Todo && event.date >= today,
-        )
-        .sort(
-          (left, right) =>
-            left.date.localeCompare(right.date) ||
-            left.creationTime - right.creationTime,
-        ),
-    [events, today],
+    () => {
+      const byGroup = new Map<string, CalendarEvent>();
+      [...allTodos]
+        .sort((left, right) => right.creationTime - left.creationTime)
+        .forEach((event) => {
+          if (!byGroup.has(event.groupId)) byGroup.set(event.groupId, event);
+        });
+      const recentCompletedCutoff = Date.now() - 36 * 60 * 60 * 1000;
+      return [...byGroup.values()].filter(
+        (todo) =>
+          !todo.completed ||
+          (todo.lastEditTime ?? todo.creationTime) >= recentCompletedCutoff,
+      );
+    },
+    [allTodos],
   );
   const updateTodoStatus = async (event: CalendarEvent, completed: boolean) => {
     setUpdatingId(event.id);
     try {
-      const relatedEvents = events
+      const relatedEvents = allTodos
         .filter((item) => item.groupId === event.groupId)
         .map((item) => ({
           ...item,
@@ -57,6 +66,7 @@ export function TodoPanel({ events, onUpdated, onAdd, onEdit }: TodoPanelProps) 
         }));
       await createCareEvents(relatedEvents);
       onUpdated();
+      await todosQuery.refetch();
       setSelectedTodo(undefined);
     } catch (cause) {
       toast(
@@ -83,12 +93,13 @@ export function TodoPanel({ events, onUpdated, onAdd, onEdit }: TodoPanelProps) 
     setUpdatingId(event.id);
     try {
       await Promise.all(
-        events
+        allTodos
           .filter((item) => item.groupId === event.groupId)
           .map(deleteCareEvent),
       );
       setSelectedTodo(undefined);
       onUpdated();
+      await todosQuery.refetch();
     } catch (cause) {
       toast(
         cause instanceof Error
@@ -126,7 +137,7 @@ export function TodoPanel({ events, onUpdated, onAdd, onEdit }: TodoPanelProps) 
         <div>
           <CheckSquare2 size={18} aria-hidden />
           <h3 id="todo-panel-title">
-            {language === 'pl' ? 'Notatki' : 'Notes'}
+            {language === 'pl' ? 'Zadania' : 'Tasks'}
           </h3>
         </div>
         <div className={styles.headerActions}>

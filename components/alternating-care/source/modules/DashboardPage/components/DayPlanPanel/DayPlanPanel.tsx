@@ -104,6 +104,17 @@ const typeLabels: Record<string, { pl: string; en: string }> = {
   [CalendarEventType.Medical]: { pl: 'Zdrowie', en: 'Health' },
   [CalendarEventType.School]: { pl: 'Szkoła', en: 'School' },
   [CalendarEventType.Camp]: { pl: 'Wyjazd', en: 'Camp' },
+  [CalendarEventType.Culinary]: { pl: 'Kulinarne', en: 'Culinary' },
+  [CalendarEventType.Coffee]: { pl: 'Kawa', en: 'Coffee' },
+  [CalendarEventType.Cinema]: { pl: 'Kino', en: 'Cinema' },
+  [CalendarEventType.Sport]: { pl: 'Sport', en: 'Sport' },
+  [CalendarEventType.Shopping]: { pl: 'Zakupy', en: 'Shopping' },
+  [CalendarEventType.Holiday]: { pl: 'Święta', en: 'Holidays' },
+  [CalendarEventType.Vacation]: { pl: 'Wakacje', en: 'Vacation' },
+  [CalendarEventType.Errands]: { pl: 'Sprawy', en: 'Errands' },
+  [CalendarEventType.Tutoring]: { pl: 'Korepetycje', en: 'Tutoring' },
+  [CalendarEventType.Work]: { pl: 'Praca', en: 'Work' },
+  [CalendarEventType.Phone]: { pl: 'Telefon', en: 'Phone call' },
   [CalendarEventType.Todo]: { pl: 'Notatka', en: 'Note' },
 };
 
@@ -664,7 +675,7 @@ export function DayPlanPanel({
       onClick={() => openEventForm()}
     >
       <Plus size={17} aria-hidden />
-      Event
+      {isPolish ? 'Dodaj' : 'Add'}
     </button>
   );
   const rangeLabel =
@@ -1365,6 +1376,7 @@ export function DayPlanPanel({
                     : 'Dodaj wydarzenie'
               }
               staticLayout
+              twoColumn
               hideCancel
               hideSelectionSummary={modalEventEditor}
               footerActions={
@@ -1453,7 +1465,6 @@ export function DayPlanPanel({
                               </span>
                             </>
                           )}
-                          <CalendarDays aria-hidden="true" />
                           <input
                             type="date"
                             aria-label={
@@ -1512,6 +1523,22 @@ export function DayPlanPanel({
                             </div>
                           </>
                         )}
+                        <button
+                          type="button"
+                          className={styles.rangeCardPicker}
+                          aria-label={
+                            isPolish ? 'Otwórz kalendarz' : 'Open calendar'
+                          }
+                          onClick={(event) =>
+                            event.currentTarget.parentElement
+                              ?.querySelector<HTMLInputElement>(
+                                'input[type="date"]',
+                              )
+                              ?.showPicker?.()
+                          }
+                        >
+                          <CalendarDays aria-hidden="true" />
+                        </button>
                       </div>
                     </div>
                   );

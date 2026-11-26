@@ -55,8 +55,10 @@
     .formActions {
       order: 2;
       position: static;
-      margin: 10px 0 0;
-      padding: 0;
+      justify-content: flex-end;
+      margin: 16px 0 0;
+      border-top: 1px solid #e2e8ec;
+      padding: 16px 0 0;
     }
 
     :global([data-slot='input-wrapper']) {
@@ -96,10 +98,24 @@
     }
 
     :global([data-slot='inner-wrapper']) {
+      flex: 1;
       min-height: 24px;
       height: auto !important;
       align-items: flex-start !important;
       overflow: visible;
+    }
+
+    :global([data-slot='input-wrapper']:not([data-has-multiple-rows]) [data-slot='inner-wrapper']) {
+      align-items: stretch !important;
+    }
+
+    :global([data-slot='input-wrapper']:not([data-has-multiple-rows]) input) {
+      align-self: stretch;
+      height: auto !important;
+    }
+
+    :global([data-slot='input-wrapper']:not([data-has-multiple-rows])) {
+      padding-block: 0;
     }
 
     input,
@@ -152,19 +168,24 @@
 
 .timeMode {
   display: flex;
-  gap: 12px;
+  gap: 20px;
 
   label {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    color: #59636b;
-    font-size: 0.8rem;
+    gap: 8px;
+    color: #3f4a52;
+    font-size: 0.95rem;
     font-weight: 600;
+    cursor: pointer;
   }
 
   input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
     accent-color: #2d6f8d;
+    cursor: pointer;
   }
 }
 
@@ -188,6 +209,65 @@
     padding: 6px 9px;
     background: #fff;
     color: #283945;
+  }
+}
+
+.formColumns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// Single column: flatten columns so groups can be reordered (range first).
+.formColumn {
+  display: contents;
+}
+
+.groupRange {
+  order: 1;
+}
+
+.groupTitle {
+  order: 2;
+}
+
+.groupType {
+  order: 3;
+}
+
+.groupVisibility {
+  order: 4;
+}
+
+@media (min-width: 1280px) {
+  .twoColumn .formColumns {
+    display: grid;
+    grid-template-areas: 'main range';
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 32px;
+  }
+
+  .twoColumn .formColumn {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .twoColumn .formColumnMain {
+    grid-area: main;
+  }
+
+  .twoColumn .formColumnRange {
+    grid-area: range;
   }
 }
 
@@ -253,9 +333,32 @@
   }
 }
 
+.visibilityPreviewRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  > article {
+    flex: 1;
+  }
+}
+
+.previewPlaceholder {
+  opacity: 0.45;
+}
+
+.dayPreviewCell {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  margin: 0 12px;
+  pointer-events: none;
+}
+
 .visibilityTile {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
   min-width: 0;
   gap: 0;
   overflow: hidden;

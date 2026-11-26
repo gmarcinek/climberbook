@@ -114,4 +114,127 @@
     background $transition-duration,
     color $transition-duration,
     filter $transition-duration $transition-timing-function;
+
+  big {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+}
+
+@container (max-width: 52px) {
+  .calendarItemBodyWeek {
+    position: absolute;
+    inset: 0;
+  }
+
+  .calendarItemBodyWeek big {
+    font-size: 1rem;
+  }
+
+  .calendarItemBodyWeek .dayName {
+    position: relative;
+    top: 1px;
+  }
+
+  .calendarItemBodyWeek .month small {
+    position: relative;
+    top: -1px;
+  }
+}
+
+// Timepage theme: round days on a black canvas.
+// Inline sizing/colors come from JS, hence the !important overrides.
+// Each state sets --tp-day (user-picked care colours, else teal / dark teal);
+// the fill switches to the event color only when events are rendered.
+:global(.timepage) .calendarItemBodyWeek {
+  --tp-day: var(--tp-surface);
+  --tp-fill: var(--tp-day);
+
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 60px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  border: 0 !important;
+  border-radius: 50%;
+  padding: 0 !important;
+  clip-path: none;
+  background: color-mix(in srgb, var(--tp-fill) 95%, transparent) !important;
+  color: var(--tp-muted) !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  text-align: center;
+  animation: none !important;
+  box-shadow: none !important;
+
+  .dayName,
+  .monthNumber,
+  .month {
+    display: none;
+  }
+
+  :global(.mt-1) {
+    margin-top: 0;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  &.isWeekend {
+    --tp-day: #0e1416;
+  }
+
+  &.isOtherCare,
+  &.isOtherCare.isWeekend {
+    --tp-day: var(--tp-care-color, color-mix(in srgb, var(--tp-teal) 25%, #000));
+    color: var(--tp-care-text, var(--tp-text)) !important;
+  }
+  &.isAlternating,
+  &.isAlternating.isWeekend {
+    --tp-day: var(--care-self-color, var(--tp-teal));
+    color: #fff !important;
+  }
+
+  &.isFirstOfTheMonth {
+    color: var(--tp-text) !important;
+  }
+
+  &.hasEventColor {
+    --tp-fill: var(--tp-event-color);
+
+    color: var(--tp-event-text) !important;
+  }
+
+  &.isToday,
+  &.isAlternating.isToday {
+    --tp-day: var(--tp-panel);
+    color: var(--tp-bg) !important;
+  }
+
+  // Selection keeps the day's color and adds a spinning loader ring.
+  &.isSelected {
+    position: relative;
+    overflow: visible;
+
+    &::after {
+      position: absolute;
+      box-sizing: border-box;
+      inset: 0;
+      border: 5px solid transparent;
+      border-top-color: var(--tp-panel);
+      border-right-color: var(--tp-panel);
+      border-radius: 50%;
+      content: '';
+      animation: tpSpin 0.9s linear infinite;
+      pointer-events: none;
+    }
+  }
+}
+@keyframes tpSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }

@@ -12,10 +12,12 @@ import {
   SetStateAction,
   useCallback,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { toast } from 'react-toastify';
 import { dashboardEventFormI18n } from './dashboardEventForm.i18n';
+import { getEventTypeColor } from './eventTypeColors';
 
 const defaultBgColor = '#E57373';
 const defaultTextColor = '#ffffff';
@@ -107,7 +109,8 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
     initialEvent?.description ?? ''
   );
   const [backgroundColor, setBackgroundColor] = useState(
-    initialEvent?.style?.background ?? '#009688'
+    initialEvent?.style?.background ??
+      getEventTypeColor(initialType ?? CalendarEventType.Event)
   );
   const [textColor, setTextColor] = useState(
     initialEvent?.style?.color ?? defaultTextColor
@@ -121,6 +124,22 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
   const [endTime, setEndTime] = useState(
     minutesToTime(initialEvent?.endTime ?? initialEndTime) || '10:00'
   );
+  // Editing keeps the stored colour; new events follow the type until the user picks one.
+  const isColorCustomized = useRef(Boolean(initialEvent?.style?.background));
+
+  const selectType = useCallback((nextType: CalendarEventType | undefined) => {
+    setType(nextType);
+    if (!isColorCustomized.current && nextType) {
+      const color = getEventTypeColor(nextType);
+      setBackgroundColor(color);
+      setTextColor(getTextColor(color));
+    }
+  }, []);
+
+  const pickBackgroundColor = useCallback((color: string) => {
+    isColorCustomized.current = true;
+    setBackgroundColor(color);
+  }, []);
 
   const { language } = useAppContext();
   const i18n = dashboardEventFormI18n[language];
@@ -179,6 +198,7 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
 
       setDate('');
       setType(undefined);
+      isColorCustomized.current = false;
       setName('');
       setDescription('');
       setBackgroundColor('#E57373');
@@ -298,6 +318,7 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
   const handleCancel = useCallback(() => {
     setSelection(new Set([]));
     setType(undefined);
+    isColorCustomized.current = false;
     setBackgroundColor(defaultBgColor);
     setTextColor(defaultTextColor);
     setIsMultiSelectionMode(false);
@@ -311,6 +332,7 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
 
   const handleReset = useCallback(() => {
     setType(undefined);
+    isColorCustomized.current = false;
     setBackgroundColor(defaultBgColor);
     setTextColor(defaultTextColor);
     setDate('');
@@ -325,13 +347,13 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
     date,
     setDate,
     type,
-    setType,
+    setType: selectType,
     name,
     setName,
     description,
     setDescription,
     backgroundColor,
-    setBackgroundColor,
+    setBackgroundColor: pickBackgroundColor,
     textColor,
     setTextColor,
     isAllDay,

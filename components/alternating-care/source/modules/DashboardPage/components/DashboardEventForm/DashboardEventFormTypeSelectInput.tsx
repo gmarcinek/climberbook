@@ -7,20 +7,36 @@ import { BiTrip } from 'react-icons/bi';
 import { FaCampground } from 'react-icons/fa';
 import { IoMdCalendar } from 'react-icons/io';
 import {
+  MdAssignment,
+  MdBeachAccess,
   MdCake,
+  MdCelebration,
+  MdLocalCafe,
   MdLocalHospital,
-  MdOutlineTaskAlt,
+  MdLocalMovies,
+  MdMenuBook,
+  MdPhone,
+  MdRestaurant,
   MdSchool,
+  MdShoppingCart,
+  MdSportsSoccer,
+  MdWork,
 } from 'react-icons/md';
 import { dashboardEventFormI18n } from './dashboardEventForm.i18n';
 import styles from './DashboardEventFormTypeSelectInput.module.scss';
+import { getEventTypeColor } from './eventTypeColors';
+import type { CSSProperties } from 'react';
 
 interface DashboardEventFormTypeSelectInputProps {
   onValueChange: (value: string) => void;
   value?: string;
 }
 
-const HIDDEN_TYPES = [CalendarEventType.Offset, CalendarEventType.Alternating];
+const HIDDEN_TYPES = [
+  CalendarEventType.Offset,
+  CalendarEventType.Alternating,
+  CalendarEventType.Todo,
+];
 
 export const DashboardEventFormTypeSelectInput = (
   props: DashboardEventFormTypeSelectInputProps
@@ -42,8 +58,26 @@ export const DashboardEventFormTypeSelectInput = (
     if (type === CalendarEventType.School) return <MdSchool {...iconProps} />;
     if (type === CalendarEventType.Camp)
       return <FaCampground {...iconProps} />;
-    if (type === CalendarEventType.Todo)
-      return <MdOutlineTaskAlt {...iconProps} />;
+    if (type === CalendarEventType.Culinary)
+      return <MdRestaurant {...iconProps} />;
+    if (type === CalendarEventType.Coffee)
+      return <MdLocalCafe {...iconProps} />;
+    if (type === CalendarEventType.Cinema)
+      return <MdLocalMovies {...iconProps} />;
+    if (type === CalendarEventType.Sport)
+      return <MdSportsSoccer {...iconProps} />;
+    if (type === CalendarEventType.Shopping)
+      return <MdShoppingCart {...iconProps} />;
+    if (type === CalendarEventType.Holiday)
+      return <MdCelebration {...iconProps} />;
+    if (type === CalendarEventType.Vacation)
+      return <MdBeachAccess {...iconProps} />;
+    if (type === CalendarEventType.Errands)
+      return <MdAssignment {...iconProps} />;
+    if (type === CalendarEventType.Tutoring)
+      return <MdMenuBook {...iconProps} />;
+    if (type === CalendarEventType.Work) return <MdWork {...iconProps} />;
+    if (type === CalendarEventType.Phone) return <MdPhone {...iconProps} />;
     return <IoMdCalendar {...iconProps} />;
   };
 
@@ -60,6 +94,7 @@ export const DashboardEventFormTypeSelectInput = (
             className={classNames(styles.typeTile, {
               [styles.selected]: isSelected,
             })}
+            style={{ '--type-color': getEventTypeColor(type) } as CSSProperties}
             onClick={() => onValueChange(type)}
           >
             {getIcon(type)}

@@ -27,6 +27,11 @@ import {
   MdOutlineVisibility,
 } from 'react-icons/md';
 import CalendarEventAvatar from '@components/Calendar/components/CalendarEventAvatar/CalendarEventAvatar';
+import CalendarDay from '@components/Calendar/components/CalendarDay/CalendarDay';
+import {
+  CalenderContext,
+  CalenderContextData,
+} from '@components/Calendar/Calendar.context';
 import { dashboardEventFormI18n } from './dashboardEventForm.i18n'; // Import your i18n file
 import styles from './dashboardEventForm.module.scss';
 import { DashboardEventFormTypeSelectInput } from './DashboardEventFormTypeSelectInput';
@@ -63,6 +68,7 @@ interface DashboardEventFormProps {
     setStartTime: (value: string) => void;
     setEndTime: (value: string) => void;
   }) => ReactNode;
+  twoColumn?: boolean;
 }
 
 export const DashboardEventForm = (props: DashboardEventFormProps) => {
@@ -90,6 +96,7 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     hideCancel = false,
     footerActions,
     hideSelectionSummary = false,
+    twoColumn = false,
   } = props;
   const { language } = useAppContext();
   const i18n = dashboardEventFormI18n[language];
@@ -148,6 +155,30 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     onDraftChange?.(newEvent);
   }, [newEvent, onDraftChange]);
 
+  const previewDate = selection[0] ?? dayjs().format('YYYY-MM-DD');
+  const dayPreviewContext = useMemo<CalenderContextData>(
+    () => ({
+      containerWidth: 400,
+      rowSize: 7,
+      isTodayVisible: false,
+      isPlanVisible: false,
+      isAlternatingVisible: false,
+      isOtherCareVisible: false,
+      isWeekendsVisible: true,
+      isEventsVisible: true,
+      events: [
+        {
+          ...newEvent,
+          date: previewDate,
+          style: { ...newEvent.style, background: backgroundColor },
+        },
+      ],
+      displayStrategy: 'continous',
+      hideSelectionCheckbox: true,
+    }),
+    [newEvent, previewDate, backgroundColor],
+  );
+
   const changes = useMemo(() => {
     const nextDates = new Set(selection);
     const previousDates = new Set(initialDates);
@@ -167,6 +198,7 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     [styles.isSelectionNotEmpty]: selection.length !== 0,
     [styles.isColorPickerVisible]: selection.length !== 0 && type !== undefined,
     [styles.staticLayout]: staticLayout,
+    [styles.twoColumn]: twoColumn,
   });
 
   useEffect(() => {
@@ -267,9 +299,11 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
         {afterActions}
 
         <Stack>
-          <Stack>
+          <Stack className={styles.formFields}>
             {!isNote && (
-              <>
+              <div className={styles.formColumns}>
+                <div className={classNames(styles.formColumn, styles.formColumnMain)}>
+                <div className={classNames(styles.formGroup, styles.groupTitle)}>
                 <Stack direction='horizontal'>
                   <MdOutlineTitle size={24} />
                   <h3>{i18n.eventName}</h3>
@@ -283,78 +317,6 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
                   size='lg'
                   onValueChange={setName}
                 />
-                <Divider className='my-2' />
-                <Stack direction='horizontal'>
-                  <MdOutlineSchedule size={24} />
-                  <h3>{language === 'pl' ? 'Zakres wydarzenia' : 'Event range'}</h3>
-                </Stack>
-                <section className={styles.timeSection}>
-                  <div className={styles.timeMode}>
-                    <label>
-                      <input
-                        type='radio'
-                        name='event-time-mode'
-                        checked={isAllDay}
-                        onChange={() => setIsAllDay(true)}
-                      />
-                      Całodniowe
-                    </label>
-                    <label>
-                      <input
-                        type='radio'
-                        name='event-time-mode'
-                        checked={!isAllDay}
-                        onChange={() => setIsAllDay(false)}
-                      />
-                      Godzinowe
-                    </label>
-                  </div>
-                  {renderRangeFields ? (
-                    renderRangeFields({
-                      isAllDay,
-                      startTime,
-                      endTime,
-                      setStartTime,
-                      setEndTime,
-                    })
-                  ) : !isAllDay ? (
-                    <div className={styles.timeRange}>
-                      <label>
-                        Od
-                        <input
-                          type='time'
-                          value={startTime}
-                          onChange={(event) => setStartTime(event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Do
-                        <input
-                          type='time'
-                          min={startTime}
-                          value={endTime}
-                          onChange={(event) => setEndTime(event.target.value)}
-                        />
-                      </label>
-                    </div>
-                  ) : null}
-                </section>
-                {(isRadioGroupVisible || staticLayout) && (
-                  <>
-                    <Divider className='my-2' />
-                    <Stack direction='horizontal'>
-                      <BsTags size={24} />
-                      <h3>{i18n.eventType}</h3>
-                    </Stack>
-                    <DashboardEventFormTypeSelectInput
-                      value={type}
-                      onValueChange={(value) => {
-                        setType(value as CalendarEventType);
-                      }}
-                    />
-                  </>
-                )}
-                <Divider className='my-2' />
                 <Stack direction='horizontal'>
                   <MdOutlineNotes size={24} />
                   <h3>{i18n.eventDescription}</h3>
@@ -365,18 +327,22 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
                   radius='sm'
                   variant='bordered'
                   size='md'
+                  minRows={4}
                   onValueChange={setDescription}
                 />
+                </div>
+                <div className={classNames(styles.formGroup, styles.groupVisibility)}>
                 <Divider className='my-2' />
                 <Stack direction='horizontal'>
                   <MdOutlineVisibility size={24} />
                   <h3>{i18n.visibility}</h3>
                 </Stack>
                 <section className={styles.visibilitySection}>
-              <label className={styles.colorControl}>
+              <div className={styles.colorControl}>
                 <span>Kolor kafelka</span>
                 <input
                   type='color'
+                  aria-label='Kolor kafelka'
                   value={backgroundColor}
                   onChange={(event) => {
                     setBackgroundColor(event.target.value);
@@ -384,9 +350,10 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
                   }}
                 />
                 <code>{backgroundColor.toUpperCase()}</code>
-              </label>
+              </div>
               <div className={styles.visibilityPreview}>
                 <span>Podgląd kafelka</span>
+                <div className={styles.visibilityPreviewRow}>
                 <article
                   className={styles.visibilityTile}
                   style={
@@ -420,14 +387,103 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
                           : dayjs().locale(language).format('DD MMMM YYYY')}
                       </span>
                     </small>
-                    <h4>{name || 'Nowe wydarzenie'}</h4>
-                    {description && <p>{description}</p>}
+                    <h4 className={name ? undefined : styles.previewPlaceholder}>
+                      {name || (language === 'pl' ? 'Nazwa wydarzenia' : 'Event name')}
+                    </h4>
+                    <p className={description ? undefined : styles.previewPlaceholder}>
+                      {description ||
+                        (language === 'pl' ? 'Opis wydarzenia' : 'Event description')}
+                    </p>
                   </div>
+                <CalenderContext.Provider value={dayPreviewContext}>
+                  <div className={styles.dayPreviewCell}>
+                    <CalendarDay
+                      day={{ date: previewDate }}
+                      dayEvents={dayPreviewContext.events}
+                    />
+                  </div>
+                </CalenderContext.Provider>
                 </article>
+                </div>
               </div>
                 </section>
-                <Divider className='my-4' />
-              </>
+                </div>
+                </div>
+                <div className={classNames(styles.formColumn, styles.formColumnRange)}>
+                  <div className={classNames(styles.formGroup, styles.groupRange)}>
+                  <Stack direction='horizontal'>
+                    <MdOutlineSchedule size={24} />
+                    <h3>{language === 'pl' ? 'Zakres wydarzenia' : 'Event range'}</h3>
+                  </Stack>
+                  <section className={styles.timeSection}>
+                    <div className={styles.timeMode}>
+                    <label>
+                      <input
+                        type='radio'
+                        name='event-time-mode'
+                        checked={isAllDay}
+                        onChange={() => setIsAllDay(true)}
+                      />
+                      Całodniowe
+                    </label>
+                    <label>
+                      <input
+                        type='radio'
+                        name='event-time-mode'
+                        checked={!isAllDay}
+                        onChange={() => setIsAllDay(false)}
+                      />
+                      Godzinowe
+                    </label>
+                  </div>
+                    {renderRangeFields ? (
+                    renderRangeFields({
+                      isAllDay,
+                      startTime,
+                      endTime,
+                      setStartTime,
+                      setEndTime,
+                    })
+                  ) : !isAllDay ? (
+                    <div className={styles.timeRange}>
+                      <label>
+                        Od
+                        <input
+                          type='time'
+                          value={startTime}
+                          onChange={(event) => setStartTime(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Do
+                        <input
+                          type='time'
+                          min={startTime}
+                          value={endTime}
+                          onChange={(event) => setEndTime(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    ) : null}
+                  </section>
+                  </div>
+                {(isRadioGroupVisible || staticLayout) && (
+                  <div className={classNames(styles.formGroup, styles.groupType)}>
+                    <Divider className='my-2' />
+                    <Stack direction='horizontal'>
+                      <BsTags size={24} />
+                      <h3>{i18n.eventType}</h3>
+                    </Stack>
+                    <DashboardEventFormTypeSelectInput
+                      value={type}
+                      onValueChange={(value) => {
+                        setType(value as CalendarEventType);
+                      }}
+                    />
+                  </div>
+                )}
+                </div>
+              </div>
             )}
             {isNote && (
               <>

@@ -2,6 +2,7 @@
 
 import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import { useAppContext } from '@app/AppContext';
+import { CareEventsLoadingOverlay } from '@components/CareEventsLoadingOverlay/CareEventsLoadingOverlay';
 import { dateFormat } from '@components/Calendar/Calendar.helpers';
 import type { CareEventsQuery } from '@api/db/events/useGetAllEventsQuery';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +16,7 @@ import {
   Expand,
   ChevronLeft,
   ChevronRight,
+  CalendarDays,
   PencilLine,
   Plus,
   Shrink,
@@ -33,6 +35,7 @@ import { caregiverBackground } from '@utils/caregiverColors';
 import { colorBlueGreen700 } from '@utils/color';
 import { createPortal } from 'react-dom';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useLongPress } from 'use-long-press';
 import { useDashboardPageContext } from '@modules/DashboardPage/DashboardPage.context';
 import { CalendarGrid } from '../CalendarGrid/CalendarGrid';
@@ -47,9 +50,12 @@ import {
 } from '../MobileEventForm/MobileEventForm';
 import { useCareEditMode } from './useCareEditMode';
 import { useSelection } from './useSelection';
+import { SchoolDaySummary } from '../SchoolDaySummary/SchoolDaySummary';
 
 import { ScrollPane } from '@/components/climberbook/common/ScrollPane';
 import { useBreakpoints } from '@utils/useBreakpoints';
+import { useCareWards } from '@utils/useCareWards';
+import { usePersistentState } from '@utils/usePersistentState';
 import { otherParentSubjectId, useOtherParent } from '@utils/useOtherParent';
 import styles from './Dashboard.module.scss';
 
@@ -98,6 +104,7 @@ export const Dashboard = (props: DashboardProps) => {
   const { fetchEventsQuery, loadMonth, mobileView } = props;
   const { user, language } = useAppContext();
   const { profile: otherParent } = useOtherParent();
+  const { wards } = useCareWards();
   const userFirstName = user.name.trim().split(/\s+/)[0] || 'Moja';
   const { is1280 } = useBreakpoints();
   const [isMobileLayout, setIsMobileLayout] = useState(false);
@@ -112,14 +119,35 @@ export const Dashboard = (props: DashboardProps) => {
   } = useSelection({
     isMultiSelectionAvailable: true,
   });
-  const [isAlternatingVisible, setIsAlternatingVisible] = useState(true);
-  const [isOtherCareVisible, setIsOtherCareVisible] = useState(true);
-  const [isEventsVisible, setIsEventsVisible] = useState(true);
-  const [formWidth, setFormWidth] = useState(520);
-  const [isWidgetsMinimized, setIsWidgetsMinimized] = useState(false);
+  const [isAlternatingVisible, setIsAlternatingVisible] = usePersistentState(
+    'alternating-care:dashboard:alternating-visible',
+    true,
+  );
+  const [isOtherCareVisible, setIsOtherCareVisible] = usePersistentState(
+    'alternating-care:dashboard:other-care-visible',
+    false,
+  );
+  const [isEventsVisible, setIsEventsVisible] = usePersistentState(
+    'alternating-care:dashboard:events-visible',
+    true,
+  );
+  const [formWidth, setFormWidth] = usePersistentState(
+    'alternating-care:dashboard:widgets-width',
+    520,
+  );
+  const [isWidgetsMinimized, setIsWidgetsMinimized] = usePersistentState(
+    'alternating-care:dashboard:widgets-minimized',
+    false,
+  );
   const layoutFormWidth = isWidgetsMinimized ? MICRO_FORM_WIDTH : formWidth;
-  const [planWidth, setPlanWidth] = useState(650);
-  const [isPlanMinimized, setIsPlanMinimized] = useState(false);
+  const [planWidth, setPlanWidth] = usePersistentState(
+    'alternating-care:dashboard:plan-width',
+    650,
+  );
+  const [isPlanMinimized, setIsPlanMinimized] = usePersistentState(
+    'alternating-care:dashboard:plan-minimized',
+    false,
+  );
   const layoutPlanWidth = isPlanMinimized ? MICRO_FORM_WIDTH : planWidth;
   const [noteRequest, setNoteRequest] = useState(0);
   const [noteEditRequest, setNoteEditRequest] = useState<{
@@ -351,6 +379,109 @@ export const Dashboard = (props: DashboardProps) => {
 
   const savedCaregivers = useCaregivers();
   const caregiverColors = useCaregiverColors();
+  const selectedDatesOrdered = [...selection].sort();
+  const selectedDateRange =
+    selectedDatesOrdered.length > 0
+      ? `${dayjs(selectedDatesOrdered[0])
+          .locale(language)
+          .format('D MMM')}${
+          selectedDatesOrdered.length > 1
+            ? ` – ${dayjs(selectedDatesOrdered.at(-1))
+                .locale(language)
+                .format('D MMM')}`
+            : ''
+        }`
+      : '';
+  const [dayDetails, setDayDetails] = useState<{
+    date: string;
+    top: number;
+    left: number;
+    careSubjects: string[];
+    events: CalendarEvent[];
+  } | null>(null);
+  const dayHoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const hoveredDay = useRef<string | null>(null);
+  const clearDayDetails = useCallback(() => {
+    clearTimeout(dayHoverTimer.current);
+    hoveredDay.current = null;
+    setDayDetails(null);
+  }, []);
+  const handleCalendarHover = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const dayElement = (event.target as HTMLElement).closest<HTMLElement>(
+        '[id^="day-"]',
+      );
+      const date = dayElement?.id.slice('day-'.length) ?? null;
+      if (date === hoveredDay.current) return;
+
+      clearDayDetails();
+      if (!dayElement || !date) return;
+      hoveredDay.current = date;
+      dayHoverTimer.current = setTimeout(() => {
+        const rect = dayElement.getBoundingClientRect();
+        const zoom = cssZoom(dayElement);
+        const sourceEvents = isCareEditActive
+          ? careEdit.previewEvents
+          : sortedEvents;
+        const eventsForDay = sourceEvents.filter(
+          (item) =>
+            item.date === date &&
+            (item.type !== CalendarEventType.Alternating ||
+              isAlternatingVisible ||
+              isOtherCareVisible),
+        );
+        const careSubjects = [
+          ...new Set(
+            eventsForDay
+              .filter((item) => {
+                if (item.type !== CalendarEventType.Alternating) return false;
+                const isOwn =
+                  item.groupId === CalendarEventType.Alternating ||
+                  item.groupId.startsWith('CARE:self:');
+                return isOwn ? isAlternatingVisible : isOtherCareVisible;
+              })
+              .map((item) =>
+                item.groupId.startsWith('CARE:')
+                  ? item.groupId.slice('CARE:'.length)
+                  : `self:${user.id}`,
+              ),
+          ),
+        ];
+        setDayDetails({
+          date,
+          top: rect.top / zoom - 8,
+          left: Math.max(
+            8,
+            Math.min(rect.left / zoom, window.innerWidth / zoom - 288),
+          ),
+          careSubjects,
+          events: isEventsVisible
+            ? eventsForDay.filter(
+                (item) => item.type !== CalendarEventType.Alternating,
+              )
+            : [],
+        });
+      }, 800);
+    },
+    [
+      careEdit.previewEvents,
+      clearDayDetails,
+      isAlternatingVisible,
+      isCareEditActive,
+      isEventsVisible,
+      isOtherCareVisible,
+      sortedEvents,
+      user.id,
+    ],
+  );
+  useEffect(
+    () => () => {
+      clearTimeout(dayHoverTimer.current);
+    },
+    [],
+  );
   // Mirrors the calendar: the first care entry of a day decides who has it,
   // and days without care belong to the other parent.
   const careStats = useMemo(() => {
@@ -426,6 +557,31 @@ export const Dashboard = (props: DashboardProps) => {
     userFirstName,
   ]);
 
+  const dayPlanPanel = (
+    <DayPlanPanel
+      events={filteredEvents}
+      selectedDates={selection}
+      planWidth={planWidth}
+      onChangeWidth={changePlanWidth}
+      onMinimize={() => setIsPlanMinimized(true)}
+      onDatesChange={(dates) => setSelection(new Set(dates))}
+      onEventsUpdated={() => {
+        void fetchEventsQuery.refetch();
+        void queryClient.invalidateQueries({
+          queryKey: ['careTodos'],
+        });
+        setIsMultiSelectionMode(false);
+      }}
+      noteRequest={noteRequest}
+      noteEditRequest={noteEditRequest}
+      eventRequest={eventRequest}
+      allowPastNavigation
+      onVisibleRangeChange={loadDayPlanRange}
+      weekListView
+      modalEventEditor
+    />
+  );
+
   return (
     <div
       className={dashboardClasses}
@@ -438,6 +594,7 @@ export const Dashboard = (props: DashboardProps) => {
       }
     >
       <div className={styles.calendarPane}>
+        <CareEventsLoadingOverlay />
         <ScrollPane
           className={styles.calendarContainer}
           contentClassName={styles.calendarContent}
@@ -553,8 +710,57 @@ export const Dashboard = (props: DashboardProps) => {
                 setIsEventsVisible={setIsEventsVisible}
               />
             </div>
+            {selection.size > 0 && !isCareEditActive && (
+              <div className={styles.calendarActionBar}>
+                <span className={styles.calendarSelectionInfo} role="status">
+                  <CalendarDays size={14} aria-hidden />
+                  {language === 'en' ? 'Selected' : 'Zaznaczono'}{' '}
+                  <strong>
+                    {selection.size}{' '}
+                    {language === 'en'
+                      ? selection.size === 1
+                        ? 'day'
+                        : 'days'
+                      : selection.size === 1
+                        ? 'dzień'
+                        : 'dni'}
+                  </strong>
+                  <span className={styles.calendarSelectionRange}>
+                    {selectedDateRange}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelection(new Set())}
+                    aria-label={
+                      language === 'en'
+                        ? 'Clear selection'
+                        : 'Wyczyść zaznaczenie'
+                    }
+                    title={
+                      language === 'en'
+                        ? 'Clear selection'
+                        : 'Wyczyść zaznaczenie'
+                    }
+                  >
+                    ×
+                  </button>
+                </span>
+                <button
+                  type="button"
+                  className={styles.calendarAddButton}
+                  onClick={() => setEventRequest((value) => value + 1)}
+                >
+                  <Plus size={17} aria-hidden />
+                  {language === 'en' ? 'Add' : 'Dodaj'}
+                </button>
+              </div>
+            )}
 
-            <div {...(isCareEditActive ? {} : bind())}>
+            <div
+              {...(isCareEditActive ? {} : bind())}
+              onMouseOver={handleCalendarHover}
+              onMouseLeave={clearDayDetails}
+            >
               <CalendarGrid
                 data={isCareEditActive ? careEdit.previewEvents : sortedEvents}
                 handlers={isCareEditActive ? careEdit.handlers : handlers}
@@ -584,10 +790,90 @@ export const Dashboard = (props: DashboardProps) => {
                 void queryClient.invalidateQueries({
                   queryKey: ['careUpcoming'],
                 });
+                void queryClient.invalidateQueries({
+                  queryKey: ['careTodos'],
+                });
               }}
             />
           </div>
         )}
+        {dayDetails &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div
+              className={styles.dayDetails}
+              style={{
+                top: dayDetails.top,
+                left: dayDetails.left,
+              }}
+              role='tooltip'
+            >
+              <strong>
+                {dayjs(dayDetails.date)
+                  .locale(language)
+                  .format('dddd, D MMM YYYY')}
+              </strong>
+              <span className={styles.dayDetailsLabel}>
+                {language === 'en' ? 'Care' : 'Opieka'}
+              </span>
+              {dayDetails.careSubjects.length > 0 ? (
+                dayDetails.careSubjects.map((subjectId, index) => (
+                  <span className={styles.dayDetailsCare} key={subjectId}>
+                    <span
+                      className={styles.dayDetailsSwatch}
+                      style={{
+                        background: subjectId.startsWith('self:')
+                          ? caregiverColors[subjectId] ?? colorBlueGreen700
+                          : caregiverBackground(
+                              `CARE:${subjectId}`,
+                              caregiverColors,
+                            ),
+                      }}
+                    />
+                    {subjectId.startsWith('self:')
+                      ? user.name
+                      : savedCaregivers.find(
+                          (caregiver) => caregiver.subjectId === subjectId,
+                        )?.name ||
+                        (language === 'en' ? 'Caregiver' : 'Opiekun')}
+                    {index > 0 && (
+                      <small>
+                        {language === 'en' ? '(underneath)' : '(pod spodem)'}
+                      </small>
+                    )}
+                  </span>
+                ))
+              ) : (
+                <span className={styles.dayDetailsCare}>
+                  {language === 'en' ? 'No care assigned' : 'Bez przypisanej opieki'}
+                </span>
+              )}
+              {dayDetails.events.length > 0 && (
+                <>
+                  <span className={styles.dayDetailsLabel}>
+                    {language === 'en' ? 'Events' : 'Wydarzenia'}
+                  </span>
+                  <ul>
+                    {dayDetails.events.map((event) => (
+                      <li key={`${event.id}-${event.date}`}>
+                        <span
+                          className={styles.dayDetailsSwatch}
+                          style={{
+                            background: event.style?.background ?? '#9aa5ab',
+                          }}
+                        />
+                        <span>
+                          <b>{event.name || event.type}</b>
+                          {event.description && <small>{event.description}</small>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>,
+            document.body,
+          )}
         </ScrollPane>
 
         {is1280 && !isMobileLayout && (
@@ -617,6 +903,10 @@ export const Dashboard = (props: DashboardProps) => {
           </div>
         )}
       </div>
+
+      {!isDayPlanVisible && !isMobileLayout && (
+        <div style={HIDDEN_PLAN_STYLE}>{dayPlanPanel}</div>
+      )}
 
       {isDayPlanVisible && (
         <>
@@ -685,27 +975,7 @@ export const Dashboard = (props: DashboardProps) => {
             className={styles.dayPlanContainer}
             style={isPlanMinimized ? HIDDEN_PLAN_STYLE : undefined}
           >
-            <DayPlanPanel
-              events={filteredEvents}
-              selectedDates={selection}
-              planWidth={planWidth}
-              onChangeWidth={changePlanWidth}
-              onMinimize={() => setIsPlanMinimized(true)}
-              onDatesChange={(dates) =>
-                setSelection(new Set(dates))
-              }
-              onEventsUpdated={() => {
-                void fetchEventsQuery.refetch();
-                setIsMultiSelectionMode(false);
-              }}
-              noteRequest={noteRequest}
-              noteEditRequest={noteEditRequest}
-              eventRequest={eventRequest}
-              allowPastNavigation
-              onVisibleRangeChange={loadDayPlanRange}
-              weekListView
-              modalEventEditor
-            />
+            {dayPlanPanel}
           </div>
           <div
             className={`${styles.columnAdjuster} ${styles.formAdjuster}`}
@@ -745,6 +1015,13 @@ export const Dashboard = (props: DashboardProps) => {
                 endDate={endDate}
                 section="micro"
                 onExpand={() => setIsWidgetsMinimized(false)}
+                microContent={
+                  <SchoolDaySummary
+                    wards={wards}
+                    micro
+                    onExpand={() => setIsWidgetsMinimized(false)}
+                  />
+                }
               />
             </div>
           ) : (
@@ -800,6 +1077,7 @@ export const Dashboard = (props: DashboardProps) => {
               endDate={endDate}
               section="overview"
             />
+            <SchoolDaySummary wards={wards} />
             <AllDayEventsPanel
               events={fetchEventsQuery.data ?? []}
               onEdit={(event) =>
@@ -808,7 +1086,12 @@ export const Dashboard = (props: DashboardProps) => {
             />
             <TodoPanel
               events={fetchEventsQuery.data ?? []}
-              onUpdated={() => void fetchEventsQuery.refetch()}
+              onUpdated={() => {
+                void fetchEventsQuery.refetch();
+                void queryClient.invalidateQueries({
+                  queryKey: ['careTodos'],
+                });
+              }}
               onAdd={() => setNoteRequest((value) => value + 1)}
               onEdit={(event) =>
                 setNoteEditRequest({ event, key: Date.now() })

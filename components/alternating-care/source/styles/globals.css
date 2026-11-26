@@ -110,6 +110,53 @@ html:has(.alternatingCareRoot) {
   }
 }
 
+/*
+ * Timepage theme: black canvas #090d0e, magenta accent #e4024b,
+ * light panels #f5f5f5 and teal contrast accent #009ca8.
+ */
+html[data-care-theme='timepage'] .alternatingCareRoot {
+  --tp-bg: #090d0e;
+  --tp-surface: #12181a;
+  --tp-line: #1f282a;
+  --tp-text: #f5f5f5;
+  --tp-muted: #8a9597;
+  --tp-magenta: #e4024b;
+  --tp-panel: #f5f5f5;
+  --tp-teal: #009ca8;
+  background: var(--tp-bg);
+  color-scheme: dark;
+}
+
+html[data-care-theme='timepage'] .alternatingCareRoot #main-navbar {
+  background: var(--tp-bg) !important;
+  box-shadow: 0 1px 0 var(--tp-line) !important;
+  color: var(--tp-text);
+}
+
+html[data-care-theme='timepage'] .alternatingCareRoot #main-navbar a:hover {
+  color: var(--tp-magenta);
+}
+
+html[data-care-theme='timepage'] #main-navbar button[class*='iconButton'] {
+  background-color: transparent !important;
+}
+
+html[data-care-theme='timepage'] #main-navbar button[class*='iconButton'] svg {
+  color: var(--tp-text) !important;
+}
+
+html[data-care-theme='timepage'] #main-navbar button[class*='iconButton']:hover {
+  background-color: rgba(245, 245, 245, 0.1) !important;
+}
+
+html[data-care-theme='timepage'] #main-navbar button[class*='avatar'] {
+  background-color: var(--tp-magenta) !important;
+}
+
+html[data-care-theme='timepage'] .alternatingCareRoot ::selection {
+  background: rgba(228, 2, 75, 0.3);
+}
+
 :where(.alternatingCareRoot) :where(h1, h2, h3, h4, p) {
   color: #333333;
 }

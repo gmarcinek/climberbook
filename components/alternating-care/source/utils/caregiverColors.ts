@@ -12,6 +12,16 @@ const OTHER_CAREGIVER_BACKGROUNDS = CAREGIVER_BACKGROUNDS.slice(1);
 
 export type CaregiverColors = Record<string, string>;
 
+// Light theme keeps color; other themes store their own picks in 	hemeColors.
+export function caregiverThemeColor(
+  caregiver: { color?: string | null; themeColors?: Record<string, string> | null },
+  theme: string
+): string | null {
+  const color =
+    theme === 'light' ? caregiver.color : caregiver.themeColors?.[theme];
+  return isCareColor(color) ? color : null;
+}
+
 export const CARE_COLORS_QUERY_KEY = ['caregiverColors'];
 
 export const isCareColor = (value: unknown): value is string =>

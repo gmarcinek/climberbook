@@ -1,11 +1,12 @@
 'use client';
 
+import { useAppTheme } from '@app/ThemeRoot';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import {
   CARE_COLORS_QUERY_KEY,
   CaregiverColors,
-  isCareColor,
+  caregiverThemeColor,
 } from './caregiverColors';
 
 export type SavedCaregiver = {
@@ -14,6 +15,7 @@ export type SavedCaregiver = {
   name: string;
   role: string;
   color?: string | null;
+  themeColors?: Record<string, string> | null;
 };
 
 export function useCaregivers(): SavedCaregiver[] {
@@ -36,13 +38,15 @@ export function useCaregivers(): SavedCaregiver[] {
 
 export function useCaregiverColors(): CaregiverColors {
   const caregivers = useCaregivers();
+  const { theme } = useAppTheme();
   return useMemo(
     () =>
       Object.fromEntries(
-        caregivers
-          .filter((item) => isCareColor(item.color))
-          .map((item) => [item.subjectId, item.color as string])
+        caregivers.flatMap((item) => {
+          const color = caregiverThemeColor(item, theme);
+          return color ? [[item.subjectId, color]] : [];
+        })
       ),
-    [caregivers]
+    [caregivers, theme]
   );
 }

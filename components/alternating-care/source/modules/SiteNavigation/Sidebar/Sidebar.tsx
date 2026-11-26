@@ -2,6 +2,7 @@ import { useAppContext } from '@app/AppContext';
 import { Stack } from '@components/Stack/Stack';
 import Link from 'next/link';
 import { siteNavigationI18n } from '../siteNavigation.i18n';
+import { ThemeMenu } from '../NavigationBar/ThemeMenu';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -58,6 +59,12 @@ export const Sidebar = (props: SidebarProps) => {
             </li>
 
             <li>
+              <Link href='/alternating-care/tasks' onClick={toggle}>
+                <h2>{i18n.tasks}</h2>
+              </Link>
+            </li>
+
+            <li>
               <Link href='/alternating-care/people' onClick={toggle}>
                 <h2>{i18n.people}</h2>
               </Link>
@@ -67,6 +74,9 @@ export const Sidebar = (props: SidebarProps) => {
               <Link href='/alternating-care/settings' onClick={toggle}>
                 <h2>{i18n.settings}</h2>
               </Link>
+            </li>
+            <li className='flex justify-center pt-4'>
+              <ThemeMenu />
             </li>
           </Stack>
         </ul>

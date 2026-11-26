@@ -44,6 +44,12 @@
   }
 }
 
+.microToday,
+.microExchange {
+  // 4:5 portrait tiles.
+  height: 55px;
+}
+
 .microValue {
   display: grid;
   justify-items: center;
@@ -56,8 +62,37 @@
 
   small {
     opacity: 0.82;
-    font-size: 0.725rem;
+    font-size: 0.78rem;
     font-weight: 500;
+  }
+}
+
+.microExchangeValue {
+  gap: 1px;
+
+  svg {
+    opacity: 0.85;
+  }
+
+  strong {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+}
+
+.microProgress {
+  overflow: hidden;
+  width: 30px;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: currentColor;
   }
 }
 
@@ -91,16 +126,35 @@
 }
 
 .microAvatar {
-  padding: 3px;
+  height: 64px;
+  align-content: center;
+  gap: 2px;
+  padding: 3px 3px 4px;
   background: linear-gradient(120deg, #8c23db 0%, #484bb1 48%, #4dadcb 100%);
   color: #fff;
 
   img {
-    width: 100%;
-    height: 100%;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     object-fit: cover;
   }
+}
+
+.microAvatarInitial {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.microAvatarLabel {
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 .microToday {
@@ -526,7 +580,7 @@
   }
 }
 
-@container care-summary (max-width: 400px) {
+@container care-summary (max-width: 360px) {
   .full {
     display: none;
   }
@@ -591,5 +645,73 @@
     justify-self: start;
     align-self: flex-start;
     text-align: left;
+  }
+}
+
+// Timepage theme: magenta care card, black "today" card, teal handoff card.
+:global(.timepage) {
+  .card {
+    background: transparent;
+  }
+
+  .currentCare {
+    border-color: transparent;
+    background:
+      radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.22), transparent 36%),
+      linear-gradient(135deg, var(--tp-magenta) 0%, #a8013a 100%);
+    box-shadow: 0 12px 28px rgba(228, 2, 75, 0.25);
+  }
+
+  .todayPanel {
+    background:
+      radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.08), transparent 38%),
+      var(--tp-bg);
+    box-shadow: 0 12px 28px rgba(9, 13, 14, 0.3);
+    color: var(--tp-text);
+  }
+
+  .exchangeProgress {
+    background: rgba(245, 245, 245, 0.14);
+
+    span {
+      background: linear-gradient(90deg, #a8013a, var(--tp-magenta));
+      box-shadow: 0 0 14px rgba(228, 2, 75, 0.55);
+    }
+  }
+
+  .exchangeSection {
+    background: var(--tp-teal);
+    box-shadow: 0 12px 28px rgba(0, 156, 168, 0.25);
+  }
+
+  .exchange {
+    background:
+      radial-gradient(circle at 88% 4%, rgba(255, 255, 255, 0.2), transparent 34%),
+      linear-gradient(135deg, var(--tp-teal), #00777f);
+  }
+
+  .microAvatar {
+    background: var(--tp-magenta);
+  }
+
+  .microToday {
+    background: var(--tp-bg);
+    color: var(--tp-text);
+  }
+
+  .microExchange {
+    background: var(--tp-teal);
+  }
+
+  .microDate {
+    color: #1f2a2c;
+
+    &:hover {
+      background: #e6e9ea;
+    }
+  }
+
+  .microControl:hover {
+    background: #e6e9ea;
   }
 }

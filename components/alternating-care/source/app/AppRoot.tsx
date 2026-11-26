@@ -3,7 +3,6 @@
 import { SiteNavigation } from '@modules/SiteNavigation/SiteNavigation';
 import { SupportedLanguages } from '@utils/lang';
 import { CareLegacyMigration } from '@api/db/events/CareLegacyMigration';
-import { CareEventsLoadingOverlay } from '@components/CareEventsLoadingOverlay/CareEventsLoadingOverlay';
 import type { AppUser } from '@api/db/types';
 import { PropsWithChildren, useCallback, useMemo } from 'react';
 import { AppConfigurationEffect } from './AppConfigurationEffect';
@@ -36,7 +35,6 @@ export default function AppRoot({
     <AppContext.Provider value={contextData}>
       <AppConfigurationEffect />
       <CareLegacyMigration />
-      <CareEventsLoadingOverlay />
       <SiteNavigation />
       {children}
     </AppContext.Provider>

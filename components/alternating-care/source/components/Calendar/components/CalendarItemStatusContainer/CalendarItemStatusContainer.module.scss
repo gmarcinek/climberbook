@@ -4,24 +4,12 @@
 
 .calendarItemStatusContainer {
   position: relative;
+  display: flex;
+  height: 100%;
   flex: 1;
 
   &.isToday {
     z-index: 2;
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border: 2px solid $red-500;
-      border-radius: 7px;
-      box-shadow:
-        0 0 $spacer-8 $red-500,
-        0 0 $spacer-16 rgba($red-500, 0.6),
-        inset 0 0 $spacer-8 rgba($red-500, 0.5);
-      pointer-events: none;
-      z-index: 2;
-    }
   }
 
   &.isSelected {
@@ -60,5 +48,15 @@
     &.isSelected {
       filter: none;
     }
+  }
+}
+
+:global(.timepage) .calendarItemStatusContainer {
+  display: flex;
+  align-items: center;
+
+  &.isToday::after,
+  &.isFirstOfTheMonth::before {
+    display: none;
   }
 }

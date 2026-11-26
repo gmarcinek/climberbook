@@ -17,6 +17,7 @@ import {
   MdKeyboardArrowRight,
   MdKeyboardDoubleArrowLeft,
   MdKeyboardDoubleArrowRight,
+  MdRefresh,
 } from 'react-icons/md';
 
 interface RangeNavigationProps {
@@ -199,10 +200,12 @@ export const RangeNavigation = (props: RangeNavigationProps) => {
           <Button
             size='sm'
             variant='ghost'
+            isIconOnly
             onClick={handleResetDates}
-            className='min-w-unit-12 px-2'
+            aria-label='Reset date range'
+            title='Reset date range'
           >
-            Reset
+            <MdRefresh size={18} aria-hidden />
           </Button>
         )}
       </div>

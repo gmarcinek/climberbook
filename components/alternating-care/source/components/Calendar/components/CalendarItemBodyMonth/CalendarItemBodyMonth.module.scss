@@ -129,3 +129,70 @@
     );
   }
 }
+
+// Timepage theme: round days on a black canvas, magenta intensity = involvement.
+:global(.timepage) .calendarItemBodyMonthItem {
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 64px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  padding: 0;
+  clip-path: none;
+  // --tp-event-mix comes from CalendarDay (more events = stronger magenta).
+  background: color-mix(
+    in srgb,
+    var(--tp-teal) var(--tp-event-mix, 0%),
+    var(--tp-surface)
+  );
+  color: var(--tp-muted);
+  font-size: 13px;
+  line-height: 1;
+  text-align: center;
+
+  small,
+  .textItem {
+    display: none;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  &.isWeekend {
+    background: color-mix(
+      in srgb,
+      var(--tp-teal) var(--tp-event-mix, 0%),
+      #0e1416
+    );
+  }
+
+  &.isOtherCare {
+    background-color: color-mix(in srgb, var(--tp-teal) 42%, var(--tp-bg)) !important;
+    color: var(--tp-text) !important;
+  }
+
+  &.isAlternating,
+  &.isAlternating.isWeekend {
+    background: var(--tp-teal) !important;
+    color: #fff !important;
+  }
+
+  &.isFirstOfTheMonth {
+    padding-left: 0;
+    color: var(--tp-text);
+  }
+
+  &.isToday,
+  &.isAlternating.isToday {
+    background: var(--tp-panel) !important;
+    color: var(--tp-bg) !important;
+  }
+
+  &.isSelected {
+    background: var(--tp-magenta) !important;
+    color: #fff !important;
+  }
+}

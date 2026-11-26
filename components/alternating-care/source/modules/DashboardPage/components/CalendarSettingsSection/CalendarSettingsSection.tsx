@@ -45,36 +45,58 @@ export const CalendarSettingsSection = (
           role='group'
           aria-label={i18n.displayMode}
         >
-        <button
-          type='button'
-          className={isAlternatingVisible ? styles.active : undefined}
-          aria-pressed={isAlternatingVisible}
-          aria-label={i18n.myCare}
-          title={i18n.myCare}
-          onClick={() => setIsAlternatingVisible(!isAlternatingVisible)}
-        >
-          <MdPerson size={19} aria-hidden />
-        </button>
-        <button
-          type='button'
-          className={isOtherCareVisible ? styles.active : undefined}
-          aria-pressed={isOtherCareVisible}
-          aria-label={i18n.otherCaregivers}
-          title={i18n.otherCaregivers}
-          onClick={() => setIsOtherCareVisible(!isOtherCareVisible)}
-        >
-          <MdGroups size={19} aria-hidden />
-        </button>
-        <button
-          type='button'
-          className={isEventsVisible ? styles.active : undefined}
-          aria-pressed={isEventsVisible}
-          aria-label={i18n.events}
-          title={i18n.events}
-          onClick={() => setIsEventsVisible(!isEventsVisible)}
-        >
-          <MdEvent size={19} aria-hidden />
-        </button>
+          <div
+            className={styles.careToggles}
+            role='radiogroup'
+            aria-label={i18n.plan}
+          >
+            <button
+              type='button'
+              role='radio'
+              className={
+                isAlternatingVisible && !isOtherCareVisible
+                  ? styles.active
+                  : undefined
+              }
+              aria-checked={isAlternatingVisible && !isOtherCareVisible}
+              aria-label={i18n.myCare}
+              title={i18n.myCare}
+              onClick={() => {
+                setIsAlternatingVisible(true);
+                setIsOtherCareVisible(false);
+              }}
+            >
+              <MdPerson size={16} aria-hidden />
+              <span>{i18n.myShort}</span>
+            </button>
+            <button
+              type='button'
+              role='radio'
+              className={isOtherCareVisible ? styles.active : undefined}
+              aria-checked={isOtherCareVisible}
+              aria-label={i18n.otherCaregivers}
+              title={i18n.otherCaregivers}
+              onClick={() => {
+                setIsAlternatingVisible(true);
+                setIsOtherCareVisible(true);
+              }}
+            >
+              <MdGroups size={17} aria-hidden />
+              <span>{i18n.shared}</span>
+            </button>
+          </div>
+          <div className={styles.eventToggles}>
+            <button
+              type='button'
+              className={isEventsVisible ? styles.active : undefined}
+              aria-pressed={isEventsVisible}
+              aria-label={i18n.events}
+              title={i18n.events}
+              onClick={() => setIsEventsVisible(!isEventsVisible)}
+            >
+              <MdEvent size={15} aria-hidden />
+            </button>
+          </div>
         </div>
 
         <RangeNavigation

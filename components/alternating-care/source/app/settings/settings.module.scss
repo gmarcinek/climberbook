@@ -420,7 +420,7 @@
   border: 1px solid #e2e7ea;
   border-radius: 14px;
   padding: 16px;
-  background: #fafbfb;
+  background: #f5f5f5;
 
   > span {
     color: #788088;
@@ -969,5 +969,17 @@
   .card {
     border-radius: 15px;
     padding: 18px;
+  }
+}
+
+:global(.timepage) .header h1 {
+  color: var(--tp-teal);
+}
+:global(.timepage) .careColorPreview {
+  border-color: #1f282a;
+  background: var(--tp-bg);
+
+  > span {
+    color: var(--tp-muted);
   }
 }

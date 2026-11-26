@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { PlatformAccountMenu } from '@/components/platform/PlatformAccountMenu';
 import { siteNavigationI18n } from '../siteNavigation.i18n';
 import { Logo } from './Logo';
+import { ThemeMenu } from './ThemeMenu';
+import { Menu } from 'lucide-react';
 
 interface NavbarProps {
   toggle: () => void;
@@ -24,9 +26,18 @@ export const NavigationBar = (props: NavbarProps) => {
     >
       <div className='container-fluid h-full px-4'>
         <div className='flex h-full items-center justify-between'>
-          <div className='flex h-full items-center justify-between gap-x-8 divide-x divide-slate-300'>
+          <div className='flex h-full items-center justify-between gap-x-8'>
+            <button
+              type='button'
+              className='flex h-9 w-9 items-center justify-center rounded-full text-slate-600 lg:hidden'
+              onClick={props.toggle}
+              aria-label={i18n.menu}
+              title={i18n.menu}
+            >
+              <Menu size={22} aria-hidden />
+            </button>
             <Logo />
-            <ul className='hidden gap-x-6 pl-8 md:flex'>
+            <ul className='hidden gap-x-6 border-l border-slate-300 pl-8 lg:flex'>
               <Link href='/alternating-care'>
                 <span>{i18n.home}</span>
               </Link>
@@ -39,6 +50,10 @@ export const NavigationBar = (props: NavbarProps) => {
                 <span>{i18n.planning}</span>
               </Link>
 
+              <Link href='/alternating-care/tasks'>
+                <span>{i18n.tasks}</span>
+              </Link>
+
               <Link href='/alternating-care/people'>
                 <span>{i18n.people}</span>
               </Link>
@@ -48,7 +63,10 @@ export const NavigationBar = (props: NavbarProps) => {
               </Link>
             </ul>
           </div>
-          <div>
+          <div className='flex items-center gap-2'>
+            <div className='hidden lg:block'>
+              <ThemeMenu />
+            </div>
             <PlatformAccountMenu currentApp='alternating-care' />
           </div>
         </div>

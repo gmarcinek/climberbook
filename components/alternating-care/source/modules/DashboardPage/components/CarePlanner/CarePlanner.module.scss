@@ -561,3 +561,55 @@
   .footer { align-items: stretch; flex-direction: column; }
   .footer > div { justify-content: flex-end; }
 }
+
+/* Timepage: black preview, teal accents on light panels */
+:global(.timepage) {
+  .page { background: var(--tp-bg); }
+  .summaryPanel { background: var(--tp-panel); }
+
+  .primaryTabs button[data-active='true'] { border-bottom-color: var(--tp-teal); color: #0d1213; }
+  .tabs { border-radius: 0; background: #e4e8e8; }
+  .tabs button { border-radius: 0; }
+  .tabs button[data-active='true'] { box-shadow: inset 0 -2px 0 var(--tp-teal); color: var(--tp-teal); }
+  .stepper li[data-state='active'] span { background: var(--tp-teal); }
+  .stepActions .primary,
+  .sectionHeading button,
+  .save { border-radius: 0; background: var(--tp-teal); color: #fff; }
+  .stepActions button,
+  .footer button,
+  .footer a { border-radius: 0; }
+  .footer { border-top-color: #e0e4e4; background: var(--tp-panel); }
+
+  .previewPanel { background: var(--tp-bg); }
+
+  .calendarHeader {
+    border-bottom-color: var(--tp-line);
+    background: var(--tp-bg);
+
+    span { color: var(--tp-muted); }
+    h4 { color: var(--tp-text); }
+
+    .rangeNav > button {
+      border: 1px solid var(--tp-line);
+      border-radius: 0;
+      background: var(--tp-surface);
+      color: var(--tp-text);
+
+      &:hover { border-color: var(--tp-teal); color: var(--tp-teal); }
+    }
+  }
+
+  .dayDetails {
+    border-color: var(--tp-line);
+    border-radius: 0;
+    background: var(--tp-surface);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+    color: var(--tp-text);
+
+    ul li small { color: var(--tp-muted); }
+    em { color: var(--tp-magenta); }
+  }
+
+  .dayDetailsLabel,
+  .dayDetailsCare small { color: var(--tp-muted); }
+}

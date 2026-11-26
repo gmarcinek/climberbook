@@ -5,6 +5,7 @@ import type { PropsWithChildren } from "react";
 import { ToastContainer } from "react-toastify";
 import AppRoot from "@/components/alternating-care/source/app/AppRoot";
 import QueryClientContext from "@/components/alternating-care/source/app/QueryClientContext";
+import { ThemeRoot } from "@/components/alternating-care/source/app/ThemeRoot";
 import { requireAuthenticatedUser } from "@/lib/server/require-auth";
 import { getPlatformUserById } from "@/lib/server/platform-user";
 
@@ -20,7 +21,7 @@ export default async function AlternatingCareLayout({
 
   return (
     <div className={`alternatingCareRoot ${inter.className}`}>
-      <div className='alternatingCareTheme light'>
+      <ThemeRoot>
         <QueryClientContext>
           <AppRoot
             initialUser={
@@ -39,7 +40,7 @@ export default async function AlternatingCareLayout({
             />
           </AppRoot>
         </QueryClientContext>
-      </div>
+      </ThemeRoot>
     </div>
   );
 }

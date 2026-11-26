@@ -2,6 +2,7 @@
 
 import PageContainer from '@components/PageContainer/PageContainer';
 import { useAppContext } from '@app/AppContext';
+import { useAppTheme } from '@app/ThemeRoot';
 import { CalendarEvent, CalendarEventType } from '@api/db/types';
 import { Calendar } from '@components/Calendar/Calendar';
 import { dateFormat } from '@components/Calendar/Calendar.helpers';
@@ -10,6 +11,7 @@ import {
   CARE_COLORS_QUERY_KEY,
   CaregiverColors,
   caregiverBackground,
+  caregiverThemeColor,
 } from '@utils/caregiverColors';
 import { colorBlueGreen700 } from '@utils/color';
 import { CareAvatarRole, useCareAvatars } from '@utils/useCareAvatars';
@@ -71,6 +73,7 @@ type Caregiver = {
   role: string;
   linkedUserId?: string | null;
   color?: string | null;
+  themeColors?: Record<string, string> | null;
 };
 
 type WardDraft = {
@@ -108,13 +111,19 @@ const formatBirthDateInput = (value: string, isEnglish: boolean) => {
   return dayjs(value).format('DD.MM.YYYY');
 };
 
-const defaultCareColor = (subjectId: string) =>
-  subjectId.startsWith('self:')
+// Mirrors the calendar defaults of each theme (Timepage: teal / dark teal).
+const defaultCareColor = (subjectId: string, theme: string) => {
+  if (theme === 'timepage') {
+    return subjectId.startsWith('self:') ? '#009ca8' : '#00272a';
+  }
+  return subjectId.startsWith('self:')
     ? colorBlueGreen700
     : caregiverBackground(subjectId);
+};
 
 export default function PeoplePage() {
   const { language, user } = useAppContext();
+  const { theme } = useAppTheme();
   const { profile, setProfile } = useOtherParent();
   const isEnglish = language === 'en';
   const otherParentSubject = otherParentSubjectId(profile);
@@ -289,7 +298,7 @@ export default function PeoplePage() {
     }
   };
 
-  const saveCaregiver = async (caregiver: Caregiver) => {
+  const saveCaregiver = async (caregiver: Caregiver & { theme?: string }) => {
     const response = await fetch('/api/alternating-care/caregivers', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -302,14 +311,17 @@ export default function PeoplePage() {
       throw new Error(data?.error || 'Nie udało się zapisać opiekuna.');
     }
     const data = (await response.json()) as { caregiver: Caregiver };
-    setCaregivers((current) => [
-      ...current.filter(
-        (item) =>
-          item.id !== data.caregiver.id &&
-          item.subjectId !== data.caregiver.subjectId
-      ),
-      data.caregiver,
-    ]);
+    // Replace in place so saving (e.g. a colour) keeps the list order.
+    setCaregivers((current) => {
+      const isSame = (item: Caregiver) =>
+        (Boolean(item.id) && item.id === data.caregiver.id) ||
+        item.subjectId === data.caregiver.subjectId;
+      const index = current.findIndex(isSame);
+      if (index === -1) return [...current, data.caregiver];
+      return current
+        .map((item, itemIndex) => (itemIndex === index ? data.caregiver : item))
+        .filter((item, itemIndex) => itemIndex === index || !isSame(item));
+    });
     return data.caregiver;
   };
 
@@ -324,7 +336,9 @@ export default function PeoplePage() {
       current.filter((item) => item.id !== caregiver.id)
     );
     if (caregiver.subjectId === profile.subjectId) setProfile({ name: '' });
-    await setAvatar('other', null, caregiver.subjectId.replace(/^caregiver:/, ''));
+    if (caregiver.subjectId.startsWith('caregiver:')) {
+      await setAvatar('other', null, caregiver.subjectId.slice('caregiver:'.length));
+    }
   };
 
   const displayedCaregivers = useMemo<Caregiver[]>(() => {
@@ -383,23 +397,22 @@ export default function PeoplePage() {
         : caregiver.subjectId,
     });
 
+  // Colours are kept per theme; drafts belong to the active theme.
   const careColorOf = (caregiver: Caregiver) =>
     caregiver.subjectId in colorDrafts
       ? colorDrafts[caregiver.subjectId]
-      : caregiver.color ?? null;
+      : caregiverThemeColor(caregiver, theme);
 
   const previewColors = useMemo<CaregiverColors>(
     () =>
       Object.fromEntries(
         displayedCaregivers.flatMap((caregiver) => {
-          const color =
-            caregiver.subjectId in colorDrafts
-              ? colorDrafts[caregiver.subjectId]
-              : caregiver.color;
+          const color = careColorOf(caregiver);
           return color ? [[caregiver.subjectId, color]] : [];
         })
       ),
-    [colorDrafts, displayedCaregivers]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [colorDrafts, displayedCaregivers, theme]
   );
 
   // Sample months: in every month consecutive blocks of days, one per caregiver.
@@ -440,7 +453,7 @@ export default function PeoplePage() {
     setColorDrafts((current) => ({ ...current, [caregiver.subjectId]: color }));
     clearTimeout(colorSaveTimers.current[caregiver.subjectId]);
     colorSaveTimers.current[caregiver.subjectId] = setTimeout(() => {
-      void saveCaregiver({ ...caregiver, color })
+      void saveCaregiver({ ...caregiver, color, theme })
         .then(() => {
           setColorDrafts((current) => {
             const next = { ...current };
@@ -708,10 +721,18 @@ export default function PeoplePage() {
                   : caregiver.subjectId.startsWith('caregiver:')
                     ? caregiver.subjectId.slice('caregiver:'.length)
                     : undefined;
+              // A `self:` row of another account (stale data) is removable and has no avatar of its own.
+              const isForeignSelf =
+                caregiver.subjectId.startsWith('self:') && avatarRole !== 'mine';
+              const isRemovableCaregiver =
+                caregiver.subjectId.startsWith('caregiver:') ||
+                (isForeignSelf && Boolean(caregiver.id));
               const avatar =
                 avatarRole === 'mine'
                   ? avatars.mine
-                  : getAvatar('other', avatarSubjectId);
+                  : isForeignSelf
+                    ? null
+                    : getAvatar('other', avatarSubjectId);
               return (
               <div className={styles.avatarEditor} key={caregiver.subjectId}>
                 <span className={styles.avatarPreview}>
@@ -801,12 +822,12 @@ export default function PeoplePage() {
                     />
                   </label>
                 )}
-                {(avatar || caregiver.subjectId.startsWith('caregiver:')) && (
+                {(avatar || isRemovableCaregiver) && (
                   <button
                     type='button'
                     className={styles.avatarRemoveButton}
                     aria-label={
-                      caregiver.subjectId.startsWith('caregiver:')
+                      isRemovableCaregiver
                         ? isEnglish
                           ? 'Remove caregiver'
                           : 'Usuń opiekuna'
@@ -815,7 +836,7 @@ export default function PeoplePage() {
                           : 'Usuń avatar'
                     }
                     title={
-                      caregiver.subjectId.startsWith('caregiver:')
+                      isRemovableCaregiver
                         ? isEnglish
                           ? 'Remove caregiver'
                           : 'Usuń opiekuna'
@@ -824,9 +845,7 @@ export default function PeoplePage() {
                           : 'Usuń avatar'
                     }
                     onClick={() => {
-                      const operation = caregiver.subjectId.startsWith(
-                        'caregiver:'
-                      )
+                      const operation = isRemovableCaregiver
                         ? removeCaregiver(caregiver)
                         : setAvatar(avatarRole, null, avatarSubjectId);
                       void operation
@@ -857,7 +876,7 @@ export default function PeoplePage() {
                         : `Kolor dni: ${caregiver.name}`
                     }
                     value={
-                      careColorOf(caregiver) ?? defaultCareColor(caregiver.subjectId)
+                      careColorOf(caregiver) ?? defaultCareColor(caregiver.subjectId, theme)
                     }
                     onChange={(event) =>
                       changeCareColor(caregiver, event.target.value)

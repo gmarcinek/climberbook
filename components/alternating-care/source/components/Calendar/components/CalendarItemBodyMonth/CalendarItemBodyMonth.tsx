@@ -81,7 +81,7 @@ export function CalendarItemBodyMonth(props: CalendarItemBodyMonthProps) {
     [styles.isWeekend]: isWeekend,
     [styles.isToday]: isTodayVisible && isToday,
     [styles.isAlternating]: isAlternating,
-
+    [styles.isOtherCare]: Boolean(caregiverCare),
     [styles.smallPolygon]: is1024,
     [styles.isFirstOfTheMonth]:
       displayStrategy === 'continous' && isFirstOfTheMonth,

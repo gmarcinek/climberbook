@@ -12,6 +12,17 @@ export enum CalendarEventType {
   Medical = 'MEDICAL',
   School = 'SCHOOL',
   Camp = 'CAMP',
+  Culinary = 'CULINARY',
+  Coffee = 'COFFEE',
+  Cinema = 'CINEMA',
+  Sport = 'SPORT',
+  Shopping = 'SHOPPING',
+  Holiday = 'HOLIDAY',
+  Vacation = 'VACATION',
+  Errands = 'ERRANDS',
+  Tutoring = 'TUTORING',
+  Work = 'WORK',
+  Phone = 'PHONE',
   Todo = 'TODO',
 }
 

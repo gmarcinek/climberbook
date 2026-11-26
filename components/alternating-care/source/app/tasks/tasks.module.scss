@@ -1,0 +1,244 @@
+.page {
+  display: grid;
+  width: 100%;
+  gap: 24px;
+  padding: 8px clamp(16px, 2vw, 40px) 40px;
+}
+
+@media (min-width: 1920px) {
+  .page {
+    width: min(1760px, 100%);
+    margin: 0 auto;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  h1 {
+    margin: 0;
+    color: #263d45;
+    font-size: 1.35rem;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: #71808a;
+    font-size: 0.8rem;
+  }
+}
+
+.headerIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  background: #eaf3f6;
+  color: #2d6f8d;
+}
+
+.total {
+  display: grid;
+  min-width: 30px;
+  height: 30px;
+  margin-left: auto;
+  place-items: center;
+  border-radius: 999px;
+  padding: 0 8px;
+  background: #2d6f8d;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+
+  > section {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    min-height: 160px;
+    border-radius: 14px;
+    transition: background 120ms ease, box-shadow 120ms ease;
+
+    &[data-drag-active='true'] {
+      background: rgba(45, 111, 141, 0.04);
+      box-shadow: inset 0 0 0 2px rgba(45, 111, 141, 0.16);
+    }
+
+    > header {
+      display: flex;
+      min-height: 43px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #dfe6ea;
+      padding: 0 2px 10px;
+
+      > span {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #385766;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      > strong {
+        color: #71808a;
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+  ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  > strong {
+    color: #71808a;
+    font-size: 0.8rem;
+  }
+}
+
+.addTask {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #2d6f8d;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 120ms ease;
+
+  svg {
+    flex: none;
+  }
+
+  &:hover {
+    background: #245a73;
+  }
+}
+
+.task {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: start;
+  gap: 10px;
+  border: 1px solid #dde5e9;
+  border-left: 4px solid var(--todo-color, #2d8dbf);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  box-shadow: 0 5px 16px rgba(31, 52, 61, 0.05);
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &[data-completed='true'] .taskCopy strong {
+    color: #879199;
+    text-decoration: line-through;
+  }
+
+  > button {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--todo-color) 35%, #dfe6ea);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--todo-color) 9%, #fff);
+    color: var(--todo-color);
+    cursor: pointer;
+  }
+
+  > button:disabled {
+    cursor: wait;
+    opacity: 0.5;
+  }
+}
+
+.taskIcon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--todo-color) 10%, #fff);
+  color: var(--todo-color);
+}
+
+.taskCopy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+
+  strong {
+    overflow-wrap: anywhere;
+    color: #263d45;
+    font-size: 0.88rem;
+  }
+
+  p {
+    margin: 0;
+    color: #687680;
+    font-size: 0.76rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  a {
+    color: #2d6f8d;
+    text-decoration: underline;
+  }
+}
+
+.empty,
+.state {
+  border: 1px dashed #cbd6dc;
+  border-radius: 12px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.65);
+  color: #7b8790;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding-top: 16px;
+  }
+
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}

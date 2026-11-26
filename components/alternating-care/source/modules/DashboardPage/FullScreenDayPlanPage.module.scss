@@ -204,3 +204,58 @@
     flex-basis: 100%;
   }
 }
+
+// Timepage: darker base around the dark plan, teal accents.
+:global(.timepage) {
+  .page {
+    background: var(--tp-bg);
+  }
+
+  .backLink {
+    color: var(--tp-teal);
+  }
+
+  .tabs,
+  .modeSwitch {
+    border-color: #263032;
+    background: #161b1c;
+  }
+
+  .tab,
+  .modeSwitch button {
+    color: var(--tp-muted);
+  }
+
+  .tab:hover,
+  .childTab:hover {
+    background: #20272a;
+  }
+
+  .tab[aria-selected='true'],
+  .modeSwitch button[aria-checked='true'],
+  .childTab[aria-selected='true'] {
+    background: var(--tp-teal);
+    color: #fff;
+  }
+
+  .childTab {
+    border-color: #263032;
+    background: #161b1c;
+    color: var(--tp-text);
+  }
+
+  .childInitial {
+    background: #20272a;
+    color: var(--tp-teal);
+  }
+
+  .childIdentity small {
+    color: var(--tp-muted);
+  }
+
+  .plan {
+    border-color: #263032;
+    background: #161b1c;
+    box-shadow: none;
+  }
+}

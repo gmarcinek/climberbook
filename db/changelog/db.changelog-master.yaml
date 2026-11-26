@@ -87,3 +87,5 @@ databaseChangeLog:
       file: changelog/changes/043-add-care-wards.sql
   - include:
       file: changelog/changes/044-add-care-ward-birth-date-and-lessons.sql
+  - include:
+      file: changelog/changes/045-add-care-caregiver-theme-colors.sql
