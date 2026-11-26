@@ -751,6 +751,27 @@
   }
 }
 
+.addPhotos {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-color: #c9dbe4 !important;
+  background: #f3f8fb !important;
+  color: #2d6f8d !important;
+
+  small {
+    min-width: 18px;
+    border-radius: 999px;
+    padding: 0 5px;
+    background: #2d6f8d;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+  }
+}
+
 .deleteEvent {
   display: inline-flex;
   align-items: center;

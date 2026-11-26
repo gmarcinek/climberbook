@@ -116,6 +116,13 @@ function normalizeEvents(input: unknown) {
               typeof styleValue.completed === "boolean"
                 ? styleValue.completed
                 : undefined,
+            amount:
+              typeof styleValue.amount === "number" &&
+              Number.isFinite(styleValue.amount) &&
+              styleValue.amount >= 0 &&
+              styleValue.amount < 1_000_000_000
+                ? Math.round(styleValue.amount * 100) / 100
+                : undefined,
           }
         : undefined;
 

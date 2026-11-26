@@ -22,6 +22,7 @@ import {
 import { BsTags } from 'react-icons/bs';
 import {
   MdOutlineNotes,
+  MdPayments,
   MdOutlineSchedule,
   MdOutlineTitle,
   MdOutlineVisibility,
@@ -127,6 +128,8 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     setBackgroundColor,
     setDescription,
     setName,
+    amount,
+    setAmount,
     setTextColor,
     setType,
     isAllDay,
@@ -317,6 +320,26 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
                   size='lg'
                   onValueChange={setName}
                 />
+                {type === CalendarEventType.Expense && (
+                  <>
+                    <Stack direction='horizontal'>
+                      <MdPayments size={24} />
+                      <h3>{language === 'pl' ? 'Kwota (zł)' : 'Amount (PLN)'}</h3>
+                    </Stack>
+                    <Input
+                      type='text'
+                      inputMode='decimal'
+                      aria-label={language === 'pl' ? 'Kwota' : 'Amount'}
+                      placeholder='0,00'
+                      value={amount}
+                      radius='sm'
+                      variant='bordered'
+                      size='lg'
+                      endContent={<span className='text-small'>zł</span>}
+                      onValueChange={setAmount}
+                    />
+                  </>
+                )}
                 <Stack direction='horizontal'>
                   <MdOutlineNotes size={24} />
                   <h3>{i18n.eventDescription}</h3>

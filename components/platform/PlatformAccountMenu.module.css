@@ -160,6 +160,10 @@
   background: linear-gradient(145deg, #b3155f, #e23d8f);
 }
 
+.appTile--timeline {
+  background: linear-gradient(145deg, #5b3a8c, #9470c9);
+}
+
 .appTile--models {
   background: linear-gradient(145deg, #4a4f8d, #767cc0);
 }

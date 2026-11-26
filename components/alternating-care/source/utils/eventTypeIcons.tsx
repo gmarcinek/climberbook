@@ -12,6 +12,7 @@ import {
   MdLocalHospital,
   MdLocalMovies,
   MdMenuBook,
+  MdPayments,
   MdPhone,
   MdRestaurant,
   MdSchool,
@@ -37,6 +38,7 @@ const EVENT_TYPE_ICONS: Partial<Record<CalendarEventType, IconType>> = {
   [CalendarEventType.Tutoring]: MdMenuBook,
   [CalendarEventType.Work]: MdWork,
   [CalendarEventType.Phone]: MdPhone,
+  [CalendarEventType.Expense]: MdPayments,
 };
 
 export const getEventTypeIcon = (type?: CalendarEventType): IconType =>

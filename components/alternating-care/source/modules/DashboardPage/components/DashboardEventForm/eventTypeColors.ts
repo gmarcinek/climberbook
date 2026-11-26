@@ -18,6 +18,7 @@ export const EVENT_TYPE_COLORS: Partial<Record<CalendarEventType, string>> = {
   [CalendarEventType.Tutoring]: '#5E35B1',
   [CalendarEventType.Work]: '#455A64',
   [CalendarEventType.Phone]: '#0277BD',
+  [CalendarEventType.Expense]: '#2E7D32',
 };
 
 export const DEFAULT_EVENT_COLOR = '#009688';

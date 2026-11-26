@@ -30,6 +30,7 @@ export const dashboardEventFormI18n = {
     TUTORING: 'Korepetycje',
     WORK: 'Praca',
     PHONE: 'Telefon',
+    EXPENSE: 'Wydatek',
     TODO: 'Notatka',
   },
   en: {
@@ -63,6 +64,7 @@ export const dashboardEventFormI18n = {
     TUTORING: 'Tutoring',
     WORK: 'Work',
     PHONE: 'Phone call',
+    EXPENSE: 'Expense',
     TODO: 'Note',
   },
 };

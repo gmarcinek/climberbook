@@ -36,6 +36,14 @@ function timeToMinutes(value: string) {
 }
 
 // Non-consecutive selections are separate days sharing the same hours.
+// Accepts "12,50" as well as "12.50"; empty or invalid input means no amount.
+export const parseAmount = (value: string) => {
+  const amount = Number(value.replace(/\s/g, '').replace(',', '.'));
+  return value.trim() && Number.isFinite(amount) && amount >= 0
+    ? Math.round(amount * 100) / 100
+    : undefined;
+};
+
 export function isScatteredSelection(dates: string[]) {
   const ordered = [...new Set(dates)].sort();
   return ordered.some(
@@ -107,6 +115,11 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
   const [name, setName] = useState(initialEvent?.name ?? '');
   const [description, setDescription] = useState(
     initialEvent?.description ?? ''
+  );
+  const [amount, setAmount] = useState(
+    initialEvent?.style?.amount !== undefined
+      ? String(initialEvent.style.amount)
+      : ''
   );
   const [backgroundColor, setBackgroundColor] = useState(
     initialEvent?.style?.background ??
@@ -201,6 +214,7 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
       isColorCustomized.current = false;
       setName('');
       setDescription('');
+      setAmount('');
       setBackgroundColor('#E57373');
       setTextColor('#ffffff');
       setIsAllDay(true);
@@ -273,6 +287,9 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
           color:
             typeToSave === CalendarEventType.Alternating ? white : textColor,
           completed: initialEvent?.completed ?? false,
+          ...(typeToSave === CalendarEventType.Expense && {
+            amount: parseAmount(amount),
+          }),
         },
         startTime: isAllDay ? undefined : timeToMinutes(startTime),
         endTime: isAllDay ? undefined : timeToMinutes(endTime),
@@ -299,6 +316,7 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
       type,
       name,
       description,
+      amount,
       backgroundColor,
       textColor,
       formPutEventMutation.mutateAsync,
@@ -352,6 +370,8 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
     setName,
     description,
     setDescription,
+    amount,
+    setAmount,
     backgroundColor,
     setBackgroundColor: pickBackgroundColor,
     textColor,

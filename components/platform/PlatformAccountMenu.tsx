@@ -5,6 +5,7 @@ import {
   BrainCircuit,
   CalendarDays,
   Grid3X3,
+  History,
   LogOut,
   Map,
   Mountain,
@@ -28,6 +29,7 @@ type PlatformUser = {
 const appIcons: Record<string, LucideIcon> = {
   climberbook: Mountain,
   "alternating-care": CalendarDays,
+  timeline: History,
   models: BrainCircuit,
   maps: Map,
 };
@@ -118,7 +120,13 @@ export function PlatformAccountMenu({
                 <span>Lobby</span>
               </Link>
               <div className={styles.appGrid}>
-                {(user?.apps ?? []).map((app) => {
+                {(user?.apps ?? [])
+                  .flatMap((app) =>
+                    app.id === "alternating-care"
+                      ? [app, { id: "timeline", label: "Oś czasu", href: "/alternating-care/timeline" }]
+                      : [app],
+                  )
+                  .map((app) => {
                   const Icon = appIcons[app.id] ?? Grid3X3;
                   return (
                     <Link

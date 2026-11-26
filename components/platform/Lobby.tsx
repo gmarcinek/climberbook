@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { BrainCircuit, CalendarDays, Map, Mountain } from "lucide-react";
+import {
+  BrainCircuit,
+  CalendarDays,
+  CalendarPlus,
+  History,
+  ImagePlus,
+  Map,
+  Mountain,
+  Wallet,
+} from "lucide-react";
 import { PlatformAccountMenu } from "./PlatformAccountMenu";
 import styles from "./Lobby.module.css";
 import { PlatformWall } from "./PlatformWall";
@@ -27,6 +36,15 @@ const apps = [
     action: "Otwórz kalendarz",
   },
   {
+    href: "/alternating-care/timeline",
+    title: "Oś czasu",
+    description:
+      "Opieka, wydarzenia, wydatki, zamknięte zadania i zdjęcia od dziś wstecz.",
+    icon: History,
+    tone: styles.timeline,
+    action: "Otwórz oś czasu",
+  },
+  {
     href: "/modele",
     title: "Modele",
     description:
@@ -44,6 +62,12 @@ const apps = [
     tone: styles.maps,
     action: "Otwórz mapy",
   },
+] as const;
+
+const quickAdd = [
+  { href: "/alternating-care/timeline?add=event", label: "Wydarzenie", icon: CalendarPlus },
+  { href: "/alternating-care/timeline?add=expense", label: "Wydatek", icon: Wallet },
+  { href: "/alternating-care/timeline?add=photos", label: "Zdjęcia", icon: ImagePlus },
 ] as const;
 
 export function Lobby() {
@@ -91,6 +115,21 @@ export function Lobby() {
               );
             })}
           </nav>
+
+          <div className={styles.quickAdd}>
+            <p>Szybko dodaj do opieki</p>
+            <div className={styles.quickAddList}>
+              {quickAdd.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href} className={styles.quickAddLink}>
+                    <Icon size={16} aria-hidden />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
 
           <PlatformNotifications />
         </aside>

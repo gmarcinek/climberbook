@@ -3,13 +3,8 @@
   width: 100%;
   gap: 18px;
   padding: 8px clamp(16px, 2vw, 40px) 40px;
-}
-
-@media (min-width: 1920px) {
-  .page {
-    width: min(1760px, 100%);
-    margin: 0 auto;
-  }
+  // The app scales desktop down (--app-zoom 0.8/0.9, globals.css); the timeline keeps full-size text.
+  zoom: calc(1 / var(--app-zoom, 1));
 }
 
 .header {
@@ -49,13 +44,9 @@
 }
 
 .legend {
-  position: sticky;
-  z-index: 3;
-  top: 0;
   width: min(980px, 100%);
-  margin: 0 auto;
-  padding: 8px 0;
-  background: #f5f5f5;
+  margin: 12px auto 0;
+  padding: 0;
   color: #6b7782;
   font-size: 0.7rem;
   font-weight: 700;
@@ -63,11 +54,194 @@
   text-transform: uppercase;
 
   span:first-child {
+    grid-column: 1;
+    grid-row: 1;
     justify-self: end;
   }
 
   span:last-child {
     grid-column: 3;
+    grid-row: 1;
+  }
+
+  // Dot on the axis between the two column labels.
+  &::after {
+    width: 6px;
+    height: 6px;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    border-radius: 50%;
+    background: #9fb0b9;
+    content: '';
+  }
+}
+
+// Search + legend stay pinned while the axis scrolls.
+.stickyBar {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  display: grid;
+  padding: 8px 0;
+  background: #f5f5f5;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  width: min(980px, 100%);
+  gap: 8px;
+  margin: 0 auto;
+  border: 1px solid #d7e0e5;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: #fff;
+  color: #6b7782;
+  box-shadow: 0 2px 10px rgba(31, 41, 55, 0.06);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    color: #263d45;
+    font: inherit;
+    font-size: 0.86rem;
+    outline: none;
+
+    // The wrapper shows focus; skip the global theme ring on the inner input.
+    &:focus {
+      box-shadow: none;
+    }
+
+    // The custom clear button replaces the browser's own one.
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
+
+  button {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 50%;
+    background: #f1f4f7;
+    color: #52616c;
+    cursor: pointer;
+    place-items: center;
+  }
+
+  &:focus-within {
+    border-color: #2d6f8d;
+  }
+}
+
+.addMenu {
+  position: relative;
+  margin-left: auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #dfe6ea;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: -1px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    padding: 10px 14px;
+    background: transparent;
+    color: #6b7782;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+
+    &:hover {
+      color: #263d45;
+    }
+
+    &[aria-selected='true'] {
+      border-bottom-color: #2d6f8d;
+      color: #2d6f8d;
+    }
+  }
+}
+
+.tabBadge {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  padding: 0 6px;
+  background: #d98a1c;
+  color: #fff;
+  font-size: 0.7rem;
+  place-items: center;
+}
+
+.addButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 16px;
+  background: #2d6f8d;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+
+  &:hover {
+    background: #245b74;
+  }
+}
+
+.addMenuPanel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  min-width: 190px;
+  gap: 2px;
+  border: 1px solid #e4e9ee;
+  border-radius: 12px;
+  padding: 6px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(25, 39, 46, 0.18);
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    border-radius: 8px;
+    padding: 9px 10px;
+    background: transparent;
+    color: #263d45;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+
+    svg {
+      color: #2d6f8d;
+    }
+
+    &:hover {
+      background: #f1f4f7;
+    }
   }
 }
 
@@ -155,6 +329,7 @@
 .careRow::after,
 .eventRow::after {
   position: absolute;
+  z-index: 1;
   top: 50%;
   left: 50%;
   width: 18px;
@@ -186,6 +361,28 @@
 
   small {
     opacity: 0.85;
+  }
+}
+
+.careAvatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--block-text) 45%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--block-text) 16%, transparent);
+  color: var(--block-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  place-items: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
 
@@ -231,6 +428,101 @@
     font-size: 0.72rem;
   }
 }
+// Clickable blocks open the editor.
+.eventBlock[role='button'] {
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover {
+    box-shadow: 0 4px 14px rgba(31, 41, 55, 0.16);
+    transform: translateY(-1px);
+  }
+}
+
+.eventBlock[data-kind='task'] {
+  background: #f7f9fa;
+
+  strong {
+    color: #52616c;
+    text-decoration: line-through;
+    text-decoration-color: rgba(82, 97, 108, 0.45);
+  }
+}
+
+.thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.thumbnail {
+  overflow: hidden;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: #eef2f4;
+  cursor: zoom-in;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.moreThumbnails {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  background: #eef2f4;
+  color: #52616c;
+  font-size: 0.8rem;
+  font-weight: 700;
+  place-items: center;
+}
+
+.addPhotoButton {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #9aa6ae;
+  cursor: pointer;
+  opacity: 0;
+  place-items: center;
+  transition: opacity 120ms ease;
+
+  &:hover {
+    background: #f1f4f7;
+    color: #2d6f8d;
+  }
+}
+
+.eventBlock:hover .addPhotoButton,
+.addPhotoButton:focus-visible {
+  opacity: 1;
+}
+
+.emptyRow span {
+  z-index: 1;
+  grid-column: 1 / -1;
+  justify-self: center;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: #fff;
+  color: #6b7782;
+  font-size: 0.82rem;
+}
+
 // Big "12 dni" counter on the right, separated by a vertical line.
 .blockDays {
   display: flex;
@@ -263,34 +555,143 @@
   border-left-color: color-mix(in srgb, var(--block-text) 35%, transparent);
 }
 
-.loadMore {
-  justify-self: center;
-  min-height: 38px;
-  border: 1px solid #d7e0e5;
-  border-radius: 8px;
-  padding: 0 18px;
-  background: #fff;
-  color: #2d6f8d;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-
-  &:disabled {
-    cursor: progress;
-    opacity: 0.6;
-  }
-}
-
 @media (max-width: 767px) {
+  // The page container already pads 16px; keep the sides tight on phones.
+  .page {
+    margin: 0 -8px;
+    width: calc(100% + 16px);
+    padding: 4px 0 28px;
+  }
+
+  // Icon + title on one row, the "Dodaj" button below at full width.
+  .header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+
+    > div:not(.addMenu) {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  }
+
+  .addMenu {
+    width: 100%;
+  }
+
+  .addButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .addMenuPanel {
+    left: 0;
+  }
+
   .legend,
   .axis > li {
-    grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
+    grid-template-columns: 22px minmax(0, 1fr) 22px;
+  }
+
+  // Two axes on phones: events on the left one, care on the right one.
+  .legend {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+
+    span:first-child {
+      order: 2;
+    }
+
+    span:last-child {
+      order: 1;
+    }
+
+    &::after {
+      display: none;
+    }
+  }
+
+  .axis::before {
+    left: 11px;
+    transform: none;
+  }
+
+  .axis::after {
+    position: absolute;
+    top: 0;
+    right: 11px;
+    bottom: 0;
+    width: 2px;
+    background: var(--tp-plan-line, #d4dde2);
+    content: '';
   }
 
   .careBlock,
   .eventBlock {
+    grid-column: 2;
+  }
+
+  .eventRow::after {
+    left: 12px;
+  }
+
+  .careRow::after {
+    right: 12px;
+    left: auto;
+    transform: translate(50%, -50%);
+  }
+
+  .careRow::after,
+  .eventRow::after {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+  }
+
+  .careBlock,
+  .eventBlock {
+    min-height: 44px;
+    gap: 8px;
     padding: 6px 8px;
+  }
+
+  .blockText {
+    strong {
+      font-size: 0.76rem;
+    }
+
+    small {
+      font-size: 0.66rem;
+    }
+  }
+
+  .careAvatar {
+    width: 26px;
+    height: 26px;
+    font-size: 0.62rem;
+  }
+
+  .eventIcon {
+    width: 22px;
+    height: 22px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .blockDays {
+    gap: 3px;
+    padding-left: 8px;
+
+    strong {
+      font-size: 1.25rem;
+    }
+
+    small {
+      font-size: 0.64rem;
+    }
   }
 }
 
@@ -299,7 +700,7 @@
     color: var(--tp-text);
   }
 
-  .legend,
+  .stickyBar,
   .monthRow span {
     background: var(--tp-bg);
   }

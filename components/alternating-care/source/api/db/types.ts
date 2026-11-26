@@ -23,6 +23,7 @@ export enum CalendarEventType {
   Tutoring = 'TUTORING',
   Work = 'WORK',
   Phone = 'PHONE',
+  Expense = 'EXPENSE',
   Todo = 'TODO',
 }
 
@@ -45,6 +46,8 @@ export interface CalendarEvent {
     startTime?: number;
     endTime?: number;
     completed?: boolean;
+    /** Amount of an expense event, in PLN. */
+    amount?: number;
   };
   // Sync-related fields
   unsynced?: boolean; // User edited offline

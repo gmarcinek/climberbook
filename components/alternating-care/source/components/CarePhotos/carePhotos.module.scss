@@ -1,0 +1,1081 @@
+.backdrop {
+  position: fixed;
+  // Above the event editor modal (10000), which can open the upload dialog.
+  z-index: 10050;
+  inset: 0;
+  display: grid;
+  padding: 24px;
+  background: rgba(26, 37, 43, 0.4);
+  place-items: center;
+}
+
+.dialog {
+  display: grid;
+  width: min(620px, 100%);
+  max-height: calc(var(--app-viewport-height, 100dvh) - 48px);
+  overflow-y: auto;
+  gap: 16px;
+  border: 1px solid #dce4e8;
+  border-radius: 16px;
+  padding: 22px 24px 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(25, 39, 46, 0.24);
+  color: #263d45;
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  small {
+    color: #2d6f8d;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 2px 0 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  > button {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    align-self: flex-start;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #6b7782;
+    cursor: pointer;
+    place-items: center;
+
+    &:hover {
+      background: #f1f4f7;
+    }
+  }
+}
+
+.dialogIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 12px;
+  background: #eaf3f6;
+  color: #2d6f8d;
+  place-items: center;
+}
+
+.dialogFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #e4e9ee;
+  padding-top: 14px;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  border-radius: 8px;
+  padding: 0 14px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.primaryButton {
+  border: 0;
+  background: #2d6f8d;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #245b74;
+  }
+}
+
+.secondaryButton {
+  border: 1px solid #d7e0e5;
+  background: #fff;
+  color: #52616c;
+}
+
+.dangerButton {
+  margin-right: auto;
+  border: 1px solid #f0c9c9;
+  background: #fff6f6;
+  color: #b43c3c;
+}
+
+.iconButton {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e4e9ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #8a5a5a;
+  cursor: pointer;
+  place-items: center;
+}
+
+.terms {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  border-radius: 10px;
+  padding: 14px 14px 14px 32px;
+  background: #f6f8f9;
+  color: #3c4f58;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  list-style: decimal;
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid #d7e0e5;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+
+  input {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    margin-top: 1px;
+    accent-color: #2d6f8d;
+  }
+}
+
+.error {
+  margin: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fdecec;
+  color: #a33030;
+  font-size: 0.8rem;
+}
+
+.dropZone {
+  display: grid;
+  gap: 6px;
+  border: 2px dashed #c6d3da;
+  border-radius: 12px;
+  padding: 28px 16px;
+  background: #f8fafb;
+  color: #52616c;
+  cursor: pointer;
+  justify-items: center;
+  text-align: center;
+
+  strong {
+    font-size: 0.9rem;
+  }
+
+  small {
+    color: #7b8790;
+    font-size: 0.76rem;
+  }
+
+  &[data-dragging],
+  &:hover {
+    border-color: #2d6f8d;
+    background: #eef5f8;
+  }
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: #eef2f4;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  button {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: grid;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    cursor: pointer;
+    place-items: center;
+  }
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+
+  > span {
+    color: #7b8790;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    min-height: 36px;
+    border: 1px solid #d7e0e5;
+    border-radius: 8px;
+    padding: 6px 10px;
+    background: #fff;
+    color: #263d45;
+    font: inherit;
+    font-size: 0.84rem;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #2d6f8d;
+    box-shadow: 0 0 0 3px rgba(45, 111, 141, 0.15);
+  }
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.photoFields {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.categoryGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.categoryTile {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  border: 1px solid #e1e8ec;
+  border-radius: 999px;
+  padding: 0 10px 0 8px;
+  background: #fff;
+  color: #3c4f58;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  svg {
+    color: var(--category-color);
+  }
+
+  &:hover {
+    border-color: var(--category-color);
+  }
+
+  &[aria-checked='true'] {
+    border-color: var(--category-color);
+    background: var(--category-color);
+    color: #fff;
+
+    svg {
+      color: #fff;
+    }
+  }
+}
+
+.heicPreview {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  background: #e7eef2;
+  color: #2d6f8d;
+  font-size: 0.8rem;
+  font-weight: 800;
+  place-content: center;
+  text-align: center;
+
+  small {
+    overflow: hidden;
+    max-width: 100%;
+    color: #6b7782;
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.progress {
+  margin-right: auto;
+  color: #52616c;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.waitingRoom {
+  display: grid;
+  gap: 14px;
+  border: 1px solid #f0d9a8;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fffaf0;
+
+  > header {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    > div {
+      flex: 1;
+    }
+
+    h2 {
+      margin: 0;
+      color: #263d45;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 2px 0 0;
+      color: #71808a;
+      font-size: 0.78rem;
+    }
+  }
+}
+
+.count {
+  display: inline-grid;
+  min-width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  border-radius: 999px;
+  padding: 0 7px;
+  background: #d98a1c;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  place-items: center;
+  vertical-align: 2px;
+}
+
+.waitingList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(500px, 100%), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.waitingCard {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  // Visible so the event picker dropdown is not clipped; the image rounds its own corners.
+  overflow: visible;
+  border: 1px solid #e8edf0;
+  border-radius: 14px;
+  padding: 0 0 14px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(31, 41, 55, 0.07);
+
+  > :not(.waitingImage) {
+    margin: 0 14px;
+  }
+}
+
+.waitingImage {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-radius: 13px 13px 0 0;
+  padding: 0;
+  background: #11181b;
+  cursor: zoom-in;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 200ms ease;
+  }
+
+  &:hover img {
+    transform: scale(1.03);
+  }
+}
+
+.waitingZoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  place-items: center;
+}
+
+.waitingEmpty {
+  display: grid;
+  gap: 6px;
+  border: 2px dashed #d7e0e5;
+  border-radius: 14px;
+  padding: 48px 16px;
+  color: #6b7782;
+  justify-items: center;
+  text-align: center;
+
+  strong {
+    color: #263d45;
+  }
+
+  span {
+    font-size: 0.82rem;
+  }
+}
+
+.metaList {
+  display: grid;
+  gap: 4px;
+  padding: 0;
+  list-style: none;
+  color: #52616c;
+  font-size: 0.76rem;
+
+  li {
+    display: flex;
+    // Icon sits on the first text line even when the text wraps.
+    align-items: flex-start;
+    gap: 7px;
+    min-width: 0;
+    line-height: 18px;
+  }
+
+  svg {
+    flex: none;
+    margin-top: 2px;
+    color: #2d6f8d;
+  }
+
+  a {
+    overflow: hidden;
+    color: #2d6f8d;
+    text-decoration: underline;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: #9aa6ae;
+  }
+}
+
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #eef2f4;
+  padding-top: 12px;
+}
+
+// Full-screen gallery; clicking the backdrop closes it.
+.lightbox {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 72px;
+  align-items: center;
+  background: rgba(8, 12, 14, 0.92);
+}
+
+.lightboxFigure {
+  display: grid;
+  grid-column: 2;
+  max-height: 100%;
+  margin: 0;
+  gap: 12px;
+  justify-items: center;
+  padding: 24px 0;
+
+  img {
+    max-width: 100%;
+    max-height: calc(100dvh - 170px);
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+  }
+
+  figcaption {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: min(900px, 100%);
+    gap: 16px;
+    color: #e8eef1;
+
+    strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+  }
+
+  .metaList {
+    color: #b8c4ca;
+
+    svg,
+    a {
+      color: #8fd3dc;
+    }
+  }
+}
+
+.lightboxCategory {
+  display: inline-block;
+  margin-bottom: 6px;
+  border-radius: 999px;
+  padding: 1px 10px;
+  background: rgba(143, 211, 220, 0.18);
+  color: #8fd3dc;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.lightboxActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  color: #b8c4ca;
+  font-size: 0.8rem;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    padding: 0 12px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+.lightboxNav,
+.lightboxClose {
+  display: grid;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  place-items: center;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.lightboxNav {
+  width: 52px;
+  height: 52px;
+  justify-self: center;
+}
+
+.lightboxPrev {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.lightboxNext {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.lightboxClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+}
+.photoDialog {
+  position: relative;
+  width: min(760px, 100%);
+}
+
+.photoLarge {
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 10px;
+  background: #11181b;
+  object-fit: contain;
+}
+
+.closeFloating {
+  position: absolute;
+  z-index: 1;
+  top: 30px;
+  right: 32px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+  place-items: center;
+}
+
+@media (max-width: 767px) {
+  .waitingRoom {
+    padding: 10px;
+  }
+
+  // Icon + title on one row, the "confirm all" button below at full width.
+  .waitingRoom > header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+
+    > div {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    > button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .waitingList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .waitingCard > :not(.waitingImage) {
+    margin: 0 10px;
+  }
+
+  .lightbox {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+
+  .lightboxNav {
+    width: 38px;
+    height: 38px;
+  }
+
+  .lightboxFigure figcaption {
+    flex-direction: column;
+    padding: 0 8px;
+  }
+
+  .fieldRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// Event picker: best matches on top, the rest behind a type-ahead search.
+.eventPicker {
+  position: relative;
+  min-width: 0;
+}
+
+.eventPickerTrigger {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #d7e0e5;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  color: #263d45;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  svg {
+    flex: none;
+    color: #7b8790;
+  }
+
+  &[aria-expanded='true'],
+  &:focus-visible {
+    border-color: #2d6f8d;
+    box-shadow: 0 0 0 3px rgba(45, 111, 141, 0.15);
+  }
+}
+
+.eventPickerPanel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  min-width: 260px;
+  overflow: hidden;
+  border: 1px solid #d7e0e5;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(25, 39, 46, 0.18);
+
+  ul {
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+  }
+
+  li > button {
+    display: flex;
+    width: 100%;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    border: 0;
+    border-radius: 7px;
+    padding: 7px 9px;
+    background: transparent;
+    color: #263d45;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+    text-align: left;
+
+    strong {
+      overflow: hidden;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      flex: none;
+      color: #7b8790;
+      font-size: 0.72rem;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: #f1f6f9;
+    }
+
+    &[aria-selected='true'] {
+      background: #e6f0f5;
+      color: #1f566e;
+    }
+  }
+}
+
+.eventPickerNone {
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  color: #6b7782 !important;
+}
+
+
+.eventPickerSearch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-top: 1px solid #e4e9ee;
+  border-bottom: 1px solid #eef2f5;
+  padding: 7px 12px;
+  background: #fafcfd;
+  color: #7b8790;
+
+  .field & input,
+  input {
+    min-height: 0;
+    flex: 1;
+    border: 0;
+    padding: 2px 0;
+    background: transparent;
+    box-shadow: none;
+    color: #263d45;
+    font-size: 0.82rem;
+
+    &:focus {
+      border: 0;
+      box-shadow: none;
+    }
+  }
+}
+
+.eventPickerResults {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.eventPickerEmpty {
+  padding: 8px 9px;
+  color: #7b8790;
+  font-size: 0.78rem;
+}
+
+// "Is this from the event?" question with up to 3 same-day events.
+.eventSuggestion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #cfe2ea;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #f2f8fb;
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+    color: #1f566e;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+}
+
+.eventSuggestionOption,
+.eventSuggestionDismiss {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid #b9d3df;
+  border-radius: 7px;
+  padding: 4px 11px;
+  background: #fff;
+  color: #1f566e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  small {
+    color: #6b8794;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  &:hover {
+    border-color: #2d6f8d;
+    background: #2d6f8d;
+    color: #fff;
+
+    small {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+}
+
+.eventSuggestionDismiss {
+  border-color: transparent;
+  background: transparent;
+  color: #6b7782;
+  font-weight: 600;
+
+  &:hover {
+    border-color: #d7e0e5;
+    background: #fff;
+    color: #263d45;
+  }
+}
+
+@media (max-width: 767px) {
+  .eventSuggestion > span {
+    font-size: 0.74rem;
+  }
+
+  .eventSuggestionOption,
+  .eventSuggestionDismiss {
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    text-align: left;
+
+    small {
+      font-size: 0.64rem;
+    }
+  }
+}
+
+// Category toggle is only used on phones; desktop always shows the tiles.
+.categoryToggle {
+  display: none;
+}
+
+// The wrapping and secondary photo details are trimmed on phones.
+.dateField,
+.eventField,
+.descriptionField,
+.suggestionField {
+  min-width: 0;
+}
+
+.eventSuggestionOption small {
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .metaSecondary {
+    display: none !important;
+  }
+
+  // Stack the fields: date, description, event, suggestion, types.
+  .photoFields > .fieldRow {
+    display: contents;
+  }
+
+  .dateField {
+    order: 1;
+  }
+
+  .descriptionField {
+    order: 2;
+  }
+
+  .eventField {
+    order: 3;
+  }
+
+  .suggestionField {
+    order: 4;
+  }
+
+  .categoryField {
+    order: 5;
+  }
+
+  .categoryLabel {
+    display: none;
+  }
+
+  .categoryToggle {
+    display: flex;
+    width: 100%;
+    min-height: 36px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border: 1px solid #d7e0e5;
+    border-radius: 8px;
+    padding: 6px 10px;
+    background: #fff;
+    color: #263d45;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-align: left;
+
+    > span {
+      display: grid;
+      min-width: 0;
+    }
+
+    small {
+      overflow: hidden;
+      color: #6b7782;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    svg {
+      flex: none;
+      color: #7b8790;
+      transition: transform 150ms ease;
+    }
+
+    &[aria-expanded='true'] svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  .categoryField[data-open='false'] .categoryGrid {
+    display: none;
+  }
+}
