@@ -81,7 +81,7 @@
 .stickyBar {
   position: sticky;
   z-index: 5;
-  top: 0;
+  top: 43px;
   display: grid;
   padding: 8px 0;
   background: #f5f5f5;
@@ -145,12 +145,21 @@
 }
 
 .tabs {
+  position: sticky;
+  z-index: 6;
+  top: 0;
   display: flex;
+  min-height: 43px;
+  flex-wrap: nowrap;
   gap: 4px;
   border-bottom: 1px solid #dfe6ea;
+  overflow-x: auto;
+  background: #f5f5f5;
+  white-space: nowrap;
 
   button {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     gap: 7px;
     margin-bottom: -1px;

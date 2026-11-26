@@ -5,11 +5,12 @@ import { useAppContext } from '@app/AppContext';
 import { Select } from '@/components/climberbook/common/FormControls';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
-import { CalendarDays, Camera, Clock3, Trash2 } from 'lucide-react';
+import { CalendarDays, Camera, Clock3, Trash2, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { PhotoUploadDialog } from '@components/CarePhotos/PhotoUploadDialog';
-import { CARE_PHOTOS_QUERY_KEY, listCarePhotos } from '@utils/carePhotos';
+import { PhotoLightbox } from '@components/CarePhotos/PhotoLightbox';
+import { CARE_PHOTOS_QUERY_KEY, carePhotoUrl, listCarePhotos } from '@utils/carePhotos';
 import { toast } from 'react-toastify';
 import { DashboardEventForm } from '../DashboardEventForm/DashboardEventForm';
 import { isScatteredSelection } from '../DashboardEventForm/useDashboardEventForm';
@@ -20,6 +21,13 @@ const TIME_OPTIONS = Array.from({ length: 24 * 12 }, (_, index) => {
   const minute = (index % 12) * 5;
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 });
+
+// 5-minute steps, plus the current value when it falls between them (e.g. 16:54),
+// otherwise the select would silently show 00:00.
+const timeOptionsWith = (value: string) =>
+  !value || TIME_OPTIONS.includes(value)
+    ? TIME_OPTIONS
+    : [...TIME_OPTIONS, value].sort();
 
 function formatDateParts(date: string, language: 'pl' | 'en') {
   return new Intl.DateTimeFormat(language === 'pl' ? 'pl-PL' : 'en-GB', {
@@ -48,7 +56,7 @@ interface EventEditorFormProps {
   isDeleting?: boolean;
   onDelete: () => void;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (events?: CalendarEvent[]) => void;
 }
 
 /** Event add/edit form shared by the calendar day plan and the timeline. */
@@ -74,6 +82,7 @@ export function EventEditorForm({
   const { language } = useAppContext();
   const isPolish = language === 'pl';
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [lightboxPhotoIndex, setLightboxPhotoIndex] = useState<number | null>(null);
   const photoGroupId =
     editingEvent && editingEvent.type !== CalendarEventType.Todo ? editingEvent.groupId : undefined;
   const photosQuery = useQuery({
@@ -151,6 +160,36 @@ export function EventEditorForm({
           twoColumn
           hideCancel
           hideSelectionSummary={modal}
+          afterFields={
+            photoCount > 0 ? (
+              <section className={styles.eventPhotos}>
+                <h3>
+                  <Camera size={18} aria-hidden />
+                  {isPolish ? 'Zdjęcia z wydarzenia' : 'Event photos'}
+                  <small>{photoCount}</small>
+                </h3>
+                <div className={styles.eventPhotoGrid}>
+                  {photosQuery.data?.map((photo, index) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => setLightboxPhotoIndex(index)}
+                      aria-label={
+                        photo.description ||
+                        (isPolish ? `Otwórz zdjęcie ${index + 1}` : `Open photo ${index + 1}`)
+                      }
+                    >
+                      <img
+                        src={carePhotoUrl(photo.id)}
+                        alt={photo.description}
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null
+          }
           footerActions={
             <div className={styles.editorHeaderActions}>
               {editingEvent && editingEvent.type !== CalendarEventType.Todo && (
@@ -298,7 +337,7 @@ export function EventEditorForm({
                             value={timeValue}
                             onChange={(event) => setTime(event.target.value)}
                           >
-                            {TIME_OPTIONS.map((time) => (
+                            {timeOptionsWith(timeValue).map((time) => (
                               <option key={time} value={time}>
                                 {time}
                               </option>
@@ -307,6 +346,33 @@ export function EventEditorForm({
                         </div>
                       </>
                     )}
+                    {!isStart &&
+                      !isEmpty &&
+                      (isEndDateChosen || formEndDate !== formStartDate) && (
+                        <button
+                          type="button"
+                          className={classNames(
+                            styles.rangeCardPicker,
+                            styles.rangeCardReset,
+                          )}
+                          aria-label={
+                            isPolish
+                              ? 'Usuń datę zakończenia'
+                              : 'Clear end date'
+                          }
+                          title={
+                            isPolish
+                              ? 'Usuń datę zakończenia'
+                              : 'Clear end date'
+                          }
+                          onClick={() => {
+                            setIsEndDateChosen(false);
+                            setFormRange(formStartDate, formStartDate);
+                          }}
+                        >
+                          <X aria-hidden="true" />
+                        </button>
+                      )}
                     <button
                       type="button"
                       className={styles.rangeCardPicker}
@@ -351,7 +417,7 @@ export function EventEditorForm({
                         )
                       }
                     >
-                      {TIME_OPTIONS.map((time) => (
+                      {timeOptionsWith(isStart ? startTime : endTime).map((time) => (
                         <option key={time} value={time}>
                           {time}
                         </option>
@@ -415,9 +481,9 @@ export function EventEditorForm({
             );
           }}
           onCancel={onClose}
-          onSuccess={() => {
+          onSuccess={(events) => {
             onClose();
-            onSaved();
+            onSaved(events);
           }}
         />
       </div>
@@ -433,6 +499,13 @@ export function EventEditorForm({
               { type: 'success' },
             )
           }
+        />
+      )}
+      {lightboxPhotoIndex !== null && photosQuery.data && (
+        <PhotoLightbox
+          photos={photosQuery.data}
+          startIndex={lightboxPhotoIndex}
+          onClose={() => setLightboxPhotoIndex(null)}
         />
       )}
     </>

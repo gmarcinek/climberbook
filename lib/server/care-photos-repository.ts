@@ -12,6 +12,10 @@ const PHOTO_CATEGORIES = new Set<string>([
   "INVOICE",
   "BILL",
   "PAYMENT_PROOF",
+  "PARTY",
+  "EXTRA_CLASSES",
+  "OUTING",
+  "CULTURE",
   ...Object.values(CalendarEventType).filter(
     (type) =>
       type !== CalendarEventType.Offset &&
@@ -377,10 +381,14 @@ export async function updateCarePhotos(
   if ("category" in input) {
     const categories = String(input.category ?? "")
       .split(",")
+      .map((category) => category.trim())
       .filter(Boolean);
+    // Fixed types, or one custom "OTHER:<text>" typed by the user.
+    const isValid = (category: string) =>
+      PHOTO_CATEGORIES.has(category) || /^OTHER:[^,]{1,40}$/.test(category);
     if (
       categories.length > 12 ||
-      categories.some((category) => !PHOTO_CATEGORIES.has(category))
+      categories.some((category) => !isValid(category))
     ) {
       throw new CarePhotoError("Nieprawidłowy typ zdjęcia.");
     }

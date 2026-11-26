@@ -128,13 +128,14 @@
   min-height: 32px;
   align-items: center;
   gap: 6px;
+  border: 0;
   border-radius: 8px;
   padding: 0 12px;
   background: #2d6f8d;
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
-  text-decoration: none;
+  cursor: pointer;
   white-space: nowrap;
   transition: background-color 120ms ease;
 
@@ -144,6 +145,100 @@
 
   &:hover {
     background: #245a73;
+  }
+}
+
+.addTaskForm {
+  overflow: hidden;
+  border: 1px solid #dfe6ea;
+  border-top: 3px solid #2d6f8d;
+  border-radius: 14px;
+  padding: 18px;
+  background: linear-gradient(180deg, #f8fbfc 0, #fff 82px);
+  box-shadow: 0 10px 26px rgba(31, 52, 61, 0.08);
+
+  > form {
+    gap: 16px;
+  }
+
+  :global([data-slot='base']) {
+    margin-top: 0 !important;
+  }
+
+  :global([data-slot='label']) {
+    color: #52636e !important;
+    font-size: 0.76rem !important;
+    font-weight: 700 !important;
+  }
+
+  :global([data-slot='input-wrapper']) {
+    min-height: 46px !important;
+    border-color: #d5e0e5 !important;
+    border-radius: 9px !important;
+    background: #fff !important;
+    box-shadow: 0 1px 2px rgba(31, 52, 61, 0.03) !important;
+  }
+
+  :global([data-slot='input-wrapper']:focus-within) {
+    border-color: #2d6f8d !important;
+    box-shadow: 0 0 0 3px rgba(45, 111, 141, 0.1) !important;
+  }
+
+  textarea {
+    min-height: 88px !important;
+  }
+
+  :global([class*='dashboardEventForm_formActions']) {
+    order: 2;
+    justify-content: flex-end;
+    gap: 8px !important;
+    margin: 2px 0 0 !important;
+    padding: 14px 0 0 !important;
+    border-top: 1px solid #e5ecef;
+    background: transparent;
+  }
+
+  :global([class*='dashboardEventForm_actionButton']) {
+    min-width: 112px;
+    border-radius: 9px;
+  }
+
+  :global([class*='dashboardEventForm_actionButton'][type='submit']) {
+    background: #2d6f8d;
+    color: #fff;
+  }
+}
+
+.addTaskFormHeader {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+
+  > span {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: none;
+    place-items: center;
+    border-radius: 10px;
+    background: #e5f0f4;
+    color: #2d6f8d;
+  }
+
+  > div {
+    display: grid;
+    gap: 1px;
+  }
+
+  strong {
+    color: #263d45;
+    font-size: 0.95rem;
+  }
+
+  small {
+    color: #7a8992;
+    font-size: 0.72rem;
   }
 }
 

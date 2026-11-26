@@ -4,7 +4,7 @@ import { createCareEvents } from './careEventsApi';
 
 export const useFormPutEventMutation = (
   props: {
-    onSuccess?: (data?: CalendarEvent[]) => void;
+    onSuccess?: (data?: CalendarEvent[], submitted?: CalendarEvent[]) => void;
     onError?: (error: unknown) => void;
   } = {}
 ) => {
@@ -12,7 +12,8 @@ export const useFormPutEventMutation = (
 
   return useMutation({
     mutationFn: (events: CalendarEvent[]) => createCareEvents(events),
-    onSuccess: (data) => onSuccess(data),
+    // The API answers with all of the user's events; `submitted` are the saved ones.
+    onSuccess: (data, submitted) => onSuccess(data, submitted),
     onError: (error) => onError(error),
   });
 };

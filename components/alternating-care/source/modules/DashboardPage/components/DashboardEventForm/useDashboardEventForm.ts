@@ -78,7 +78,7 @@ interface useDashboardEventFormProps {
   setIsRadioGroupVisible: Dispatch<SetStateAction<boolean>>;
   selection: string[];
   setSelection: Dispatch<SetStateAction<Set<string>>>;
-  onSuccess: () => void;
+  onSuccess: (events?: CalendarEvent[]) => void;
   setIsMultiSelectionMode: (value: boolean) => void;
   initialEvent?: CalendarEvent;
   initialType?: CalendarEventType;
@@ -205,8 +205,8 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
   ]);
 
   const formPutEventMutation = useFormPutEventMutation({
-    onSuccess: (data) => {
-      onSuccess();
+    onSuccess: (data, submitted) => {
+      onSuccess(submitted);
       setIsRadioGroupVisible(false);
 
       setDate('');
@@ -225,7 +225,7 @@ export const useDashboardEventForm = (props: useDashboardEventFormProps) => {
         className: 'bg-green-100',
       });
 
-      const currentGroupId = data?.at(0)?.groupId;
+      const currentGroupId = submitted?.at(0)?.groupId ?? data?.at(0)?.groupId;
       if (redirectAfterSave) {
         router.push(redirectAfterSave);
       } else if (currentGroupId) {

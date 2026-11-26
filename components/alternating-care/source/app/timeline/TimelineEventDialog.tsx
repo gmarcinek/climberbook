@@ -22,14 +22,22 @@ interface TimelineEventDialogProps {
   /** Events of the edited group (all its days); empty when adding. */
   groupEvents: CalendarEvent[];
   initialType?: CalendarEventType;
+  /** Day the new event starts on (defaults to today). */
+  initialDate?: string;
+  /** Prefilled hours (minutes since midnight) for a new timed event. */
+  initialStartTime?: number;
+  initialEndTime?: number;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (events?: CalendarEvent[]) => void;
 }
 
 /** Opens the same event editor modal as the calendar. */
 export const TimelineEventDialog = ({
   groupEvents,
   initialType,
+  initialDate,
+  initialStartTime,
+  initialEndTime,
   onClose,
   onSaved,
 }: TimelineEventDialogProps) => {
@@ -37,7 +45,7 @@ export const TimelineEventDialog = ({
   const isEnglish = language === 'en';
   const editedEvent = groupEvents[0];
   const initialDates = groupEvents.map((event) => event.date).sort();
-  const today = dayjs().format(dateFormat);
+  const today = initialDate ?? dayjs().format(dateFormat);
   const [from, setFrom] = useState(initialDates[0] ?? today);
   const [to, setTo] = useState(initialDates.at(-1) ?? today);
   const [selection, setSelection] = useState<Set<string>>(
@@ -92,6 +100,8 @@ export const TimelineEventDialog = ({
       setIsEndDateChosen={setIsEndDateChosen}
       editingEvent={editedEvent}
       newEventType={editedEvent ? undefined : initialType}
+      draftStartTime={editedEvent ? undefined : initialStartTime}
+      draftEndTime={editedEvent ? undefined : initialEndTime}
       redirectAfterSave='/alternating-care/timeline'
       modal
       isDeleting={isDeleting}

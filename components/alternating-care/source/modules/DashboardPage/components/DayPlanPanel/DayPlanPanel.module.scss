@@ -772,6 +772,82 @@
   }
 }
 
+.eventPhotos {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8ec;
+
+  > h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: #384750;
+    font-size: 0.9rem;
+    line-height: 1.2;
+
+    svg {
+      flex: none;
+    }
+
+    small {
+      min-width: 20px;
+      border-radius: 999px;
+      padding: 2px 6px;
+      background: #eaf2f6;
+      color: #2d6f8d;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-align: center;
+    }
+  }
+}
+
+.eventPhotoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+
+  button {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    border: 1px solid #dce4e8;
+    border-radius: 8px;
+    padding: 0;
+    background: #f3f6f8;
+    cursor: pointer;
+
+    &::after {
+      position: absolute;
+      inset: 0;
+      border: 2px solid transparent;
+      border-radius: inherit;
+      content: '';
+      transition: border-color 0.15s ease;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      border-color: #2d6f8d;
+    }
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (max-width: 640px) {
+  .eventPhotoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .deleteEvent {
   display: inline-flex;
   align-items: center;
@@ -879,6 +955,16 @@
     svg {
       width: 26px;
       height: 26px;
+    }
+  }
+
+  // Clears the end date back to a single-day event.
+  .rangeCardReset {
+    margin-left: auto;
+
+    svg {
+      width: 20px;
+      height: 20px;
     }
   }
 

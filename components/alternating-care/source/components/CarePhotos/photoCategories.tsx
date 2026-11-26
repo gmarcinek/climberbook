@@ -9,9 +9,14 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import {
+  MdCelebration,
   MdChildCare,
   MdDescription,
   MdFamilyRestroom,
+  MdMoreHoriz,
+  MdPalette,
+  MdDirectionsWalk,
+  MdTheaterComedy,
   MdReceipt,
   MdReceiptLong,
   MdTaskAlt,
@@ -35,7 +40,21 @@ const PRIMARY_CATEGORIES: PhotoCategory[] = [
   { id: 'INVOICE', label: { pl: 'Faktura', en: 'Invoice' }, icon: MdDescription, color: '#1565C0' },
   { id: 'BILL', label: { pl: 'Rachunek', en: 'Bill' }, icon: MdReceiptLong, color: '#6D4C41' },
   { id: 'PAYMENT_PROOF', label: { pl: 'Dowód zapłaty', en: 'Proof of payment' }, icon: MdTaskAlt, color: '#00897B' },
+  { id: 'PARTY', label: { pl: 'Impreza', en: 'Party' }, icon: MdCelebration, color: '#D81B60' },
+  { id: 'EXTRA_CLASSES', label: { pl: 'Zajęcia dodatkowe', en: 'Extra classes' }, icon: MdPalette, color: '#7CB342' },
+  { id: 'OUTING', label: { pl: 'Wyjścia', en: 'Outings' }, icon: MdDirectionsWalk, color: '#F4511E' },
+  { id: 'CULTURE', label: { pl: 'Kulturalne', en: 'Culture' }, icon: MdTheaterComedy, color: '#6A1B9A' },
 ];
+
+// Custom type typed by the user, stored as "OTHER:<text>" (no commas, max 40 chars).
+export const OTHER_PREFIX = 'OTHER:';
+const OTHER_CATEGORY: PhotoCategory = {
+  id: 'OTHER',
+  label: { pl: 'Inne', en: 'Other' },
+  icon: MdMoreHoriz,
+  color: '#607D8B',
+};
+export const cleanOtherText = (text: string) => text.replace(/,/g, ' ').slice(0, 40);
 
 const EVENT_CATEGORIES: PhotoCategory[] = Object.values(CalendarEventType)
   .filter(
@@ -56,8 +75,14 @@ const EVENT_CATEGORIES: PhotoCategory[] = Object.values(CalendarEventType)
 
 const ALL_CATEGORIES = [...PRIMARY_CATEGORIES, ...EVENT_CATEGORIES];
 
-export const getPhotoCategory = (id: string) =>
-  ALL_CATEGORIES.find((category) => category.id === id);
+export const getPhotoCategory = (id: string): PhotoCategory | undefined =>
+  id.startsWith(OTHER_PREFIX)
+    ? {
+        ...OTHER_CATEGORY,
+        id,
+        label: { pl: id.slice(OTHER_PREFIX.length), en: id.slice(OTHER_PREFIX.length) },
+      }
+    : ALL_CATEGORIES.find((category) => category.id === id);
 
 // A photo can have several types, stored as "WITH_WARD,RECEIPT".
 export const parsePhotoCategories = (value: string | null | undefined) =>
@@ -109,6 +134,9 @@ export const PhotoCategoryPicker = ({
   const isEnglish = language === 'en';
   // Collapsed on phones (CSS); desktop always shows all tiles.
   const [isOpen, setIsOpen] = useState(false);
+  const otherEntry = selected.find((id) => id.startsWith(OTHER_PREFIX));
+  const [isOtherOpen, setIsOtherOpen] = useState(false);
+  const [otherText, setOtherText] = useState(otherEntry?.slice(OTHER_PREFIX.length) ?? '');
   const toggle = (id: string) =>
     onChange(
       (selected.includes(id)
@@ -157,6 +185,36 @@ export const PhotoCategoryPicker = ({
             onClick={() => toggle(category.id)}
           />
         ))}
+        <CategoryTile
+          category={OTHER_CATEGORY}
+          isSelected={Boolean(otherEntry) || isOtherOpen}
+          language={language}
+          onClick={() => {
+            if (otherEntry || isOtherOpen) {
+              setIsOtherOpen(false);
+              setOtherText('');
+              onChange(selected.filter((id) => !id.startsWith(OTHER_PREFIX)).join(','));
+            } else {
+              setIsOtherOpen(true);
+            }
+          }}
+        />
+        {(isOtherOpen || otherEntry) && (
+          <input
+            className={styles.categoryOther}
+            type='text'
+            autoFocus={isOtherOpen && !otherEntry}
+            maxLength={40}
+            value={otherText}
+            placeholder={isEnglish ? 'Type your own type…' : 'Wpisz własny typ…'}
+            onChange={(event) => {
+              const text = cleanOtherText(event.target.value);
+              setOtherText(text);
+              const rest = selected.filter((id) => !id.startsWith(OTHER_PREFIX));
+              onChange([...rest, ...(text.trim() ? [`${OTHER_PREFIX}${text.trim()}`] : [])].join(','));
+            }}
+          />
+        )}
       </div>
     </div>
   );

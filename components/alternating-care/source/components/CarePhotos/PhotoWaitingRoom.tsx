@@ -11,7 +11,9 @@ import {
   listCarePhotos,
   updateCarePhoto,
 } from '@utils/carePhotos';
-import { Check, CheckCheck, Inbox, Maximize2, Sparkles, Trash2, X } from 'lucide-react';
+import { Check, CheckCheck, Inbox, Maximize2, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { CalendarEventType } from '@api/db/types';
+import { TimelineEventDialog } from '@app/timeline/TimelineEventDialog';
 import { listCareEvents } from '@api/db/events/careEventsApi';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
@@ -31,15 +33,30 @@ type PhotoDraft = Pick<CarePhoto, 'description' | 'takenDate' | 'groupId' | 'cat
 
 const PhotoFields = ({
   draft,
+  takenAt,
   onChange,
   eventOptions,
 }: {
   draft: PhotoDraft;
+  /** EXIF capture time; used to prefill the time of an event created from the photo. */
+  takenAt?: number | null;
   onChange: (draft: PhotoDraft) => void;
   eventOptions: PhotoEventOption[];
 }) => {
   const { language } = useAppContext();
   const isEnglish = language === 'en';
+  const queryClient = useQueryClient();
+  const [isAddingEvent, setIsAddingEvent] = useState(false);
+  // New event from a timed photo: 15 min before it until 1 h after (minutes since midnight),
+  // snapped to the 5-minute steps of the time selects.
+  const takenMinute = takenAt ? dayjs(takenAt).hour() * 60 + dayjs(takenAt).minute() : null;
+  const eventTimes =
+    takenMinute === null
+      ? {}
+      : {
+          initialStartTime: Math.max(0, Math.floor((takenMinute - 15) / 5) * 5),
+          initialEndTime: Math.min(1435, Math.ceil((takenMinute + 60) / 5) * 5),
+        };
   // The timeline loads history in pages, so also fetch events around this photo's date.
   const nearbyQuery = useQuery({
     queryKey: ['careTimelineNearby', draft.takenDate],
@@ -132,6 +149,36 @@ const PhotoFields = ({
             {isEnglish ? 'No' : 'Nie'}
           </button>
         </div>
+      )}
+      <div className={`${styles.addEventHint} ${styles.suggestionField}`}>
+        <span>
+          {matches.length > 0
+            ? isEnglish
+              ? 'Not the right one?'
+              : 'To nie to?'
+            : isEnglish
+              ? 'No matching event?'
+              : 'Brak pasującego wydarzenia?'}
+        </span>
+        <button type='button' onClick={() => setIsAddingEvent(true)}>
+          <Plus size={14} aria-hidden />
+          {isEnglish ? 'Add event' : 'Dodaj wydarzenie'}
+        </button>
+      </div>
+      {isAddingEvent && (
+        <TimelineEventDialog
+          groupEvents={[]}
+          initialType={CalendarEventType.Event}
+          initialDate={draft.takenDate}
+          {...eventTimes}
+          onClose={() => setIsAddingEvent(false)}
+          onSaved={(events) => {
+            const groupId = events?.[0]?.groupId;
+            if (groupId) onChange({ ...draft, groupId });
+            void queryClient.invalidateQueries({ queryKey: ['careTimelineNearby'] });
+            void queryClient.invalidateQueries({ queryKey: ['careTimeline'] });
+          }}
+        />
       )}
       <label className={`${styles.field} ${styles.descriptionField}`}>
         <span>{isEnglish ? 'What is it?' : 'Co to jest?'}</span>
@@ -295,6 +342,7 @@ export const PhotoWaitingRoom = ({
             <PhotoMetaList photo={photo} />
             <PhotoFields
               draft={drafts[photo.id] ?? draftOf(photo)}
+              takenAt={photo.takenAt}
               eventOptions={eventOptions}
               onChange={(draft) =>
                 setDrafts((current) => ({ ...current, [photo.id]: draft }))
@@ -381,7 +429,12 @@ export const PhotoEditDialog = ({
         </button>
         <img className={styles.photoLarge} src={carePhotoUrl(photo.id)} alt={photo.description} />
         <PhotoMetaList photo={photo} />
-        <PhotoFields draft={draft} onChange={setDraft} eventOptions={eventOptions} />
+        <PhotoFields
+          draft={draft}
+          takenAt={photo.takenAt}
+          onChange={setDraft}
+          eventOptions={eventOptions}
+        />
         <footer className={styles.dialogFooter}>
           <button
             type='button'

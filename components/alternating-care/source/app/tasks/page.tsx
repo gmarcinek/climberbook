@@ -7,7 +7,9 @@ import {
 } from '@api/db/events/careEventsApi';
 import { useAppContext } from '@app/AppContext';
 import PageContainer from '@components/PageContainer/PageContainer';
+import { DashboardEventForm } from '@modules/DashboardPage/components/DashboardEventForm/DashboardEventForm';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import {
   Check,
   CheckCircle2,
@@ -16,7 +18,6 @@ import {
   Plus,
   RotateCcw,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import styles from './tasks.module.scss';
@@ -25,6 +26,10 @@ export default function TasksPage() {
   const { language } = useAppContext();
   const isEnglish = language === 'en';
   const queryClient = useQueryClient();
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskDates, setNewTaskDates] = useState(
+    () => new Set([dayjs().format('YYYY-MM-DD')]),
+  );
   const [updatingGroup, setUpdatingGroup] = useState<string | null>(null);
   const [draggedGroup, setDraggedGroup] = useState<string | null>(null);
   const todosQuery = useQuery({
@@ -168,6 +173,16 @@ export default function TasksPage() {
     }
   };
 
+  const openTaskForm = () => {
+    setNewTaskDates(new Set([dayjs().format('YYYY-MM-DD')]));
+    setIsAddingTask((current) => !current);
+  };
+
+  const closeTaskForm = () => {
+    setIsAddingTask(false);
+    setNewTaskDates(new Set([dayjs().format('YYYY-MM-DD')]));
+  };
+
   return (
     <PageContainer scrollable isFullWidth>
       <main className={styles.page}>
@@ -210,15 +225,50 @@ export default function TasksPage() {
                 </span>
                 <div className={styles.sectionActions}>
                   <strong>{pending.length}</strong>
-                  <Link
-                    href="/alternating-care/add?type=TODO&returnUrl=%2Falternating-care%2Ftasks"
+                  <button
+                    type="button"
                     className={styles.addTask}
+                    aria-expanded={isAddingTask}
+                    onClick={openTaskForm}
                   >
                     <Plus size={15} aria-hidden />
                     {isEnglish ? 'Add task' : 'Dodaj zadanie'}
-                  </Link>
+                  </button>
                 </div>
               </header>
+              {isAddingTask && (
+                <div className={styles.addTaskForm}>
+                  <div className={styles.addTaskFormHeader}>
+                    <span>
+                      <Plus size={18} aria-hidden />
+                    </span>
+                    <div>
+                      <strong>{isEnglish ? 'New task' : 'Nowe zadanie'}</strong>
+                      <small>
+                        {isEnglish
+                          ? 'Add a short title and optional details.'
+                          : 'Dodaj krótki tytuł i opcjonalne szczegóły.'}
+                      </small>
+                    </div>
+                  </div>
+                  <DashboardEventForm
+                    selection={[...newTaskDates]}
+                    setSelection={setNewTaskDates}
+                    setIsMultiSelectionMode={() => undefined}
+                    initialType={CalendarEventType.Todo}
+                    submitLabel={isEnglish ? 'Add task' : 'Dodaj zadanie'}
+                    staticLayout
+                    redirectAfterSave="/alternating-care/tasks"
+                    onCancel={closeTaskForm}
+                    onSuccess={() => {
+                      void queryClient.invalidateQueries({
+                        queryKey: ['careTodos'],
+                      });
+                      closeTaskForm();
+                    }}
+                  />
+                </div>
+              )}
               <ul>
                 {pending.length > 0 ? (
                   pending.map(renderTask)

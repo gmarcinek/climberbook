@@ -42,7 +42,7 @@ import { useDashboardEventFormAnimations } from './useDashboardEventFormAnimatio
 interface DashboardEventFormProps {
   selection: string[];
   setSelection: Dispatch<SetStateAction<Set<string>>>;
-  onSuccess: () => void;
+  onSuccess: (events?: CalendarEvent[]) => void;
   setIsMultiSelectionMode: (value: boolean) => void;
   initialEvent?: CalendarEvent;
   initialType?: CalendarEventType;
@@ -59,6 +59,7 @@ interface DashboardEventFormProps {
   rangeStartDate?: string;
   rangeEndDate?: string;
   afterActions?: ReactNode;
+  afterFields?: ReactNode;
   hideCancel?: boolean;
   footerActions?: ReactNode;
   hideSelectionSummary?: boolean;
@@ -93,6 +94,7 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
     rangeStartDate,
     rangeEndDate,
     afterActions,
+    afterFields,
     renderRangeFields,
     hideCancel = false,
     footerActions,
@@ -532,6 +534,7 @@ export const DashboardEventForm = (props: DashboardEventFormProps) => {
               </>
             )}
           </Stack>
+          {afterFields}
         </Stack>
         {confirmBeforeSave && isConfirming && (
           <div className={styles.confirmationPanel} role='dialog' aria-modal='true'>
